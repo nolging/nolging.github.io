@@ -3,14 +3,23 @@
 
 # Logs
 *.log
-
-# Environment
-.env
-.env.local
+npm-debug.log*
 
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+
+# Environment (실제 키는 커밋하지 않음)
+.env
+.env.local
+.env.*.local
+
 # Editor
 .vscode/
 .idea/
+
+# Supabase 로컬
+supabase/.temp/
+supabase/.branches/
