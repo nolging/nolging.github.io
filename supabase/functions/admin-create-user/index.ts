@@ -1,9 +1,16 @@
+// @ts-nocheck  (Deno 런타임 전용 파일 — VSCode TS 서버는 Deno 전역/URL import 를 모름)
 // Supabase Edge Function: admin-create-user
-// 관리자가 닉네임/비밀번호로 새 사용자를 생성(승인)합니다.
-// service_role 키는 이 서버 함수 안에서만 사용되어 프론트엔드에 노출되지 않습니다.
+// 사용자 계정 관리 (service_role 키는 이 함수 안에서만 사용 → 프론트에 노출 안 됨)
 //
-// 배포:  supabase functions deploy admin-create-user
-// 첫 관리자: profiles 에 admin 이 하나도 없으면 인증 없이 최초 1명(admin) 생성 허용(부트스트랩).
+// action:
+//   'request'    (공개)   : 가입 요청 → status='pending' 사용자 생성 (관리자 승인 대기)
+//   'create'     (관리자) : status='active' 사용자 즉시 생성
+//   'set-status' (관리자) : 사용자 status 변경 (active/disabled)
+//   'delete'     (관리자) : 사용자 삭제 (가입요청 거절 등)
+//
+// 첫 관리자: profiles 에 admin 이 0명이면 최초 1명(admin) 을 인증 없이 생성 허용(부트스트랩).
+//
+// 배포:  supabase functions deploy admin-create-user --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -32,55 +39,80 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 
-  let payload: { nickname?: string; password?: string; role?: string; requestId?: string }
+  let p: {
+    action?: string
+    nickname?: string
+    password?: string
+    role?: string
+    contact?: string
+    birthdate?: string
+    userId?: string
+    status?: string
+  }
   try {
-    payload = await req.json()
+    p = await req.json()
   } catch {
     return json({ error: '잘못된 요청 본문입니다.' }, 400)
   }
 
-  const nickname = (payload.nickname ?? '').trim().toLowerCase()
-  const password = payload.password ?? ''
-  const role = payload.role === 'admin' ? 'admin' : 'member'
+  const action = p.action ?? 'create'
 
-  if (!NICK_RE.test(nickname)) {
-    return json({ error: '닉네임은 영문 소문자/숫자/._- 2~32자여야 합니다.' }, 400)
+  // 호출자 판별
+  const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '')
+  async function callerIsAdmin(): Promise<boolean> {
+    if (!token) return false
+    const { data, error } = await admin.auth.getUser(token)
+    if (error || !data.user) return false
+    const { data: prof } = await admin.from('profiles').select('role').eq('id', data.user.id).single()
+    return prof?.role === 'admin'
   }
-  if (password.length < 6) {
-    return json({ error: '비밀번호는 6자 이상이어야 합니다.' }, 400)
-  }
 
-  // 부트스트랩: 관리자가 한 명도 없으면 최초 1명(admin) 생성을 인증 없이 허용
-  const { count: adminCount, error: countErr } = await admin
-    .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'admin')
-  if (countErr) return json({ error: countErr.message }, 500)
-
+  // 관리자 부트스트랩 여부
+  const { count: adminCount } = await admin
+    .from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')
   const bootstrap = (adminCount ?? 0) === 0
 
-  if (!bootstrap) {
-    // 호출자가 관리자인지 검증
-    const authHeader = req.headers.get('Authorization') ?? ''
-    const token = authHeader.replace('Bearer ', '')
-    if (!token) return json({ error: '인증이 필요합니다.' }, 401)
+  // ---- 상태 변경 / 삭제 (관리자 전용) ----
+  if (action === 'set-status' || action === 'delete') {
+    if (!(await callerIsAdmin())) return json({ error: '관리자 권한이 필요합니다.' }, 403)
+    if (!p.userId) return json({ error: 'userId 가 필요합니다.' }, 400)
 
-    const { data: userData, error: userErr } = await admin.auth.getUser(token)
-    if (userErr || !userData.user) return json({ error: '유효하지 않은 세션입니다.' }, 401)
+    if (action === 'delete') {
+      await admin.from('profiles').delete().eq('id', p.userId)
+      await admin.auth.admin.deleteUser(p.userId).catch(() => {})
+      return json({ ok: true })
+    }
+    const status = p.status === 'active' ? 'active' : 'disabled'
+    const { error } = await admin.from('profiles').update({ status }).eq('id', p.userId)
+    if (error) return json({ error: error.message }, 500)
+    return json({ ok: true, status })
+  }
 
-    const { data: caller } = await admin
-      .from('profiles')
-      .select('role')
-      .eq('id', userData.user.id)
-      .single()
-    if (!caller || caller.role !== 'admin') {
+  // ---- 사용자 생성 (create / request) ----
+  const nickname = (p.nickname ?? '').trim().toLowerCase()
+  const password = p.password ?? ''
+  const contact = (p.contact ?? '').trim() || null
+  const birthdate = (p.birthdate ?? '').trim() || null
+
+  if (!NICK_RE.test(nickname)) return json({ error: '아이디는 영문 소문자/숫자/._- 2~32자여야 합니다.' }, 400)
+  if (password.length < 6) return json({ error: '비밀번호는 6자 이상이어야 합니다.' }, 400)
+
+  let role = 'member'
+  let status = 'active'
+
+  if (action === 'request') {
+    status = 'pending' // 관리자 승인 대기
+  } else {
+    // create: 관리자 또는 부트스트랩만
+    if (!bootstrap && !(await callerIsAdmin())) {
       return json({ error: '관리자만 사용자를 생성할 수 있습니다.' }, 403)
     }
+    role = bootstrap ? 'admin' : (p.role === 'admin' ? 'admin' : 'member')
+    status = 'active'
   }
 
   const email = `${nickname}@${EMAIL_DOMAIN}`
 
-  // 1) auth 사용자 생성
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email,
     password,
@@ -90,31 +122,22 @@ Deno.serve(async (req) => {
   if (createErr || !created.user) {
     const msg = createErr?.message ?? '사용자 생성 실패'
     const dup = /already|registered|exists/i.test(msg)
-    return json({ error: dup ? '이미 존재하는 닉네임입니다.' : msg }, dup ? 409 : 500)
+    return json({ error: dup ? '이미 존재하는 아이디입니다.' : msg }, dup ? 409 : 500)
   }
 
-  // 2) 프로필 생성
   const { error: profErr } = await admin.from('profiles').insert({
     id: created.user.id,
     nickname,
-    role: bootstrap ? 'admin' : role,
-    status: 'active',
+    role,
+    status,
+    contact,
+    birthdate,
   })
   if (profErr) {
-    // 롤백: 프로필 생성 실패 시 auth 사용자 제거
     await admin.auth.admin.deleteUser(created.user.id)
     const dup = /duplicate|unique/i.test(profErr.message)
-    return json({ error: dup ? '이미 존재하는 닉네임입니다.' : profErr.message }, dup ? 409 : 500)
+    return json({ error: dup ? '이미 존재하는 아이디입니다.' : profErr.message }, dup ? 409 : 500)
   }
 
-  // 3) 가입 요청과 연결된 경우 승인 처리
-  if (payload.requestId) {
-    await admin.from('access_requests').update({ status: 'approved' }).eq('id', payload.requestId)
-  }
-
-  return json({
-    ok: true,
-    bootstrap,
-    user: { id: created.user.id, nickname, role: bootstrap ? 'admin' : role },
-  })
+  return json({ ok: true, bootstrap, user: { id: created.user.id, nickname, role, status } })
 })

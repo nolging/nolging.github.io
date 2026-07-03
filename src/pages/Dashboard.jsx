@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { listMyGroups, createGroup } from '../lib/api'
+import { GROUP_TYPES, THEMES_BY_TYPE, typeLabel, themeLabel, normalizeTheme } from '../lib/constants'
+
+const EMPTY = { name: '', description: '', groupType: 'nolging', theme: 'solo', showContact: false, showBirthdate: false }
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -9,41 +12,32 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
+  const [form, setForm] = useState(EMPTY)
   const [busy, setBusy] = useState(false)
+
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   async function load() {
     setLoading(true)
-    try {
-      setGroups(await listMyGroups())
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setGroups(await listMyGroups()) }
+    catch (err) { setError(err.message) }
+    finally { setLoading(false) }
   }
+  useEffect(() => { load() }, [])
 
-  useEffect(() => {
-    load()
-  }, [])
+  function chooseType(t) {
+    set({ groupType: t, theme: normalizeTheme(t, form.theme) })
+  }
 
   async function handleCreate(e) {
     e.preventDefault()
-    if (!name.trim()) return
-    setBusy(true)
-    setError('')
+    if (!form.name.trim()) return
+    setBusy(true); setError('')
     try {
-      await createGroup({ name: name.trim(), description: description.trim(), ownerId: profile.id })
-      setName('')
-      setDescription('')
-      setShowForm(false)
+      await createGroup({ ...form, name: form.name.trim(), description: form.description.trim(), ownerId: profile.id })
+      setForm(EMPTY); setShowForm(false)
       await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
   return (
@@ -56,25 +50,49 @@ export default function Dashboard() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="card form-inline">
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="그룹 이름"
-          />
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="설명 (선택)"
-          />
-          <button className="btn btn-primary" disabled={busy}>
-            {busy ? '생성 중…' : '만들기'}
-          </button>
+        <form onSubmit={handleCreate} className="card form">
+          <label className="field"><span>그룹명 *</span>
+            <input autoFocus value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="그룹 이름" /></label>
+          <label className="field"><span>설명 (선택)</span>
+            <input value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="설명" /></label>
+
+          <div className="field"><span>그룹 유형</span>
+            <div className="toggle-group">
+              {GROUP_TYPES.map((t) => (
+                <button type="button" key={t.value}
+                  className={`toggle ${form.groupType === t.value ? 'active' : ''}`}
+                  onClick={() => chooseType(t.value)}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field"><span>그룹 테마</span>
+            <div className="toggle-group">
+              {THEMES_BY_TYPE[form.groupType].map((t) => (
+                <button type="button" key={t.value}
+                  className={`toggle ${form.theme === t.value ? 'active' : ''}`}
+                  onClick={() => set({ theme: t.value })}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field-row">
+            <label className="check">
+              <input type="checkbox" checked={form.showContact} onChange={(e) => set({ showContact: e.target.checked })} />
+              연락처 공개 허용
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={form.showBirthdate} onChange={(e) => set({ showBirthdate: e.target.checked })} />
+              생년월일 공개 허용
+            </label>
+          </div>
+
+          {error && <div className="alert alert-error">{error}</div>}
+          <button className="btn btn-primary" disabled={busy}>{busy ? '생성 중…' : '만들기'}</button>
         </form>
       )}
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && !showForm && <div className="alert alert-error">{error}</div>}
 
       {loading ? (
         <div className="spinner" />
@@ -87,6 +105,10 @@ export default function Dashboard() {
         <div className="grid">
           {groups.map((g) => (
             <Link key={g.id} to={`/groups/${g.id}`} className="card group-card">
+              <div className="group-card-badges">
+                <span className={`badge type-${g.group_type}`}>{typeLabel(g.group_type)}</span>
+                <span className="badge">{themeLabel(g.group_type, g.theme)}</span>
+              </div>
               <h3>{g.name}</h3>
               {g.description && <p className="muted">{g.description}</p>}
               <div className="group-card-foot">

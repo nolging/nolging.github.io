@@ -160,8 +160,12 @@ textarea { resize: vertical; }
 .invite-box code { flex: 1; background: #f1f2f6; padding: 9px 12px; border-radius: 8px; font-size: 13px; word-break: break-all; }
 .member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .member-list li { display: flex; align-items: center; gap: 10px; }
-.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
-.member-name { flex: 1; font-weight: 500; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; overflow: hidden; vertical-align: middle; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.member-list li { align-items: flex-start; }
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.member-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
 
 /* ---- 요청 목록 ---- */
 .request-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -178,8 +182,67 @@ textarea { resize: vertical; }
 .spinner { width: 26px; height: 26px; border: 3px solid #e0e3ee; border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin: 24px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 780px) {
+/* ---- 브랜드 워드마크 (놀기ㅇ) ---- */
+.brand-word { font-weight: 800; letter-spacing: -1px; }
+.brand .brand-word { font-size: 1.2rem; }
+.auth-logo .brand-word { font-size: 1.7rem; }
+.brand-word .brand-o {
+  color: var(--primary); font-size: inherit;
+  display: inline-block; margin-left: 1px; transform: translateY(1px);
+}
+
+/* ---- 토글 버튼 그룹 ---- */
+.toggle-group { display: inline-flex; background: #eef0f5; border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
+.toggle {
+  border: none; background: transparent; padding: 7px 16px; border-radius: 8px;
+  font-weight: 600; font-size: 14px; color: var(--muted); cursor: pointer; transition: all .12s;
+}
+.toggle.active { background: #fff; color: var(--primary); box-shadow: var(--shadow); }
+
+/* ---- 체크박스 라벨 ---- */
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); }
+.check input { width: auto; }
+
+/* ---- 아바타 편집 ---- */
+.avatar-edit { display: flex; align-items: center; gap: 16px; }
+
+/* ---- 태스크 내 담당자(인라인 아바타) ---- */
+.task-person { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---- 그룹 카드 배지 ---- */
+.group-card-badges { display: flex; gap: 6px; margin-bottom: 4px; }
+.badge.type-nolging { background: #ffe9d6; color: #c2410c; }
+.badge.type-ilhaging { background: #dbeafe; color: #1d4ed8; }
+
+/* ---- 테이블 가로 스크롤 (모바일) ---- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---- 반응형: 태블릿 ---- */
+@media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }
-  .content { padding: 18px 14px; }
-  .topnav a { padding: 7px 9px; }
+}
+
+/* ---- 반응형: 모바일 ---- */
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  .content { padding: 16px 12px; }
+  .topbar { gap: 10px; padding: 0 14px; height: 54px; }
+  .brand .brand-word { font-size: 1.05rem; }
+  .topnav { gap: 2px; }
+  .topnav a { padding: 6px 8px; font-size: 13px; }
+  .me { display: none; }              /* 좁은 화면에선 이름 숨기고 로그아웃만 */
+  .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-head .row-gap { flex-wrap: wrap; }
+  .field-row { flex-direction: column; }
+  .field-narrow { flex: 1 1 auto !important; }
+  .task-item { flex-direction: column; gap: 10px; }
+  .task-actions { align-self: flex-end; }
+  .auth-card { padding: 24px 20px; }
+  .grid { grid-template-columns: 1fr; }
+  .toggle { padding: 7px 12px; }
+}
+
+/* ---- 아주 좁은 화면 ---- */
+@media (max-width: 380px) {
+  .topnav a { padding: 6px 6px; }
 }

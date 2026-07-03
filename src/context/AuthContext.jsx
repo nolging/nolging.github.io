@@ -13,7 +13,12 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return
     }
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    // contact/birthdate 는 프라이버시로 일반 조회에서 제외됨 → 필요한 컬럼만
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, nickname, role, status, created_at')
+      .eq('id', userId)
+      .single()
     setProfile(data ?? null)
   }, [])
 
@@ -40,12 +45,16 @@ export function AuthProvider({ children }) {
     const email = nicknameToEmail(nickname)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error('닉네임 또는 비밀번호가 올바르지 않습니다.')
-    // 비활성 계정 차단
+    // 비활성/승인대기 계정 차단
     const { data: prof } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, nickname, role, status')
       .eq('id', data.user.id)
       .single()
+    if (prof?.status === 'pending') {
+      await supabase.auth.signOut()
+      throw new Error('아직 관리자 승인 대기 중인 계정입니다.')
+    }
     if (prof?.status === 'disabled') {
       await supabase.auth.signOut()
       throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.')

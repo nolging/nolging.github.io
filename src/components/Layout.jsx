@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Brand from './Brand'
 
 export default function Layout() {
   const { profile, isAdmin, logout } = useAuth()
@@ -13,7 +14,7 @@ export default function Layout() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <Link to="/" className="brand">놀징<span>Nolging</span></Link>
+        <Link to="/" className="brand"><Brand /></Link>
         <nav className="topnav">
           <NavLink to="/" end>내 그룹</NavLink>
           <NavLink to="/join">그룹 가입</NavLink>

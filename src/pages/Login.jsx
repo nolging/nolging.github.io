@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Brand from '../components/Brand'
 
 export default function Login() {
   const { login, user } = useAuth()
@@ -31,16 +32,16 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-logo">놀징 <span>Nolging</span></div>
+        <div className="auth-logo"><Brand /></div>
         <p className="auth-sub">그룹 태스크 관리</p>
         <form onSubmit={handleSubmit} className="form">
           <label className="field">
-            <span>닉네임</span>
+            <span>아이디</span>
             <input
               autoFocus
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="닉네임"
+              placeholder="아이디"
               autoComplete="username"
             />
           </label>

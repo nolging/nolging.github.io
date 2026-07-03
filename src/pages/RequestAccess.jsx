@@ -1,24 +1,36 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { submitAccessRequest } from '../lib/api'
+import { requestAccess } from '../lib/api'
+import Brand from '../components/Brand'
 
 export default function RequestAccess() {
-  const [nickname, setNickname] = useState('')
-  const [note, setNote] = useState('')
+  const [form, setForm] = useState({ nickname: '', password: '', contact: '', birthdate: '' })
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!/^[a-z0-9._-]{2,32}$/.test(nickname.trim().toLowerCase())) {
-      setError('닉네임은 영문 소문자/숫자/._- 2~32자여야 합니다.')
+    const nick = form.nickname.trim().toLowerCase()
+    if (!/^[a-z0-9._-]{2,32}$/.test(nick)) {
+      setError('아이디는 영문 소문자/숫자/._- 2~32자여야 합니다.')
+      return
+    }
+    if (form.password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.')
       return
     }
     setBusy(true)
     try {
-      await submitAccessRequest({ nickname, note })
+      await requestAccess({
+        nickname: nick,
+        password: form.password,
+        contact: form.contact.trim(),
+        birthdate: form.birthdate || null,
+      })
       setDone(true)
     } catch (err) {
       setError(err.message)
@@ -34,31 +46,31 @@ export default function RequestAccess() {
         {done ? (
           <>
             <div className="alert alert-success">
-              요청이 접수되었습니다. 관리자가 승인하면 계정이 생성됩니다.
+              요청이 접수되었습니다. 관리자가 승인하면 <Brand /> 로 로그인할 수 있어요.
             </div>
             <p className="auth-foot"><Link to="/login">로그인으로 돌아가기</Link></p>
           </>
         ) : (
           <>
-            <p className="auth-sub">관리자 승인 후 계정이 생성됩니다.</p>
+            <p className="auth-sub">관리자 승인 후 로그인할 수 있습니다. (<b>아이디·비밀번호</b>는 필수)</p>
             <form onSubmit={handleSubmit} className="form">
               <label className="field">
-                <span>원하는 닉네임</span>
-                <input
-                  autoFocus
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="영문 소문자/숫자/._-"
-                />
+                <span>아이디 *</span>
+                <input autoFocus value={form.nickname} onChange={set('nickname')}
+                  placeholder="영문 소문자/숫자/._-" autoComplete="username" />
               </label>
               <label className="field">
-                <span>메모 (선택)</span>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="본인 소개나 요청 사유를 남겨주세요"
-                  rows={3}
-                />
+                <span>비밀번호 *</span>
+                <input type="password" value={form.password} onChange={set('password')}
+                  placeholder="6자 이상" autoComplete="new-password" />
+              </label>
+              <label className="field">
+                <span>연락처 (선택)</span>
+                <input value={form.contact} onChange={set('contact')} placeholder="예: 010-1234-5678" />
+              </label>
+              <label className="field">
+                <span>생년월일 (선택)</span>
+                <input type="date" value={form.birthdate} onChange={set('birthdate')} />
               </label>
               {error && <div className="alert alert-error">{error}</div>}
               <button className="btn btn-primary btn-block" disabled={busy}>

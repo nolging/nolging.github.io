@@ -139,7 +139,11 @@ create policy profiles_select on public.profiles
 drop policy if exists groups_select on public.groups;
 create policy groups_select on public.groups
   for select to authenticated
-  using (public.is_group_member(id, auth.uid()) or public.is_admin(auth.uid()));
+  using (
+    owner_id = auth.uid()  -- 그룹 생성 직후 RETURNING 조회 보장(트리거 멤버십은 STABLE 스냅샷에 안 보임)
+    or public.is_group_member(id, auth.uid())
+    or public.is_admin(auth.uid())
+  );
 
 drop policy if exists groups_insert on public.groups;
 create policy groups_insert on public.groups
