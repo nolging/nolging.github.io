@@ -2,8 +2,18 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#4f46e5" />
+
+    <!-- PWA: 홈 화면에 추가하면 주소창 없이 전체화면(standalone)으로 실행 -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- iOS(Safari)용: 홈 화면 실행 시 주소창/브라우저 UI 숨김 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Nolging" />
+
     <title>Nolging · 그룹 태스크 관리</title>
   </head>
   <body>

@@ -1,0 +1,12 @@
+{
+  "name": "Nolging · 그룹 태스크 관리",
+  "short_name": "Nolging",
+  "description": "그룹별 태스크 관리 웹앱",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "lang": "ko",
+  "orientation": "portrait"
+}
