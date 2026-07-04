@@ -170,10 +170,10 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const [menuOpen, setMenuOpen] = useState(false)
   const stop = (e) => e.stopPropagation()
 
-  // 약속(accepted) 카드: 참여자 프로필 + 약속 시간/반복/알림 표기
-  const isAppt = task.status === 'accepted'
+  // 약속/추억 카드: 참여자 프로필 + 약속 시간/반복/알림 표기
   const parts = participants || []
-  const showParts = isAppt && parts.length > 0
+  const showParts = parts.length > 0
+  const extra = parts.length - 3
 
   return (
     <li className={`task-item status-${task.status}`} onClick={onOpen}>
@@ -185,9 +185,10 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
         <div className="task-head-right">
           {showParts ? (
             <span className={`task-parts ${parts.length > 1 ? 'multi' : ''}`}>
-              {parts.slice(0, 4).map((uid) => (
+              {parts.slice(0, 3).map((uid) => (
                 <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={24} />
               ))}
+              {extra > 0 && <span className="task-parts-more">+{extra}</span>}
               {parts.length === 1 && <span className="task-author-name">{nameOf(parts[0])}</span>}
             </span>
           ) : (
@@ -217,7 +218,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
         </div>
       </div>
 
-      {isAppt && task.scheduled_at && (
+      {task.scheduled_at && (
         <div className="task-appt">
           <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
           {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
@@ -230,7 +231,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
       {task.description && <p className="task-desc">{task.description}</p>}
 
       <div className="task-foot">
-        {task.assignee_id && !isAppt && (
+        {task.assignee_id && !showParts && (
           <span className="task-person">
             <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
             담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}

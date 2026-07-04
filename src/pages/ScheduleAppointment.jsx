@@ -110,11 +110,13 @@ export default function ScheduleAppointment() {
         timeSet = timeOn
       }
       const rule = buildRepeat()
+      // 3명 이상: 선택한 참여자 / 그 외(1~2명): 그룹 전원(2명이면 둘 다 참여)
+      const ids = needChoose ? [...participants] : members.map((m) => m.user_id)
       const payload = {
         taskId, scheduledAt, timeSet, repeat: rule,
         repeatUntil: (dateOn && rule && untilOn) ? until : null,
         remind: dateOn ? remind : '',
-        participantIds: needChoose ? [...participants] : [...mandatory],
+        participantIds: ids,
       }
       if (isReschedule) await rescheduleTask(payload)
       else await scheduleTask(payload)
