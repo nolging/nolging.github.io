@@ -119,7 +119,8 @@ export default function GroupDetail() {
               onAccept={() => runAction(() => acceptTask(t.id, profile.id))}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
-              onDelete={() => runAction(() => deleteTask(t.id))} />
+              onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
+              onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
           ))}
         </ul>
       )}
@@ -140,31 +141,59 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onComplete, onReopen, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onComplete, onReopen, onEdit, onDelete }) {
   const mine = task.assignee_id === meId
-  const canDelete = task.created_by === meId || isOwner
+  const canManage = task.created_by === meId || isOwner
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <li className={`task-item status-${task.status}`}>
-      <div className="task-main">
-        <div className="task-title">
-          <span className={`status-dot ${task.status}`} />
-          {task.title}
-        </div>
-        {task.description && <p className="task-desc">{task.description}</p>}
-        <div className="task-meta">
+      <div className="task-head">
+        <div className="task-headline">
           {task.category && <span className="cat-chip">{task.category}</span>}
-          <span className="task-person"><Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={18} />작성 {nameOf(task.created_by)}</span>
-          {task.assignee_id && (
-            <span className="task-person">· <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
+          <span className="task-name">{task.title}</span>
+        </div>
+        <div className="task-head-right">
+          <span className="task-author">
+            <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+            <span className="task-author-name">{nameOf(task.created_by)}</span>
+          </span>
+          {canManage && (
+            <div className="task-menu-wrap">
+              <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((v) => !v)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                  <div className="menu-pop" role="menu">
+                    <button type="button" onClick={() => { setMenuOpen(false); onEdit() }}>편집</button>
+                    <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
-      <div className="task-actions">
-        {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
-        {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
-        {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
-        {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
-        {canDelete && <button className="btn btn-sm btn-icon" title="삭제" onClick={onDelete}>✕</button>}
+
+      {task.description && <p className="task-desc">{task.description}</p>}
+
+      <div className="task-foot">
+        {task.assignee_id && (
+          <span className="task-person">
+            <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
+            담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
+          </span>
+        )}
+        <div className="task-actions">
+          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
+          {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
+          {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
+          {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
+        </div>
       </div>
     </li>
   )

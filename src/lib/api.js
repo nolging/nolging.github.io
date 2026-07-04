@@ -130,6 +130,14 @@ export async function createTask({ groupId, title, description, category, create
   return data
 }
 
+export async function updateTask(taskId, { title, description, category }) {
+  const patch = { title, description: description ?? '' }
+  patch.category = category || null // 컬럼 존재 가정(schema-v2 적용됨)
+  const { data, error } = await supabase.from('tasks').update(patch).eq('id', taskId).select().single()
+  if (error) throw error
+  return data
+}
+
 export async function acceptTask(taskId, userId) {
   const { data, error } = await supabase
     .from('tasks')

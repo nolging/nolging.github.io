@@ -169,19 +169,32 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .task-item {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
 }
 .task-item.status-done { opacity: .72; }
-.task-main { flex: 1; min-width: 0; }
-.task-title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
-.task-item.status-done .task-title { text-decoration: line-through; }
-.task-desc { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-.task-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; font-size: 12px; color: var(--muted); }
-.task-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-.status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.status-dot.open { background: var(--open); }
-.status-dot.accepted { background: var(--primary); }
-.status-dot.done { background: var(--success); }
+.task-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.task-headline { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.task-name { font-weight: 600; min-width: 0; word-break: break-word; }
+.task-item.status-done .task-name { text-decoration: line-through; }
+.task-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.task-author { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.task-author-name { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-menu-wrap { position: relative; }
+.menu-pop {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 41; min-width: 112px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(20, 22, 40, .14); padding: 6px; display: flex; flex-direction: column;
+}
+.menu-pop button {
+  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  padding: 8px 12px; border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--text);
+}
+.menu-pop button:hover { background: rgba(0, 0, 0, .05); }
+.menu-pop .menu-danger { color: var(--danger); }
+.task-desc { margin: 0; color: var(--muted); font-size: 14px; }
+.task-foot { display: flex; align-items: center; gap: 8px; }
+.task-foot .task-person { font-size: 12px; color: var(--muted); }
+.task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
 
 /* ---- 배지 ---- */
 .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #eceef3; color: var(--muted); }
@@ -361,8 +374,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .page-head .row-gap { flex-wrap: wrap; }
   .field-row { flex-direction: column; }
   .field-narrow { flex: 1 1 auto !important; }
-  .task-item { flex-direction: column; gap: 10px; }
-  .task-actions { align-self: flex-end; }
   .auth-card { padding: 24px 20px; }
   .grid { grid-template-columns: 1fr; }
   .toggle { padding: 7px 12px; }
