@@ -18,7 +18,9 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
-  background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5;
+  /* 배경은 흰색(하단바와 동일). 회색 캔버스는 .content 가 담당 →
+     안전영역(홈 인디케이터)이 어떻게 처리되든 그 부분이 회색이 아니라 흰색으로 보임 */
+  background: var(--surface); color: var(--text); font-size: 15px; line-height: 1.5;
   overflow: hidden; overscroll-behavior: none; /* 본문만 스크롤, 상단바 고정 */
 }
 a { color: var(--primary); text-decoration: none; }
@@ -123,11 +125,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .content {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 28px 24px; max-width: 1080px; width: 100%; margin: 0 auto;
+  padding: 28px 24px; background: var(--bg); /* 회색 캔버스는 전체폭 content 가 담당 */
 }
 
 /* ---- 페이지 ---- */
-.page { display: flex; flex-direction: column; gap: 18px; }
+.page { display: flex; flex-direction: column; gap: 18px; max-width: 1080px; width: 100%; margin: 0 auto; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .page-actions { display: flex; justify-content: flex-end; }
 .breadcrumb { color: var(--muted); font-size: 13px; }
