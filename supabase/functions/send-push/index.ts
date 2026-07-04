@@ -38,12 +38,13 @@ Deno.serve(async (req) => {
     if (error) throw error
     if (!subs || subs.length === 0) return json({ sent: 0 })
 
-    const url =
-      record.task_id && record.group_id
-        ? `/groups/${record.group_id}/tasks/${record.task_id}`
-        : record.group_id
-          ? `/groups/${record.group_id}`
-          : '/'
+    let url = '/'
+    if (record.task_id && record.group_id) {
+      url = `/groups/${record.group_id}/tasks/${record.task_id}`
+      if (record.comment_id) url += `?c=${record.comment_id}` // 알림 유발 댓글로 포커스
+    } else if (record.group_id) {
+      url = `/groups/${record.group_id}`
+    }
 
     const body = JSON.stringify({
       title: record.title,

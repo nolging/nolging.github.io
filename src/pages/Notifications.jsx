@@ -53,7 +53,10 @@ export default function Notifications() {
   }
 
   function targetOf(n) {
-    if (n.task_id && n.group_id) return `/groups/${n.group_id}/tasks/${n.task_id}`
+    if (n.task_id && n.group_id) {
+      const base = `/groups/${n.group_id}/tasks/${n.task_id}`
+      return n.comment_id ? `${base}?c=${n.comment_id}` : base
+    }
     if (n.group_id) return `/groups/${n.group_id}`
     return null
   }

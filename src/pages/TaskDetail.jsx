@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
@@ -19,6 +19,8 @@ export default function TaskDetail() {
   const { groupId, taskId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const focusCommentId = searchParams.get('c') // 알림에서 넘어온 강조 대상 댓글
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
@@ -98,6 +100,11 @@ export default function TaskDetail() {
   }, [groupId, taskId])
 
   useEffect(() => { load() }, [load])
+
+  // 알림에서 넘어온 경우(?c=댓글id): 로딩 완료 후 그 댓글로 스크롤 + 강조
+  useEffect(() => {
+    if (!loading && focusCommentId) setHighlightId(focusCommentId)
+  }, [loading, focusCommentId])
 
   async function runTaskAction(fn) {
     setError('')
