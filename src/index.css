@@ -169,8 +169,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .task-item {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; cursor: pointer;
 }
+.task-item:hover { border-color: #d3d6e0; }
 .task-item.status-done { opacity: .72; }
 .task-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .task-headline { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
@@ -195,6 +196,26 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-foot { display: flex; align-items: center; gap: 8px; }
 .task-foot .task-person { font-size: 12px; color: var(--muted); }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+/* ---- 태스크 상세 + 댓글 ---- */
+.td-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.td-name { font-size: 1.15rem; }
+.td-desc { margin: 0; color: var(--text); font-size: 15px; white-space: pre-wrap; word-break: break-word; }
+.td-actions { display: flex; align-items: center; gap: 8px; }
+.comment-title { font-weight: 700; font-size: 1rem; }
+.comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.comment { display: flex; gap: 10px; align-items: flex-start; }
+.comment-body { flex: 1; min-width: 0; }
+.comment-meta { display: flex; align-items: center; gap: 8px; }
+.comment-author { font-weight: 600; font-size: 13px; }
+.comment-time { color: var(--muted); font-size: 11px; }
+.comment-del { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 4px; }
+.comment-del:hover { color: var(--danger); }
+.comment-text { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+/* 댓글 입력창: 스크롤 하단에 고정 */
+.composer { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; background: var(--bg); padding: 12px 0 6px; margin-top: 4px; }
+.composer input { flex: 1; }
+.composer .btn { flex-shrink: 0; }
 
 /* ---- 배지 ---- */
 .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #eceef3; color: var(--muted); }

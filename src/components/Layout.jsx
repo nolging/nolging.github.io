@@ -45,13 +45,14 @@ export default function Layout() {
   const membersMatch = useMatch('/groups/:groupId/members')
   const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
   const taskEditMatch = useMatch('/groups/:groupId/tasks/:taskId/edit')
+  const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(groupConfigMatch || settingsMatch || membersMatch || taskNewMatch || taskEditMatch || groupMatch)
+  const isGroupView = !!(groupConfigMatch || settingsMatch || membersMatch || taskNewMatch || taskEditMatch || taskDetailMatch || groupMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -101,6 +102,15 @@ export default function Layout() {
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 편집</span>
+      </header>
+    )
+  } else if (taskDetailMatch) {
+    // 태스크 상세 페이지: 좌측 뒤로(그룹으로), 제목은 유형별 명칭
+    const id = taskDetailMatch.params.groupId
+    topbar = (
+      <header className="topbar">
+        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">{taskTerms(location.state?.groupType).noun}</span>
       </header>
     )
   } else if (groupMatch) {

@@ -130,6 +130,12 @@ export async function createTask({ groupId, title, description, category, create
   return data
 }
 
+export async function getTask(taskId) {
+  const { data, error } = await supabase.from('tasks').select('*').eq('id', taskId).single()
+  if (error) throw error
+  return data
+}
+
 export async function updateTask(taskId, { title, description, category }) {
   const patch = { title, description: description ?? '' }
   patch.category = category || null // 컬럼 존재 가정(schema-v2 적용됨)
@@ -167,6 +173,29 @@ export async function reopenTask(taskId) {
 
 export async function deleteTask(taskId) {
   const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+  if (error) throw error
+}
+
+// ---- 태스크 댓글 --------------------------------------------
+
+export async function listComments(taskId) {
+  const { data, error } = await supabase
+    .from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function addComment({ taskId, groupId, body, authorId }) {
+  const { data, error } = await supabase
+    .from('task_comments')
+    .insert({ task_id: taskId, group_id: groupId, body, author_id: authorId })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteComment(commentId) {
+  const { error } = await supabase.from('task_comments').delete().eq('id', commentId)
   if (error) throw error
 }
 

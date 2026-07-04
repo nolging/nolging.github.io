@@ -116,6 +116,7 @@ export default function GroupDetail() {
         <ul className="task-list">
           {visibleTasks.map((t) => (
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+              onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
               onAccept={() => runAction(() => acceptTask(t.id, profile.id))}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
@@ -141,13 +142,14 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onComplete, onReopen, onEdit, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onOpen, onAccept, onComplete, onReopen, onEdit, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
   const [menuOpen, setMenuOpen] = useState(false)
+  const stop = (e) => e.stopPropagation()
 
   return (
-    <li className={`task-item status-${task.status}`}>
+    <li className={`task-item status-${task.status}`} onClick={onOpen}>
       <div className="task-head">
         <div className="task-headline">
           {task.category && <span className="cat-chip">{task.category}</span>}
@@ -159,7 +161,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onCo
             <span className="task-author-name">{nameOf(task.created_by)}</span>
           </span>
           {canManage && (
-            <div className="task-menu-wrap">
+            <div className="task-menu-wrap" onClick={stop}>
               <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((v) => !v)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
@@ -188,7 +190,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onCo
             담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
           </span>
         )}
-        <div className="task-actions">
+        <div className="task-actions" onClick={stop}>
           {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
           {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
           {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}

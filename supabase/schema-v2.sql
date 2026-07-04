@@ -157,3 +157,34 @@ grant execute on function public.preview_group(text) to authenticated;
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;
+
+-- ---- task_comments: 태스크별 댓글 -----------------------------
+create table if not exists public.task_comments (
+  id         uuid primary key default gen_random_uuid(),
+  task_id    uuid not null references public.tasks(id)  on delete cascade,
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  author_id  uuid not null references public.profiles(id),
+  body       text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_task_comments_task on public.task_comments(task_id);
+alter table public.task_comments enable row level security;
+
+drop policy if exists tc_select on public.task_comments;
+create policy tc_select on public.task_comments
+  for select to authenticated
+  using (public.is_group_member(group_id, auth.uid()) or public.is_admin(auth.uid()));
+
+drop policy if exists tc_insert on public.task_comments;
+create policy tc_insert on public.task_comments
+  for insert to authenticated
+  with check (public.is_group_member(group_id, auth.uid()) and author_id = auth.uid());
+
+drop policy if exists tc_delete on public.task_comments;
+create policy tc_delete on public.task_comments
+  for delete to authenticated
+  using (
+    author_id = auth.uid()
+    or public.is_group_owner(group_id, auth.uid())
+    or public.is_admin(auth.uid())
+  );
