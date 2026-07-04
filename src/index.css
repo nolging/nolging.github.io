@@ -74,6 +74,16 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
 textarea { resize: vertical; }
+
+/* date 인풋: iOS/모바일에서 높이·정렬 깨지는 것 방지 (텍스트 인풋과 통일) */
+input[type="date"] {
+  -webkit-appearance: none; appearance: none;
+  min-height: 44px; text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
+
+.pw-box { display: flex; flex-direction: column; gap: 14px; }
 .mono, .code-chip, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 /* ---- 알림 ---- */
