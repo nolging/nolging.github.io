@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
@@ -58,38 +58,6 @@ export default function Layout() {
     return () => { document.body.style.background = '' }
   }, [isGroupView])
 
-  // 키보드 대응(본문 고정): 입력 포커스 순간, 키보드가 뜨기 전에 앱 셸을
-  // "예상 키보드 높이"만큼 미리 줄여 입력창을 올려둔다. → iOS 가 입력창이
-  // 이미 보인다고 판단해 화면을 스크롤하지 않으므로 본문이 움직이지 않는다.
-  // 키보드 높이는 실측 후 localStorage 에 저장해 재사용(다음부터 정확).
-  const shellRef = useRef(null)
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    let kb = Number(localStorage.getItem('kbH')) || 0
-    const setShell = (h, ty) => {
-      const el = shellRef.current
-      if (!el) return
-      el.style.height = h == null ? '' : `${h}px`
-      el.style.transform = ty ? `translateY(${ty}px)` : ''
-    }
-    const onResize = () => {
-      setShell(vv.height, vv.offsetTop)
-      const k = Math.round(window.innerHeight - vv.height)
-      if (k > 100) { kb = k; try { localStorage.setItem('kbH', String(k)) } catch { /* noop */ } }
-    }
-    const onFocusIn = () => { if (kb > 0) setShell(window.innerHeight - kb, 0) }
-    const onFocusOut = () => { window.setTimeout(() => setShell(null, 0), 250) }
-    vv.addEventListener('resize', onResize)
-    window.addEventListener('focusin', onFocusIn)
-    window.addEventListener('focusout', onFocusOut)
-    return () => {
-      vv.removeEventListener('resize', onResize)
-      window.removeEventListener('focusin', onFocusIn)
-      window.removeEventListener('focusout', onFocusOut)
-      setShell(null, 0)
-    }
-  }, [])
 
   let topbar
   if (groupConfigMatch) {
@@ -180,7 +148,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className="app-shell" ref={shellRef}>
+    <div className="app-shell">
       {topbar}
       <main className="content">
         <Outlet />
