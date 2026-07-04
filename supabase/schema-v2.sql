@@ -200,3 +200,165 @@ create policy tc_delete on public.task_comments
     or public.is_group_owner(group_id, auth.uid())
     or public.is_admin(auth.uid())
   );
+
+-- =============================================================
+--  알림 (notifications)
+--  아래 5가지 이벤트에서 DB 트리거로 알림을 생성한다.
+--   1) 내 댓글에 답글        2) 내 태스크에 댓글
+--   3) 새 태스크(작성자 제외) 4) 새 멤버 가입
+--   5) 놀기 신청(수락)
+-- =============================================================
+
+create table if not exists public.notifications (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id)      on delete cascade, -- 수신자
+  actor_id   uuid references public.profiles(id)               on delete set null, -- 행위자
+  type       text not null,   -- reply | task_comment | new_task | new_member | accept
+  title      text not null,
+  body       text,
+  group_id   uuid references public.groups(id)                 on delete cascade,
+  task_id    uuid references public.tasks(id)                  on delete cascade,
+  comment_id uuid references public.task_comments(id)          on delete cascade,
+  is_read    boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user
+  on public.notifications(user_id, is_read, created_at desc);
+alter table public.notifications enable row level security;
+
+-- 본인 알림만 조회/읽음처리/삭제 가능. INSERT 는 아래 트리거(정의자 권한)만 수행.
+drop policy if exists notif_select on public.notifications;
+create policy notif_select on public.notifications
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists notif_update on public.notifications;
+create policy notif_update on public.notifications
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists notif_delete on public.notifications;
+create policy notif_delete on public.notifications
+  for delete to authenticated using (user_id = auth.uid());
+
+-- ---- 헬퍼: 유형별 명칭 / 수락 용어 / 그룹내 표시 닉네임 --------
+create or replace function public.notif_noun(p_type text)
+returns text language sql immutable as $$
+  select case when p_type = 'ilhaging' then '태스크' else '위시리스트' end;
+$$;
+
+create or replace function public.notif_accept_term(p_type text)
+returns text language sql immutable as $$
+  select case when p_type = 'ilhaging' then '일정 추가' else '놀기 신청' end;
+$$;
+
+create or replace function public.notif_member_name(p_group_id uuid, p_user_id uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select coalesce(nullif(gm.display_nickname, ''), p.nickname)
+  from public.group_members gm
+  join public.profiles p on p.id = gm.user_id
+  where gm.group_id = p_group_id and gm.user_id = p_user_id
+  limit 1;
+$$;
+
+-- ---- 트리거 1·2: 댓글/답글 --------------------------------------
+create or replace function public.tg_notify_comment()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_group  public.groups;
+  v_task   public.tasks;
+  v_actor  text;
+  v_parent uuid;
+begin
+  select * into v_task  from public.tasks  where id = NEW.task_id;
+  select * into v_group from public.groups where id = NEW.group_id;
+  v_actor := public.notif_member_name(NEW.group_id, NEW.author_id);
+
+  if NEW.parent_id is not null then
+    -- (1) 답글: 부모 댓글 작성자에게
+    select author_id into v_parent from public.task_comments where id = NEW.parent_id;
+    if v_parent is not null and v_parent <> NEW.author_id then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id, comment_id)
+      values (v_parent, NEW.author_id, 'reply',
+              '내 댓글에 답글이 달렸어요',
+              v_actor || ': ' || NEW.body,
+              NEW.group_id, NEW.task_id, NEW.id);
+    end if;
+  else
+    -- (2) 최상위 댓글: 태스크 작성자에게
+    if v_task.created_by is not null and v_task.created_by <> NEW.author_id then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id, comment_id)
+      values (v_task.created_by, NEW.author_id, 'task_comment',
+              '내 ' || public.notif_noun(v_group.group_type) || '에 댓글이 달렸어요',
+              v_actor || ': ' || NEW.body,
+              NEW.group_id, NEW.task_id, NEW.id);
+    end if;
+  end if;
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_notify_comment on public.task_comments;
+create trigger trg_notify_comment after insert on public.task_comments
+  for each row execute function public.tg_notify_comment();
+
+-- ---- 트리거 3: 새 태스크(작성자 제외 그룹원 전체) ---------------
+create or replace function public.tg_notify_task_insert()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_group public.groups; v_noun text;
+begin
+  select * into v_group from public.groups where id = NEW.group_id;
+  v_noun := public.notif_noun(v_group.group_type);
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+  select gm.user_id, NEW.created_by, 'new_task',
+         '새 ' || v_noun || '가 있어요',
+         NEW.title,
+         NEW.group_id, NEW.id
+  from public.group_members gm
+  where gm.group_id = NEW.group_id and gm.user_id <> NEW.created_by;
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_notify_task_insert on public.tasks;
+create trigger trg_notify_task_insert after insert on public.tasks
+  for each row execute function public.tg_notify_task_insert();
+
+-- ---- 트리거 4: 새 멤버 가입(기존 멤버에게) ----------------------
+create or replace function public.tg_notify_member_join()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_group public.groups; v_name text;
+begin
+  select * into v_group from public.groups where id = NEW.group_id;
+  select coalesce(nullif(NEW.display_nickname, ''), p.nickname) into v_name
+    from public.profiles p where p.id = NEW.user_id;
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+  select gm.user_id, NEW.user_id, 'new_member',
+         '[' || v_group.name || ']에 ' || v_name || ' 님이 가입했어요',
+         null,
+         NEW.group_id
+  from public.group_members gm
+  where gm.group_id = NEW.group_id and gm.user_id <> NEW.user_id;
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_notify_member_join on public.group_members;
+create trigger trg_notify_member_join after insert on public.group_members
+  for each row execute function public.tg_notify_member_join();
+
+-- ---- 트리거 5: 놀기 신청(수락) — 신청자 제외 그룹원 전체 -------
+create or replace function public.tg_notify_task_accept()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_group public.groups; v_actor text;
+begin
+  if OLD.status = 'open' and NEW.status = 'accepted' and NEW.assignee_id is not null then
+    select * into v_group from public.groups where id = NEW.group_id;
+    v_actor := public.notif_member_name(NEW.group_id, NEW.assignee_id);
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+    select gm.user_id, NEW.assignee_id, 'accept',
+           v_actor || ' 님의 ' || public.notif_accept_term(v_group.group_type) || '! [' || NEW.title || ']',
+           null,
+           NEW.group_id, NEW.id
+    from public.group_members gm
+    where gm.group_id = NEW.group_id and gm.user_id <> NEW.assignee_id;
+  end if;
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_notify_task_accept on public.tasks;
+create trigger trg_notify_task_accept after update on public.tasks
+  for each row execute function public.tg_notify_task_accept();

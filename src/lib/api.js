@@ -206,6 +206,38 @@ export async function deleteComment(commentId) {
   if (error) throw error
 }
 
+// ---- 알림 ----------------------------------------------------
+
+export async function listNotifications(limit = 50) {
+  const { data, error } = await supabase
+    .from('notifications').select('*')
+    .order('created_at', { ascending: false }).limit(limit)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function unreadNotificationCount() {
+  const { count, error } = await supabase
+    .from('notifications').select('id', { count: 'exact', head: true }).eq('is_read', false)
+  if (error) throw error
+  return count ?? 0
+}
+
+export async function markNotificationRead(id) {
+  const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+  if (error) throw error
+}
+
+export async function markAllNotificationsRead() {
+  const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false)
+  if (error) throw error
+}
+
+export async function deleteNotification(id) {
+  const { error } = await supabase.from('notifications').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ---- 내 프로필 (연락처/생년월일 포함) ------------------------
 
 export async function getMyProfile() {
