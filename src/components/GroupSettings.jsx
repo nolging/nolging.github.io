@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GROUP_TYPES, THEMES_BY_TYPE, normalizeTheme } from '../lib/constants'
 import { updateGroup } from '../lib/api'
 
-export default function GroupSettings({ group, onSaved, onClose }) {
+export default function GroupSettings({ group, onSaved }) {
   const [form, setForm] = useState({
     name: group.name,
     description: group.description || '',
@@ -68,10 +68,7 @@ export default function GroupSettings({ group, onSaved, onClose }) {
       </label>
 
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="row-gap">
-        <button className="btn btn-primary" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
-        <button type="button" className="btn btn-ghost" onClick={onClose}>닫기</button>
-      </div>
+      <button className="btn btn-primary" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
     </form>
   )
 }

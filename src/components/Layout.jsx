@@ -23,12 +23,22 @@ function BackIcon() {
 
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
+  const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const groupMatch = useMatch('/groups/:groupId')
 
   let topbar
-  if (settingsMatch) {
-    // 그룹 설정 페이지: 좌측 뒤로(그룹으로), 제목만
+  if (groupConfigMatch) {
+    // 그룹 설정 페이지: 좌측 뒤로(설정으로), 제목 "그룹 설정"
+    const id = groupConfigMatch.params.groupId
+    topbar = (
+      <header className="topbar">
+        <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">그룹 설정</span>
+      </header>
+    )
+  } else if (settingsMatch) {
+    // 설정 페이지: 좌측 뒤로(그룹으로), 제목 "설정"
     const id = settingsMatch.params.groupId
     topbar = (
       <header className="topbar">
