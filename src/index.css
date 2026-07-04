@@ -17,7 +17,10 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+body {
+  background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5;
+  overflow: hidden; overscroll-behavior: none; /* 앱 셸: 본문만 스크롤, 상단바 고정 */
+}
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1 { font-size: 1.5rem; margin: 0; }
@@ -47,10 +50,11 @@ h3 { margin: 0; }
 
 /* ---- 인증 화면 ---- */
 .auth-screen {
-  min-height: 100%; display: flex; align-items: center; justify-content: center;
-  padding: 24px; background: linear-gradient(160deg, #eef0fb, #f4f5f8);
+  height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; padding: 24px; background: linear-gradient(160deg, #eef0fb, #f4f5f8);
 }
 .auth-card {
+  margin: auto; /* 짧으면 중앙, 길면 스크롤(잘리지 않음) */
   width: 100%; max-width: 380px; background: var(--surface); padding: 32px;
   border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
 }
@@ -93,12 +97,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .alert-success { background: #e7f6ef; color: #067a51; }
 
 /* ---- 앱 셸 ---- */
-.app-shell { min-height: 100%; display: flex; flex-direction: column; }
+.app-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
+  flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
   padding: env(safe-area-inset-top) calc(24px + env(safe-area-inset-right)) 0 calc(24px + env(safe-area-inset-left));
   height: calc(58px + env(safe-area-inset-top));
-  background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+  background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10;
 }
 .topbar-heading { font-weight: 700; font-size: 1.05rem; color: var(--text); }
 .push-right { margin-left: auto; }
@@ -113,7 +118,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .topnav a.active { background: #eef0fb; color: var(--primary); }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .me { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.content { flex: 1; padding: 28px 24px; max-width: 1080px; width: 100%; margin: 0 auto; }
+.content {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 28px 24px; max-width: 1080px; width: 100%; margin: 0 auto;
+}
 
 /* ---- 페이지 ---- */
 .page { display: flex; flex-direction: column; gap: 18px; }
