@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile, changeMyPassword } from '../lib/api'
 
 // 한국 전화번호 자동 하이픈: 숫자만 입력해도 010-1111-1234 형태로 표시
@@ -18,6 +19,8 @@ function formatPhone(value) {
 }
 
 export default function MyProfile() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ contact: '', birthdate: '' })
   const [busy, setBusy] = useState(false)
@@ -78,6 +81,11 @@ export default function MyProfile() {
     setPwOpen(false); setPw({ p1: '', p2: '' }); setPwError('')
   }
 
+  async function handleLogout() {
+    await logout()
+    navigate('/login')
+  }
+
   return (
     <div className="page">
       <div className="page-head">
@@ -90,6 +98,7 @@ export default function MyProfile() {
       {loading ? (
         <div className="spinner" />
       ) : (
+        <>
         <div className="card form">
           <label className="field"><span>연락처</span>
             <input value={form.contact} inputMode="numeric"
@@ -135,6 +144,13 @@ export default function MyProfile() {
             {busy ? '저장 중…' : '저장'}
           </button>
         </div>
+
+        <div className="logout-bar">
+          <button type="button" className="btn btn-danger btn-block" onClick={handleLogout}>
+            로그아웃
+          </button>
+        </div>
+        </>
       )}
     </div>
   )
