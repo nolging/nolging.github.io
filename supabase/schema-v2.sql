@@ -571,13 +571,13 @@ begin
 
     -- 참여자에게
     insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-    select p.user_id, null, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id
+    select p.user_id, null::uuid, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id
     from public.task_participants p where p.task_id = t.id;
 
     -- 참여자가 없으면 담당자에게라도
     if not found and t.assignee_id is not null then
       insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-      values (t.assignee_id, null, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id);
+      values (t.assignee_id, null::uuid, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id);
     end if;
 
     update public.tasks set reminded = true where id = t.id;
