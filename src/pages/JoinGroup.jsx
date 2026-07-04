@@ -39,8 +39,6 @@ export default function JoinGroup() {
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
-  function reset() { setPreview(null); setError('') }
-
   // ---- 1단계: 초대 코드 입력 ----
   if (!preview) {
     return (
@@ -64,8 +62,6 @@ export default function JoinGroup() {
   // ---- 2단계: 그룹 정보 확인 + 프로필 설정 후 가입 ----
   return (
     <div className="page">
-      <div className="page-head"><h1>그룹 가입</h1></div>
-
       <div className="card narrow">
         <div className="join-group-info">
           <div className="group-card-badges">
@@ -103,12 +99,9 @@ export default function JoinGroup() {
           )}
 
           {error && <div className="alert alert-error">{error}</div>}
-          <div className="row-gap">
-            <button type="button" className="btn btn-primary" disabled={busy} onClick={join}>
-              {busy ? '가입 중…' : '가입하기'}
-            </button>
-            <button type="button" className="btn btn-ghost" disabled={busy} onClick={reset}>이전</button>
-          </div>
+          <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={join}>
+            {busy ? '가입 중…' : '가입하기'}
+          </button>
         </div>
       </div>
     </div>
