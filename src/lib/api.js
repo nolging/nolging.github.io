@@ -185,10 +185,10 @@ export async function listComments(taskId) {
   return data ?? []
 }
 
-export async function addComment({ taskId, groupId, body, authorId }) {
+export async function addComment({ taskId, groupId, body, authorId, parentId }) {
   const { data, error } = await supabase
     .from('task_comments')
-    .insert({ task_id: taskId, group_id: groupId, body, author_id: authorId })
+    .insert({ task_id: taskId, group_id: groupId, body, author_id: authorId, parent_id: parentId ?? null })
     .select().single()
   if (error) throw error
   return data

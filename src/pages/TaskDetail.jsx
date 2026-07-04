@@ -28,8 +28,9 @@ export default function TaskDetail() {
   const [error, setError] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
-  const [editingId, setEditingId] = useState(null) // 하단 입력창에서 수정 중인 댓글 id
-  const [menuId, setMenuId] = useState(null)       // ⋮ 메뉴가 열린 댓글 id
+  const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
+  const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
+  const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
   const inputRef = useRef(null)
@@ -54,6 +55,17 @@ export default function TaskDetail() {
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
   const avatarOf = (uid) => nameMap[uid]?.avatar
 
+  // 부모별 자식 댓글 맵. 최상위 댓글은 parent_id 가 없음.
+  const childrenOf = useMemo(() => {
+    const map = {}
+    comments.forEach((c) => {
+      const p = c.parent_id || 'root'
+      ;(map[p] = map[p] || []).push(c)
+    })
+    return map
+  }, [comments])
+  const roots = childrenOf.root || []
+
   const loadComments = useCallback(async () => { setComments(await listComments(taskId)) }, [taskId])
 
   const load = useCallback(async () => {
@@ -73,7 +85,7 @@ export default function TaskDetail() {
     try { setTask(await fn()) } catch (err) { setError(err.message) }
   }
 
-  // 하단 입력창 제출: 수정 중이면 해당 댓글 수정, 아니면 새 댓글 작성
+  // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
   async function submit(e) {
     e.preventDefault()
     if (!body.trim() || sending) return
@@ -83,38 +95,83 @@ export default function TaskDetail() {
         await updateComment(editingId, body.trim())
         setEditingId(null)
       } else {
-        await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id })
+        await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id, parentId: replyParent?.id })
+        setReplyParent(null)
       }
       setBody(''); await loadComments()
     } catch (err) { setError(err.message) } finally { setSending(false) }
   }
 
   async function removeComment(id) {
-    if (!confirm('삭제하시겠습니까?')) return
+    if (!confirm('삭제하시겠습니까? 답글도 함께 삭제됩니다.')) return
     try {
       await deleteComment(id)
       if (editingId === id) { setEditingId(null); setBody('') }
+      if (replyParent?.id === id) setReplyParent(null)
       await loadComments()
     } catch (err) { setError(err.message) }
   }
 
   // '수정' → 하단 입력창에 댓글 내용을 넣고 편집 모드로
   function startEdit(c) {
+    setMenuId(null); setReplyParent(null)
     setEditingId(c.id); setBody(c.body)
     inputRef.current?.focus()
   }
-  function cancelEdit() { setEditingId(null); setBody('') }
-
-  // '답글 달기' → 하단 입력창에 @닉네임 을 넣고 새 댓글 작성 모드로
+  // '답글 달기' → 하단 입력창을 해당 댓글의 답글 작성 모드로
   function replyTo(c) {
     setMenuId(null); setEditingId(null)
-    setBody(`@${nameOf(c.author_id)} `)
+    setReplyParent(c); setBody('')
     inputRef.current?.focus()
   }
+  function cancelCompose() { setEditingId(null); setReplyParent(null); setBody('') }
   function copyComment(c) {
     setMenuId(null)
     try { navigator.clipboard?.writeText(c.body); setToast('복사되었습니다') }
     catch { setToast('복사에 실패했습니다') }
+  }
+
+  function renderComment(c, depth) {
+    const canEdit = c.author_id === profile.id
+    const canDelete = c.author_id === profile.id || isOwner
+    const kids = childrenOf[c.id] || []
+    return (
+      <li key={c.id} className="comment-item">
+        <div className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''}`}>
+          <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
+          <div className="comment-body">
+            <div className="comment-meta">
+              <span className="comment-author">{nameOf(c.author_id)}</span>
+              <span className="comment-time">{formatTime(c.created_at)}</span>
+              <div className="comment-menu-wrap">
+                <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                  </svg>
+                </button>
+                {menuId === c.id && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                    <div className="menu-pop" role="menu">
+                      <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
+                      <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
+                      {canEdit && <button type="button" onClick={() => startEdit(c)}>수정</button>}
+                      {canDelete && <button type="button" className="menu-danger" onClick={() => { setMenuId(null); removeComment(c.id) }}>삭제</button>}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <p className="comment-text">{c.body}</p>
+          </div>
+        </div>
+        {kids.length > 0 && (
+          <ul className="comment-replies">
+            {kids.map((k) => renderComment(k, depth + 1))}
+          </ul>
+        )}
+      </li>
+    )
   }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
@@ -158,40 +215,7 @@ export default function TaskDetail() {
         <p className="muted sm">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
       ) : (
         <ul className="comment-list">
-          {comments.map((c) => {
-            const canEdit = c.author_id === profile.id
-            const canDelete = c.author_id === profile.id || isOwner
-            return (
-              <li key={c.id} className={`comment ${editingId === c.id ? 'editing' : ''}`}>
-                <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={30} />
-                <div className="comment-body">
-                  <div className="comment-meta">
-                    <span className="comment-author">{nameOf(c.author_id)}</span>
-                    <span className="comment-time">{formatTime(c.created_at)}</span>
-                    <div className="comment-menu-wrap">
-                      <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                        </svg>
-                      </button>
-                      {menuId === c.id && (
-                        <>
-                          <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                          <div className="menu-pop" role="menu">
-                            <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
-                            <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
-                            {canEdit && <button type="button" onClick={() => { setMenuId(null); startEdit(c) }}>수정</button>}
-                            {canDelete && <button type="button" className="menu-danger" onClick={() => { setMenuId(null); removeComment(c.id) }}>삭제</button>}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <p className="comment-text">{c.body}</p>
-                </div>
-              </li>
-            )
-          })}
+          {roots.map((c) => renderComment(c, 0))}
         </ul>
       )}
 
@@ -199,12 +223,19 @@ export default function TaskDetail() {
 
       {bottomEl && createPortal(
         <form className="composer" onSubmit={submit}>
-          {editingId && (
-            <button type="button" className="composer-cancel" onClick={cancelEdit} aria-label="수정 취소" title="수정 취소">✕</button>
+          {(editingId || replyParent) && (
+            <div className="composer-tag">
+              <span className="composer-tag-text">
+                {editingId ? '댓글 수정 중' : `${nameOf(replyParent.author_id)}님에게 답글`}
+              </span>
+              <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
+            </div>
           )}
-          <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
-            placeholder={editingId ? '댓글 수정…' : '댓글을 입력하세요'} />
-          <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+          <div className="composer-row">
+            <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
+              placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
+            <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+          </div>
         </form>,
         bottomEl,
       )}

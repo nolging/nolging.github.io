@@ -170,6 +170,12 @@ create table if not exists public.task_comments (
 create index if not exists idx_task_comments_task on public.task_comments(task_id);
 alter table public.task_comments enable row level security;
 
+-- ---- task_comments: 스레드형 답글 (parent_id) ------------------
+-- 최상위 댓글은 parent_id null, 답글은 부모 댓글 id 참조. 부모 삭제 시 답글도 삭제.
+alter table public.task_comments
+  add column if not exists parent_id uuid references public.task_comments(id) on delete cascade;
+create index if not exists idx_task_comments_parent on public.task_comments(parent_id);
+
 drop policy if exists tc_select on public.task_comments;
 create policy tc_select on public.task_comments
   for select to authenticated
