@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks,
-  acceptTask, completeTask, reopenTask, deleteTask,
+  acceptTask, completeTask, reopenTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
   typeLabel, themeLabel, taskTerms, TASK_STATUSES, formatWhen, repeatCycleText,
@@ -143,6 +143,8 @@ export default function GroupDetail() {
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
               onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
+              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { groupType: group.group_type } })}
+              onCancelAppointment={() => { if (confirm('약속을 취소하고 위시리스트로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
               onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
           ))}
         </ul>
@@ -164,7 +166,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReopen, onEdit, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReopen, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
   const [menuOpen, setMenuOpen] = useState(false)
@@ -174,6 +176,12 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const parts = participants || []
   const showParts = parts.length > 0
   const extra = parts.length - 3
+
+  // 약속(일정이 잡힌) 카드는 상세와 동일한 메뉴(편집/약속취소/삭제)
+  const isScheduled = !!task.scheduled_at
+  const isCreator = task.created_by === meId
+  const isParticipant = isCreator || parts.includes(meId)
+  const showMenu = isScheduled ? isParticipant : canManage
 
   return (
     <li className={`task-item status-${task.status}`} onClick={onOpen}>
@@ -197,7 +205,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
               <span className="task-author-name">{nameOf(task.created_by)}</span>
             </span>
           )}
-          {canManage && (
+          {showMenu && (
             <div className="task-menu-wrap" onClick={stop}>
               <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((v) => !v)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -208,8 +216,18 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
                 <>
                   <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
                   <div className="menu-pop" role="menu">
-                    <button type="button" onClick={() => { setMenuOpen(false); onEdit() }}>편집</button>
-                    <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>
+                    {isScheduled ? (
+                      <>
+                        <button type="button" onClick={() => { setMenuOpen(false); onEditAppointment() }}>편집</button>
+                        <button type="button" onClick={() => { setMenuOpen(false); onCancelAppointment() }}>약속 취소</button>
+                        {isCreator && <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>}
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => { setMenuOpen(false); onEdit() }}>편집</button>
+                        <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>
+                      </>
+                    )}
                   </div>
                 </>
               )}
