@@ -100,7 +100,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
-.app-shell { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
+.app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -215,13 +216,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-act.danger { color: var(--danger); }
 .comment-edit { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
 .comment-text { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-/* 댓글 입력창: 화면 맨 하단 고정 (키보드 시 JS 로 위로 올림) */
-.task-detail { padding-bottom: 78px; }
+/* 하단 고정 바 슬롯 (앱 셸의 마지막 flex 자식). 앱 셸이 키보드에 맞춰
+   축소되므로, 키보드가 올라오면 이 바만 키보드 위에 위치하고 본문은 그대로. */
+.app-bottom { flex: 0 0 auto; }
+.app-bottom:empty { display: none; }
 .composer {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: flex; gap: 8px; align-items: center;
   background: var(--surface); border-top: 1px solid var(--border);
-  padding: 10px 14px 12px; max-width: 1080px; margin: 0 auto; will-change: transform;
+  padding: 12px 14px 18px; max-width: 1080px; width: 100%; margin: 0 auto;
 }
 .composer input { flex: 1; }
 .composer .btn { flex-shrink: 0; }

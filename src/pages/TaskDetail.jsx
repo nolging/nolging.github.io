@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -30,28 +31,12 @@ export default function TaskDetail() {
   const [editingId, setEditingId] = useState(null)
   const [editBody, setEditBody] = useState('')
   const [editBusy, setEditBusy] = useState(false)
-  const composerRef = useRef(null)
+  const [bottomEl, setBottomEl] = useState(null)
+
+  // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
   const isOwner = group && group.owner_id === profile?.id
-
-  // 모바일: 키보드가 올라오면 하단 고정 입력창을 키보드 위로 올림
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const apply = () => {
-      const el = composerRef.current
-      if (!el) return
-      const overlap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      el.style.transform = overlap > 0 ? `translateY(-${overlap}px)` : ''
-    }
-    vv.addEventListener('resize', apply)
-    vv.addEventListener('scroll', apply)
-    apply()
-    return () => {
-      vv.removeEventListener('resize', apply)
-      vv.removeEventListener('scroll', apply)
-    }
-  }, [])
   const terms = taskTerms(group?.group_type)
 
   const nameMap = useMemo(() => {
@@ -183,10 +168,13 @@ export default function TaskDetail() {
         </ul>
       )}
 
-      <form ref={composerRef} className="composer" onSubmit={send}>
-        <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="댓글을 입력하세요" />
-        <button className="btn btn-primary" disabled={sending || !body.trim()}>등록</button>
-      </form>
+      {bottomEl && createPortal(
+        <form className="composer" onSubmit={send}>
+          <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="댓글을 입력하세요" />
+          <button className="btn btn-primary" disabled={sending || !body.trim()}>등록</button>
+        </form>,
+        bottomEl,
+      )}
     </div>
   )
 }

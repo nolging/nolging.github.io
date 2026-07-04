@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
@@ -57,6 +57,27 @@ export default function Layout() {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
   }, [isGroupView])
+
+  // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
+  // → 상단/본문은 그대로 있고 하단 입력창만 키보드 위로 올라온다.
+  const shellRef = useRef(null)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const apply = () => {
+      const el = shellRef.current
+      if (!el) return
+      el.style.height = `${vv.height}px`
+      el.style.top = `${vv.offsetTop}px`
+    }
+    vv.addEventListener('resize', apply)
+    vv.addEventListener('scroll', apply)
+    apply()
+    return () => {
+      vv.removeEventListener('resize', apply)
+      vv.removeEventListener('scroll', apply)
+    }
+  }, [])
 
   let topbar
   if (groupConfigMatch) {
@@ -147,7 +168,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" ref={shellRef}>
       {topbar}
       <main className="content">
         <Outlet />
@@ -159,6 +180,8 @@ export default function Layout() {
           {isAdmin && <NavLink to="/admin"><AdminIcon /><span>관리</span></NavLink>}
         </nav>
       )}
+      {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}
+      <div id="app-bottom" className="app-bottom" />
     </div>
   )
 }
