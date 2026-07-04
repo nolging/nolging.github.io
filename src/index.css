@@ -17,6 +17,8 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* 하단 안전영역(홈 인디케이터 영역)이 회색으로 비치지 않고 하단바(흰색)와 이어지도록 */
+html { background: var(--surface); }
 body {
   background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5;
   overflow: hidden; overscroll-behavior: none; /* 앱 셸: 본문만 스크롤, 상단바 고정 */
