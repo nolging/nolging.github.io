@@ -42,8 +42,7 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <h1>내 그룹</h1>
+      <div className="page-actions">
         <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
           {showForm ? '취소' : '+ 그룹 만들기'}
         </button>

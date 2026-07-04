@@ -76,12 +76,22 @@ export default function Layout() {
     )
   }
 
+  // 기본(메인) 화면에서만 하단 내비게이션 노출 (모바일 전용, CSS로 제어)
+  const showBottomNav = !groupConfigMatch && !settingsMatch && !groupMatch
+
   return (
     <div className="app-shell">
       {topbar}
       <main className="content">
         <Outlet />
       </main>
+      {showBottomNav && (
+        <nav className="bottomnav">
+          <NavLink to="/" end>내 그룹</NavLink>
+          <NavLink to="/join">그룹 가입</NavLink>
+          {isAdmin && <NavLink to="/admin">관리자</NavLink>}
+        </nav>
+      )}
     </div>
   )
 }

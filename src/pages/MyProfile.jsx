@@ -88,12 +88,6 @@ export default function MyProfile() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>내 정보</h1>
-        </div>
-      </div>
-
       {loading ? (
         <div className="spinner" />
       ) : (

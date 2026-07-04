@@ -55,7 +55,6 @@ export default function Admin() {
 
   return (
     <div className="page">
-      <div className="page-head"><h1>관리자</h1></div>
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 

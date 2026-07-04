@@ -111,6 +111,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .brand span { color: var(--primary); font-size: .7rem; margin-left: 5px; letter-spacing: .5px; }
 .brand:hover { text-decoration: none; }
 .topnav { display: flex; gap: 6px; }
+.bottomnav { display: none; }  /* 모바일에서만 노출 (하단 내비게이션) */
 .topnav a {
   padding: 7px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; font-size: 14px;
 }
@@ -127,6 +128,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 페이지 ---- */
 .page { display: flex; flex-direction: column; gap: 18px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.page-actions { display: flex; justify-content: flex-end; }
 .breadcrumb { color: var(--muted); font-size: 13px; }
 .muted { color: var(--muted); }
 .sm { font-size: 13px; }
@@ -288,9 +290,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
     height: calc(54px + env(safe-area-inset-top));
   }
   .brand .brand-word { font-size: 1.05rem; }
-  .topnav { gap: 2px; }
-  .topnav a { padding: 6px 8px; font-size: 13px; }
-  .me { display: none; }              /* 좁은 화면에선 이름 숨기고 로그아웃만 */
+  .topnav { display: none; }          /* 모바일: 메뉴는 하단 내비게이션으로 이동 */
+  .me { display: none; }              /* 좁은 화면에선 이름 숨김 */
+
+  .bottomnav {
+    flex: 0 0 auto; display: flex;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottomnav a {
+    flex: 1; text-align: center; padding: 12px 4px;
+    color: var(--muted); font-weight: 600; font-size: 13px;
+  }
+  .bottomnav a:hover { text-decoration: none; }
+  .bottomnav a.active { color: var(--primary); }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
   .page-head .row-gap { flex-wrap: wrap; }
   .field-row { flex-direction: column; }

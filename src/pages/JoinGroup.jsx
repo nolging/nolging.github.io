@@ -43,7 +43,6 @@ export default function JoinGroup() {
   if (!preview) {
     return (
       <div className="page">
-        <div className="page-head"><h1>그룹 가입</h1></div>
         <div className="card narrow">
           <p className="muted">그룹 관리자에게 받은 초대 코드를 입력하세요.</p>
           <form onSubmit={lookup} className="form">
