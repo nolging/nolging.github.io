@@ -211,10 +211,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-author { font-weight: 600; font-size: 13px; }
 .comment-time { color: var(--muted); font-size: 11px; }
 .comment.editing { background: #eef0fb; border-radius: 10px; padding: 8px 10px; margin: -8px -10px; }
-.comment-acts { margin-left: auto; display: flex; gap: 10px; }
-.comment-act { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); padding: 0; }
-.comment-act:hover { text-decoration: underline; }
-.comment-act.danger { color: var(--danger); }
+.comment-menu-wrap { margin-left: auto; position: relative; flex-shrink: 0; }
+.comment-menu-btn { background: none; border: none; cursor: pointer; color: var(--muted); padding: 0 2px; line-height: 0; display: flex; align-items: center; }
+.comment-menu-btn:hover { color: var(--text); }
+.toast {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  background: rgba(20, 22, 40, .9); color: #fff; padding: 8px 16px; border-radius: 20px;
+  font-size: 13px; z-index: 60; pointer-events: none;
+}
 .comment-edit { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
 .comment-text { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
 /* 하단 고정 바 슬롯 (앱 셸의 마지막 flex 자식). 앱 셸이 키보드에 맞춰

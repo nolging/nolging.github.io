@@ -29,8 +29,16 @@ export default function TaskDetail() {
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [editingId, setEditingId] = useState(null) // 하단 입력창에서 수정 중인 댓글 id
+  const [menuId, setMenuId] = useState(null)       // ⋮ 메뉴가 열린 댓글 id
+  const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 1500)
+    return () => clearTimeout(t)
+  }, [toast])
 
   // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
@@ -97,6 +105,18 @@ export default function TaskDetail() {
   }
   function cancelEdit() { setEditingId(null); setBody('') }
 
+  // '답글 달기' → 하단 입력창에 @닉네임 을 넣고 새 댓글 작성 모드로
+  function replyTo(c) {
+    setMenuId(null); setEditingId(null)
+    setBody(`@${nameOf(c.author_id)} `)
+    inputRef.current?.focus()
+  }
+  function copyComment(c) {
+    setMenuId(null)
+    try { navigator.clipboard?.writeText(c.body); setToast('복사되었습니다') }
+    catch { setToast('복사에 실패했습니다') }
+  }
+
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!task) return null
@@ -148,9 +168,23 @@ export default function TaskDetail() {
                   <div className="comment-meta">
                     <span className="comment-author">{nameOf(c.author_id)}</span>
                     <span className="comment-time">{formatTime(c.created_at)}</span>
-                    <div className="comment-acts">
-                      {canEdit && <button className="comment-act" onClick={() => startEdit(c)}>수정</button>}
-                      {canDelete && <button className="comment-act danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                    <div className="comment-menu-wrap">
+                      <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                        </svg>
+                      </button>
+                      {menuId === c.id && (
+                        <>
+                          <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                          <div className="menu-pop" role="menu">
+                            <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
+                            <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
+                            {canEdit && <button type="button" onClick={() => { setMenuId(null); startEdit(c) }}>수정</button>}
+                            {canDelete && <button type="button" className="menu-danger" onClick={() => { setMenuId(null); removeComment(c.id) }}>삭제</button>}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                   <p className="comment-text">{c.body}</p>
@@ -160,6 +194,8 @@ export default function TaskDetail() {
           })}
         </ul>
       )}
+
+      {toast && <div className="toast">{toast}</div>}
 
       {bottomEl && createPortal(
         <form className="composer" onSubmit={submit}>
