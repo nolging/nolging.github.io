@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -28,10 +28,9 @@ export default function TaskDetail() {
   const [error, setError] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editBody, setEditBody] = useState('')
-  const [editBusy, setEditBusy] = useState(false)
+  const [editingId, setEditingId] = useState(null) // 하단 입력창에서 수정 중인 댓글 id
   const [bottomEl, setBottomEl] = useState(null)
+  const inputRef = useRef(null)
 
   // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
@@ -66,30 +65,37 @@ export default function TaskDetail() {
     try { setTask(await fn()) } catch (err) { setError(err.message) }
   }
 
-  async function send(e) {
+  // 하단 입력창 제출: 수정 중이면 해당 댓글 수정, 아니면 새 댓글 작성
+  async function submit(e) {
     e.preventDefault()
     if (!body.trim() || sending) return
     setSending(true); setError('')
     try {
-      await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id })
+      if (editingId) {
+        await updateComment(editingId, body.trim())
+        setEditingId(null)
+      } else {
+        await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id })
+      }
       setBody(''); await loadComments()
     } catch (err) { setError(err.message) } finally { setSending(false) }
   }
 
   async function removeComment(id) {
     if (!confirm('삭제하시겠습니까?')) return
-    try { await deleteComment(id); await loadComments() } catch (err) { setError(err.message) }
+    try {
+      await deleteComment(id)
+      if (editingId === id) { setEditingId(null); setBody('') }
+      await loadComments()
+    } catch (err) { setError(err.message) }
   }
 
-  function startEdit(c) { setEditingId(c.id); setEditBody(c.body) }
-  function cancelEdit() { setEditingId(null); setEditBody('') }
-  async function saveEdit(e, id) {
-    e.preventDefault()
-    if (!editBody.trim() || editBusy) return
-    setEditBusy(true); setError('')
-    try { await updateComment(id, editBody.trim()); cancelEdit(); await loadComments() }
-    catch (err) { setError(err.message) } finally { setEditBusy(false) }
+  // '수정' → 하단 입력창에 댓글 내용을 넣고 편집 모드로
+  function startEdit(c) {
+    setEditingId(c.id); setBody(c.body)
+    inputRef.current?.focus()
   }
+  function cancelEdit() { setEditingId(null); setBody('') }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
@@ -135,32 +141,19 @@ export default function TaskDetail() {
           {comments.map((c) => {
             const canEdit = c.author_id === profile.id
             const canDelete = c.author_id === profile.id || isOwner
-            const editing = editingId === c.id
             return (
-              <li key={c.id} className="comment">
+              <li key={c.id} className={`comment ${editingId === c.id ? 'editing' : ''}`}>
                 <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={30} />
                 <div className="comment-body">
                   <div className="comment-meta">
                     <span className="comment-author">{nameOf(c.author_id)}</span>
                     <span className="comment-time">{formatTime(c.created_at)}</span>
-                    {!editing && (
-                      <div className="comment-acts">
-                        {canEdit && <button className="comment-act" onClick={() => startEdit(c)}>수정</button>}
-                        {canDelete && <button className="comment-act danger" onClick={() => removeComment(c.id)}>삭제</button>}
-                      </div>
-                    )}
+                    <div className="comment-acts">
+                      {canEdit && <button className="comment-act" onClick={() => startEdit(c)}>수정</button>}
+                      {canDelete && <button className="comment-act danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                    </div>
                   </div>
-                  {editing ? (
-                    <form className="comment-edit" onSubmit={(e) => saveEdit(e, c.id)}>
-                      <input autoFocus value={editBody} onChange={(e) => setEditBody(e.target.value)} />
-                      <div className="row-gap">
-                        <button className="btn btn-sm btn-primary" disabled={editBusy}>{editBusy ? '저장 중…' : '저장'}</button>
-                        <button type="button" className="btn btn-sm btn-ghost" onClick={cancelEdit}>취소</button>
-                      </div>
-                    </form>
-                  ) : (
-                    <p className="comment-text">{c.body}</p>
-                  )}
+                  <p className="comment-text">{c.body}</p>
                 </div>
               </li>
             )
@@ -169,9 +162,13 @@ export default function TaskDetail() {
       )}
 
       {bottomEl && createPortal(
-        <form className="composer" onSubmit={send}>
-          <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="댓글을 입력하세요" />
-          <button className="btn btn-primary" disabled={sending || !body.trim()}>등록</button>
+        <form className="composer" onSubmit={submit}>
+          {editingId && (
+            <button type="button" className="composer-cancel" onClick={cancelEdit} aria-label="수정 취소" title="수정 취소">✕</button>
+          )}
+          <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
+            placeholder={editingId ? '댓글 수정…' : '댓글을 입력하세요'} />
+          <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
         </form>,
         bottomEl,
       )}
