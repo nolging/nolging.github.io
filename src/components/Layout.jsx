@@ -58,20 +58,39 @@ export default function Layout() {
     return () => { document.body.style.background = '' }
   }, [isGroupView])
 
-  // 키보드가 올라오면 앱 셸 "높이"만 보이는 영역(visual viewport)에 맞춰 줄인다.
-  // 상단(top)은 0 고정 → 본문은 움직이지 않고, 하단 입력창만 키보드 위로 드러남.
-  // (top 을 offsetTop 에 맞춰 따라가게 하면 iOS 가 밀었다 되돌리며 본문이 흔들림)
+  // 키보드 대응: 앱 셸을 "보이는 영역(visual viewport)"에 정확히 맞춘다.
+  //  - height = vv.height (키보드만큼 축소)
+  //  - transform = translateY(vv.offsetTop) (iOS 가 밀어올린 만큼 내려서 상쇄)
+  // 입력 중에는 매 프레임(rAF) 동기화해 지연으로 인한 흔들림/공백을 없앤다.
   const shellRef = useRef(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const apply = () => {
+    let raf = 0
+    const sync = () => {
       const el = shellRef.current
-      if (el) el.style.height = `${vv.height}px`
+      if (!el) return
+      el.style.height = `${vv.height}px`
+      el.style.transform = vv.offsetTop ? `translateY(${vv.offsetTop}px)` : ''
     }
-    vv.addEventListener('resize', apply)
-    apply()
-    return () => { vv.removeEventListener('resize', apply) }
+    const tick = () => { sync(); raf = requestAnimationFrame(tick) }
+    const onFocusIn = () => { if (!raf) tick() }
+    const onFocusOut = () => {
+      // 키보드 닫힘 애니메이션까지 잠깐 더 추적 후 정지
+      window.setTimeout(() => { if (raf) { cancelAnimationFrame(raf); raf = 0 } sync() }, 350)
+    }
+    vv.addEventListener('resize', sync)
+    window.addEventListener('focusin', onFocusIn)
+    window.addEventListener('focusout', onFocusOut)
+    sync()
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      vv.removeEventListener('resize', sync)
+      window.removeEventListener('focusin', onFocusIn)
+      window.removeEventListener('focusout', onFocusOut)
+      const el = shellRef.current
+      if (el) { el.style.height = ''; el.style.transform = '' }
+    }
   }, [])
 
   let topbar
