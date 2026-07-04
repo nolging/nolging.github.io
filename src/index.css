@@ -269,6 +269,57 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .push-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .push-banner-text strong { font-size: 14px; }
 .push-banner .btn { flex-shrink: 0; }
+
+/* ---- 약속 잡기 페이지 (iOS 미리 알림 스타일) ---- */
+.sched-headline { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.ios-list {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; margin-bottom: 16px;
+}
+.ios-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-top: 1px solid var(--border);
+}
+.ios-row:first-child { border-top: none; }
+.ios-row-label { font-weight: 600; font-size: 15px; flex-shrink: 0; }
+.ios-row input, .ios-row select {
+  border: none; background: none; text-align: right; font-size: 15px; color: var(--text);
+  padding: 4px 0; max-width: 62%;
+}
+.ios-row input:focus, .ios-row select:focus { outline: none; }
+.sched-sec-title { font-weight: 700; font-size: 14px; margin: 4px 2px 8px; }
+.member-pick {
+  list-style: none; margin: 0 0 16px; padding: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.member-pick-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-top: 1px solid var(--border); cursor: pointer;
+}
+.member-pick-item:first-child { border-top: none; }
+.member-pick-item.fixed { cursor: default; }
+.member-pick-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+.pick-check {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+  color: transparent; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+}
+.pick-check.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-block { width: 100%; margin-top: 4px; }
+
+/* ---- 약속 정보 (태스크 상세) ---- */
+.appt {
+  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  background: #f3f1fe; border: 1px solid #ddd6fb; display: flex; flex-direction: column; gap: 8px;
+}
+.appt-when { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
+.appt-cal { font-size: 16px; }
+.appt-repeat {
+  font-size: 12px; font-weight: 700; color: var(--primary);
+  background: #fff; border: 1px solid #ddd6fb; border-radius: 20px; padding: 2px 8px;
+}
+.appt-edit { margin-left: auto; }
+.appt-people { display: flex; flex-wrap: wrap; gap: 10px; }
 .notif-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
 .notif-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .notif {

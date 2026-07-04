@@ -55,3 +55,21 @@ export const TASK_STATUSES = ['open', 'accepted', 'done']
 
 // 위시리스트(놀깅) 유형
 export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
+
+// 약속 반복 옵션 (아이폰 미리 알림 참고). value=저장 키, label=표시
+export const REPEAT_OPTIONS = [
+  { value: 'none', label: '안 함' },
+  { value: 'hourly', label: '매시간' },
+  { value: 'daily', label: '매일' },
+  { value: 'weekday', label: '평일' },
+  { value: 'weekend', label: '주말' },
+  { value: 'weekly', label: '매주' },
+  { value: 'biweekly', label: '격주' },
+  { value: 'monthly', label: '매월' },
+  { value: 'quarterly', label: '3개월마다' },
+  { value: 'semiannually', label: '6개월마다' },
+  { value: 'yearly', label: '매년' },
+]
+export function repeatLabel(v) {
+  return REPEAT_OPTIONS.find((o) => o.value === v)?.label ?? '안 함'
+}

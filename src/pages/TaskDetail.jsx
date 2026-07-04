@@ -4,14 +4,22 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
-  acceptTask, completeTask, reopenTask,
+  acceptTask, completeTask, reopenTask, listTaskParticipants,
 } from '../lib/api'
-import { taskTerms } from '../lib/constants'
+import { taskTerms, repeatLabel } from '../lib/constants'
 import Avatar from '../components/Avatar'
 
 function formatTime(iso) {
   try {
     return new Date(iso).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  } catch { return '' }
+}
+
+function formatWhen(iso) {
+  try {
+    return new Date(iso).toLocaleString('ko-KR', {
+      month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit',
+    })
   } catch { return '' }
 }
 
@@ -25,6 +33,7 @@ export default function TaskDetail() {
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
   const [members, setMembers] = useState([])
+  const [participants, setParticipants] = useState([])
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -92,10 +101,11 @@ export default function TaskDetail() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, t, m, c] = await Promise.all([
+      const [g, t, m, c, p] = await Promise.all([
         getGroup(groupId), getTask(taskId), listMemberCards(groupId), listComments(taskId),
+        listTaskParticipants(taskId),
       ])
-      setGroup(g); setTask(t); setMembers(m); setComments(c)
+      setGroup(g); setTask(t); setMembers(m); setComments(c); setParticipants(p)
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId])
 
@@ -109,6 +119,13 @@ export default function TaskDetail() {
   async function runTaskAction(fn) {
     setError('')
     try { setTask(await fn()) } catch (err) { setError(err.message) }
+  }
+
+  const isNolging = group?.group_type === 'nolging'
+  // 놀기 신청: 놀깅은 약속 잡기 페이지로, 그 외는 즉시 수락
+  function acceptOrSchedule() {
+    if (isNolging) navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })
+    else runTaskAction(() => acceptTask(task.id, profile.id))
   }
 
   // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
@@ -239,12 +256,38 @@ export default function TaskDetail() {
           <span className="task-person"><Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
         )}
         <div className="task-actions">
-          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={() => runTaskAction(() => acceptTask(task.id, profile.id))}>{terms.accept}</button>}
+          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
           {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={() => runTaskAction(() => completeTask(task.id))}>완료</button>}
           {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
           {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={() => runTaskAction(() => reopenTask(task.id))}>다시 열기</button>}
         </div>
       </div>
+
+      {/* 약속 정보 (놀깅에서 놀기 신청 시 설정한 일정/반복/참여자) */}
+      {task.scheduled_at && (
+        <div className="appt">
+          <div className="appt-when">
+            <span className="appt-cal" aria-hidden="true">🗓</span>
+            <span>{formatWhen(task.scheduled_at)}</span>
+            {task.repeat_rule && <span className="appt-repeat">{repeatLabel(task.repeat_rule)}</span>}
+            {isNolging && mine && task.status === 'accepted' && (
+              <button className="btn btn-ghost btn-sm appt-edit"
+                onClick={() => navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })}>
+                수정
+              </button>
+            )}
+          </div>
+          {participants.length > 0 && (
+            <div className="appt-people">
+              {participants.map((uid) => (
+                <span key={uid} className="task-person">
+                  <Avatar src={avatarOf(uid)} name={nameOf(uid)} size={20} />{nameOf(uid)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <hr className="divider" />
 

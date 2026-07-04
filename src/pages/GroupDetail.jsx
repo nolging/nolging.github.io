@@ -117,7 +117,13 @@ export default function GroupDetail() {
           {visibleTasks.map((t) => (
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
-              onAccept={() => runAction(() => acceptTask(t.id, profile.id))}
+              onAccept={() => {
+                if (group.group_type === 'nolging') {
+                  navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { groupType: group.group_type } })
+                } else {
+                  runAction(() => acceptTask(t.id, profile.id))
+                }
+              }}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
               onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}

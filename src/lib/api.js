@@ -176,6 +176,39 @@ export async function deleteTask(taskId) {
   if (error) throw error
 }
 
+// ---- 약속 잡기 (놀깅) ----------------------------------------
+
+// 놀기 신청 확정: 일정/반복/참여자 저장 + 상태 accepted
+export async function scheduleTask({ taskId, scheduledAt, repeat, participantIds }) {
+  const { data, error } = await supabase.rpc('schedule_task', {
+    p_task_id: taskId,
+    p_scheduled_at: scheduledAt,
+    p_repeat: repeat || null,
+    p_participants: participantIds ?? [],
+  })
+  if (error) throw error
+  return Array.isArray(data) ? data[0] : data
+}
+
+// 이미 잡힌 약속의 일정/반복/참여자 수정
+export async function rescheduleTask({ taskId, scheduledAt, repeat, participantIds }) {
+  const { data, error } = await supabase.rpc('reschedule_task', {
+    p_task_id: taskId,
+    p_scheduled_at: scheduledAt,
+    p_repeat: repeat || null,
+    p_participants: participantIds ?? [],
+  })
+  if (error) throw error
+  return Array.isArray(data) ? data[0] : data
+}
+
+export async function listTaskParticipants(taskId) {
+  const { data, error } = await supabase
+    .from('task_participants').select('user_id').eq('task_id', taskId)
+  if (error) throw error
+  return (data ?? []).map((r) => r.user_id)
+}
+
 // ---- 태스크 댓글 --------------------------------------------
 
 export async function listComments(taskId) {

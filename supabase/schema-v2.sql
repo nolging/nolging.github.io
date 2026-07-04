@@ -392,3 +392,98 @@ create policy ps_update on public.push_subscriptions
 drop policy if exists ps_delete on public.push_subscriptions;
 create policy ps_delete on public.push_subscriptions
   for delete to authenticated using (user_id = auth.uid());
+
+-- =============================================================
+--  약속 잡기 (놀깅: 놀기 신청 → 날짜/시간/반복/참여멤버)
+-- =============================================================
+alter table public.tasks add column if not exists scheduled_at timestamptz;
+alter table public.tasks add column if not exists repeat_rule  text;
+
+-- 약속 참여 멤버
+create table if not exists public.task_participants (
+  task_id    uuid not null references public.tasks(id)     on delete cascade,
+  user_id    uuid not null references public.profiles(id)  on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (task_id, user_id)
+);
+alter table public.task_participants enable row level security;
+
+-- 그룹 멤버는 참여자 목록 조회 가능 (쓰기는 아래 RPC 로만)
+drop policy if exists tp_select on public.task_participants;
+create policy tp_select on public.task_participants
+  for select to authenticated
+  using (
+    public.is_group_member((select group_id from public.tasks where id = task_id), auth.uid())
+    or public.is_admin(auth.uid())
+  );
+
+-- ---- RPC: 약속 잡기 (놀기 신청 확정) --------------------------
+-- 상태를 accepted 로 바꾸고(=놀기 신청 알림 트리거 발동), 일정/반복/참여자를 저장.
+create or replace function public.schedule_task(
+  p_task_id uuid,
+  p_scheduled_at timestamptz,
+  p_repeat text,
+  p_participants uuid[]
+)
+returns public.tasks language plpgsql security definer set search_path = public as $$
+declare r public.tasks; v_gid uuid;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 신청할 수 있습니다.';
+  end if;
+
+  update public.tasks
+     set status = 'accepted', assignee_id = auth.uid(), accepted_at = now(),
+         scheduled_at = p_scheduled_at, repeat_rule = p_repeat
+   where id = p_task_id and status = 'open'
+  returning * into r;
+  if r.id is null then
+    raise exception '이미 신청되었거나 열려 있지 않은 항목입니다.';
+  end if;
+
+  delete from public.task_participants where task_id = p_task_id;
+  insert into public.task_participants(task_id, user_id)
+    select p_task_id, x
+    from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(v_gid, x)
+    on conflict do nothing;
+
+  return r;
+end;
+$$;
+grant execute on function public.schedule_task(uuid, timestamptz, text, uuid[]) to authenticated;
+
+-- 약속 변경(재조정): 이미 accepted 인 약속의 일정/반복/참여자만 갱신
+create or replace function public.reschedule_task(
+  p_task_id uuid,
+  p_scheduled_at timestamptz,
+  p_repeat text,
+  p_participants uuid[]
+)
+returns public.tasks language plpgsql security definer set search_path = public as $$
+declare r public.tasks; v_gid uuid;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 수정할 수 있습니다.';
+  end if;
+
+  update public.tasks
+     set scheduled_at = p_scheduled_at, repeat_rule = p_repeat
+   where id = p_task_id
+  returning * into r;
+
+  delete from public.task_participants where task_id = p_task_id;
+  insert into public.task_participants(task_id, user_id)
+    select p_task_id, x
+    from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(v_gid, x)
+    on conflict do nothing;
+
+  return r;
+end;
+$$;
+grant execute on function public.reschedule_task(uuid, timestamptz, text, uuid[]) to authenticated;

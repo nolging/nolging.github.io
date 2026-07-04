@@ -9,6 +9,7 @@ import GroupMembers from './pages/GroupMembers'
 import CreateTask from './pages/CreateTask'
 import TaskEdit from './pages/TaskEdit'
 import TaskDetail from './pages/TaskDetail'
+import ScheduleAppointment from './pages/ScheduleAppointment'
 import GroupSettingsPage from './pages/GroupSettingsPage'
 import GroupConfigPage from './pages/GroupConfigPage'
 import JoinGroup from './pages/JoinGroup'
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/groups/:groupId/members" element={<GroupMembers />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />
         <Route path="/groups/:groupId/tasks/:taskId/edit" element={<TaskEdit />} />
+        <Route path="/groups/:groupId/tasks/:taskId/schedule" element={<ScheduleAppointment />} />
         <Route path="/groups/:groupId/tasks/:taskId" element={<TaskDetail />} />
         <Route path="/groups/:groupId/settings" element={<GroupSettingsPage />} />
         <Route path="/groups/:groupId/settings/group" element={<GroupConfigPage />} />
