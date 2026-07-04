@@ -20,6 +20,7 @@ html, body, #root { height: 100%; margin: 0; }
 body {
   background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5;
   overflow: hidden; overscroll-behavior: none; /* 앱 셸: 본문만 스크롤, 상단바 고정 */
+  height: 100dvh; /* 모바일 동적 뷰포트에 맞춰 하단바가 화면 끝에 붙도록 (100% 폴백) */
 }
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -299,9 +300,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
     padding-bottom: env(safe-area-inset-bottom);
   }
   .bottomnav a {
-    flex: 1; text-align: center; padding: 12px 4px;
-    color: var(--muted); font-weight: 600; font-size: 13px;
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 8px 4px;
+    color: var(--muted); font-weight: 600; font-size: 11px;
   }
+  .bottomnav a svg { width: 22px; height: 22px; }
   .bottomnav a:hover { text-decoration: none; }
   .bottomnav a.active { color: var(--primary); }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
