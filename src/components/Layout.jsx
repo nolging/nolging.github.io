@@ -58,38 +58,36 @@ export default function Layout() {
     return () => { document.body.style.background = '' }
   }, [isGroupView])
 
-  // 키보드 대응: 앱 셸을 "보이는 영역(visual viewport)"에 정확히 맞춘다.
-  //  - height = vv.height (키보드만큼 축소)
-  //  - transform = translateY(vv.offsetTop) (iOS 가 밀어올린 만큼 내려서 상쇄)
-  // 입력 중에는 매 프레임(rAF) 동기화해 지연으로 인한 흔들림/공백을 없앤다.
+  // 키보드 대응(본문 고정): 입력 포커스 순간, 키보드가 뜨기 전에 앱 셸을
+  // "예상 키보드 높이"만큼 미리 줄여 입력창을 올려둔다. → iOS 가 입력창이
+  // 이미 보인다고 판단해 화면을 스크롤하지 않으므로 본문이 움직이지 않는다.
+  // 키보드 높이는 실측 후 localStorage 에 저장해 재사용(다음부터 정확).
   const shellRef = useRef(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    let raf = 0
-    const sync = () => {
+    let kb = Number(localStorage.getItem('kbH')) || 0
+    const setShell = (h, ty) => {
       const el = shellRef.current
       if (!el) return
-      el.style.height = `${vv.height}px`
-      el.style.transform = vv.offsetTop ? `translateY(${vv.offsetTop}px)` : ''
+      el.style.height = h == null ? '' : `${h}px`
+      el.style.transform = ty ? `translateY(${ty}px)` : ''
     }
-    const tick = () => { sync(); raf = requestAnimationFrame(tick) }
-    const onFocusIn = () => { if (!raf) tick() }
-    const onFocusOut = () => {
-      // 키보드 닫힘 애니메이션까지 잠깐 더 추적 후 정지
-      window.setTimeout(() => { if (raf) { cancelAnimationFrame(raf); raf = 0 } sync() }, 350)
+    const onResize = () => {
+      setShell(vv.height, vv.offsetTop)
+      const k = Math.round(window.innerHeight - vv.height)
+      if (k > 100) { kb = k; try { localStorage.setItem('kbH', String(k)) } catch { /* noop */ } }
     }
-    vv.addEventListener('resize', sync)
+    const onFocusIn = () => { if (kb > 0) setShell(window.innerHeight - kb, 0) }
+    const onFocusOut = () => { window.setTimeout(() => setShell(null, 0), 250) }
+    vv.addEventListener('resize', onResize)
     window.addEventListener('focusin', onFocusIn)
     window.addEventListener('focusout', onFocusOut)
-    sync()
     return () => {
-      if (raf) cancelAnimationFrame(raf)
-      vv.removeEventListener('resize', sync)
+      vv.removeEventListener('resize', onResize)
       window.removeEventListener('focusin', onFocusIn)
       window.removeEventListener('focusout', onFocusOut)
-      const el = shellRef.current
-      if (el) { el.style.height = ''; el.style.transform = '' }
+      setShell(null, 0)
     }
   }, [])
 
