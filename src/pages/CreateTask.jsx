@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createTask } from '../lib/api'
+import { taskTerms } from '../lib/constants'
 
 export default function CreateTask() {
   const { groupId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const terms = taskTerms(location.state?.groupType)
 
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
@@ -31,7 +34,7 @@ export default function CreateTask() {
         <label className="field"><span>설명 (선택)</span>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="설명" rows={4} /></label>
         {error && <div className="alert alert-error">{error}</div>}
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '추가 중…' : '태스크 추가'}</button>
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '추가 중…' : `${terms.noun} 추가`}</button>
       </form>
     </div>
   )

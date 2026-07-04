@@ -5,7 +5,7 @@ import {
   getGroup, listMemberCards, listTasks,
   acceptTask, completeTask, reopenTask, deleteTask,
 } from '../lib/api'
-import { typeLabel, themeLabel, TASK_STATUS_LABEL } from '../lib/constants'
+import { typeLabel, themeLabel, taskTerms, TASK_STATUSES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
 
@@ -34,7 +34,7 @@ export default function GroupDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('open')
   const [inviteOpen, setInviteOpen] = useState(false)
 
   const isOwner = group && group.owner_id === profile?.id
@@ -77,7 +77,8 @@ export default function GroupDetail() {
     )
   }
 
-  const visibleTasks = tasks.filter((t) => filter === 'all' || t.status === filter)
+  const terms = taskTerms(group.group_type)
+  const visibleTasks = tasks.filter((t) => t.status === filter)
 
   return (
     <div className="page">
@@ -101,20 +102,20 @@ export default function GroupDetail() {
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="tabs">
-        {['all', 'open', 'accepted', 'done'].map((f) => (
+        {TASK_STATUSES.map((f) => (
           <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? '전체' : TASK_STATUS_LABEL[f]}
-            <span className="tab-count">{f === 'all' ? tasks.length : tasks.filter((t) => t.status === f).length}</span>
+            {terms.status[f]}
+            <span className="tab-count">{tasks.filter((t) => t.status === f).length}</span>
           </button>
         ))}
       </div>
 
       {visibleTasks.length === 0 ? (
-        <div className="empty"><p className="muted">태스크가 없습니다.</p></div>
+        <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
       ) : (
         <ul className="task-list">
           {visibleTasks.map((t) => (
-            <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+            <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
               onAccept={() => runAction(() => acceptTask(t.id, profile.id))}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
@@ -124,8 +125,8 @@ export default function GroupDetail() {
       )}
 
       {/* 태스크 작성 버튼 (고정) */}
-      <button className="fab" aria-label="태스크 작성" title="태스크 작성"
-        onClick={() => navigate(`/groups/${groupId}/tasks/new`)}>+</button>
+      <button className="fab" aria-label={`${terms.noun} 작성`} title={`${terms.noun} 작성`}
+        onClick={() => navigate(`/groups/${groupId}/tasks/new`, { state: { groupType: group.group_type } })}>+</button>
 
       {/* 초대 시트 */}
       <BottomSheet open={inviteOpen} onClose={() => setInviteOpen(false)}>
@@ -139,7 +140,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, nameOf, avatarOf, onAccept, onComplete, onReopen, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onComplete, onReopen, onDelete }) {
   const mine = task.assignee_id === meId
   const canDelete = task.created_by === meId || isOwner
   return (
@@ -155,11 +156,11 @@ function TaskItem({ task, meId, isOwner, nameOf, avatarOf, onAccept, onComplete,
           {task.assignee_id && (
             <span className="task-person">· <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
           )}
-          <span className={`badge badge-${task.status}`}>{TASK_STATUS_LABEL[task.status]}</span>
+          <span className={`badge badge-${task.status}`}>{terms.status[task.status]}</span>
         </div>
       </div>
       <div className="task-actions">
-        {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>수락</button>}
+        {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
         {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
         {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
         {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}

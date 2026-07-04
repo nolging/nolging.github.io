@@ -31,4 +31,24 @@ export function normalizeTheme(type, theme) {
   return list.some((x) => x.value === theme) ? theme : list[0]?.value ?? 'solo'
 }
 
-export const TASK_STATUS_LABEL = { open: '열림', accepted: '진행 중', done: '완료' }
+// 그룹 유형별 태스크 용어 (명칭/진행단계/수락)
+const TASK_TERMS = {
+  nolging: {
+    noun: '위시리스트',
+    status: { open: '위시리스트', accepted: '약속', done: '추억' },
+    accept: '놀기 신청',
+  },
+  ilhaging: {
+    noun: '태스크',
+    status: { open: 'TO DO', accepted: 'DOING', done: 'DONE' },
+    accept: '일정 추가',
+  },
+}
+
+// 유형이 없거나 알 수 없으면 일하깅(일반 태스크) 용어로 폴백
+export function taskTerms(groupType) {
+  return TASK_TERMS[groupType] ?? TASK_TERMS.ilhaging
+}
+
+// 진행 단계 순서 ("전체" 제외)
+export const TASK_STATUSES = ['open', 'accepted', 'done']

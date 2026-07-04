@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { Link, NavLink, Outlet, useMatch } from 'react-router-dom'
+import { Link, NavLink, Outlet, useMatch, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { taskTerms } from '../lib/constants'
 import Brand from './Brand'
 
 function GearIcon() {
@@ -38,6 +39,7 @@ const AdminIcon = () => tabSvg(<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 
 
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
+  const location = useLocation()
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
@@ -83,12 +85,12 @@ export default function Layout() {
       </header>
     )
   } else if (taskNewMatch) {
-    // 태스크 작성 페이지: 좌측 뒤로(그룹으로), 제목 "태스크 작성"
+    // 태스크 작성 페이지: 좌측 뒤로(그룹으로), 제목은 유형별 명칭 + 작성
     const id = taskNewMatch.params.groupId
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">태스크 작성</span>
+        <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 작성</span>
       </header>
     )
   } else if (groupMatch) {
