@@ -309,9 +309,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .bottomnav a:hover { text-decoration: none; }
   .bottomnav a.active { color: var(--primary); }
 
-  /* iOS(아이폰)만: 홈 인디케이터 여백을 더 줄여 하단 공백 최소화 */
+  /* iOS(아이폰)만: 홈 인디케이터와 겹치지 않게 살짝 흰 여백을 남김 */
   @supports (-webkit-touch-callout: none) {
-    .bottomnav { padding-bottom: max(2px, calc(env(safe-area-inset-bottom) - 26px)); }
+    .bottomnav { padding-bottom: max(8px, calc(env(safe-area-inset-bottom) - 14px)); }
   }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
   .page-head .row-gap { flex-wrap: wrap; }
