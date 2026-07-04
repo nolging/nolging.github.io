@@ -209,11 +209,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-meta { display: flex; align-items: center; gap: 8px; }
 .comment-author { font-weight: 600; font-size: 13px; }
 .comment-time { color: var(--muted); font-size: 11px; }
-.comment-del { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 4px; }
-.comment-del:hover { color: var(--danger); }
+.comment-acts { margin-left: auto; display: flex; gap: 10px; }
+.comment-act { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); padding: 0; }
+.comment-act:hover { text-decoration: underline; }
+.comment-act.danger { color: var(--danger); }
+.comment-edit { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
 .comment-text { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-/* 댓글 입력창: 스크롤 하단에 고정 */
-.composer { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; background: var(--bg); padding: 12px 0 6px; margin-top: 4px; }
+/* 댓글 입력창: 화면 맨 하단 고정 (키보드 시 JS 로 위로 올림) */
+.task-detail { padding-bottom: 78px; }
+.composer {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; gap: 8px; align-items: center;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 10px 14px 12px; max-width: 1080px; margin: 0 auto; will-change: transform;
+}
 .composer input { flex: 1; }
 .composer .btn { flex-shrink: 0; }
 

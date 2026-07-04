@@ -180,6 +180,12 @@ create policy tc_insert on public.task_comments
   for insert to authenticated
   with check (public.is_group_member(group_id, auth.uid()) and author_id = auth.uid());
 
+drop policy if exists tc_update on public.task_comments;
+create policy tc_update on public.task_comments
+  for update to authenticated
+  using (author_id = auth.uid())
+  with check (author_id = auth.uid());
+
 drop policy if exists tc_delete on public.task_comments;
 create policy tc_delete on public.task_comments
   for delete to authenticated

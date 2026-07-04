@@ -194,6 +194,13 @@ export async function addComment({ taskId, groupId, body, authorId }) {
   return data
 }
 
+export async function updateComment(commentId, body) {
+  const { data, error } = await supabase
+    .from('task_comments').update({ body }).eq('id', commentId).select().single()
+  if (error) throw error
+  return data
+}
+
 export async function deleteComment(commentId) {
   const { error } = await supabase.from('task_comments').delete().eq('id', commentId)
   if (error) throw error
