@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
@@ -57,6 +57,29 @@ export default function Layout() {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
   }, [isGroupView])
+
+  // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
+  // → 하단 입력창이 키보드 위로 올라오고, 본문은 그 영역 안에 맞춰진다.
+  const shellRef = useRef(null)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const apply = () => {
+      const el = shellRef.current
+      if (!el) return
+      el.style.height = `${vv.height}px`
+      el.style.top = `${vv.offsetTop}px`
+    }
+    vv.addEventListener('resize', apply)
+    vv.addEventListener('scroll', apply)
+    apply()
+    return () => {
+      vv.removeEventListener('resize', apply)
+      vv.removeEventListener('scroll', apply)
+      const el = shellRef.current
+      if (el) { el.style.height = ''; el.style.top = '' }
+    }
+  }, [])
 
 
   let topbar
@@ -148,7 +171,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" ref={shellRef}>
       {topbar}
       <main className="content">
         <Outlet />
