@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useMatch } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Brand from './Brand'
@@ -40,6 +41,16 @@ export default function Layout() {
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const groupMatch = useMatch('/groups/:groupId')
+
+  // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
+  // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
+  // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
+  // - 그 외(하단이 흰색 탭바): body 흰색
+  const isGroupView = !!(groupConfigMatch || settingsMatch || groupMatch)
+  useEffect(() => {
+    document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
+    return () => { document.body.style.background = '' }
+  }, [isGroupView])
 
   let topbar
   if (groupConfigMatch) {
