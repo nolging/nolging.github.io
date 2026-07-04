@@ -487,3 +487,108 @@ begin
 end;
 $$;
 grant execute on function public.reschedule_task(uuid, timestamptz, text, uuid[]) to authenticated;
+
+-- =============================================================
+--  약속 v2: 날짜/시간 on-off, 반복 종료, 마감 예정 미리 알림
+-- =============================================================
+alter table public.tasks add column if not exists scheduled_time_set boolean not null default true;
+alter table public.tasks add column if not exists repeat_until date;
+alter table public.tasks add column if not exists remind_min int;         -- 분(약속 시간 기준 전), null=없음, 0=정시
+alter table public.tasks add column if not exists remind_at  timestamptz; -- 계산된 알림 시각
+alter table public.tasks add column if not exists reminded   boolean not null default false;
+
+-- 기존 4-인자 RPC 는 신규 7-인자 버전으로 교체
+drop function if exists public.schedule_task(uuid, timestamptz, text, uuid[]);
+drop function if exists public.reschedule_task(uuid, timestamptz, text, uuid[]);
+
+create or replace function public.schedule_task(
+  p_task_id uuid, p_scheduled_at timestamptz, p_time_set boolean,
+  p_repeat text, p_repeat_until date, p_remind int, p_participants uuid[]
+) returns public.tasks language plpgsql security definer set search_path = public as $$
+declare r public.tasks; v_gid uuid; v_remind_at timestamptz;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 신청할 수 있습니다.'; end if;
+  if p_remind is not null and p_scheduled_at is not null then
+    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
+  end if;
+  update public.tasks
+     set status='accepted', assignee_id=auth.uid(), accepted_at=now(),
+         scheduled_at=p_scheduled_at, scheduled_time_set=coalesce(p_time_set, true),
+         repeat_rule=p_repeat, repeat_until=p_repeat_until,
+         remind_min=p_remind, remind_at=v_remind_at, reminded=false
+   where id=p_task_id and status='open' returning * into r;
+  if r.id is null then raise exception '이미 신청되었거나 열려 있지 않은 항목입니다.'; end if;
+  delete from public.task_participants where task_id=p_task_id;
+  insert into public.task_participants(task_id, user_id)
+    select p_task_id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(v_gid, x) on conflict do nothing;
+  return r;
+end; $$;
+grant execute on function public.schedule_task(uuid, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
+
+create or replace function public.reschedule_task(
+  p_task_id uuid, p_scheduled_at timestamptz, p_time_set boolean,
+  p_repeat text, p_repeat_until date, p_remind int, p_participants uuid[]
+) returns public.tasks language plpgsql security definer set search_path = public as $$
+declare r public.tasks; v_gid uuid; v_remind_at timestamptz;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 수정할 수 있습니다.'; end if;
+  if p_remind is not null and p_scheduled_at is not null then
+    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
+  end if;
+  update public.tasks
+     set scheduled_at=p_scheduled_at, scheduled_time_set=coalesce(p_time_set, true),
+         repeat_rule=p_repeat, repeat_until=p_repeat_until,
+         remind_min=p_remind, remind_at=v_remind_at, reminded=false
+   where id=p_task_id returning * into r;
+  delete from public.task_participants where task_id=p_task_id;
+  insert into public.task_participants(task_id, user_id)
+    select p_task_id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(v_gid, x) on conflict do nothing;
+  return r;
+end; $$;
+grant execute on function public.reschedule_task(uuid, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
+
+-- ---- 마감 예정 미리 알림 발송 (pg_cron 이 매분 호출) -----------
+-- remind_at 이 지난 약속의 참여자에게 notifications 행을 넣는다.
+-- (그 INSERT 가 기존 웹훅/푸시 경로를 태워 휴대폰 알림까지 전달)
+create or replace function public.dispatch_due_reminders()
+returns integer language plpgsql security definer set search_path = public as $$
+declare t record; n int := 0;
+begin
+  for t in
+    select * from public.tasks
+    where remind_at is not null and reminded = false
+      and remind_at <= now() and status = 'accepted'
+  loop
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+    select distinct s.uid, null, 'reminder',
+           '곧 약속이에요 · ' || t.title,
+           to_char(t.scheduled_at at time zone 'Asia/Seoul', 'MM월 DD일 HH24:MI'),
+           t.group_id, t.id
+    from (
+      select tp.user_id as uid from public.task_participants tp where tp.task_id = t.id
+      union
+      select t.assignee_id where t.assignee_id is not null
+    ) s
+    where s.uid is not null;
+    update public.tasks set reminded = true where id = t.id;
+    n := n + 1;
+  end loop;
+  return n;
+end; $$;
+
+-- pg_cron 매분 스케줄 (이미 있으면 교체)
+create extension if not exists pg_cron;
+do $$
+begin
+  perform cron.unschedule('nolging-reminders');
+exception when others then null;
+end $$;
+select cron.schedule('nolging-reminders', '* * * * *', $$select public.dispatch_due_reminders()$$);

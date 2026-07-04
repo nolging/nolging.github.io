@@ -270,33 +270,49 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .push-banner-text strong { font-size: 14px; }
 .push-banner .btn { flex-shrink: 0; }
 
-/* ---- 약속 잡기 페이지 (iOS 미리 알림 스타일) ---- */
-.sched-headline { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-.ios-list {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  overflow: hidden; margin-bottom: 16px;
+/* ---- 약속 잡기 페이지 (iOS 미리 알림 스타일, 박스 없이 행) ---- */
+.sched-headline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sched-rows { margin-bottom: 22px; }
+.sched-row {
+  display: flex; align-items: center; gap: 10px; min-height: 48px;
+  padding: 10px 2px; border-bottom: 1px solid var(--border);
 }
-.ios-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 14px; border-top: 1px solid var(--border);
+.sched-row.sub { border-bottom: none; padding-bottom: 4px; }
+.sched-row-label { font-weight: 600; font-size: 15px; flex-shrink: 0; }
+.sched-spacer { flex: 1; }
+.sched-val {
+  border: none; background: none; font-size: 15px; color: var(--text);
+  text-align: right; padding: 4px 0; max-width: 60%;
 }
-.ios-row:first-child { border-top: none; }
-.ios-row-label { font-weight: 600; font-size: 15px; flex-shrink: 0; }
-.ios-row input, .ios-row select {
-  border: none; background: none; text-align: right; font-size: 15px; color: var(--text);
-  padding: 4px 0; max-width: 62%;
+.sched-val:focus { outline: none; }
+.sched-num { width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
+.sched-custom { padding: 2px 2px 12px; border-bottom: 1px solid var(--border); }
+.weekday-row { display: flex; gap: 6px; margin-top: 8px; }
+.weekday {
+  flex: 1; max-width: 42px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--border); background: none; color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.ios-row input:focus, .ios-row select:focus { outline: none; }
+.weekday.on { background: var(--primary); border-color: var(--primary); color: #fff; }
 .sched-sec-title { font-weight: 700; font-size: 14px; margin: 4px 2px 8px; }
-.member-pick {
-  list-style: none; margin: 0 0 16px; padding: 0;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+
+/* iOS 스타일 스위치 */
+.switch { position: relative; display: inline-flex; width: 46px; height: 28px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 999px; transition: .2s; }
+.switch .slider::before {
+  content: ''; position: absolute; width: 24px; height: 24px; left: 2px; top: 2px;
+  background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
 }
+.switch input:checked + .slider { background: #34c759; }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+
+/* 참여 멤버 (박스 없이 행) */
+.member-pick { list-style: none; margin: 0 0 20px; padding: 0; }
 .member-pick-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-  border-top: 1px solid var(--border); cursor: pointer;
+  display: flex; align-items: center; gap: 10px; padding: 10px 2px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
 }
-.member-pick-item:first-child { border-top: none; }
 .member-pick-item.fixed { cursor: default; }
 .member-pick-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
 .pick-check {

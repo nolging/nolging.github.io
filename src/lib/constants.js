@@ -69,7 +69,48 @@ export const REPEAT_OPTIONS = [
   { value: 'quarterly', label: '3개월마다' },
   { value: 'semiannually', label: '6개월마다' },
   { value: 'yearly', label: '매년' },
+  { value: 'custom', label: '사용자화' },
 ]
-export function repeatLabel(v) {
-  return REPEAT_OPTIONS.find((o) => o.value === v)?.label ?? '안 함'
+
+// 사용자화 반복: 빈도 단위
+export const CUSTOM_FREQ = [
+  { value: 'daily', label: '일' },
+  { value: 'weekly', label: '주' },
+  { value: 'monthly', label: '개월' },
+  { value: 'yearly', label: '년' },
+]
+export const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+// 마감 예정 미리 알림 (약속 시간 기준 얼마 전). value=분(문자열), ''=없음
+export const REMIND_OPTIONS = [
+  { value: '', label: '없음' },
+  { value: '0', label: '정시' },
+  { value: '5', label: '5분 전' },
+  { value: '10', label: '10분 전' },
+  { value: '30', label: '30분 전' },
+  { value: '60', label: '1시간 전' },
+  { value: '1440', label: '1일 전' },
+  { value: '10080', label: '1주 전' },
+]
+export function remindLabel(min) {
+  if (min === null || min === undefined || min === '') return '없음'
+  return REMIND_OPTIONS.find((o) => o.value === String(min))?.label ?? `${min}분 전`
+}
+
+// 반복 규칙 → 표시 문자열 (프리셋 키 또는 사용자화 JSON)
+export function repeatLabel(rule) {
+  if (!rule || rule === 'none') return '안 함'
+  if (typeof rule === 'string' && rule[0] === '{') {
+    try {
+      const c = JSON.parse(rule)
+      const every = { daily: '매일', weekly: '매주', monthly: '매월', yearly: '매년' }[c.freq] || ''
+      const unit = { daily: '일', weekly: '주', monthly: '개월', yearly: '년' }[c.freq] || ''
+      const base = c.interval > 1 ? `${c.interval}${unit}마다` : every
+      if (c.freq === 'weekly' && c.weekdays?.length) {
+        return `${base} ${c.weekdays.map((d) => WEEKDAYS[d]).join('·')}`
+      }
+      return base
+    } catch { return '사용자화' }
+  }
+  return REPEAT_OPTIONS.find((o) => o.value === rule)?.label ?? '안 함'
 }

@@ -178,26 +178,29 @@ export async function deleteTask(taskId) {
 
 // ---- 약속 잡기 (놀깅) ----------------------------------------
 
-// 놀기 신청 확정: 일정/반복/참여자 저장 + 상태 accepted
-export async function scheduleTask({ taskId, scheduledAt, repeat, participantIds }) {
-  const { data, error } = await supabase.rpc('schedule_task', {
+function scheduleArgs({ taskId, scheduledAt, timeSet, repeat, repeatUntil, remind, participantIds }) {
+  const r = remind === '' || remind === null || remind === undefined ? null : Number(remind)
+  return {
     p_task_id: taskId,
-    p_scheduled_at: scheduledAt,
+    p_scheduled_at: scheduledAt ?? null,
+    p_time_set: timeSet ?? true,
     p_repeat: repeat || null,
+    p_repeat_until: repeatUntil || null,
+    p_remind: r,
     p_participants: participantIds ?? [],
-  })
+  }
+}
+
+// 놀기 신청 확정: 일정/시간여부/반복/반복종료/미리알림/참여자 저장 + 상태 accepted
+export async function scheduleTask(opts) {
+  const { data, error } = await supabase.rpc('schedule_task', scheduleArgs(opts))
   if (error) throw error
   return Array.isArray(data) ? data[0] : data
 }
 
-// 이미 잡힌 약속의 일정/반복/참여자 수정
-export async function rescheduleTask({ taskId, scheduledAt, repeat, participantIds }) {
-  const { data, error } = await supabase.rpc('reschedule_task', {
-    p_task_id: taskId,
-    p_scheduled_at: scheduledAt,
-    p_repeat: repeat || null,
-    p_participants: participantIds ?? [],
-  })
+// 이미 잡힌 약속 수정
+export async function rescheduleTask(opts) {
+  const { data, error } = await supabase.rpc('reschedule_task', scheduleArgs(opts))
   if (error) throw error
   return Array.isArray(data) ? data[0] : data
 }

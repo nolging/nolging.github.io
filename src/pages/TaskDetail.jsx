@@ -6,7 +6,7 @@ import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   acceptTask, completeTask, reopenTask, listTaskParticipants,
 } from '../lib/api'
-import { taskTerms, repeatLabel } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel } from '../lib/constants'
 import Avatar from '../components/Avatar'
 
 function formatTime(iso) {
@@ -15,11 +15,12 @@ function formatTime(iso) {
   } catch { return '' }
 }
 
-function formatWhen(iso) {
+function formatWhen(iso, timeSet = true) {
   try {
-    return new Date(iso).toLocaleString('ko-KR', {
-      month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit',
-    })
+    const opts = timeSet
+      ? { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }
+      : { month: 'long', day: 'numeric', weekday: 'short' }
+    return new Date(iso).toLocaleString('ko-KR', opts)
   } catch { return '' }
 }
 
@@ -268,8 +269,12 @@ export default function TaskDetail() {
         <div className="appt">
           <div className="appt-when">
             <span className="appt-cal" aria-hidden="true">🗓</span>
-            <span>{formatWhen(task.scheduled_at)}</span>
-            {task.repeat_rule && <span className="appt-repeat">{repeatLabel(task.repeat_rule)}</span>}
+            <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+            {task.repeat_rule && (
+              <span className="appt-repeat">
+                {repeatLabel(task.repeat_rule)}{task.repeat_until ? ` ~${task.repeat_until}` : ''}
+              </span>
+            )}
             {isNolging && mine && task.status === 'accepted' && (
               <button className="btn btn-ghost btn-sm appt-edit"
                 onClick={() => navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })}>
@@ -277,6 +282,9 @@ export default function TaskDetail() {
               </button>
             )}
           </div>
+          {task.remind_min !== null && task.remind_min !== undefined && (
+            <div className="appt-remind muted sm">⏰ 미리 알림 · {remindLabel(task.remind_min)}</div>
+          )}
           {participants.length > 0 && (
             <div className="appt-people">
               {participants.map((uid) => (

@@ -24,6 +24,7 @@ const ICONS = {
   new_task: '📝',
   new_member: '👋',
   accept: '🙌',
+  reminder: '⏰',
 }
 
 export default function Notifications() {

@@ -4,15 +4,22 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask,
 } from '../lib/api'
-import { REPEAT_OPTIONS } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS } from '../lib/constants'
 import Avatar from '../components/Avatar'
 
 const pad = (n) => String(n).padStart(2, '0')
-function dateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
-function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}` }
+const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const timeStr = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 function defaultDate() { return dateStr(new Date()) }
-function defaultTime() {
-  const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return timeStr(d)
+function defaultTime() { const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return timeStr(d) }
+
+function Switch({ checked, onChange }) {
+  return (
+    <label className="switch" onClick={(e) => e.stopPropagation()}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="slider" />
+    </label>
+  )
 }
 
 export default function ScheduleAppointment() {
@@ -27,58 +34,88 @@ export default function ScheduleAppointment() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const [dateOn, setDateOn] = useState(true)
+  const [timeOn, setTimeOn] = useState(true)
   const [date, setDate] = useState(defaultDate())
   const [time, setTime] = useState(defaultTime())
   const [repeat, setRepeat] = useState('none')
+  const [cFreq, setCFreq] = useState('weekly')
+  const [cInterval, setCInterval] = useState(1)
+  const [cWeekdays, setCWeekdays] = useState(() => new Set())
+  const [untilOn, setUntilOn] = useState(false)
+  const [until, setUntil] = useState(defaultDate())
+  const [remind, setRemind] = useState('')
   const [participants, setParticipants] = useState(() => new Set())
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, t, m] = await Promise.all([
-        getGroup(groupId), getTask(taskId), listMemberCards(groupId),
-      ])
+      const [g, t, m] = await Promise.all([getGroup(groupId), getTask(taskId), listMemberCards(groupId)])
       setGroup(g); setTask(t); setMembers(m)
 
-      // 재조정(이미 잡힌 약속)이면 기존 값 프리필
       if (t.scheduled_at) {
         const d = new Date(t.scheduled_at)
-        setDate(dateStr(d)); setTime(timeStr(d))
+        setDateOn(true); setDate(dateStr(d))
+        setTimeOn(t.scheduled_time_set !== false); setTime(timeStr(d))
+      } else if (t.status === 'accepted') {
+        setDateOn(false)
       }
-      if (t.repeat_rule) setRepeat(t.repeat_rule)
+      if (t.repeat_rule) {
+        if (t.repeat_rule[0] === '{') {
+          try {
+            const c = JSON.parse(t.repeat_rule)
+            setRepeat('custom'); setCFreq(c.freq || 'weekly'); setCInterval(c.interval || 1)
+            setCWeekdays(new Set(c.weekdays || []))
+          } catch { setRepeat('none') }
+        } else setRepeat(t.repeat_rule)
+      }
+      if (t.repeat_until) { setUntilOn(true); setUntil(t.repeat_until) }
+      if (t.remind_min !== null && t.remind_min !== undefined) setRemind(String(t.remind_min))
 
       const existing = t.status === 'accepted' ? await listTaskParticipants(taskId) : []
-      // 기본 참여자: 위시리스트 작성자 + 신청자(나) (+ 기존 참여자)
       setParticipants(new Set([t.created_by, profile.id, ...existing].filter(Boolean)))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId, profile.id])
   useEffect(() => { load() }, [load])
 
   const isReschedule = task?.status === 'accepted'
-  const mandatory = useMemo(
-    () => new Set([task?.created_by, profile.id].filter(Boolean)),
-    [task, profile.id],
-  )
+  const mandatory = useMemo(() => new Set([task?.created_by, profile.id].filter(Boolean)), [task, profile.id])
   const needChoose = members.length >= 3
 
-  function toggle(uid) {
+  function toggleMember(uid) {
     if (mandatory.has(uid)) return
-    setParticipants((prev) => {
-      const next = new Set(prev)
-      next.has(uid) ? next.delete(uid) : next.add(uid)
-      return next
-    })
+    setParticipants((p) => { const n = new Set(p); n.has(uid) ? n.delete(uid) : n.add(uid); return n })
+  }
+  function toggleWeekday(i) {
+    setCWeekdays((p) => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n })
+  }
+
+  function buildRepeat() {
+    if (!dateOn || repeat === 'none') return null
+    if (repeat !== 'custom') return repeat
+    const obj = { type: 'custom', freq: cFreq, interval: Math.max(1, Number(cInterval) || 1) }
+    if (cFreq === 'weekly') obj.weekdays = [...cWeekdays].sort((a, b) => a - b)
+    return JSON.stringify(obj)
   }
 
   async function submit(e) {
     e.preventDefault()
     if (saving) return
-    if (!date || !time) { setError('날짜와 시간을 설정해 주세요.'); return }
     setSaving(true); setError('')
     try {
-      const scheduledAt = new Date(`${date}T${time}`).toISOString()
-      const ids = needChoose ? Array.from(participants) : Array.from(mandatory)
-      const payload = { taskId, scheduledAt, repeat: repeat === 'none' ? null : repeat, participantIds: ids }
+      let scheduledAt = null, timeSet = false
+      if (dateOn) {
+        if (!date) { setError('날짜를 설정해 주세요.'); setSaving(false); return }
+        scheduledAt = new Date(`${date}T${timeOn ? time : '00:00'}`).toISOString()
+        timeSet = timeOn
+      }
+      const rule = buildRepeat()
+      const payload = {
+        taskId, scheduledAt, timeSet, repeat: rule,
+        repeatUntil: (dateOn && rule && untilOn) ? until : null,
+        remind: dateOn ? remind : '',
+        participantIds: needChoose ? [...participants] : [...mandatory],
+      }
       if (isReschedule) await rescheduleTask(payload)
       else await scheduleTask(payload)
       navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
@@ -97,21 +134,73 @@ export default function ScheduleAppointment() {
       </div>
 
       <form onSubmit={submit}>
-        <div className="ios-list">
-          <label className="ios-row">
-            <span className="ios-row-label">날짜</span>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
-          <label className="ios-row">
-            <span className="ios-row-label">시간</span>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-          </label>
-          <label className="ios-row">
-            <span className="ios-row-label">반복</span>
-            <select value={repeat} onChange={(e) => setRepeat(e.target.value)}>
-              {REPEAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </label>
+        <div className="sched-rows">
+          <div className="sched-row">
+            <span className="sched-row-label">날짜</span>
+            <span className="sched-spacer" />
+            {dateOn && <input type="date" className="sched-val" value={date} onChange={(e) => setDate(e.target.value)} />}
+            <Switch checked={dateOn} onChange={setDateOn} />
+          </div>
+
+          {dateOn && (
+            <div className="sched-row">
+              <span className="sched-row-label">시간</span>
+              <span className="sched-spacer" />
+              {timeOn && <input type="time" className="sched-val" value={time} onChange={(e) => setTime(e.target.value)} />}
+              <Switch checked={timeOn} onChange={setTimeOn} />
+            </div>
+          )}
+
+          {dateOn && (
+            <div className="sched-row">
+              <span className="sched-row-label">반복</span>
+              <span className="sched-spacer" />
+              <select className="sched-val" value={repeat} onChange={(e) => setRepeat(e.target.value)}>
+                {REPEAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
+
+          {dateOn && repeat === 'custom' && (
+            <div className="sched-custom">
+              <div className="sched-row sub">
+                <span className="sched-row-label">빈도</span>
+                <span className="sched-spacer" />
+                <input type="number" min="1" className="sched-val sched-num" value={cInterval}
+                  onChange={(e) => setCInterval(e.target.value)} />
+                <select className="sched-val" value={cFreq} onChange={(e) => setCFreq(e.target.value)}>
+                  {CUSTOM_FREQ.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              {cFreq === 'weekly' && (
+                <div className="weekday-row">
+                  {WEEKDAYS.map((w, i) => (
+                    <button type="button" key={i} className={`weekday ${cWeekdays.has(i) ? 'on' : ''}`}
+                      onClick={() => toggleWeekday(i)}>{w}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {dateOn && repeat !== 'none' && (
+            <div className="sched-row">
+              <span className="sched-row-label">반복 종료</span>
+              <span className="sched-spacer" />
+              {untilOn && <input type="date" className="sched-val" value={until} onChange={(e) => setUntil(e.target.value)} />}
+              <Switch checked={untilOn} onChange={setUntilOn} />
+            </div>
+          )}
+
+          {dateOn && (
+            <div className="sched-row">
+              <span className="sched-row-label">마감 예정 미리 알림</span>
+              <span className="sched-spacer" />
+              <select className="sched-val" value={remind} onChange={(e) => setRemind(e.target.value)}>
+                {REMIND_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
         </div>
 
         {needChoose && (
@@ -122,13 +211,10 @@ export default function ScheduleAppointment() {
                 const checked = participants.has(m.user_id)
                 const fixed = mandatory.has(m.user_id)
                 return (
-                  <li key={m.user_id}
-                    className={`member-pick-item ${checked ? 'on' : ''} ${fixed ? 'fixed' : ''}`}
-                    onClick={() => toggle(m.user_id)}>
+                  <li key={m.user_id} className={`member-pick-item ${fixed ? 'fixed' : ''}`} onClick={() => toggleMember(m.user_id)}>
                     <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
                     <span className="member-pick-name">
-                      {m.display_nickname}
-                      {fixed && <span className="muted sm"> · 필수</span>}
+                      {m.display_nickname}{fixed && <span className="muted sm"> · 필수</span>}
                     </span>
                     <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
                   </li>
