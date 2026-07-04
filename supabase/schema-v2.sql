@@ -560,24 +560,25 @@ grant execute on function public.reschedule_task(uuid, timestamptz, boolean, tex
 -- (그 INSERT 가 기존 웹훅/푸시 경로를 태워 휴대폰 알림까지 전달)
 create or replace function public.dispatch_due_reminders()
 returns integer language plpgsql security definer set search_path = public as $$
-declare t record; v_body text; n int := 0;
+declare t record; v_title text; n int := 0;
 begin
   for t in
     select * from public.tasks
     where remind_at is not null and reminded = false
       and remind_at <= now() and status = 'accepted'
   loop
-    v_body := to_char(t.scheduled_at at time zone 'Asia/Seoul', 'MM월 DD일 HH24:MI');
+    v_title := '[' || t.title || '] '
+             || to_char(t.scheduled_at at time zone 'Asia/Seoul', 'MM월 DD일 HH24:MI');
 
     -- 참여자에게
     insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-    select p.user_id, null::uuid, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id
+    select p.user_id, null::uuid, 'reminder', v_title, '준비해 주세요', t.group_id, t.id
     from public.task_participants p where p.task_id = t.id;
 
     -- 참여자가 없으면 담당자에게라도
     if not found and t.assignee_id is not null then
       insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-      values (t.assignee_id, null::uuid, 'reminder', '곧 약속이에요 · ' || t.title, v_body, t.group_id, t.id);
+      values (t.assignee_id, null::uuid, 'reminder', v_title, '준비해 주세요', t.group_id, t.id);
     end if;
 
     update public.tasks set reminded = true where id = t.id;
