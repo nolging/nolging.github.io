@@ -362,3 +362,33 @@ $$;
 drop trigger if exists trg_notify_task_accept on public.tasks;
 create trigger trg_notify_task_accept after update on public.tasks
   for each row execute function public.tg_notify_task_accept();
+
+-- =============================================================
+--  웹 푸시 (휴대폰 알림센터)
+--  브라우저 푸시 구독 저장소. notifications INSERT → Database Webhook
+--  → Edge Function(send-push) 가 이 구독들로 푸시를 전송한다.
+-- =============================================================
+create table if not exists public.push_subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  endpoint   text not null unique,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_push_subscriptions_user on public.push_subscriptions(user_id);
+alter table public.push_subscriptions enable row level security;
+
+-- 본인 구독만 관리 (Edge Function 은 service_role 로 RLS 우회하여 전체 조회)
+drop policy if exists ps_select on public.push_subscriptions;
+create policy ps_select on public.push_subscriptions
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists ps_insert on public.push_subscriptions;
+create policy ps_insert on public.push_subscriptions
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists ps_update on public.push_subscriptions;
+create policy ps_update on public.push_subscriptions
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists ps_delete on public.push_subscriptions;
+create policy ps_delete on public.push_subscriptions
+  for delete to authenticated using (user_id = auth.uid());

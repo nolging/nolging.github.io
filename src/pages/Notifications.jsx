@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import {
   listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification,
 } from '../lib/api'
+import { pushStatus, enablePush, disablePush } from '../lib/push'
 
 function timeAgo(iso) {
   try {
@@ -26,9 +28,12 @@ const ICONS = {
 
 export default function Notifications() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [pStatus, setPStatus] = useState(null) // 푸시 상태
+  const [pBusy, setPBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -37,6 +42,15 @@ export default function Notifications() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useEffect(() => { pushStatus().then(setPStatus).catch(() => setPStatus('unsupported')) }, [])
+
+  async function togglePush() {
+    setPBusy(true); setError('')
+    try {
+      if (pStatus === 'subscribed') { await disablePush(); setPStatus('default') }
+      else { await enablePush(profile.id); setPStatus('subscribed') }
+    } catch (err) { setError(err.message) } finally { setPBusy(false) }
+  }
 
   function targetOf(n) {
     if (n.task_id && n.group_id) return `/groups/${n.group_id}/tasks/${n.task_id}`
@@ -72,6 +86,26 @@ export default function Notifications() {
         <h2 className="notif-title">알림</h2>
         {hasUnread && <button className="btn btn-ghost btn-sm" onClick={markAll}>모두 읽음</button>}
       </div>
+
+      {pStatus && pStatus !== 'unsupported' && (
+        <div className="push-banner">
+          <div className="push-banner-text">
+            <strong>휴대폰 알림</strong>
+            <span className="muted sm">
+              {pStatus === 'subscribed' && '앱을 열지 않아도 알림센터로 알림을 받아요.'}
+              {pStatus === 'default' && '앱을 열지 않아도 알림센터로 알림을 받으려면 켜세요.'}
+              {pStatus === 'denied' && '브라우저 설정에서 이 사이트의 알림을 허용해 주세요.'}
+              {pStatus === 'need-standalone' && '아이폰은 홈 화면에 추가한 뒤 이 화면에서 켤 수 있어요.'}
+            </span>
+          </div>
+          {(pStatus === 'default' || pStatus === 'subscribed') && (
+            <button className={`btn btn-sm ${pStatus === 'subscribed' ? 'btn-ghost' : 'btn-primary'}`}
+              onClick={togglePush} disabled={pBusy}>
+              {pBusy ? '…' : pStatus === 'subscribed' ? '끄기' : '켜기'}
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 
