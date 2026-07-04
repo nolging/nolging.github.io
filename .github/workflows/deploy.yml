@@ -41,7 +41,32 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      # 재시도 중 성공한 시도의 URL 사용 (앞선 시도가 비면 다음 것 사용)
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment-2.outputs.page_url || steps.deployment-3.outputs.page_url }}
     steps:
-      - id: deployment
+      # GitHub Pages 배포 API 가 간헐적으로 "Deployment failed, try again later"
+      # 를 반환해 실패하므로, 최대 3회까지 자동 재시도한다.
+      - name: Deploy (attempt 1)
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Wait before retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 20
+
+      - name: Deploy (attempt 2)
+        id: deployment-2
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Wait before final retry
+        if: steps.deployment.outcome == 'failure' && steps.deployment-2.outcome == 'failure'
+        run: sleep 30
+
+      # 마지막 시도는 continue-on-error 없음 → 여기서도 실패하면 워크플로 실패로 표시
+      - name: Deploy (attempt 3, final)
+        id: deployment-3
+        if: steps.deployment.outcome == 'failure' && steps.deployment-2.outcome == 'failure'
         uses: actions/deploy-pages@v4
