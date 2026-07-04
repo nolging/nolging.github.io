@@ -40,13 +40,15 @@ export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
+  const membersMatch = useMatch('/groups/:groupId/members')
+  const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(groupConfigMatch || settingsMatch || groupMatch)
+  const isGroupView = !!(groupConfigMatch || settingsMatch || membersMatch || taskNewMatch || groupMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -69,6 +71,24 @@ export default function Layout() {
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">설정</span>
+      </header>
+    )
+  } else if (membersMatch) {
+    // 멤버 페이지: 좌측 뒤로(그룹으로), 제목 "멤버"
+    const id = membersMatch.params.groupId
+    topbar = (
+      <header className="topbar">
+        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">멤버</span>
+      </header>
+    )
+  } else if (taskNewMatch) {
+    // 태스크 작성 페이지: 좌측 뒤로(그룹으로), 제목 "태스크 작성"
+    const id = taskNewMatch.params.groupId
+    topbar = (
+      <header className="topbar">
+        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">태스크 작성</span>
       </header>
     )
   } else if (groupMatch) {
@@ -102,7 +122,7 @@ export default function Layout() {
   }
 
   // 기본(메인) 화면에서만 하단 내비게이션 노출 (모바일 전용, CSS로 제어)
-  const showBottomNav = !groupConfigMatch && !settingsMatch && !groupMatch
+  const showBottomNav = !isGroupView
 
   return (
     <div className="app-shell">

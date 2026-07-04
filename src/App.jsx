@@ -5,6 +5,8 @@ import Login from './pages/Login'
 import RequestAccess from './pages/RequestAccess'
 import Dashboard from './pages/Dashboard'
 import GroupDetail from './pages/GroupDetail'
+import GroupMembers from './pages/GroupMembers'
+import CreateTask from './pages/CreateTask'
 import GroupSettingsPage from './pages/GroupSettingsPage'
 import GroupConfigPage from './pages/GroupConfigPage'
 import JoinGroup from './pages/JoinGroup'
@@ -26,6 +28,8 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/groups/:groupId" element={<GroupDetail />} />
+        <Route path="/groups/:groupId/members" element={<GroupMembers />} />
+        <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />
         <Route path="/groups/:groupId/settings" element={<GroupSettingsPage />} />
         <Route path="/groups/:groupId/settings/group" element={<GroupConfigPage />} />
         <Route path="/join" element={<JoinGroup />} />
