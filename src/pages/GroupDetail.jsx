@@ -1,20 +1,16 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, createTask,
   acceptTask, completeTask, reopenTask, deleteTask,
-  leaveGroup, deleteGroup,
 } from '../lib/api'
 import { typeLabel, themeLabel, TASK_STATUS_LABEL } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import GroupSettings from '../components/GroupSettings'
-import MySettings from '../components/MySettings'
 
 export default function GroupDetail() {
   const { groupId } = useParams()
   const { profile } = useAuth()
-  const navigate = useNavigate()
 
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
@@ -22,7 +18,6 @@ export default function GroupDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [panel, setPanel] = useState(null) // 'group' | 'me' | null
 
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
@@ -30,7 +25,6 @@ export default function GroupDetail() {
   const [filter, setFilter] = useState('all')
 
   const isOwner = group && group.owner_id === profile?.id
-  const me = useMemo(() => members.find((m) => m.user_id === profile?.id), [members, profile])
 
   // userId -> {name, avatar} (그룹 내 표시 이름)
   const nameMap = useMemo(() => {
@@ -70,15 +64,6 @@ export default function GroupDetail() {
     setCopied(true); setTimeout(() => setCopied(false), 1500)
   }
 
-  async function handleLeave() {
-    if (!confirm('이 그룹에서 나가시겠습니까?')) return
-    await runAction(() => leaveGroup(groupId, profile.id)); navigate('/')
-  }
-  async function handleDeleteGroup() {
-    if (!confirm('그룹을 삭제하면 모든 태스크가 사라집니다. 삭제할까요?')) return
-    await runAction(() => deleteGroup(groupId)); navigate('/')
-  }
-
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !group) {
     return (
@@ -102,27 +87,7 @@ export default function GroupDetail() {
           <h1>{group.name}</h1>
           {group.description && <p className="muted">{group.description}</p>}
         </div>
-        <div className="row-gap">
-          <button className="btn btn-sm" onClick={() => setPanel(panel === 'me' ? null : 'me')}>내 설정</button>
-          {isOwner && <button className="btn btn-sm" onClick={() => setPanel(panel === 'group' ? null : 'group')}>그룹 설정</button>}
-          {isOwner
-            ? <button className="btn btn-danger btn-sm" onClick={handleDeleteGroup}>그룹 삭제</button>
-            : <button className="btn btn-ghost btn-sm" onClick={handleLeave}>나가기</button>}
-        </div>
       </div>
-
-      {panel === 'group' && isOwner && (
-        <div className="card"><h3 className="card-title">그룹 설정</h3>
-          <GroupSettings group={group} onClose={() => setPanel(null)}
-            onSaved={(g) => { setGroup(g); setPanel(null) }} />
-        </div>
-      )}
-      {panel === 'me' && me && (
-        <div className="card"><h3 className="card-title">내 설정 (이 그룹)</h3>
-          <MySettings group={group} me={me} onClose={() => setPanel(null)}
-            onSaved={() => { setPanel(null); load() }} />
-        </div>
-      )}
 
       <div className="two-col">
         <section className="col-main">
