@@ -31,6 +31,7 @@ export default function TaskDetail() {
   const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
   const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
+  const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
   const inputRef = useRef(null)
@@ -43,6 +44,15 @@ export default function TaskDetail() {
 
   // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+
+  // 방금 작성/수정한 댓글을 화면에 보이게 스크롤 + 강조 (애니메이션 후 해제)
+  useEffect(() => {
+    if (!highlightId) return
+    const el = document.querySelector(`[data-cid="${highlightId}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const t = setTimeout(() => setHighlightId(null), 1800)
+    return () => clearTimeout(t)
+  }, [highlightId])
 
   const isOwner = group && group.owner_id === profile?.id
   const terms = taskTerms(group?.group_type)
@@ -100,14 +110,18 @@ export default function TaskDetail() {
     if (!body.trim() || sending) return
     setSending(true); setError('')
     try {
+      let targetId
       if (editingId) {
         await updateComment(editingId, body.trim())
+        targetId = editingId
         setEditingId(null)
       } else {
-        await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id, parentId: replyParent?.id })
+        const created = await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id, parentId: replyParent?.id })
+        targetId = created?.id
         setReplyParent(null)
       }
       setBody(''); await loadComments()
+      setHighlightId(targetId || null)
     } catch (err) { setError(err.message) } finally { setSending(false) }
   }
 
@@ -144,7 +158,7 @@ export default function TaskDetail() {
     const canEdit = c.author_id === profile.id
     const canDelete = c.author_id === profile.id || isOwner
     return (
-      <div className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''}`}>
+      <div data-cid={c.id} className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
         <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
         <div className="comment-body">
           <div className="comment-meta">
