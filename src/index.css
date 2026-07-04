@@ -104,8 +104,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
-  padding: env(safe-area-inset-top) calc(24px + env(safe-area-inset-right)) 0 calc(24px + env(safe-area-inset-left));
-  height: calc(58px + env(safe-area-inset-top));
+  padding: 0 24px; height: 58px;
   background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10;
 }
 .topbar-heading { font-weight: 700; font-size: 1.05rem; color: var(--text); }
@@ -289,8 +288,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .content { padding: 16px 12px; }
   .topbar {
     gap: 10px;
-    padding: env(safe-area-inset-top) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
-    height: calc(54px + env(safe-area-inset-top));
+    padding: 0 14px; height: 54px;
   }
   .brand .brand-word { font-size: 1.05rem; }
   .topnav { display: none; }          /* 모바일: 메뉴는 하단 내비게이션으로 이동 */
