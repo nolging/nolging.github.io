@@ -595,3 +595,25 @@ begin
 exception when others then null;
 end $$;
 select cron.schedule('nolging-reminders', '* * * * *', $$select public.dispatch_due_reminders()$$);
+
+-- ---- RPC: 약속 취소 (참여자 누구나) → 위시리스트(open) 로 복귀 ----
+create or replace function public.cancel_appointment(p_task_id uuid)
+returns public.tasks language plpgsql security definer set search_path = public as $$
+declare r public.tasks; v_gid uuid; v_ok boolean;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  v_ok := public.is_group_owner(v_gid, auth.uid())
+       or exists (select 1 from public.tasks t where t.id = p_task_id and t.created_by = auth.uid())
+       or exists (select 1 from public.task_participants tp where tp.task_id = p_task_id and tp.user_id = auth.uid());
+  if not v_ok then raise exception '약속 참여자만 취소할 수 있습니다.'; end if;
+
+  update public.tasks
+     set status='open', assignee_id=null, accepted_at=null, completed_at=null,
+         scheduled_at=null, scheduled_time_set=true, repeat_rule=null, repeat_until=null,
+         remind_min=null, remind_at=null, reminded=false
+   where id = p_task_id returning * into r;
+  delete from public.task_participants where task_id = p_task_id;
+  return r;
+end; $$;
+grant execute on function public.cancel_appointment(uuid) to authenticated;

@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext } from 'react
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
-  acceptTask, completeTask, reopenTask, listTaskParticipants,
+  acceptTask, completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel } from '../lib/constants'
 import Avatar from '../components/Avatar'
@@ -44,6 +44,7 @@ export default function TaskDetail() {
   const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
   const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
+  const [headMenu, setHeadMenu] = useState(false)      // 상단 약속 ⋮ 메뉴
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
@@ -137,6 +138,22 @@ export default function TaskDetail() {
   function acceptOrSchedule() {
     if (isNolging) navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })
     else runTaskAction(() => acceptTask(task.id, profile.id))
+  }
+
+  // 상단 약속 메뉴 동작
+  function goEditAppointment() {
+    setHeadMenu(false)
+    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })
+  }
+  async function doCancelAppointment() {
+    setHeadMenu(false)
+    if (!confirm('약속을 취소하고 위시리스트로 되돌릴까요?')) return
+    try { await cancelAppointment(taskId); await load() } catch (err) { setError(err.message) }
+  }
+  async function doDeleteTask() {
+    setHeadMenu(false)
+    if (!confirm('삭제하시겠습니까? 약속과 댓글도 함께 삭제됩니다.')) return
+    try { await deleteTask(taskId); navigate(`/groups/${groupId}`) } catch (err) { setError(err.message) }
   }
 
   // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
@@ -246,6 +263,12 @@ export default function TaskDetail() {
   if (!task) return null
 
   const mine = task.assignee_id === profile.id
+  const isScheduled = !!task.scheduled_at
+  const isCreator = task.created_by === profile.id
+  const isParticipant = isCreator || participants.includes(profile.id)
+  const extra = participants.length - 3
+  const canComplete = task.status === 'accepted' && (isScheduled ? isParticipant : mine)
+  const showActions = task.status !== 'done' || !isScheduled
 
   return (
     <div className="page task-detail">
@@ -254,28 +277,44 @@ export default function TaskDetail() {
           {task.category && <span className="cat-chip">{task.category}</span>}
           <span className="task-name td-name">{task.title}</span>
         </div>
-        <span className="task-author">
-          <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
-          <span className="task-author-name">{nameOf(task.created_by)}</span>
-        </span>
-      </div>
-
-      {task.description && <p className="td-desc">{task.description}</p>}
-
-      <div className="td-actions">
-        {task.assignee_id && (
-          <span className="task-person"><Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
-        )}
-        <div className="task-actions">
-          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
-          {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={() => runTaskAction(() => completeTask(task.id))}>완료</button>}
-          {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
-          {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={() => runTaskAction(() => reopenTask(task.id))}>다시 열기</button>}
+        <div className="td-head-right">
+          {isScheduled && participants.length > 0 ? (
+            <span className={`task-parts ${participants.length > 1 ? 'multi' : ''}`}>
+              {participants.slice(0, 3).map((uid) => (
+                <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={26} />
+              ))}
+              {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+            </span>
+          ) : (
+            <span className="task-author">
+              <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+              <span className="task-author-name">{nameOf(task.created_by)}</span>
+            </span>
+          )}
+          {isScheduled && isParticipant && (
+            <div className="task-menu-wrap">
+              <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                </svg>
+              </button>
+              {headMenu && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
+                  <div className="menu-pop" role="menu">
+                    <button type="button" onClick={goEditAppointment}>편집</button>
+                    <button type="button" onClick={doCancelAppointment}>약속 취소</button>
+                    {isCreator && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 약속 정보 (놀깅에서 놀기 신청 시 설정한 일정/반복/참여자) */}
-      {task.scheduled_at && (
+      {/* 약속 정보 (태스크명 아래: 날짜·시간, 반복, 알림) */}
+      {isScheduled && (
         <div className="appt">
           <div className="appt-when">
             <span className="appt-cal" aria-hidden="true">🗓</span>
@@ -285,25 +324,26 @@ export default function TaskDetail() {
                 {repeatLabel(task.repeat_rule)}{task.repeat_until ? ` ~${task.repeat_until}` : ''}
               </span>
             )}
-            {isNolging && mine && task.status === 'accepted' && (
-              <button className="btn btn-ghost btn-sm appt-edit"
-                onClick={() => navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })}>
-                수정
-              </button>
-            )}
           </div>
           {task.remind_min !== null && task.remind_min !== undefined && (
             <div className="appt-remind muted sm">⏰ 미리 알림 · {remindLabel(task.remind_min)}</div>
           )}
-          {participants.length > 0 && (
-            <div className="appt-people">
-              {participants.map((uid) => (
-                <span key={uid} className="task-person">
-                  <Avatar src={avatarOf(uid)} name={nameOf(uid)} size={20} />{nameOf(uid)}
-                </span>
-              ))}
-            </div>
+        </div>
+      )}
+
+      {task.description && <p className="td-desc">{task.description}</p>}
+
+      {showActions && (
+        <div className="td-actions">
+          {!isScheduled && task.assignee_id && (
+            <span className="task-person"><Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
           )}
+          <div className="task-actions">
+            {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
+            {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => runTaskAction(() => completeTask(task.id))}>완료</button>}
+            {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
+            {task.status === 'done' && !isScheduled && <button className="btn btn-sm btn-ghost" onClick={() => runTaskAction(() => reopenTask(task.id))}>다시 열기</button>}
+          </div>
         </div>
       )}
 

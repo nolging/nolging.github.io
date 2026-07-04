@@ -219,6 +219,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 태스크 상세 + 댓글 ---- */
 .td-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.td-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .td-name { font-size: 1.15rem; }
 .td-desc { margin: 0; color: var(--text); font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .td-actions { display: flex; align-items: center; gap: 8px; }
@@ -291,6 +292,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 약속 잡기 페이지 (iOS 미리 알림 스타일, 박스 없이 행) ---- */
 .sched-headline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sched-taskedit { margin-bottom: 14px; }
+.sched-taskedit .chip-row { margin-bottom: 10px; }
+.sched-title-input {
+  width: 100%; border: none; border-bottom: 1px solid var(--border); background: none;
+  font-size: 1.15rem; font-weight: 700; padding: 6px 2px;
+}
+.sched-title-input:focus { outline: none; border-bottom-color: var(--primary); }
 .sched-rows { margin-bottom: 22px; }
 .sched-row {
   display: flex; align-items: center; gap: 10px; min-height: 48px;

@@ -205,6 +205,13 @@ export async function rescheduleTask(opts) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// 약속 취소 → 위시리스트(open) 로 복귀, 일정/참여자 초기화
+export async function cancelAppointment(taskId) {
+  const { data, error } = await supabase.rpc('cancel_appointment', { p_task_id: taskId })
+  if (error) throw error
+  return Array.isArray(data) ? data[0] : data
+}
+
 export async function listTaskParticipants(taskId) {
   const { data, error } = await supabase
     .from('task_participants').select('user_id').eq('task_id', taskId)
