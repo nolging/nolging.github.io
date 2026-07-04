@@ -152,11 +152,11 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onAccept, onCo
         </div>
         {task.description && <p className="task-desc">{task.description}</p>}
         <div className="task-meta">
+          {task.category && <span className="cat-chip">{task.category}</span>}
           <span className="task-person"><Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={18} />작성 {nameOf(task.created_by)}</span>
           {task.assignee_id && (
             <span className="task-person">· <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
           )}
-          <span className={`badge badge-${task.status}`}>{terms.status[task.status]}</span>
         </div>
       </div>
       <div className="task-actions">
