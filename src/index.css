@@ -224,6 +224,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-menu-wrap { margin-left: auto; position: relative; flex-shrink: 0; }
 .comment-menu-btn { background: none; border: none; cursor: pointer; color: var(--muted); padding: 0 2px; line-height: 0; display: flex; align-items: center; }
 .comment-menu-btn:hover { color: var(--text); }
+/* 댓글 메뉴는 점 세 개 기준으로 위로 열림(하단 댓글에서 잘림 방지) */
+.comment-menu-wrap .menu-pop { top: auto; bottom: calc(100% + 4px); }
 .toast {
   position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
   background: rgba(20, 22, 40, .9); color: #fff; padding: 8px 16px; border-radius: 20px;
