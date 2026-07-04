@@ -212,6 +212,17 @@ export async function listTaskParticipants(taskId) {
   return (data ?? []).map((r) => r.user_id)
 }
 
+// 여러 태스크의 참여자 한번에 조회 → { [taskId]: [userId, ...] }
+export async function listParticipantsByTasks(taskIds) {
+  if (!taskIds || taskIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from('task_participants').select('task_id, user_id').in('task_id', taskIds)
+  if (error) throw error
+  const map = {}
+  ;(data ?? []).forEach((r) => { (map[r.task_id] = map[r.task_id] || []).push(r.user_id) })
+  return map
+}
+
 // ---- 태스크 댓글 --------------------------------------------
 
 export async function listComments(taskId) {

@@ -181,6 +181,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .task-author { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
 .task-author-name { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 약속 카드: 참여자 프로필 (2명 이상이면 겹쳐서 표시, 닉네임 생략) */
+.task-parts { display: inline-flex; align-items: center; gap: 6px; }
+.task-parts.multi { gap: 0; }
+.task-parts.multi .avatar { margin-left: -8px; box-shadow: 0 0 0 2px var(--surface); }
+.task-parts.multi .avatar:first-child { margin-left: 0; }
 .task-menu-wrap { position: relative; }
 .menu-pop {
   position: absolute; top: calc(100% + 4px); right: 0; z-index: 41; min-width: 112px;
@@ -194,6 +199,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .menu-pop button:hover { background: rgba(0, 0, 0, .05); }
 .menu-pop .menu-danger { color: var(--danger); }
 .task-desc { margin: 0; color: var(--muted); font-size: 14px; }
+/* 약속 카드: 시간/반복/알림 정보 줄 */
+.task-appt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; font-weight: 600; }
+.task-appt-when { color: var(--text); }
+.task-appt-rep {
+  font-size: 12px; font-weight: 700; color: var(--primary);
+  background: #f3f1fe; border: 1px solid #ddd6fb; border-radius: 20px; padding: 1px 8px;
+}
+.task-appt-bell { display: inline-flex; align-items: center; color: var(--primary); }
 .task-foot { display: flex; align-items: center; gap: 8px; }
 .task-foot .task-person { font-size: 12px; color: var(--muted); }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }

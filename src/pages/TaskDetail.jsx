@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
@@ -30,6 +30,7 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const focusCommentId = searchParams.get('c') // 알림에서 넘어온 강조 대상 댓글
+  const { setTaskHeading, setTaskBackTo } = useOutletContext()
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
@@ -111,6 +112,15 @@ export default function TaskDetail() {
   }, [groupId, taskId])
 
   useEffect(() => { load() }, [load])
+
+  // 상단바: 진행 상태별 명칭(위시리스트/약속/추억) + 뒤로가기는 해당 상태 탭으로
+  useEffect(() => {
+    if (task && group) {
+      setTaskHeading(taskTerms(group.group_type).status[task.status])
+      setTaskBackTo(`/groups/${groupId}?tab=${task.status}`)
+    }
+  }, [task?.status, group?.group_type, groupId, setTaskHeading, setTaskBackTo])
+  useEffect(() => () => { setTaskHeading(null); setTaskBackTo(null) }, [setTaskHeading, setTaskBackTo])
 
   // 알림에서 넘어온 경우(?c=댓글id): 로딩 완료 후 그 댓글로 스크롤 + 강조
   useEffect(() => {

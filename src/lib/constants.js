@@ -97,6 +97,31 @@ export function remindLabel(min) {
   return REMIND_OPTIONS.find((o) => o.value === String(min))?.label ?? `${min}분 전`
 }
 
+// 약속 시각 표시 (시간 미설정이면 날짜만)
+export function formatWhen(iso, timeSet = true) {
+  try {
+    const opts = timeSet
+      ? { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }
+      : { month: 'long', day: 'numeric', weekday: 'short' }
+    return new Date(iso).toLocaleString('ko-KR', opts)
+  } catch { return '' }
+}
+
+// 반복 주기 요약 (ex. "매주 수요일 18:00")
+export function repeatCycleText(rule, iso) {
+  if (!rule || rule === 'none') return ''
+  const base = repeatLabel(rule)
+  let hm = '', wd = ''
+  if (iso) {
+    const d = new Date(iso)
+    hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    wd = `${WEEKDAYS[d.getDay()]}요일`
+  }
+  // 매주/격주 프리셋은 라벨에 요일이 없으므로 약속 요일을 덧붙임
+  if (rule === 'weekly' || rule === 'biweekly') return [base, wd, hm].filter(Boolean).join(' ')
+  return [base, hm].filter(Boolean).join(' ')
+}
+
 // 반복 규칙 → 표시 문자열 (프리셋 키 또는 사용자화 JSON)
 export function repeatLabel(rule) {
   if (!rule || rule === 'none') return '안 함'

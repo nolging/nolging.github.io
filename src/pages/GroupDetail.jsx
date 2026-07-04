@@ -1,13 +1,22 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, listMemberCards, listTasks,
+  getGroup, listMemberCards, listTasks, listParticipantsByTasks,
   acceptTask, completeTask, reopenTask, deleteTask,
 } from '../lib/api'
-import { typeLabel, themeLabel, taskTerms, TASK_STATUSES } from '../lib/constants'
+import {
+  typeLabel, themeLabel, taskTerms, TASK_STATUSES, formatWhen, repeatCycleText,
+} from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
+
+const BellIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+)
 
 const MembersIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -28,13 +37,17 @@ export default function GroupDetail() {
   const { profile } = useAuth()
   const navigate = useNavigate()
 
+  const [searchParams] = useSearchParams()
+  const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
+
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
   const [tasks, setTasks] = useState([])
+  const [partsByTask, setPartsByTask] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [filter, setFilter] = useState('open')
+  const [filter, setFilter] = useState(initialTab)
   const [inviteOpen, setInviteOpen] = useState(false)
 
   const isOwner = group && group.owner_id === profile?.id
@@ -52,6 +65,8 @@ export default function GroupDetail() {
     try {
       const [g, m, t] = await Promise.all([getGroup(groupId), listMemberCards(groupId), listTasks(groupId)])
       setGroup(g); setMembers(m); setTasks(t)
+      const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
+      setPartsByTask(await listParticipantsByTasks(scheduledIds))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -116,6 +131,7 @@ export default function GroupDetail() {
         <ul className="task-list">
           {visibleTasks.map((t) => (
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+              participants={partsByTask[t.id] || []}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
               onAccept={() => {
                 if (group.group_type === 'nolging') {
@@ -148,11 +164,16 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onOpen, onAccept, onComplete, onReopen, onEdit, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReopen, onEdit, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
   const [menuOpen, setMenuOpen] = useState(false)
   const stop = (e) => e.stopPropagation()
+
+  // 약속(accepted) 카드: 참여자 프로필 + 약속 시간/반복/알림 표기
+  const isAppt = task.status === 'accepted'
+  const parts = participants || []
+  const showParts = isAppt && parts.length > 0
 
   return (
     <li className={`task-item status-${task.status}`} onClick={onOpen}>
@@ -162,10 +183,19 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onOpen, onAcce
           <span className="task-name">{task.title}</span>
         </div>
         <div className="task-head-right">
-          <span className="task-author">
-            <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
-            <span className="task-author-name">{nameOf(task.created_by)}</span>
-          </span>
+          {showParts ? (
+            <span className={`task-parts ${parts.length > 1 ? 'multi' : ''}`}>
+              {parts.slice(0, 4).map((uid) => (
+                <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={24} />
+              ))}
+              {parts.length === 1 && <span className="task-author-name">{nameOf(parts[0])}</span>}
+            </span>
+          ) : (
+            <span className="task-author">
+              <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+              <span className="task-author-name">{nameOf(task.created_by)}</span>
+            </span>
+          )}
           {canManage && (
             <div className="task-menu-wrap" onClick={stop}>
               <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((v) => !v)}>
@@ -187,10 +217,20 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, onOpen, onAcce
         </div>
       </div>
 
+      {isAppt && task.scheduled_at && (
+        <div className="task-appt">
+          <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+          {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
+          {task.remind_min !== null && task.remind_min !== undefined && (
+            <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
+          )}
+        </div>
+      )}
+
       {task.description && <p className="task-desc">{task.description}</p>}
 
       <div className="task-foot">
-        {task.assignee_id && (
+        {task.assignee_id && !isAppt && (
           <span className="task-person">
             <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
             담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}

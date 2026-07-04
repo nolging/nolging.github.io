@@ -60,6 +60,10 @@ export default function Layout() {
   const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
   const groupMatch = useMatch('/groups/:groupId')
 
+  // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
+  const [taskHeading, setTaskHeading] = useState(null)
+  const [taskBackTo, setTaskBackTo] = useState(null)
+
   // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + 60초 주기로 갱신
   const [unread, setUnread] = useState(0)
   const refreshUnread = () => unreadNotificationCount().then(setUnread).catch(() => {})
@@ -160,12 +164,12 @@ export default function Layout() {
       </header>
     )
   } else if (taskDetailMatch) {
-    // 태스크 상세 페이지: 좌측 뒤로(그룹으로), 제목은 유형별 명칭
+    // 태스크 상세 페이지: 좌측 뒤로(상태 탭으로), 제목은 진행 상태별 명칭
     const id = taskDetailMatch.params.groupId
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">{taskTerms(location.state?.groupType).noun}</span>
+        <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
       </header>
     )
   } else if (groupMatch) {
@@ -209,7 +213,7 @@ export default function Layout() {
     <div className="app-shell" ref={shellRef}>
       {topbar}
       <main className="content">
-        <Outlet />
+        <Outlet context={{ setTaskHeading, setTaskBackTo }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">
