@@ -58,25 +58,20 @@ export default function Layout() {
     return () => { document.body.style.background = '' }
   }, [isGroupView])
 
-  // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
-  // → 상단/본문은 그대로 있고 하단 입력창만 키보드 위로 올라온다.
+  // 키보드가 올라오면 앱 셸 "높이"만 보이는 영역(visual viewport)에 맞춰 줄인다.
+  // 상단(top)은 0 고정 → 본문은 움직이지 않고, 하단 입력창만 키보드 위로 드러남.
+  // (top 을 offsetTop 에 맞춰 따라가게 하면 iOS 가 밀었다 되돌리며 본문이 흔들림)
   const shellRef = useRef(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const apply = () => {
       const el = shellRef.current
-      if (!el) return
-      el.style.height = `${vv.height}px`
-      el.style.top = `${vv.offsetTop}px`
+      if (el) el.style.height = `${vv.height}px`
     }
     vv.addEventListener('resize', apply)
-    vv.addEventListener('scroll', apply)
     apply()
-    return () => {
-      vv.removeEventListener('resize', apply)
-      vv.removeEventListener('scroll', apply)
-    }
+    return () => { vv.removeEventListener('resize', apply) }
   }, [])
 
   let topbar
