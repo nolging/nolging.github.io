@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getGroup, listMemberCards, leaveGroup } from '../lib/api'
+import { getGroup, getMyGroupMember, leaveGroup } from '../lib/api'
 import MySettings from '../components/MySettings'
 
 // 그룹 내 "설정" 페이지 (상단 내비게이션에 "설정" 표기)
@@ -11,21 +11,29 @@ export default function GroupSettingsPage() {
   const navigate = useNavigate()
 
   const [group, setGroup] = useState(null)
-  const [members, setMembers] = useState([])
+  const [member, setMember] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const isOwner = group && group.owner_id === profile?.id
-  const me = useMemo(() => members.find((m) => m.user_id === profile?.id), [members, profile])
+  // 실제 저장값(공개토글 포함)으로 초기화 — 카드 RPC 는 토글을 반환하지 않음
+  const me = member && {
+    user_id: profile.id,
+    login_id: profile.nickname,
+    display_nickname: member.display_nickname || '',
+    avatar_url: member.avatar_url || '',
+    show_contact: !!member.show_contact,
+    show_birthdate: !!member.show_birthdate,
+  }
   const backToGroup = () => navigate(`/groups/${groupId}`)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, m] = await Promise.all([getGroup(groupId), listMemberCards(groupId)])
-      setGroup(g); setMembers(m)
+      const [g, mm] = await Promise.all([getGroup(groupId), getMyGroupMember(groupId, profile?.id)])
+      setGroup(g); setMember(mm)
     } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [groupId])
+  }, [groupId, profile?.id])
 
   useEffect(() => { load() }, [load])
 

@@ -76,6 +76,17 @@ export async function updateMyGroupMember(groupId, userId, patch) {
   if (error) throw error
 }
 
+// 내 그룹내 설정 원본 조회 (공개토글 등 실제 저장값 — 카드 RPC엔 없음)
+export async function getMyGroupMember(groupId, userId) {
+  const { data, error } = await supabase
+    .from('group_members')
+    .select('display_nickname, avatar_url, show_contact, show_birthdate')
+    .eq('group_id', groupId).eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
 // ---- 태스크 --------------------------------------------------
 
 export async function listTasks(groupId) {
