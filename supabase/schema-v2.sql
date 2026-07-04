@@ -153,3 +153,7 @@ returns table (
   where g.invite_code = lower(trim(p_code));
 $$;
 grant execute on function public.preview_group(text) to authenticated;
+
+-- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
+-- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
+alter table public.tasks add column if not exists category text;

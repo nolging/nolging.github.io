@@ -121,11 +121,11 @@ export async function listTasks(groupId) {
   return data ?? []
 }
 
-export async function createTask({ groupId, title, description, createdBy }) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert({ group_id: groupId, title, description: description ?? '', created_by: createdBy })
-    .select().single()
+export async function createTask({ groupId, title, description, category, createdBy }) {
+  const row = { group_id: groupId, title, description: description ?? '', created_by: createdBy }
+  // category 는 값이 있을 때만 전송 (컬럼 미적용 환경에서 일반 태스크는 정상 동작)
+  if (category) row.category = category
+  const { data, error } = await supabase.from('tasks').insert(row).select().single()
   if (error) throw error
   return data
 }

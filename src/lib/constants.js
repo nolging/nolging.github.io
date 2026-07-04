@@ -52,3 +52,6 @@ export function taskTerms(groupType) {
 
 // 진행 단계 순서 ("전체" 제외)
 export const TASK_STATUSES = ['open', 'accepted', 'done']
+
+// 위시리스트(놀깅) 유형
+export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
