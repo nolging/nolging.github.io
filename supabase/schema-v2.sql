@@ -129,3 +129,27 @@ begin
 end;
 $$;
 grant execute on function public.admin_list_users() to authenticated;
+
+-- ---- RPC: 초대코드로 그룹 미리보기 (가입 전, 비멤버 조회) ------
+-- 가입 전 그룹명/소유자/공개설정을 보여주기 위함. 가입은 시키지 않음.
+create or replace function public.preview_group(p_code text)
+returns table (
+  id uuid,
+  name text,
+  description text,
+  group_type text,
+  theme text,
+  owner_nickname text,
+  show_contact boolean,
+  show_birthdate boolean,
+  already_member boolean
+) language sql security definer stable set search_path = public as $$
+  select g.id, g.name, g.description, g.group_type, g.theme,
+         p.nickname as owner_nickname,
+         g.show_contact, g.show_birthdate,
+         public.is_group_member(g.id, auth.uid()) as already_member
+  from public.groups g
+  join public.profiles p on p.id = g.owner_id
+  where g.invite_code = lower(trim(p_code));
+$$;
+grant execute on function public.preview_group(text) to authenticated;

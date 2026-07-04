@@ -137,6 +137,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
 .card-title { font-size: 15px; margin-bottom: 12px; }
 .card.narrow { max-width: 460px; }
+.join-group-info { text-align: center; }
+.join-group-info .group-card-badges { justify-content: center; }
+.join-group-name { margin: 8px 0 2px; font-size: 1.3rem; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .group-card { display: flex; flex-direction: column; gap: 6px; color: var(--text); transition: transform .1s, box-shadow .1s; }
 .group-card:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(20,22,40,.09); }

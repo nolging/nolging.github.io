@@ -1,7 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { updateMyGroupMember } from '../lib/api'
-import { fileToSquareDataURL } from '../lib/image'
-import Avatar from './Avatar'
+import AvatarEditor from './AvatarEditor'
 
 // 그룹 내 내 설정: 프로필사진(원형/클릭 메뉴), 닉네임, 연락처/생일 공개 토글
 export default function MySettings({ group, me, onSaved }) {
@@ -13,22 +12,7 @@ export default function MySettings({ group, me, onSaved }) {
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [menuOpen, setMenuOpen] = useState(false)
-  const fileRef = useRef(null)
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
-
-  async function pickImage(e) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // 같은 파일 다시 선택 가능하도록 초기화
-    if (!file) return
-    try {
-      const dataUrl = await fileToSquareDataURL(file)
-      set({ avatar_url: dataUrl })
-    } catch (err) { setError(err.message) }
-  }
-
-  function chooseChange() { setMenuOpen(false); fileRef.current?.click() }
-  function chooseRemove() { setMenuOpen(false); set({ avatar_url: '' }) }
 
   async function save() {
     setBusy(true); setError('')
@@ -46,28 +30,8 @@ export default function MySettings({ group, me, onSaved }) {
   return (
     <div className="form">
       {/* 프로필 사진: 원형·가운데, 클릭 시 변경/제거 메뉴 */}
-      <div className="avatar-editor">
-        <button type="button" className="avatar-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="프로필 사진 변경">
-          <Avatar src={form.avatar_url} name={form.display_nickname || me?.login_id} size={104} />
-          <span className="avatar-cam" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </span>
-        </button>
-        {menuOpen && (
-          <>
-            <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-            <div className="avatar-menu" role="menu">
-              <button type="button" onClick={chooseChange}>사진 변경</button>
-              {form.avatar_url && <button type="button" className="menu-danger" onClick={chooseRemove}>사진 제거</button>}
-            </div>
-          </>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickImage} />
-      </div>
+      <AvatarEditor value={form.avatar_url} name={form.display_nickname || me?.login_id}
+        onChange={(v) => set({ avatar_url: v })} onError={setError} />
 
       <label className="field"><span>닉네임</span>
         <input value={form.display_nickname} onChange={(e) => set({ display_nickname: e.target.value })}

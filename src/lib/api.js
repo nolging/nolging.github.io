@@ -55,6 +55,31 @@ export async function joinGroupByCode(code) {
   return data
 }
 
+// 초대 코드로 그룹 정보 미리보기 (가입 전, 비멤버도 조회). preview_group RPC 필요.
+export async function previewGroup(code) {
+  const { data, error } = await supabase.rpc('preview_group', { p_code: lowerTrim(code) })
+  if (error) {
+    if (error.code === 'PGRST202' || /preview_group/.test(error.message || '')) {
+      throw new Error('가입 미리보기 기능이 아직 DB에 설정되지 않았습니다. (preview_group 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Array.isArray(data) ? data[0] : data // 유효하지 않으면 undefined
+}
+const lowerTrim = (s) => String(s).trim().toLowerCase()
+
+// 프로필(사진/닉네임/공개토글) 설정과 함께 가입
+export async function joinGroupWithProfile(code, userId, { display_nickname, avatar_url, show_contact, show_birthdate }) {
+  const group = await joinGroupByCode(code)
+  await updateMyGroupMember(group.id, userId, {
+    display_nickname: display_nickname?.trim() || null,
+    avatar_url: avatar_url || null,
+    show_contact: !!show_contact,
+    show_birthdate: !!show_birthdate,
+  })
+  return group
+}
+
 export async function leaveGroup(groupId, userId) {
   const { error } = await supabase
     .from('group_members').delete().eq('group_id', groupId).eq('user_id', userId)
