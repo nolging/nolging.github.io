@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile, changeMyPassword } from '../lib/api'
 
@@ -90,7 +90,6 @@ export default function MyProfile() {
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="breadcrumb"><Link to="/">내 그룹</Link> / 내 정보</div>
           <h1>내 정보</h1>
         </div>
       </div>

@@ -93,8 +93,6 @@ export default function GroupDetail() {
 
   return (
     <div className="page">
-      <div className="breadcrumb"><Link to="/">내 그룹</Link> / {group.name}</div>
-
       <div className="page-head">
         <div>
           <div className="group-card-badges">
