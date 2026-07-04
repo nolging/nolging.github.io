@@ -42,6 +42,8 @@ h3 { margin: 0; }
 .btn-block { width: 100%; }
 .btn-icon { color: var(--muted); padding: 5px 9px; }
 .btn-icon:hover { color: var(--danger); }
+.icon-btn { padding: 6px; line-height: 0; }
+.icon-btn:hover { color: var(--text); }
 
 /* ---- 인증 화면 ---- */
 .auth-screen {

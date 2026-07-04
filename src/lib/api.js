@@ -143,6 +143,12 @@ export async function updateMyProfile({ contact, birthdate }) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// 내 비밀번호 변경 (Supabase Auth)
+export async function changeMyPassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
+}
+
 // ---- 가입 요청 / 관리자 사용자 관리 (Edge Function) ----------
 
 async function invokeAdmin(body) {
