@@ -55,16 +55,25 @@ export default function TaskDetail() {
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
   const avatarOf = (uid) => nameMap[uid]?.avatar
 
-  // 부모별 자식 댓글 맵. 최상위 댓글은 parent_id 가 없음.
-  const childrenOf = useMemo(() => {
-    const map = {}
+  // 최상위 댓글과, 각 최상위 댓글에 딸린 답글(답글의 답글까지 모두 한 단계로 평면화)
+  const { roots, repliesOf } = useMemo(() => {
+    const byId = {}
+    comments.forEach((c) => { byId[c.id] = c })
+    const rootIdOf = (c) => {
+      let cur = c, guard = 0
+      while (cur.parent_id && byId[cur.parent_id] && guard++ < 100) cur = byId[cur.parent_id]
+      return cur.id
+    }
+    const roots = comments.filter((c) => !c.parent_id)
+    const repliesOf = {}
     comments.forEach((c) => {
-      const p = c.parent_id || 'root'
-      ;(map[p] = map[p] || []).push(c)
+      if (!c.parent_id) return
+      const rid = rootIdOf(c)
+      if (rid === c.id) return
+      ;(repliesOf[rid] = repliesOf[rid] || []).push(c) // comments 는 이미 작성순 정렬
     })
-    return map
+    return { roots, repliesOf }
   }, [comments])
-  const roots = childrenOf.root || []
 
   const loadComments = useCallback(async () => { setComments(await listComments(taskId)) }, [taskId])
 
@@ -131,43 +140,52 @@ export default function TaskDetail() {
     catch { setToast('복사에 실패했습니다') }
   }
 
-  function renderComment(c, depth) {
+  function renderCard(c, depth) {
     const canEdit = c.author_id === profile.id
     const canDelete = c.author_id === profile.id || isOwner
-    const kids = childrenOf[c.id] || []
+    return (
+      <div className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''}`}>
+        <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
+        <div className="comment-body">
+          <div className="comment-meta">
+            <span className="comment-author">{nameOf(c.author_id)}</span>
+            <span className="comment-time">{formatTime(c.created_at)}</span>
+            <div className="comment-menu-wrap">
+              <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                </svg>
+              </button>
+              {menuId === c.id && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                  <div className="menu-pop" role="menu">
+                    <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
+                    <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
+                    {canEdit && <button type="button" onClick={() => startEdit(c)}>수정</button>}
+                    {canDelete && <button type="button" className="menu-danger" onClick={() => { setMenuId(null); removeComment(c.id) }}>삭제</button>}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <p className="comment-text">{c.body}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 최상위 댓글 + 그에 딸린 답글(모두 한 단계 들여쓰기)
+  function renderThread(c) {
+    const replies = repliesOf[c.id] || []
     return (
       <li key={c.id} className="comment-item">
-        <div className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''}`}>
-          <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
-          <div className="comment-body">
-            <div className="comment-meta">
-              <span className="comment-author">{nameOf(c.author_id)}</span>
-              <span className="comment-time">{formatTime(c.created_at)}</span>
-              <div className="comment-menu-wrap">
-                <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                  </svg>
-                </button>
-                {menuId === c.id && (
-                  <>
-                    <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                    <div className="menu-pop" role="menu">
-                      <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
-                      <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
-                      {canEdit && <button type="button" onClick={() => startEdit(c)}>수정</button>}
-                      {canDelete && <button type="button" className="menu-danger" onClick={() => { setMenuId(null); removeComment(c.id) }}>삭제</button>}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <p className="comment-text">{c.body}</p>
-          </div>
-        </div>
-        {kids.length > 0 && (
+        {renderCard(c, 0)}
+        {replies.length > 0 && (
           <ul className="comment-replies">
-            {kids.map((k) => renderComment(k, depth + 1))}
+            {replies.map((k) => (
+              <li key={k.id} className="comment-item">{renderCard(k, 1)}</li>
+            ))}
           </ul>
         )}
       </li>
@@ -215,7 +233,7 @@ export default function TaskDetail() {
         <p className="muted sm">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
       ) : (
         <ul className="comment-list">
-          {roots.map((c) => renderComment(c, 0))}
+          {roots.map((c) => renderThread(c))}
         </ul>
       )}
 
