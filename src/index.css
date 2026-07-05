@@ -561,6 +561,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .mp-row:last-child { border-bottom: none; }
 .mp-k { width: 72px; flex-shrink: 0; color: var(--muted); font-size: 14px; font-weight: 600; }
 .mp-v { font-size: 15px; font-weight: 600; color: var(--text); word-break: break-all; }
+a.mp-tel { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+a.mp-tel::before { content: "\260E"; font-size: 14px; }
+a.mp-tel:active { opacity: .55; }
 .mp-empty { text-align: center; padding: 20px; }
 
 /* ---- 그룹 상세 헤더 (그룹명 + 멤버/초대 버튼) ---- */

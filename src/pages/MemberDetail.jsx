@@ -7,6 +7,11 @@ function joinLabel(iso) {
     return `${new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} 가입`
   } catch { return '' }
 }
+function telHref(s) {
+  const cleaned = String(s).replace(/[^\d+]/g, '')
+  const digits = cleaned.replace(/\D/g, '')
+  return digits.length >= 3 ? `tel:${cleaned}` : ''
+}
 function birthLabel(s) {
   if (!s) return ''
   const [y, mo, d] = s.split('-')
@@ -54,7 +59,12 @@ export default function MemberDetail() {
         {hasInfo ? (
           <>
             {member.contact && (
-              <div className="mp-row"><span className="mp-k">연락처</span><span className="mp-v">{member.contact}</span></div>
+              <div className="mp-row">
+                <span className="mp-k">연락처</span>
+                {telHref(member.contact)
+                  ? <a className="mp-v mp-tel" href={telHref(member.contact)}>{member.contact}</a>
+                  : <span className="mp-v">{member.contact}</span>}
+              </div>
             )}
             {member.birthdate && (
               <div className="mp-row"><span className="mp-k">생년월일</span><span className="mp-v">{birthLabel(member.birthdate)}</span></div>
