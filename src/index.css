@@ -19,6 +19,8 @@
   --open: #d97706;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(20, 22, 40, 0.06), 0 1px 2px rgba(20, 22, 40, 0.04);
+  /* 콘텐츠 카드: 테두리 없이 살짝 뜬 그림자 (내 그룹 카드와 동일) */
+  --card-shadow: 0 4px 14px rgba(20, 22, 40, .06);
   font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
     'Pretendard', 'Segoe UI', Roboto, sans-serif;
 }
@@ -33,7 +35,7 @@ button, input, textarea, select, optgroup { font-family: inherit; }
   .btn-ghost:hover, .menu-pop button:hover, .avatar-menu button:hover,
   .toggle:hover, .bottomnav a:hover { background: transparent; }
   .tile-action:hover { background: rgba(0, 0, 0, .4); }
-  .task-item:hover { border-color: var(--border); }
+  .task-item:hover { box-shadow: var(--card-shadow); }
   .cal-appt:hover, a:hover { background: transparent; }
 }
 html, body, #root { height: 100%; margin: 0; }
@@ -78,7 +80,7 @@ h3 { margin: 0; }
 .auth-card {
   margin: auto; /* 짧으면 중앙, 길면 스크롤(잘리지 않음) */
   width: 100%; max-width: 380px; background: var(--surface); padding: 32px;
-  border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--card-shadow); border: none;
 }
 .auth-logo { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; }
 .auth-logo span { color: var(--text); }
@@ -163,7 +165,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .row-gap { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ---- 카드 / 그리드 ---- */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.card { background: var(--surface); border: none; border-radius: var(--radius); padding: 18px; box-shadow: var(--card-shadow); }
 .card-title { font-size: 15px; margin-bottom: 12px; }
 .card.narrow { max-width: 460px; }
 .join-group-info { text-align: center; }
@@ -242,7 +244,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .wizard-actions .btn-primary { flex: 1; }
 
 /* ---- 일정(캘린더) ---- */
-.cal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 8px; margin-bottom: 16px; }
+.cal { background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: 14px; padding: 10px 8px; margin-bottom: 16px; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 8px; }
 .cal-title { font-weight: 700; font-size: 1rem; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
@@ -274,7 +276,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .cal-appt {
   width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
   color: var(--text);
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 8px;
+  background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px; margin-bottom: 8px;
 }
 .cal-appt-time { font-weight: 700; font-size: 14px; color: var(--text); flex-shrink: 0; min-width: 42px; }
 .cal-appt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -307,10 +309,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 태스크 ---- */
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .task-item {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: var(--radius);
   padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; cursor: pointer;
 }
-.task-item:hover { border-color: #d3d6e0; }
+.task-item:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
 .task-item.status-done { opacity: .72; }
 .task-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .task-headline { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
@@ -506,7 +508,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .notif {
   display: flex; gap: 10px; align-items: flex-start; position: relative;
   padding: 12px 34px 12px 12px; border-radius: 12px;
-  background: var(--surface); border: 1px solid var(--border);
+  background: var(--surface); border: none; box-shadow: var(--card-shadow);
 }
 .notif.unread { background: #f3f1fe; border-color: #ddd6fb; }
 .notif.clickable { cursor: pointer; }
@@ -632,7 +634,7 @@ a.mp-tel:active { opacity: .55; }
 
 /* ---- 요청 목록 ---- */
 .request-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.request-list li { border: 1px solid var(--border); border-radius: 9px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.request-list li { border: none; box-shadow: var(--card-shadow); border-radius: 9px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
 /* ---- 테이블 ---- */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
