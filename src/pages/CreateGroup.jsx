@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createGroup, updateMyGroupMember } from '../lib/api'
 import { DEFAULT_THEME } from '../lib/constants'
@@ -8,6 +8,7 @@ import AvatarEditor from '../components/AvatarEditor'
 export default function CreateGroup() {
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { setBackHandler } = useOutletContext()
 
   const [step, setStep] = useState(1)
   const [busy, setBusy] = useState(false)
@@ -20,6 +21,12 @@ export default function CreateGroup() {
   // 2단계: 소유자의 그룹 내 프로필
   const [prof, setProf] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false })
   const setP = (patch) => setProf((f) => ({ ...f, ...patch }))
+
+  // 상단바 < 버튼: 2단계면 1단계로 (이전 버튼 대체), 1단계면 기본(내 그룹)
+  useEffect(() => {
+    setBackHandler(() => (step === 2 ? () => { setError(''); setStep(1) } : null))
+  }, [step, setBackHandler])
+  useEffect(() => () => setBackHandler(() => null), [setBackHandler])
 
   function next(e) {
     e.preventDefault()
@@ -102,10 +109,9 @@ export default function CreateGroup() {
         )}
 
         {error && <div className="alert alert-error">{error}</div>}
-        <div className="wizard-actions">
-          <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => { setError(''); setStep(1) }}>이전</button>
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={finish}>{busy ? '만드는 중…' : '그룹 만들기'}</button>
-        </div>
+        <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={finish}>
+          {busy ? '만드는 중…' : '그룹 만들기'}
+        </button>
       </div>
     </div>
   )

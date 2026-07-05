@@ -64,6 +64,8 @@ export default function Layout() {
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
   const [taskHeading, setTaskHeading] = useState(null)
   const [taskBackTo, setTaskBackTo] = useState(null)
+  // 페이지가 상단바 뒤로가기 동작을 가로챌 수 있게 (예: 그룹 만들기 2단계 → 1단계)
+  const [backHandler, setBackHandler] = useState(null)
 
   // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + 60초 주기로 갱신
   const [unread, setUnread] = useState(0)
@@ -174,10 +176,12 @@ export default function Layout() {
       </header>
     )
   } else if (newGroupMatch) {
-    // 그룹 만들기 페이지: 좌측 뒤로(내 그룹), 제목 "그룹 만들기"
+    // 그룹 만들기 페이지: 좌측 뒤로 — 페이지가 핸들러를 주면 그걸(2단계→1단계), 아니면 내 그룹으로
     topbar = (
       <header className="topbar">
-        <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        {backHandler
+          ? <button type="button" onClick={backHandler} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">그룹 만들기</span>
       </header>
     )
@@ -222,7 +226,7 @@ export default function Layout() {
     <div className="app-shell" ref={shellRef}>
       {topbar}
       <main className="content">
-        <Outlet context={{ setTaskHeading, setTaskBackTo }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">
