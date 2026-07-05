@@ -80,7 +80,9 @@ $$;
 grant execute on function public.update_my_profile(text, date) to authenticated;
 
 -- ---- RPC: 그룹 멤버 카드 (프라이버시 규칙 적용) --------------
--- 그룹 설정 공개여부 AND 멤버 개인 공개여부가 모두 Y 일 때만 연락처/생년월일 노출
+-- 그룹 설정 공개여부 AND 멤버 개인 공개여부가 모두 Y 일 때만 연락처/생년월일 노출.
+-- (본인 정보라도 공개로 설정한 것만 노출 — 목록/상세 표시를 실제 공개 상태와 일치)
+drop function if exists public.group_member_cards(uuid);
 create or replace function public.group_member_cards(p_group_id uuid)
 returns table (
   user_id uuid,
@@ -90,7 +92,8 @@ returns table (
   role text,
   is_self boolean,
   contact text,
-  birthdate date
+  birthdate date,
+  joined_at timestamptz
 ) language plpgsql security definer stable set search_path = public as $$
 declare g public.groups;
 begin
@@ -107,10 +110,9 @@ begin
       gm.avatar_url,
       gm.role,
       (gm.user_id = auth.uid()),
-      case when gm.user_id = auth.uid()
-             or (g.show_contact and gm.show_contact) then p.contact else null end,
-      case when gm.user_id = auth.uid()
-             or (g.show_birthdate and gm.show_birthdate) then p.birthdate else null end
+      case when (g.show_contact and gm.show_contact) then p.contact else null end,
+      case when (g.show_birthdate and gm.show_birthdate) then p.birthdate else null end,
+      gm.joined_at
     from public.group_members gm
     join public.profiles p on p.id = gm.user_id
     where gm.group_id = p_group_id
