@@ -178,34 +178,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .code-chip { font-size: 12px; background: #f1f2f6; padding: 3px 8px; border-radius: 6px; color: var(--muted); }
 
 /* 내 그룹: 정방형 카드 2열 그리드 (모바일 기준) */
-/* 내 그룹 검색: 좌측 원형 돋보기 버튼 → 클릭 시 인풋으로 확장 */
-.group-search { display: flex; align-items: center; gap: 0; margin-bottom: 14px; }
-.gs-btn {
-  flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--surface); color: var(--text); border: none; cursor: pointer;
-  box-shadow: 0 2px 10px rgba(20, 22, 40, .06); z-index: 1;
-}
-.group-search.open .gs-btn { box-shadow: none; }
-.gs-input {
-  flex: 1; min-width: 0; width: 0; max-width: 0; opacity: 0;
-  height: 44px; line-height: 44px; border: none; background: var(--surface);
-  border-radius: 22px; font-size: 15px; color: var(--text);
-  margin-left: -44px; padding-left: 44px; padding-right: 12px;
-  white-space: nowrap; overflow: hidden; text-overflow: clip;
-  transition: max-width .28s ease, opacity .18s ease, box-shadow .2s ease;
-}
-.group-search.open .gs-input {
-  max-width: 100%; opacity: 1; box-shadow: 0 2px 10px rgba(20, 22, 40, .06);
-}
-.gs-input:focus { outline: none; }
-.gs-input:empty::before { content: attr(data-placeholder); color: var(--muted); }
-.gs-clear {
-  flex-shrink: 0; width: 30px; height: 30px; margin-left: -38px; z-index: 1;
-  border: none; background: transparent; color: var(--muted);
-  font-size: 22px; line-height: 1; cursor: pointer;
-}
-
 .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 700px) {
   .group-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
@@ -747,8 +719,6 @@ a.mp-tel:active { opacity: .55; }
   .bottomnav a svg { width: 22px; height: 22px; }
   .bottomnav a:hover { text-decoration: none; }
   .bottomnav a.active { color: var(--primary); }
-  /* 키보드가 올라오면 하단 탭 숨김 (키보드 위로 따라 올라오지 않게) */
-  .app-shell.kb-open .bottomnav { display: none; }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
   .page-head .row-gap { flex-wrap: wrap; }
   .field-row { flex-direction: column; }
