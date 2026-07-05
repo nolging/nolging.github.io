@@ -746,6 +746,8 @@ a.mp-tel:active { opacity: .55; }
   .bottomnav a svg { width: 22px; height: 22px; }
   .bottomnav a:hover { text-decoration: none; }
   .bottomnav a.active { color: var(--primary); }
+  /* 키보드가 올라오면 하단 탭 숨김 (키보드 위로 따라 올라오지 않게) */
+  .app-shell.kb-open .bottomnav { display: none; }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
   .page-head .row-gap { flex-wrap: wrap; }
   .field-row { flex-direction: column; }
