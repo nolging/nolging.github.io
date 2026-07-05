@@ -24,11 +24,17 @@ export default function Dashboard() {
         <div className="spinner" />
       ) : (
         <div className="group-grid">
-          {/* 첫 칸: 그룹 만들기 (그룹 카드와 동일 사이즈) */}
-          <Link to="/groups/new" className="group-tile group-tile-new">
-            <span className="tile-plus" aria-hidden="true">+</span>
-            <span>그룹 만들기</span>
-          </Link>
+          {/* 첫 칸: 위 그룹 만들기 / 아래 그룹 가입하기 (카드와 동일 사이즈) */}
+          <div className="tile-actions">
+            <Link to="/groups/new" className="tile-action">
+              <span className="tile-action-ico" aria-hidden="true">+</span>
+              <span>그룹 만들기</span>
+            </Link>
+            <Link to="/join" className="tile-action">
+              <span className="tile-action-ico" aria-hidden="true">↳</span>
+              <span>그룹 가입하기</span>
+            </Link>
+          </div>
 
           {groups.map((g) => {
             const members = g.group_members || []
