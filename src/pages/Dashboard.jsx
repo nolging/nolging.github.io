@@ -51,8 +51,9 @@ export default function Dashboard() {
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </button>
+        {/* placeholder 는 열렸을 때만 — iOS 에서 placeholder 가 접힘 후 잔상으로 남는 버그 방지 */}
         <input ref={inputRef} className="gs-input" type="text" value={q}
-          onChange={(e) => setQ(e.target.value)} placeholder="그룹 검색"
+          onChange={(e) => setQ(e.target.value)} placeholder={searchOpen ? '그룹 검색' : ''}
           aria-label="그룹 검색" enterKeyHint="search"
           autoComplete="off" autoCorrect="off" autoCapitalize="none"
           tabIndex={searchOpen ? 0 : -1}
