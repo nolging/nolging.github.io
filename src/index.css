@@ -32,7 +32,7 @@ button, input, textarea, select, optgroup { font-family: inherit; }
   .btn:hover { filter: none; }
   .btn-ghost:hover, .menu-pop button:hover, .avatar-menu button:hover,
   .toggle:hover, .bottomnav a:hover { background: transparent; }
-  .tile-action:hover { background: rgba(255, 255, 255, .5); }
+  .tile-action:hover { background: rgba(0, 0, 0, .4); }
   .task-item:hover { border-color: var(--border); }
   .cal-appt:hover, a:hover { background: transparent; }
 }
@@ -122,11 +122,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
 .app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-/* 내 그룹(그룹 페이지) 전용 배경 이미지 — 화면 꽉 차게, 상·하단 바까지 투명 */
-.app-shell.bg-scene { background: url('/bg-groups.jpg') center top / cover no-repeat; }
-.app-shell.bg-scene .content { background: transparent; }
-.app-shell.bg-scene .topbar { background: transparent; border-bottom: none; }
-.app-shell.bg-scene .bottomnav { background: transparent; border-top: none; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -194,12 +189,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-actions { aspect-ratio: 1 / 1; display: flex; flex-direction: column; gap: 12px; }
 .tile-action {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-  border: none; border-radius: 16px; background: rgba(255, 255, 255, .5);
-  box-shadow: 0 4px 14px rgba(20, 22, 40, .05);
+  border: none; border-radius: 16px; background: rgba(0, 0, 0, .4);
   color: #fff; font-weight: 700; font-size: 14px; text-decoration: none;
   transition: background .1s;
 }
-.tile-action:hover { text-decoration: none; background: rgba(255, 255, 255, .7); }
+.tile-action:hover { text-decoration: none; background: rgba(0, 0, 0, .52); }
 .tile-action-ico { font-size: 20px; line-height: 1; }
 .tile-name {
   margin: 0; font-size: 1rem; font-weight: 700;

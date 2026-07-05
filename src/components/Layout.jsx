@@ -60,7 +60,6 @@ export default function Layout() {
   const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
   const newGroupMatch = useMatch('/groups/new')
   const groupMatch = useMatch('/groups/:groupId')
-  const dashboardMatch = useMatch('/') // 내 그룹(그룹 페이지) — 배경 이미지 적용
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
   const [taskHeading, setTaskHeading] = useState(null)
@@ -220,7 +219,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${dashboardMatch ? 'bg-scene' : ''}`} ref={shellRef}>
+    <div className="app-shell" ref={shellRef}>
       {topbar}
       <main className="content">
         <Outlet context={{ setTaskHeading, setTaskBackTo }} />
