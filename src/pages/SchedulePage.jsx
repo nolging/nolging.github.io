@@ -191,7 +191,7 @@ export default function SchedulePage() {
               const extra = parts.length - 3
               return (
                 <button key={a.id} type="button" className="cal-appt"
-                  onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`)}>
+                  onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } })}>
                   <span className="cal-appt-time">{timeOf(a)}</span>
                   <span className="cal-appt-body">
                     <span className="cal-appt-head">

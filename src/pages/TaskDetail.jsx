@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useOutletContext, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
@@ -28,8 +28,10 @@ export default function TaskDetail() {
   const { groupId, taskId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const focusCommentId = searchParams.get('c') // 알림에서 넘어온 강조 대상 댓글
+  const fromSchedule = location.state?.from === 'schedule' // 일정 탭에서 진입 시 뒤로가기는 일정으로
   const { setTaskHeading, setTaskBackTo } = useOutletContext()
 
   const [group, setGroup] = useState(null)
@@ -118,9 +120,9 @@ export default function TaskDetail() {
   useEffect(() => {
     if (task && group) {
       setTaskHeading(taskTerms().status[task.status])
-      setTaskBackTo(`/groups/${groupId}?tab=${task.status}`)
+      setTaskBackTo(fromSchedule ? '/schedule' : `/groups/${groupId}?tab=${task.status}`)
     }
-  }, [task?.status, group, groupId, setTaskHeading, setTaskBackTo])
+  }, [task?.status, group, groupId, fromSchedule, setTaskHeading, setTaskBackTo])
   useEffect(() => () => { setTaskHeading(null); setTaskBackTo(null) }, [setTaskHeading, setTaskBackTo])
 
   // 알림에서 넘어온 경우(?c=댓글id): 로딩 완료 후 그 댓글로 스크롤 + 강조
