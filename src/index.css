@@ -90,6 +90,10 @@ h3 { margin: 0; }
 .form-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .form-inline input { flex: 1; min-width: 160px; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+/* 인풋 하단 주의 문구 (배경 없이 빨간 글자만) */
+.field-error { color: var(--danger); font-size: 13px; font-weight: 500; }
+/* 라벨 + 토글 한 줄 (체크박스 대체) */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; color: var(--text); padding: 2px 0; }
 .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .field-row .field { flex: 1; min-width: 140px; }
 .field-narrow { flex: 0 0 120px !important; }
