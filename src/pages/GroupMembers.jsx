@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listMemberCards } from '../lib/api'
 import Avatar from '../components/Avatar'
+import CrownIcon from '../components/CrownIcon'
 
 export default function GroupMembers() {
   const { groupId } = useParams()
@@ -35,7 +36,9 @@ export default function GroupMembers() {
                   <div className="member-card-name">
                     <span className="member-card-nick">{m.display_nickname}</span>
                     {m.is_self && <span className="muted sm">나</span>}
-                    {m.role === 'owner' && <span className="badge">소유자</span>}
+                    {m.role === 'owner' && (
+                      <span className="owner-badge" title="소유자"><CrownIcon /></span>
+                    )}
                   </div>
                   {info && <div className="muted sm member-card-sub">{info}</div>}
                 </div>

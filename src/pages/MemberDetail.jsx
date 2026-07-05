@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { listMemberCards } from '../lib/api'
+import CrownIcon from '../components/CrownIcon'
 
 function joinLabel(iso) {
   try {
@@ -47,7 +48,9 @@ export default function MemberDetail() {
       <div className={`mp-photo ${member.avatar_url ? 'has-img' : ''}`}
         style={member.avatar_url ? { backgroundImage: `url(${member.avatar_url})` } : undefined}>
         {!member.avatar_url && <span className="mp-initial">{initial}</span>}
-        {member.role === 'owner' && <span className="mp-owner">소유자</span>}
+        {member.role === 'owner' && (
+          <span className="mp-owner" title="소유자"><CrownIcon size={16} /></span>
+        )}
         <div className="mp-scrim" />
         <div className="mp-name">
           {member.display_nickname}
