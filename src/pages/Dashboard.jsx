@@ -51,7 +51,8 @@ export default function Dashboard() {
     <div className="page">
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div ref={searchRef} className={`group-search ${searchOpen ? 'open' : ''}`}>
+      <form ref={searchRef} className={`group-search ${searchOpen ? 'open' : ''}`}
+        onSubmit={(e) => e.preventDefault()}>
         <button type="button" className="gs-btn" onClick={toggleSearch}
           aria-label={searchOpen ? '검색 닫기' : '그룹 검색'} aria-expanded={searchOpen}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -68,7 +69,7 @@ export default function Dashboard() {
           <button type="button" className="gs-clear" onClick={() => { setQ(''); inputRef.current?.focus() }}
             aria-label="검색어 지우기">×</button>
         )}
-      </div>
+      </form>
 
       {loading ? (
         <div className="spinner" />
