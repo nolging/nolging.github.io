@@ -116,7 +116,6 @@ export default function GroupDetail() {
         {TASK_STATUSES.map((f) => (
           <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
             {terms.status[f]}
-            <span className="tab-count">{tasks.filter((t) => t.status === f).length}</span>
           </button>
         ))}
       </div>
