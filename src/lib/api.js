@@ -210,12 +210,31 @@ export async function rescheduleTask(opts) {
 export async function listMyAppointments() {
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, groups(name)')
+    .select('*, groups(name), task_participants(user_id)')
     .eq('status', 'accepted')
     .not('scheduled_at', 'is', null)
     .order('scheduled_at', { ascending: true })
   if (error) throw error
   return data ?? []
+}
+
+// 여러 그룹의 멤버 표시정보 → { "groupId:userId": { name, avatar } }
+export async function listGroupMembersBrief(groupIds) {
+  const ids = [...new Set(groupIds || [])]
+  if (ids.length === 0) return {}
+  const { data, error } = await supabase
+    .from('group_members')
+    .select('group_id, user_id, display_nickname, avatar_url, profiles(nickname)')
+    .in('group_id', ids)
+  if (error) throw error
+  const map = {}
+  ;(data ?? []).forEach((m) => {
+    map[`${m.group_id}:${m.user_id}`] = {
+      name: m.display_nickname || m.profiles?.nickname || '?',
+      avatar: m.avatar_url,
+    }
+  })
+  return map
 }
 
 // 약속 취소 → 위시리스트(open) 로 복귀, 일정/참여자 초기화

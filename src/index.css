@@ -71,7 +71,7 @@ h3 { margin: 0; }
   border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
 }
 .auth-logo { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; }
-.auth-logo span { color: var(--primary); }
+.auth-logo span { color: var(--text); }
 .auth-sub { color: var(--muted); margin: 4px 0 20px; }
 .auth-foot { text-align: center; margin-top: 18px; color: var(--muted); font-size: 14px; }
 
@@ -84,12 +84,12 @@ h3 { margin: 0; }
 .field-row .field { flex: 1; min-width: 140px; }
 .field-narrow { flex: 0 0 120px !important; }
 input, textarea, select {
-  font: inherit; padding: 10px 12px; border: 1px solid var(--border);
-  border-radius: 9px; background: #fff; color: var(--text); width: 100%;
+  font: inherit; padding: 10px 16px; border: 1px solid var(--border);
+  border-radius: 999px; background: #fff; color: var(--text); width: 100%;
   font-size: 16px; /* iOS 포커스 시 자동 줌인 방지 (16px 미만이면 확대됨) */
 }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
-textarea { resize: vertical; }
+textarea { resize: vertical; border-radius: 20px; }
 
 /* date 인풋: iOS/모바일에서 높이·정렬 깨지는 것 방지 (텍스트 인풋과 통일) */
 input[type="date"] {
@@ -231,11 +231,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 .cal-list-title { font-weight: 700; font-size: .95rem; margin-bottom: 10px; }
 .cal-appt {
-  width: 100%; display: flex; gap: 12px; align-items: flex-start; text-align: left; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px;
+  width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
+  color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 8px;
 }
-.cal-appt-time { font-weight: 700; font-size: 14px; color: var(--primary); flex-shrink: 0; min-width: 42px; padding-top: 1px; }
+.cal-appt-time { font-weight: 700; font-size: 14px; color: var(--text); flex-shrink: 0; min-width: 42px; }
 .cal-appt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cal-appt-avs { flex-shrink: 0; }
 .cal-appt-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .cal-appt-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cal-appt-group { font-size: 12px; color: var(--muted); }
@@ -558,7 +560,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .brand .brand-word { font-size: 1.2rem; }
 .auth-logo .brand-word { font-size: 1.7rem; }
 .brand-word .brand-o {
-  color: var(--primary); font-size: inherit;
+  color: var(--text); font-size: inherit;
   display: inline-block; margin-left: 1px; transform: translateY(1px);
 }
 

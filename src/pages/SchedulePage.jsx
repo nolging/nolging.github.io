@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listMyAppointments } from '../lib/api'
+import { listMyAppointments, listGroupMembersBrief } from '../lib/api'
 import { repeatLabel, categoryStyle } from '../lib/constants'
+import Avatar from '../components/Avatar'
 
 const pad = (n) => String(n).padStart(2, '0')
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -78,6 +79,7 @@ function occursOn(appt, date) {
 export default function SchedulePage() {
   const navigate = useNavigate()
   const [appts, setAppts] = useState([])
+  const [memberMap, setMemberMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -88,11 +90,18 @@ export default function SchedulePage() {
   useEffect(() => {
     (async () => {
       setLoading(true); setError('')
-      try { setAppts(await listMyAppointments()) }
-      catch (err) { setError(err.message) }
+      try {
+        const a = await listMyAppointments()
+        setAppts(a)
+        setMemberMap(await listGroupMembersBrief(a.map((x) => x.group_id)))
+      } catch (err) { setError(err.message) }
       finally { setLoading(false) }
     })()
   }, [])
+
+  // 약속의 참여자 표시정보 (그룹 내 아바타/닉네임)
+  const partsOf = (a) => (a.task_participants || [])
+    .map((p) => memberMap[`${a.group_id}:${p.user_id}`]).filter(Boolean)
 
   // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
   const daysWithAppt = useMemo(() => {
@@ -177,22 +186,31 @@ export default function SchedulePage() {
           {dayList.length === 0 ? (
             <p className="muted sm">이 날은 약속이 없어요.</p>
           ) : (
-            dayList.map((a) => (
-              <button key={a.id} type="button" className="cal-appt"
-                onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`)}>
-                <span className="cal-appt-time">{timeOf(a)}</span>
-                <span className="cal-appt-body">
-                  <span className="cal-appt-head">
-                    {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
-                    <span className="task-name">{a.title}</span>
+            dayList.map((a) => {
+              const parts = partsOf(a)
+              const extra = parts.length - 3
+              return (
+                <button key={a.id} type="button" className="cal-appt"
+                  onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`)}>
+                  <span className="cal-appt-time">{timeOf(a)}</span>
+                  <span className="cal-appt-body">
+                    <span className="cal-appt-head">
+                      {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
+                      <span className="task-name">{a.title}</span>
+                    </span>
+                    {a.repeat_rule && (
+                      <span className="cal-appt-meta"><span className="cal-appt-rep">{repeatLabel(a.repeat_rule)}</span></span>
+                    )}
                   </span>
-                  <span className="cal-appt-meta">
-                    <span className="cal-appt-group">{a.groups?.name}</span>
-                    {a.repeat_rule && <span className="cal-appt-rep">{repeatLabel(a.repeat_rule)}</span>}
-                  </span>
-                </span>
-              </button>
-            ))
+                  {parts.length > 0 && (
+                    <span className={`cal-appt-avs task-parts ${parts.length > 1 ? 'multi' : ''}`}>
+                      {parts.slice(0, 3).map((m, i) => <Avatar key={i} src={m.avatar} name={m.name} size={26} />)}
+                      {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+                    </span>
+                  )}
+                </button>
+              )
+            })
           )}
         </div>
       )}
