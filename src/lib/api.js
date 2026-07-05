@@ -8,8 +8,9 @@ const PROFILE_COLS = 'id, nickname, role, status, created_at'
 export async function listMyGroups() {
   const { data, error } = await supabase
     .from('groups')
-    .select('*, group_members!inner(user_id)')
+    .select('*, group_members!inner(user_id, display_nickname, avatar_url, profiles(nickname))')
     .order('created_at', { ascending: false })
+    .order('joined_at', { referencedTable: 'group_members', ascending: true })
   if (error) throw error
   return data ?? []
 }

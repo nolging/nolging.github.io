@@ -179,7 +179,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   margin: 5px 0 0; font-size: 12px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.tile-code { margin-top: auto; align-self: flex-start; }
+.tile-members { margin-top: auto; align-self: flex-start; }
 .empty-hint { margin-top: 16px; text-align: center; }
 
 /* 그룹 만들기 마법사 하단 버튼 */
