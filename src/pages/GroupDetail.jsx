@@ -3,10 +3,10 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks,
-  acceptTask, completeTask, reopenTask, deleteTask, cancelAppointment,
+  completeTask, reopenTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
-  typeLabel, themeLabel, taskTerms, TASK_STATUSES, formatWhen, repeatCycleText,
+  taskTerms, TASK_STATUSES, formatWhen, repeatCycleText,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -92,17 +92,13 @@ export default function GroupDetail() {
     )
   }
 
-  const terms = taskTerms(group.group_type)
+  const terms = taskTerms()
   const visibleTasks = tasks.filter((t) => t.status === filter)
 
   return (
     <div className="page">
       <div className="gd-head">
         <div className="gd-title">
-          <div className="group-card-badges">
-            <span className={`badge type-${group.group_type}`}>{typeLabel(group.group_type)}</span>
-            <span className="badge">{themeLabel(group.group_type, group.theme)}</span>
-          </div>
           <h1>{group.name}</h1>
           {group.description && <p className="muted">{group.description}</p>}
         </div>
@@ -133,18 +129,12 @@ export default function GroupDetail() {
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
               participants={partsByTask[t.id] || []}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
-              onAccept={() => {
-                if (group.group_type === 'nolging') {
-                  navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { groupType: group.group_type } })
-                } else {
-                  runAction(() => acceptTask(t.id, profile.id))
-                }
-              }}
+              onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`)}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
               onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
-              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { groupType: group.group_type } })}
-              onCancelAppointment={() => { if (confirm('약속을 취소하고 위시리스트로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
+              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`)}
+              onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
               onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
           ))}
         </ul>

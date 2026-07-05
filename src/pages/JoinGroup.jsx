@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { previewGroup, joinGroupWithProfile } from '../lib/api'
-import { typeLabel, themeLabel } from '../lib/constants'
 import AvatarEditor from '../components/AvatarEditor'
 
 export default function JoinGroup() {
@@ -63,10 +62,6 @@ export default function JoinGroup() {
     <div className="page">
       <div className="card narrow">
         <div className="join-group-info">
-          <div className="group-card-badges">
-            <span className={`badge type-${preview.group_type}`}>{typeLabel(preview.group_type)}</span>
-            <span className="badge">{themeLabel(preview.group_type, preview.theme)}</span>
-          </div>
           <h2 className="join-group-name">{preview.name}</h2>
           <p className="muted sm">소유자 · {preview.owner_nickname}</p>
           {preview.description && <p className="muted">{preview.description}</p>}

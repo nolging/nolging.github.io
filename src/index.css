@@ -524,11 +524,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 태스크 내 담당자(인라인 아바타) ---- */
 .task-person { display: inline-flex; align-items: center; gap: 4px; }
 
-/* ---- 그룹 카드 배지 ---- */
-.group-card-badges { display: flex; gap: 6px; margin-bottom: 4px; }
-.badge.type-nolging { background: #ffe9d6; color: #c2410c; }
-.badge.type-ilhaging { background: #dbeafe; color: #1d4ed8; }
-
 /* ---- 테이블 가로 스크롤 (모바일) ---- */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 

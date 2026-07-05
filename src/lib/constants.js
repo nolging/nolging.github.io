@@ -1,59 +1,31 @@
-// 그룹 유형/테마 라벨 및 규칙
+// 위시 용어 & 그룹 테마 (모든 그룹 공통 — "놀 때" 컨셉)
 
-export const GROUP_TYPES = [
-  { value: 'nolging', label: '놀깅' },
-  { value: 'ilhaging', label: '일하깅' },
+// 그룹 테마: 기본/사랑/우정. 현재는 사용자가 바꿀 수 없고 생성 시 '기본' 고정.
+// 값은 기존 DB 제약(solo/couple/friend)을 재사용 → 마이그레이션 불필요.
+export const GROUP_THEMES = [
+  { value: 'solo', label: '기본' },
+  { value: 'couple', label: '사랑' },
+  { value: 'friend', label: '우정' },
 ]
-
-export const THEMES_BY_TYPE = {
-  nolging: [
-    { value: 'solo', label: '혼자' },
-    { value: 'friend', label: '친구' },
-    { value: 'couple', label: '연인' },
-  ],
-  ilhaging: [
-    { value: 'solo', label: '혼자' },
-    { value: 'together', label: '같이' },
-  ],
+export const DEFAULT_THEME = 'solo'
+export function themeLabel(theme) {
+  return GROUP_THEMES.find((t) => t.value === theme)?.label ?? '기본'
 }
 
-export function typeLabel(t) {
-  return GROUP_TYPES.find((x) => x.value === t)?.label ?? t
+// 위시 용어. 진행 상태: 위시(to do) → 약속(doing) → 추억(done)
+const TERMS = {
+  noun: '위시',
+  status: { open: '위시', accepted: '약속', done: '추억' },
+  accept: '놀기 신청',
 }
-
-export function themeLabel(type, theme) {
-  return (THEMES_BY_TYPE[type] ?? []).find((x) => x.value === theme)?.label ?? theme
-}
-
-// 유형이 바뀌면 테마가 유효하지 않을 수 있으니 기본값으로 보정
-export function normalizeTheme(type, theme) {
-  const list = THEMES_BY_TYPE[type] ?? []
-  return list.some((x) => x.value === theme) ? theme : list[0]?.value ?? 'solo'
-}
-
-// 그룹 유형별 태스크 용어 (명칭/진행단계/수락)
-const TASK_TERMS = {
-  nolging: {
-    noun: '위시리스트',
-    status: { open: '위시리스트', accepted: '약속', done: '추억' },
-    accept: '놀기 신청',
-  },
-  ilhaging: {
-    noun: '태스크',
-    status: { open: 'TO DO', accepted: 'DOING', done: 'DONE' },
-    accept: '일정 추가',
-  },
-}
-
-// 유형이 없거나 알 수 없으면 일하깅(일반 태스크) 용어로 폴백
-export function taskTerms(groupType) {
-  return TASK_TERMS[groupType] ?? TASK_TERMS.ilhaging
+export function taskTerms() {
+  return TERMS
 }
 
 // 진행 단계 순서 ("전체" 제외)
 export const TASK_STATUSES = ['open', 'accepted', 'done']
 
-// 위시리스트(놀깅) 유형
+// 위시 카테고리
 export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
 
 // 약속 반복 옵션 (아이폰 미리 알림 참고). value=저장 키, label=표시

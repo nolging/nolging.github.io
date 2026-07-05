@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext } from 'react
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
-  acceptTask, completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
+  completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel } from '../lib/constants'
 import Avatar from '../components/Avatar'
@@ -69,7 +69,7 @@ export default function TaskDetail() {
   }, [highlightId])
 
   const isOwner = group && group.owner_id === profile?.id
-  const terms = taskTerms(group?.group_type)
+  const terms = taskTerms()
 
   const nameMap = useMemo(() => {
     const map = {}
@@ -117,10 +117,10 @@ export default function TaskDetail() {
   // 상단바: 진행 상태별 명칭(위시리스트/약속/추억) + 뒤로가기는 해당 상태 탭으로
   useEffect(() => {
     if (task && group) {
-      setTaskHeading(taskTerms(group.group_type).status[task.status])
+      setTaskHeading(taskTerms().status[task.status])
       setTaskBackTo(`/groups/${groupId}?tab=${task.status}`)
     }
-  }, [task?.status, group?.group_type, groupId, setTaskHeading, setTaskBackTo])
+  }, [task?.status, group, groupId, setTaskHeading, setTaskBackTo])
   useEffect(() => () => { setTaskHeading(null); setTaskBackTo(null) }, [setTaskHeading, setTaskBackTo])
 
   // 알림에서 넘어온 경우(?c=댓글id): 로딩 완료 후 그 댓글로 스크롤 + 강조
@@ -133,21 +133,19 @@ export default function TaskDetail() {
     try { setTask(await fn()) } catch (err) { setError(err.message) }
   }
 
-  const isNolging = group?.group_type === 'nolging'
-  // 놀기 신청: 놀깅은 약속 잡기 페이지로, 그 외는 즉시 수락
+  // 놀기 신청 → 약속 잡기 페이지
   function acceptOrSchedule() {
-    if (isNolging) navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })
-    else runTaskAction(() => acceptTask(task.id, profile.id))
+    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`)
   }
 
   // 상단 약속 메뉴 동작
   function goEditAppointment() {
     setHeadMenu(false)
-    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { groupType: group.group_type } })
+    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`)
   }
   async function doCancelAppointment() {
     setHeadMenu(false)
-    if (!confirm('약속을 취소하고 위시리스트로 되돌릴까요?')) return
+    if (!confirm('약속을 취소하고 위시로 되돌릴까요?')) return
     try { await cancelAppointment(taskId); await load() } catch (err) { setError(err.message) }
   }
   async function doDeleteTask() {

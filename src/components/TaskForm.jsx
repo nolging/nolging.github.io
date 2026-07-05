@@ -3,8 +3,8 @@ import { WISH_CATEGORIES } from '../lib/constants'
 
 // 태스크 작성/편집 공용 폼. onSubmit(values) 는 저장(생성/수정)을 처리하고
 // 성공 시 페이지 이동을 담당한다. (실패 시 throw)
-export default function TaskForm({ groupType, initial = {}, submitLabel, onSubmit }) {
-  const isNolging = groupType === 'nolging'
+export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
+  const isNolging = true // 모든 그룹이 놀 때 컨셉 → 카테고리 칩 + 제목(설명 없음)
   const [title, setTitle] = useState(initial.title || '')
   const [desc, setDesc] = useState(initial.description || '')
   const [category, setCategory] = useState(initial.category || '')

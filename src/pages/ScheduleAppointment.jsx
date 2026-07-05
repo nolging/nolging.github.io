@@ -84,7 +84,7 @@ export default function ScheduleAppointment() {
   const isReschedule = task && task.status !== 'open'
   const isCreator = task?.created_by === profile.id
   const canEditTask = isReschedule && isCreator   // 작성자는 약속 수정 페이지에서 태스크 정보도 수정
-  const isNolging = group?.group_type === 'nolging'
+  const isNolging = true
   const mandatory = useMemo(() => new Set([task?.created_by, profile.id].filter(Boolean)), [task, profile.id])
   const needChoose = members.length >= 3
 

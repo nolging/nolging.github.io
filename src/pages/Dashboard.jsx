@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { listMyGroups, createGroup } from '../lib/api'
-import { GROUP_TYPES, THEMES_BY_TYPE, typeLabel, themeLabel, normalizeTheme } from '../lib/constants'
+import { DEFAULT_THEME } from '../lib/constants'
 
-const EMPTY = { name: '', description: '', groupType: 'nolging', theme: 'solo', showContact: false, showBirthdate: false }
+const EMPTY = { name: '', description: '', showContact: false, showBirthdate: false }
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -25,16 +25,15 @@ export default function Dashboard() {
   }
   useEffect(() => { load() }, [])
 
-  function chooseType(t) {
-    set({ groupType: t, theme: normalizeTheme(t, form.theme) })
-  }
-
   async function handleCreate(e) {
     e.preventDefault()
     if (!form.name.trim()) return
     setBusy(true); setError('')
     try {
-      await createGroup({ ...form, name: form.name.trim(), description: form.description.trim(), ownerId: profile.id })
+      await createGroup({
+        ...form, name: form.name.trim(), description: form.description.trim(),
+        ownerId: profile.id, groupType: 'nolging', theme: DEFAULT_THEME,
+      })
       setForm(EMPTY); setShowForm(false)
       await load()
     } catch (err) { setError(err.message) } finally { setBusy(false) }
@@ -54,26 +53,6 @@ export default function Dashboard() {
             <input autoFocus value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="그룹 이름" /></label>
           <label className="field"><span>설명 (선택)</span>
             <input value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="설명" /></label>
-
-          <div className="field"><span>그룹 유형</span>
-            <div className="toggle-group">
-              {GROUP_TYPES.map((t) => (
-                <button type="button" key={t.value}
-                  className={`toggle ${form.groupType === t.value ? 'active' : ''}`}
-                  onClick={() => chooseType(t.value)}>{t.label}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="field"><span>그룹 테마</span>
-            <div className="toggle-group">
-              {THEMES_BY_TYPE[form.groupType].map((t) => (
-                <button type="button" key={t.value}
-                  className={`toggle ${form.theme === t.value ? 'active' : ''}`}
-                  onClick={() => set({ theme: t.value })}>{t.label}</button>
-              ))}
-            </div>
-          </div>
 
           <div className="field-row">
             <label className="check">
@@ -104,10 +83,6 @@ export default function Dashboard() {
         <div className="grid">
           {groups.map((g) => (
             <Link key={g.id} to={`/groups/${g.id}`} className="card group-card">
-              <div className="group-card-badges">
-                <span className={`badge type-${g.group_type}`}>{typeLabel(g.group_type)}</span>
-                <span className="badge">{themeLabel(g.group_type, g.theme)}</span>
-              </div>
               <h3>{g.name}</h3>
               {g.description && <p className="muted">{g.description}</p>}
               <div className="group-card-foot">
