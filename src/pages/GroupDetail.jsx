@@ -6,7 +6,7 @@ import {
   completeTask, reopenTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
-  taskTerms, TASK_STATUSES, formatWhen, repeatCycleText,
+  taskTerms, TASK_STATUSES, formatWhen, repeatCycleText, categoryStyle,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -177,7 +177,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
     <li className={`task-item status-${task.status}`} onClick={onOpen}>
       <div className="task-head">
         <div className="task-headline">
-          {task.category && <span className="cat-chip">{task.category}</span>}
+          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
           <span className="task-name">{task.title}</span>
         </div>
         <div className="task-head-right">

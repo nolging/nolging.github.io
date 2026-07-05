@@ -27,6 +27,20 @@ export const TASK_STATUSES = ['open', 'accepted', 'done']
 // 위시 카테고리
 export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
 
+// 카테고리별 파스텔 색 (배경/글자) — 칩으로 유형을 한눈에 구분
+export const CATEGORY_COLORS = {
+  OTT:  { bg: '#ECE6FB', fg: '#6C4BD6' }, // 라벤더
+  독서: { bg: '#FBE7D6', fg: '#B96A2E' }, // 살구
+  영화: { bg: '#DCEAFE', fg: '#2F6FCF' }, // 하늘
+  게임: { bg: '#DAF1E2', fg: '#2E9E63' }, // 민트
+  운동: { bg: '#FFE0E6', fg: '#D2506E' }, // 코랄핑크
+  기타: { bg: '#E9EBF1', fg: '#6B7280' }, // 뉴트럴
+}
+export function categoryStyle(cat) {
+  const c = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
+  return { background: c.bg, color: c.fg, borderColor: c.bg }
+}
+
 // 약속 반복 옵션 (아이폰 미리 알림 참고). value=저장 키, label=표시
 export const REPEAT_OPTIONS = [
   { value: 'none', label: '안 함' },

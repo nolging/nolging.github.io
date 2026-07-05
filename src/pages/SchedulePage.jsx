@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listMyAppointments } from '../lib/api'
-import { repeatLabel } from '../lib/constants'
+import { repeatLabel, categoryStyle } from '../lib/constants'
 
 const pad = (n) => String(n).padStart(2, '0')
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -183,7 +183,7 @@ export default function SchedulePage() {
                 <span className="cal-appt-time">{timeOf(a)}</span>
                 <span className="cal-appt-body">
                   <span className="cal-appt-head">
-                    {a.category && <span className="cat-chip">{a.category}</span>}
+                    {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
                     <span className="task-name">{a.title}</span>
                   </span>
                   <span className="cal-appt-meta">

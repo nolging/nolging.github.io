@@ -6,7 +6,7 @@ import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
 } from '../lib/api'
-import { taskTerms, repeatLabel, remindLabel } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel, categoryStyle } from '../lib/constants'
 import Avatar from '../components/Avatar'
 
 function formatTime(iso) {
@@ -272,7 +272,7 @@ export default function TaskDetail() {
     <div className="page task-detail">
       <div className="td-head">
         <div className="task-headline">
-          {task.category && <span className="cat-chip">{task.category}</span>}
+          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
           <span className="task-name td-name">{task.title}</span>
         </div>
         <div className="td-head-right">

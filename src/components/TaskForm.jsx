@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WISH_CATEGORIES } from '../lib/constants'
+import { WISH_CATEGORIES, categoryStyle } from '../lib/constants'
 
 // 태스크 작성/편집 공용 폼. onSubmit(values) 는 저장(생성/수정)을 처리하고
 // 성공 시 페이지 이동을 담당한다. (실패 시 throw)
@@ -30,6 +30,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
         <div className="chip-row">
           {WISH_CATEGORIES.map((c) => (
             <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
+              style={category === c ? categoryStyle(c) : undefined}
               onClick={() => setCategory(category === c ? '' : c)}>{c}</button>
           ))}
         </div>

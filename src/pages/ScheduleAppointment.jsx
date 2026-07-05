@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, updateTask,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle } from '../lib/constants'
 import Avatar from '../components/Avatar'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -151,6 +151,7 @@ export default function ScheduleAppointment() {
             <div className="chip-row">
               {WISH_CATEGORIES.map((c) => (
                 <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
+                  style={category === c ? categoryStyle(c) : undefined}
                   onClick={() => setCategory(category === c ? '' : c)}>{c}</button>
               ))}
             </div>
@@ -159,7 +160,7 @@ export default function ScheduleAppointment() {
         </div>
       ) : (
         <div className="sched-headline">
-          {task.category && <span className="cat-chip">{task.category}</span>}
+          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
           <span className="task-name">{task.title}</span>
         </div>
       )}
