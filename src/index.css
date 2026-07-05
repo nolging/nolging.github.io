@@ -24,6 +24,8 @@
 }
 
 * { box-sizing: border-box; }
+/* 폼 요소는 폰트를 상속하지 않으므로 명시적으로 페이퍼로지 상속 */
+button, input, textarea, select, optgroup { font-family: inherit; }
 html, body, #root { height: 100%; margin: 0; }
 body {
   /* 배경은 흰색(하단바와 동일). 회색 캔버스는 .content 가 담당 →
@@ -40,14 +42,14 @@ h3 { margin: 0; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  padding: 8px 14px; border-radius: 9px; font-size: 14px; font-weight: 600;
+  padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
   cursor: pointer; transition: filter .12s, background .12s; white-space: nowrap;
 }
 .btn:hover { filter: brightness(0.97); }
 .btn:disabled { opacity: .55; cursor: default; }
-.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-d); filter: none; }
-.btn-success { background: var(--success); border-color: var(--success); color: #fff; }
+.btn-primary { background: var(--text); border-color: var(--text); color: #fff; }
+.btn-primary:hover { background: var(--text); filter: brightness(1.35); }
+.btn-success { background: var(--text); border-color: var(--text); color: #fff; }
 .btn-danger { background: #fff; border-color: #f0c0c0; color: var(--danger); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn-ghost:hover { background: rgba(0,0,0,.04); }
@@ -510,13 +512,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .fab {
   position: fixed; right: 20px; bottom: 24px; z-index: 30;
   width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--primary); color: #fff;
+  background: var(--text); color: #fff;
   font-size: 30px; font-weight: 300; line-height: 1;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 18px rgba(79, 70, 229, .42);
+  box-shadow: 0 6px 18px rgba(20, 22, 40, .32);
   transition: transform .12s ease;
 }
-.fab:hover { background: var(--primary-d); text-decoration: none; }
+.fab:hover { background: var(--text); filter: brightness(1.3); text-decoration: none; }
 .fab:active { transform: scale(.94); }
 
 /* ---- 하단 시트 (초대 등) ---- */
