@@ -21,14 +21,12 @@ export default function Dashboard() {
   useEffect(() => { load() }, [])
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
 
-  const clearDom = () => { if (inputRef.current) inputRef.current.textContent = '' }
-
   // 검색창 밖을 누르면 접어서 돋보기만 남김 (검색어도 초기화)
   useEffect(() => {
     if (!searchOpen) return
     function onDown(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchOpen(false); setQ(''); clearDom()
+        setSearchOpen(false); setQ('')
       }
     }
     document.addEventListener('pointerdown', onDown)
@@ -37,16 +35,11 @@ export default function Dashboard() {
 
   function toggleSearch() {
     setSearchOpen((v) => {
-      if (v) { setQ(''); clearDom() } // 닫을 때 검색어 초기화
+      if (v) setQ('') // 닫을 때 검색어 초기화
       return !v
     })
   }
-  function clearSearch() { setQ(''); clearDom(); inputRef.current?.focus() }
-  function onSearchInput(e) {
-    const t = e.currentTarget.textContent || ''
-    if (!t) e.currentTarget.innerHTML = '' // 빈 <br> 잔여물 제거 → placeholder 노출
-    setQ(t)
-  }
+  function clearSearch() { setQ(''); inputRef.current?.focus() }
 
   const query = q.trim().toLowerCase()
   const filtered = query
@@ -69,14 +62,12 @@ export default function Dashboard() {
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </button>
-        {/* iOS 폼 어시스턴트 바(∧∨✓)를 피하려고 input 대신 contenteditable 사용 */}
-        <div ref={inputRef} className="gs-input" contentEditable={searchOpen}
-          role="searchbox" aria-label="그룹 검색" data-placeholder="그룹 검색"
-          suppressContentEditableWarning onInput={onSearchInput}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.preventDefault()
-            if (e.key === 'Escape') toggleSearch()
-          }} />
+        <input ref={inputRef} className="gs-input" type="text" value={q}
+          onChange={(e) => setQ(e.target.value)} placeholder="그룹 검색"
+          aria-label="그룹 검색" enterKeyHint="search"
+          autoComplete="off" autoCorrect="off" autoCapitalize="none"
+          tabIndex={searchOpen ? 0 : -1}
+          onKeyDown={(e) => e.key === 'Escape' && toggleSearch()} />
         {searchOpen && q && (
           <button type="button" className="gs-clear" onClick={clearSearch}
             aria-label="검색어 지우기">×</button>
