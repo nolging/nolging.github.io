@@ -122,6 +122,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
 .app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+/* 내 그룹(그룹 페이지) 전용 배경 이미지 — 화면 꽉 차게, 상·하단 바까지 투명 */
+.app-shell.bg-scene { background: url('/bg-groups.jpg') center top / cover no-repeat; }
+.app-shell.bg-scene .content { background: transparent; }
+.app-shell.bg-scene .topbar { background: transparent; border-bottom: none; }
+.app-shell.bg-scene .bottomnav { background: transparent; border-top: none; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
