@@ -663,6 +663,11 @@ a.mp-tel:active { opacity: .55; }
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(20, 22, 40, .18);
 }
+.avatar-cam-spin {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--muted);
+  animation: spin .7s linear infinite;
+}
 .menu-backdrop { position: fixed; inset: 0; z-index: 40; }
 .avatar-menu {
   position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);

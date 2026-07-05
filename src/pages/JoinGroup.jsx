@@ -73,7 +73,7 @@ export default function JoinGroup() {
 
         <div className="form">
           <AvatarEditor value={form.avatar_url} name={form.display_nickname || profile?.nickname}
-            onChange={(v) => set({ avatar_url: v })} onError={setError} />
+            userId={profile?.id} onChange={(v) => set({ avatar_url: v })} onError={setError} />
 
           <label className="field"><span>닉네임</span>
             <input value={form.display_nickname} onChange={(e) => set({ display_nickname: e.target.value })}

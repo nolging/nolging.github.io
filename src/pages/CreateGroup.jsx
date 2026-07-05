@@ -96,7 +96,7 @@ export default function CreateGroup() {
       <p className="muted sm">이 그룹에서 사용할 내 프로필을 설정하세요.</p>
       <div className="form">
         <AvatarEditor value={prof.avatar_url} name={prof.display_nickname || profile?.nickname}
-          onChange={(v) => setP({ avatar_url: v })} onError={setError} />
+          userId={profile?.id} onChange={(v) => setP({ avatar_url: v })} onError={setError} />
 
         <label className="field"><span>닉네임 *</span>
           <input value={prof.display_nickname}

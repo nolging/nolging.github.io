@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { updateMyGroupMember } from '../lib/api'
+import { deleteAvatarByUrl } from '../lib/storage'
 import AvatarEditor from './AvatarEditor'
 import Switch from './Switch'
 
@@ -24,6 +25,8 @@ export default function MySettings({ group, me, onSaved }) {
         show_contact: form.show_contact,
         show_birthdate: form.show_birthdate,
       })
+      // 저장 성공 후, 교체·삭제된 이전 스토리지 아바타 정리 (best-effort)
+      if (me.avatar_url && me.avatar_url !== form.avatar_url) deleteAvatarByUrl(me.avatar_url)
       onSaved()
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
@@ -32,7 +35,7 @@ export default function MySettings({ group, me, onSaved }) {
     <div className="form">
       {/* 프로필 사진: 원형·가운데, 클릭 시 변경/제거 메뉴 */}
       <AvatarEditor value={form.avatar_url} name={form.display_nickname || me?.login_id}
-        onChange={(v) => set({ avatar_url: v })} onError={setError} />
+        userId={me?.user_id} onChange={(v) => set({ avatar_url: v })} onError={setError} />
 
       <label className="field"><span>닉네임</span>
         <input value={form.display_nickname} onChange={(e) => set({ display_nickname: e.target.value })}
