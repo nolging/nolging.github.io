@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import RequestAccess from './pages/RequestAccess'
 import Dashboard from './pages/Dashboard'
+import CreateGroup from './pages/CreateGroup'
 import GroupDetail from './pages/GroupDetail'
 import GroupMembers from './pages/GroupMembers'
 import CreateTask from './pages/CreateTask'
@@ -31,6 +32,7 @@ export default function App() {
         }
       >
         <Route path="/" element={<Dashboard />} />
+        <Route path="/groups/new" element={<CreateGroup />} />
         <Route path="/groups/:groupId" element={<GroupDetail />} />
         <Route path="/groups/:groupId/members" element={<GroupMembers />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />

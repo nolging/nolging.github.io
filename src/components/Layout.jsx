@@ -58,6 +58,7 @@ export default function Layout() {
   const taskEditMatch = useMatch('/groups/:groupId/tasks/:taskId/edit')
   const taskScheduleMatch = useMatch('/groups/:groupId/tasks/:taskId/schedule')
   const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
+  const newGroupMatch = useMatch('/groups/new')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
@@ -78,7 +79,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(groupConfigMatch || settingsMatch || membersMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
+  const isGroupView = !!(newGroupMatch || groupConfigMatch || settingsMatch || membersMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -170,6 +171,14 @@ export default function Layout() {
       <header className="topbar">
         <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
+      </header>
+    )
+  } else if (newGroupMatch) {
+    // 그룹 만들기 페이지: 좌측 뒤로(내 그룹), 제목 "그룹 만들기"
+    topbar = (
+      <header className="topbar">
+        <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">그룹 만들기</span>
       </header>
     )
   } else if (groupMatch) {
