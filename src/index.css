@@ -556,13 +556,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- 브랜드 워드마크 (놀기ㅇ) ---- */
-.brand-word { font-weight: 800; letter-spacing: -1px; }
+.brand-word { font-weight: 800; letter-spacing: -1px; color: var(--text); }
 .brand .brand-word { font-size: 1.2rem; }
 .auth-logo .brand-word { font-size: 1.7rem; }
-.brand-word .brand-o {
-  color: var(--text); font-size: inherit;
-  display: inline-block; margin-left: 1px; transform: translateY(1px);
-}
 
 /* ---- 토글 버튼 그룹 ---- */
 .toggle-group { display: inline-flex; background: #eef0f5; border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
