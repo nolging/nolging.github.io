@@ -16,9 +16,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Nolging" />
 
-    <!-- 웹폰트: 페이퍼로지 (동적 서브셋, 9종 굵기) -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/subsets/Paperlogy-dynamic-subset.css" />
+    <!-- 웹폰트: 페이퍼로지는 self-host (src/index.css @font-face, public/fonts) -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-4Regular.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-6SemiBold.woff2" crossorigin />
 
     <title>Nolging · 그룹 태스크 관리</title>
   </head>
