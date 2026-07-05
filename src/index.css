@@ -190,7 +190,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .gs-input {
   flex: 1; min-width: 0; width: 0; max-width: 0; opacity: 0;
   height: 44px; padding: 0 12px 0 44px; border: none; background: var(--surface);
-  border-radius: 22px; font-size: 15px; color: var(--text);
+  border-radius: 22px; font-size: 16px; color: var(--text); /* 16px: iOS 포커스 자동 확대 방지 */
   margin-left: -44px;
   transition: max-width .28s ease, opacity .18s ease, box-shadow .2s ease;
 }
