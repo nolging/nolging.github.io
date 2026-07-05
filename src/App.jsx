@@ -14,6 +14,7 @@ import ScheduleAppointment from './pages/ScheduleAppointment'
 import GroupSettingsPage from './pages/GroupSettingsPage'
 import GroupConfigPage from './pages/GroupConfigPage'
 import JoinGroup from './pages/JoinGroup'
+import SchedulePage from './pages/SchedulePage'
 import MyProfile from './pages/MyProfile'
 import Notifications from './pages/Notifications'
 import Admin from './pages/Admin'
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/groups/:groupId/settings" element={<GroupSettingsPage />} />
         <Route path="/groups/:groupId/settings/group" element={<GroupConfigPage />} />
         <Route path="/join" element={<JoinGroup />} />
+        <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/me" element={<MyProfile />} />
         <Route

@@ -206,6 +206,18 @@ export async function rescheduleTask(opts) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용
+export async function listMyAppointments() {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*, groups(name)')
+    .eq('status', 'accepted')
+    .not('scheduled_at', 'is', null)
+    .order('scheduled_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
 // 약속 취소 → 위시리스트(open) 로 복귀, 일정/참여자 초기화
 export async function cancelAppointment(taskId) {
   const { data, error } = await supabase.rpc('cancel_appointment', { p_task_id: taskId })
