@@ -10,7 +10,6 @@ export default function Dashboard() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
-  const searchRef = useRef(null)
 
   async function load() {
     setLoading(true)
@@ -21,24 +20,14 @@ export default function Dashboard() {
   useEffect(() => { load() }, [])
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
 
-  // 검색창 밖을 누르면 접어서 돋보기만 남김 (검색어도 초기화)
-  useEffect(() => {
-    if (!searchOpen) return
-    function onDown(e) {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchOpen(false); setQ('')
-      }
-    }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
-  }, [searchOpen])
-
-  function toggleSearch() {
-    setSearchOpen((v) => {
-      if (v) setQ('') // 닫을 때 검색어 초기화
-      return !v
-    })
+  // 접힘은 blur 로 처리 → iOS 어디를 누르든(포커스 해제) 안정적으로 닫힌다.
+  // blur 직후 카드 클릭이 먼저 처리되도록 약간 지연 + 재포커스 시엔 닫지 않음.
+  function openSearch() { setSearchOpen(true) }
+  function closeSearch() {
+    if (document.activeElement === inputRef.current) return
+    setSearchOpen(false); setQ('')
   }
+  function onSearchBlur() { setTimeout(closeSearch, 120) }
   function clearSearch() { setQ(''); inputRef.current?.focus() }
 
   const query = q.trim().toLowerCase()
@@ -52,10 +41,10 @@ export default function Dashboard() {
     <div className="page">
       {error && <div className="alert alert-error">{error}</div>}
 
-      <form ref={searchRef} className={`group-search ${searchOpen ? 'open' : ''}`}
-        onSubmit={(e) => e.preventDefault()}>
-        <button type="button" className="gs-btn" onClick={toggleSearch}
-          aria-label={searchOpen ? '검색 닫기' : '그룹 검색'} aria-expanded={searchOpen}>
+      <div className={`group-search ${searchOpen ? 'open' : ''}`}>
+        <button type="button" className="gs-btn"
+          onMouseDown={(e) => e.preventDefault()} onClick={openSearch}
+          aria-label="그룹 검색" aria-expanded={searchOpen}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="7" />
@@ -67,12 +56,14 @@ export default function Dashboard() {
           aria-label="그룹 검색" enterKeyHint="search"
           autoComplete="off" autoCorrect="off" autoCapitalize="none"
           tabIndex={searchOpen ? 0 : -1}
-          onKeyDown={(e) => e.key === 'Escape' && toggleSearch()} />
+          onBlur={onSearchBlur}
+          onKeyDown={(e) => e.key === 'Escape' && inputRef.current?.blur()} />
         {searchOpen && q && (
-          <button type="button" className="gs-clear" onClick={clearSearch}
+          <button type="button" className="gs-clear"
+            onMouseDown={(e) => e.preventDefault()} onClick={clearSearch}
             aria-label="검색어 지우기">×</button>
         )}
-      </form>
+      </div>
 
       {loading ? (
         <div className="spinner" />
