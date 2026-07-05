@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { updateMyGroupMember } from '../lib/api'
 import AvatarEditor from './AvatarEditor'
+import Switch from './Switch'
 
 // 그룹 내 내 설정: 프로필사진(원형/클릭 메뉴), 닉네임, 연락처/생일 공개 토글
 export default function MySettings({ group, me, onSaved }) {
@@ -38,16 +39,12 @@ export default function MySettings({ group, me, onSaved }) {
           placeholder="그룹 내에서 사용할 닉네임을 입력해 주세요" /></label>
 
       {group.show_contact && (
-        <label className="check">
-          <input type="checkbox" checked={form.show_contact} onChange={(e) => set({ show_contact: e.target.checked })} />
-          이 그룹에 내 연락처 공개
-        </label>
+        <div className="switch-row"><span>이 그룹에 내 연락처 공개</span>
+          <Switch checked={form.show_contact} onChange={(v) => set({ show_contact: v })} /></div>
       )}
       {group.show_birthdate && (
-        <label className="check">
-          <input type="checkbox" checked={form.show_birthdate} onChange={(e) => set({ show_birthdate: e.target.checked })} />
-          이 그룹에 내 생년월일 공개
-        </label>
+        <div className="switch-row"><span>이 그룹에 내 생년월일 공개</span>
+          <Switch checked={form.show_birthdate} onChange={(v) => set({ show_birthdate: v })} /></div>
       )}
 
       {error && <div className="alert alert-error">{error}</div>}
