@@ -195,6 +195,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 8px; }
 .cal-title { font-weight: 700; font-size: 1rem; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+/* 날짜 그리드: 모든 주(행) 높이를 동일하게 고정 */
+.cal-grid:not(.cal-wd) { grid-auto-rows: 48px; }
 .cal-wd { margin-bottom: 2px; }
 .cal-wdc { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
 .cal-wdc.sun { color: #dc2626; }
