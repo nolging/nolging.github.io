@@ -28,7 +28,7 @@ export async function createGroup({ name, description, ownerId, groupType, theme
       description: description ?? '',
       owner_id: ownerId,
       group_type: groupType ?? 'nolging',
-      theme: theme ?? 'solo',
+      theme: theme ?? 'default',
       show_contact: !!showContact,
       show_birthdate: !!showBirthdate,
     })

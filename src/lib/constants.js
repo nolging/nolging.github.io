@@ -1,13 +1,12 @@
 // 위시 용어 & 그룹 테마 (모든 그룹 공통 — "놀 때" 컨셉)
 
 // 그룹 테마: 기본/사랑/우정. 현재는 사용자가 바꿀 수 없고 생성 시 '기본' 고정.
-// 값은 기존 DB 제약(solo/couple/friend)을 재사용 → 마이그레이션 불필요.
 export const GROUP_THEMES = [
-  { value: 'solo', label: '기본' },
+  { value: 'default', label: '기본' },
   { value: 'couple', label: '사랑' },
   { value: 'friend', label: '우정' },
 ]
-export const DEFAULT_THEME = 'solo'
+export const DEFAULT_THEME = 'default'
 export function themeLabel(theme) {
   return GROUP_THEMES.find((t) => t.value === theme)?.label ?? '기본'
 }

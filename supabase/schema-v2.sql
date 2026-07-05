@@ -14,17 +14,20 @@ alter table public.profiles add  constraint profiles_status_check
 
 -- ---- groups: 유형 / 테마 / 공개 여부 -------------------------
 alter table public.groups add column if not exists group_type    text not null default 'nolging';
-alter table public.groups add column if not exists theme         text not null default 'solo';
+alter table public.groups add column if not exists theme         text not null default 'default';
 alter table public.groups add column if not exists show_contact  boolean not null default false;
 alter table public.groups add column if not exists show_birthdate boolean not null default false;
 
 alter table public.groups drop constraint if exists groups_type_check;
 alter table public.groups add  constraint groups_type_check
   check (group_type in ('nolging','ilhaging'));
+
+-- 테마: 기본(default)/사랑(couple)/우정(friend). 과거 solo/together → default 로 이관.
 alter table public.groups drop constraint if exists groups_theme_check;
+update public.groups set theme = 'default' where theme in ('solo', 'together');
+alter table public.groups alter column theme set default 'default';
 alter table public.groups add  constraint groups_theme_check
-  -- nolging: solo/friend/couple, ilhaging: solo/together
-  check (theme in ('solo','friend','couple','together'));
+  check (theme in ('default', 'couple', 'friend'));
 
 -- ---- group_members: 그룹내 닉네임 / 프로필사진 / 공개 토글 ----
 alter table public.group_members add column if not exists display_nickname text;
