@@ -60,8 +60,9 @@ export default function Dashboard() {
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </button>
-        <input ref={inputRef} className="gs-input" type="search" value={q}
+        <input ref={inputRef} className="gs-input" type="text" value={q}
           onChange={(e) => setQ(e.target.value)} placeholder="그룹 검색"
+          enterKeyHint="search" autoComplete="off" autoCorrect="off" autoCapitalize="none"
           tabIndex={searchOpen ? 0 : -1} onKeyDown={(e) => e.key === 'Escape' && toggleSearch()} />
         {searchOpen && q && (
           <button type="button" className="gs-clear" onClick={() => { setQ(''); inputRef.current?.focus() }}
