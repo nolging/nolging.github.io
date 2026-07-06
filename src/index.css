@@ -689,6 +689,9 @@ a.mp-tel:active { opacity: .55; }
 .media-info {
   background: var(--surface); box-shadow: var(--card-shadow); border-radius: 12px; padding: 12px 14px;
 }
+.media-info-body { display: flex; gap: 12px; align-items: flex-start; }
+.media-info-poster { width: 64px; height: 96px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #e4e6ec; }
+.media-info-main { flex: 1; min-width: 0; }
 .media-info-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .media-info-title { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; }
 .media-info-clear { border: none; background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; flex-shrink: 0; }
