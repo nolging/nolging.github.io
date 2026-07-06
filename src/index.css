@@ -400,11 +400,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 약속 카드: 시간/반복/알림 정보 줄 */
 .task-appt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; font-weight: 600; }
 .task-appt-when { color: var(--text); }
-.task-appt-rep {
-  font-size: 12px; font-weight: 700; color: var(--primary);
-  background: #f3f1fe; border: 1px solid #ddd6fb; border-radius: 20px; padding: 1px 8px;
-}
-.task-appt-bell { display: inline-flex; align-items: center; color: var(--primary); }
+.task-appt-rep { font-size: 12px; font-weight: 600; color: var(--muted); }
+.task-appt-bell { display: inline-flex; align-items: center; color: var(--muted); }
 .task-foot { display: flex; align-items: center; gap: 8px; }
 .task-foot .task-person { font-size: 12px; color: var(--muted); }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
@@ -560,16 +557,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .btn-block { width: 100%; margin-top: 4px; }
 
 /* ---- 약속 정보 (태스크 상세) ---- */
-.appt {
-  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
-  background: #f3f1fe; border: 1px solid #ddd6fb; display: flex; flex-direction: column; gap: 8px;
-}
+/* 상세: 약속 정보(보라 박스 제거, 완료/리뷰 버튼과 같은 줄의 좌측) */
+.td-appt { min-width: 0; }
 .appt-when { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
 .appt-cal { font-size: 16px; }
-.appt-repeat {
-  font-size: 12px; font-weight: 700; color: var(--primary);
-  background: #fff; border: 1px solid #ddd6fb; border-radius: 20px; padding: 2px 8px;
-}
+.appt-repeat { font-size: 12px; font-weight: 600; color: var(--muted); }
+.appt-bell { color: var(--muted); }
 .appt-edit { margin-left: auto; }
 .appt-people { display: flex; flex-wrap: wrap; gap: 10px; }
 .notif-title { font-size: 1.1rem; font-weight: 700; margin: 0; }

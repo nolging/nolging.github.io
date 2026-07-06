@@ -353,16 +353,6 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
           </div>
         </div>
 
-        {task.scheduled_at && (
-          <div className="task-appt">
-            <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
-            {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
-            {task.remind_min !== null && task.remind_min !== undefined && (
-              <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
-            )}
-          </div>
-        )}
-
         {task.description && <p className="task-desc">{task.description}</p>}
 
         <div className="task-foot">
@@ -378,6 +368,17 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
             <span className="task-cc">댓글 {commentCount}</span>
           </div>
         </div>
+
+        {/* 약속 시간: 상세 정보(foot) 아래에 배치 */}
+        {task.scheduled_at && (
+          <div className="task-appt">
+            <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+            {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
+            {task.remind_min !== null && task.remind_min !== undefined && (
+              <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
+            )}
+          </div>
+        )}
       </div>
     </li>
   )

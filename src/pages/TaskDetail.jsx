@@ -341,10 +341,16 @@ export default function TaskDetail() {
         </div>
       </div>
 
-      {/* 약속 정보 (태스크명 아래: 날짜·시간, 반복, 알림) */}
-      {isScheduled && (
-        <div className="appt">
-          <div className="appt-when">
+      {task.description && <p className="td-desc">{task.description}</p>}
+
+      {task.media_info && MEDIA_LOOKUP_CATS.includes(task.category) && (
+        <MediaInfo category={task.category} info={task.media_info} />
+      )}
+
+      {/* 약속 정보(상세 정보 카드 아래) + 완료/리뷰 버튼을 같은 줄에 */}
+      <div className="td-actions">
+        {isScheduled ? (
+          <div className="td-appt appt-when">
             <span className="appt-cal" aria-hidden="true">🗓</span>
             <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
             {task.repeat_rule && (
@@ -352,31 +358,22 @@ export default function TaskDetail() {
                 {repeatLabel(task.repeat_rule)}{task.repeat_until ? ` ~${task.repeat_until}` : ''}
               </span>
             )}
+            {task.remind_min !== null && task.remind_min !== undefined && (
+              <span className="appt-bell" aria-label="미리 알림" title={`미리 알림 · ${remindLabel(task.remind_min)}`}>⏰</span>
+            )}
           </div>
-          {task.remind_min !== null && task.remind_min !== undefined && (
-            <div className="appt-remind muted sm">⏰ 미리 알림 · {remindLabel(task.remind_min)}</div>
-          )}
-        </div>
-      )}
-
-      {task.description && <p className="td-desc">{task.description}</p>}
-
-      {task.media_info && MEDIA_LOOKUP_CATS.includes(task.category) && (
-        <MediaInfo category={task.category} info={task.media_info} />
-      )}
-
-      {showActions && (
-        <div className="td-actions">
-          {!isScheduled && task.assignee_id && (
+        ) : (
+          task.assignee_id && (
             <span className="task-person"><Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
-          )}
-          <div className="task-actions">
-            {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
-            {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => { if (confirm('완료하시겠습니까?')) runTaskAction(() => completeTask(task.id)) }}>완료</button>}
-            {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
-          </div>
+          )
+        )}
+        <div className="task-actions">
+          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
+          {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => { if (confirm('완료하시겠습니까?')) runTaskAction(() => completeTask(task.id)) }}>완료</button>}
+          {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
+          {task.status === 'done' && isParticipant && <button className="btn btn-sm btn-primary" onClick={() => {}}>리뷰 작성</button>}
         </div>
-      )}
+      </div>
 
       <hr className="divider" />
 
