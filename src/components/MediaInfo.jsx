@@ -34,9 +34,9 @@ export default function MediaInfo({ category, info, onClear }) {
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count} 부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
-  } else { // 영화
-    if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
+  } else { // 영화: 개봉일 → 장르 → 러닝타임
     if (info.release_date) rows.push(['개봉일', info.release_date])
+    if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
   }
 

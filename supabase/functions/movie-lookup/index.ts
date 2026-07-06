@@ -47,14 +47,18 @@ function dedupeProviders(list: Provider[]): Provider[] {
   return [...seen.values()]
 }
 
+// 표기 제외할 제공처 (구글 플레이 등)
+const EXCLUDE_PROVIDER = /google play/i
+const keep = (list: Provider[]) => list.filter((p) => !EXCLUDE_PROVIDER.test(p.name))
+
 // 한국(KR) 시청 제공처: flatrate(구독), buy/rent(개별 구매·대여) — 각각 {name, logo}, 중복 제거
 async function providersKR(media: string, id: number): Promise<{ sub: Provider[]; buy: Provider[] }> {
   try {
     const d = await tmdb(`/${media}/${id}/watch/providers`)
     const kr = d?.results?.KR
     return {
-      sub: dedupeProviders(provs(kr?.flatrate)),
-      buy: dedupeProviders([...provs(kr?.buy), ...provs(kr?.rent)]),
+      sub: keep(dedupeProviders(provs(kr?.flatrate))),
+      buy: keep(dedupeProviders([...provs(kr?.buy), ...provs(kr?.rent)])),
     }
   } catch { return { sub: [], buy: [] } }
 }
