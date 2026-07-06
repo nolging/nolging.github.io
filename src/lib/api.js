@@ -148,15 +148,22 @@ export async function createTask({ groupId, title, description, category, media_
   return data
 }
 
-// 영화/드라마 정보 조회 (movie-lookup Edge Function → TMDB)
-export async function searchMedia(query, kind) {
-  const { data, error } = await supabase.functions.invoke('movie-lookup', { body: { action: 'search', query, kind } })
+// 위시 유형별 정보 조회 Edge Function (OTT/영화→movie-lookup·TMDB, 독서→book-lookup·알라딘, 게임→game-lookup·RAWG)
+const LOOKUP_FN = { OTT: 'movie-lookup', '영화': 'movie-lookup', '독서': 'book-lookup', '게임': 'game-lookup' }
+
+export async function searchMedia(query, category) {
+  const fn = LOOKUP_FN[category]
+  if (!fn) return []
+  const kind = category === '영화' ? 'movie' : category === 'OTT' ? 'multi' : undefined
+  const { data, error } = await supabase.functions.invoke(fn, { body: { action: 'search', query, kind } })
   if (error) throw new Error('정보 조회에 실패했어요. 잠시 후 다시 시도해 주세요.')
   if (data?.error) throw new Error(data.error)
   return data?.results ?? []
 }
-export async function getMediaDetail(id, media) {
-  const { data, error } = await supabase.functions.invoke('movie-lookup', { body: { action: 'detail', id, media } })
+export async function getMediaDetail(id, media, category) {
+  const fn = LOOKUP_FN[category]
+  if (!fn) throw new Error('지원하지 않는 유형이에요.')
+  const { data, error } = await supabase.functions.invoke(fn, { body: { action: 'detail', id, media } })
   if (error) throw new Error('정보 조회에 실패했어요. 잠시 후 다시 시도해 주세요.')
   if (data?.error) throw new Error(data.error)
   return data

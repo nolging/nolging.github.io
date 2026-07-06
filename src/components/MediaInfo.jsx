@@ -34,18 +34,30 @@ export default function MediaInfo({ category, info, onClear }) {
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count} 부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
-  } else { // 영화: 개봉일 → 장르 → 러닝타임
+  } else if (category === '영화') { // 개봉일 → 장르 → 러닝타임
     if (info.release_date) rows.push(['개봉일', info.release_date])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
+  } else if (category === '독서') {
+    if (info.author) rows.push(['저자', info.author])
+    if (info.publisher) rows.push(['출판사', info.publisher])
+    if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
+    if (info.page_count) rows.push(['페이지', `${info.page_count} 쪽`])
+  } else if (category === '게임') {
+    if (info.platforms?.length) rows.push(['플랫폼', info.platforms.join(', ')])
+    if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
+    if (info.developers?.length) rows.push(['개발사', info.developers.join(', ')])
+    if (info.publishers?.length) rows.push(['배급사', info.publishers.join(', ')])
   }
+
+  const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : '🎬'
 
   return (
     <div className="media-info">
       <div className="media-info-body">
         {info.poster
           ? <img src={info.poster} alt="" className="media-info-poster" />
-          : <span className="media-info-poster media-poster-empty" aria-hidden="true">🎬</span>}
+          : <span className="media-info-poster media-poster-empty" aria-hidden="true">{posterEmoji}</span>}
         <div className="media-info-main">
           <div className="media-info-head">
             {info.title && <span className="media-info-title">{info.title}</span>}

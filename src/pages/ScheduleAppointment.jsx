@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, updateTask,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 
@@ -166,7 +166,7 @@ export default function ScheduleAppointment() {
         </div>
       )}
 
-      {(category === 'OTT' || category === '영화') && task.media_info && (
+      {MEDIA_LOOKUP_CATS.includes(category) && task.media_info && (
         <MediaInfo category={category} info={task.media_info} />
       )}
 

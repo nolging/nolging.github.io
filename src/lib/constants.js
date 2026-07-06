@@ -45,23 +45,31 @@ export function ottNameKo(name) {
   return OTT_NAME_KO[n] ?? n
 }
 
-// 위시 카드에 표시할 미디어 요약 (OTT 영화: 러닝타임 | OTT, OTT 시리즈: N 부작 | OTT, 영화: 러닝타임 | 개봉일 개봉)
-// 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
+// 정보 자동 조회를 지원하는 위시 유형
+export const MEDIA_LOOKUP_CATS = ['OTT', '영화', '독서', '게임']
+
+// 위시 카드에 표시할 미디어 요약. 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
+// OTT: (러닝타임 | OTT) / (N 부작 | OTT), 영화: 러닝타임 | 개봉일 개봉,
+// 독서: 페이지수 | 저자, 게임: 플랫폼 | 장르
 export function mediaCardLine(category, mi) {
-  if (!mi || (category !== 'OTT' && category !== '영화')) return ''
+  if (!mi) return ''
   const parts = []
-  if (category === 'OTT' && mi.kind === 'tv') {
-    if (mi.episode_count) parts.push(`${mi.episode_count} 부작`)
-  } else if (mi.runtime) {
-    parts.push(`${mi.runtime} 분`)
-  }
   if (category === 'OTT') {
+    if (mi.kind === 'tv') { if (mi.episode_count) parts.push(`${mi.episode_count} 부작`) }
+    else if (mi.runtime) parts.push(`${mi.runtime} 분`)
     const list = (mi.providers?.length ? mi.providers : mi.providers_buy) || []
     const names = list.map((p) => ottNameKo(typeof p === 'string' ? p : p?.name)).filter(Boolean)
     if (names.length) parts.push(names.join(' '))
-  } else if (mi.release_date) {
-    parts.push(`${mi.release_date} 개봉`)
-  }
+  } else if (category === '영화') {
+    if (mi.runtime) parts.push(`${mi.runtime} 분`)
+    if (mi.release_date) parts.push(`${mi.release_date} 개봉`)
+  } else if (category === '독서') {
+    if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
+    if (mi.author) parts.push(mi.author)
+  } else if (category === '게임') {
+    if (mi.platforms?.length) parts.push(mi.platforms.join(' '))
+    if (mi.genres?.length) parts.push(mi.genres.join(', '))
+  } else return ''
   return parts.join(' | ')
 }
 

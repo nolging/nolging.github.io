@@ -6,7 +6,7 @@ import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
 } from '../lib/api'
-import { taskTerms, repeatLabel, remindLabel, categoryStyle } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 
@@ -361,7 +361,7 @@ export default function TaskDetail() {
 
       {task.description && <p className="td-desc">{task.description}</p>}
 
-      {task.media_info && (task.category === 'OTT' || task.category === '영화') && (
+      {task.media_info && MEDIA_LOOKUP_CATS.includes(task.category) && (
         <MediaInfo category={task.category} info={task.media_info} />
       )}
 

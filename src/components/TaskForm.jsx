@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { WISH_CATEGORIES, categoryStyle } from '../lib/constants'
+import { WISH_CATEGORIES, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import { searchMedia, getMediaDetail } from '../lib/api'
 import MediaInfo from './MediaInfo'
 
-const MEDIA_CATS = ['OTT', '영화'] // 정보 가져오기 지원 유형
+const MEDIA_CATS = MEDIA_LOOKUP_CATS // 정보 가져오기 지원 유형
+// 유형별 버튼 이모지 / 안내 문구
+const MEDIA_UI = {
+  OTT: { emoji: '🎬', hint: '쿠팡플레이는 OTT 정보에 포함되지 않아요.' },
+  '영화': { emoji: '🎬', hint: '현재 극장 상영 중인 영화만 검색돼요.' },
+  '독서': { emoji: '📚', hint: '국내 도서를 제목으로 검색해요.' },
+  '게임': { emoji: '🎮', hint: '영문 제목이 더 정확히 검색돼요.' },
+}
 
 // 위시 작성/편집 공용 폼. onSubmit(values) 는 저장(생성/수정)을 처리하고
 // 성공 시 페이지 이동을 담당한다. (실패 시 throw)
@@ -29,14 +36,20 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
     if (!title.trim()) return
     setLookupBusy(true); setLookupErr(''); setResults(null)
     try {
-      const kind = category === '영화' ? 'movie' : 'multi'
-      setResults(await searchMedia(title.trim(), kind))
+      setResults(await searchMedia(title.trim(), category))
     } catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
   }
   async function pickResult(item) {
     setLookupBusy(true); setLookupErr('')
-    try { setMediaInfo(await getMediaDetail(item.id, item.media)); setResults(null) }
+    try { setMediaInfo(await getMediaDetail(item.id, item.media, category)); setResults(null) }
     catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
+  }
+
+  // 검색 결과 부제(유형별)
+  function resultSub(it) {
+    if (category === '독서') return it.author || ''
+    if (category === '게임') return it.year || ''
+    return [it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')
   }
 
   async function submit(e) {
@@ -70,10 +83,10 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
           {!mediaInfo && (
             <>
               <button type="button" className="btn btn-block" disabled={!title.trim() || lookupBusy} onClick={doSearch}>
-                {lookupBusy ? '불러오는 중…' : '🎬 정보 가져오기'}
+                {lookupBusy ? '불러오는 중…' : `${MEDIA_UI[category]?.emoji ?? '🔎'} 정보 가져오기`}
               </button>
               <p className="muted sm" style={{ margin: '2px 2px 0' }}>
-                {category === '영화' ? '현재 극장 상영 중인 영화만 검색돼요.' : '쿠팡플레이는 OTT 정보에 포함되지 않아요.'}
+                {MEDIA_UI[category]?.hint}
               </p>
             </>
           )}
@@ -87,10 +100,10 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
                 <button type="button" key={`${it.media}-${it.id}`} className="media-result" onClick={() => pickResult(it)}>
                   {it.poster
                     ? <img src={it.poster} alt="" className="media-poster" />
-                    : <span className="media-poster media-poster-empty" aria-hidden="true">🎬</span>}
+                    : <span className="media-poster media-poster-empty" aria-hidden="true">{MEDIA_UI[category]?.emoji ?? '🎬'}</span>}
                   <span className="media-result-info">
                     <span className="media-result-title">{it.title}</span>
-                    <span className="muted sm">{[it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')}</span>
+                    <span className="muted sm">{resultSub(it)}</span>
                   </span>
                 </button>
               ))}
