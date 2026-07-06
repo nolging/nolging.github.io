@@ -45,11 +45,16 @@ export function ottNameKo(name) {
   return OTT_NAME_KO[n] ?? n
 }
 
-// 위시 카드에 표시할 미디어 요약 (OTT: 러닝타임 | 볼 수 있는 OTT, 영화: 러닝타임 | 개봉일 개봉)
+// 위시 카드에 표시할 미디어 요약 (OTT 영화: 러닝타임 | OTT, OTT 시리즈: N 부작 | OTT, 영화: 러닝타임 | 개봉일 개봉)
+// 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
 export function mediaCardLine(category, mi) {
   if (!mi || (category !== 'OTT' && category !== '영화')) return ''
   const parts = []
-  if (mi.runtime) parts.push(`${mi.runtime}분`)
+  if (category === 'OTT' && mi.kind === 'tv') {
+    if (mi.episode_count) parts.push(`${mi.episode_count} 부작`)
+  } else if (mi.runtime) {
+    parts.push(`${mi.runtime} 분`)
+  }
   if (category === 'OTT') {
     const list = (mi.providers?.length ? mi.providers : mi.providers_buy) || []
     const names = list.map((p) => ottNameKo(typeof p === 'string' ? p : p?.name)).filter(Boolean)

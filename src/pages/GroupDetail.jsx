@@ -139,7 +139,7 @@ export default function GroupDetail() {
           <FilterIcon />
           {catFilter.length > 0 && <span className="filter-badge">{catFilter.length}</span>}
         </button>
-        <span className="tabs-count">{visibleTasks.length}개</span>
+        <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
 
       {visibleTasks.length === 0 ? (
