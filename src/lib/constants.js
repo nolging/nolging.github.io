@@ -48,6 +48,16 @@ export function ottNameKo(name) {
 // 정보 자동 조회를 지원하는 위시 유형
 export const MEDIA_LOOKUP_CATS = ['OTT', '영화', '독서', '게임']
 
+// 게임 플랫폼 패밀리 → 표기 명칭. 없으면 원문 유지.
+const PLATFORM_KO = {
+  PlayStation: '플스', Xbox: 'Xbox', Nintendo: '닌텐도',
+  PC: '윈도우', Windows: '윈도우', Mac: '맥', Linux: '리눅스', iOS: 'iOS', Android: '안드로이드',
+}
+export function platformKo(name) {
+  if (!name) return ''
+  return PLATFORM_KO[String(name).trim()] ?? name
+}
+
 // 위시 카드에 표시할 미디어 요약. 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
 // OTT: (러닝타임 | OTT) / (N 부작 | OTT), 영화: 러닝타임 | 개봉일 개봉,
 // 독서: 페이지수 | 저자, 게임: 플랫폼 | 장르
@@ -67,7 +77,7 @@ export function mediaCardLine(category, mi) {
     if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
     if (mi.author) parts.push(mi.author)
   } else if (category === '게임') {
-    if (mi.platforms?.length) parts.push(mi.platforms.join(' '))
+    if (mi.platforms?.length) parts.push(mi.platforms.map(platformKo).join(' '))
     if (mi.genres?.length) parts.push(mi.genres.join(', '))
   } else return ''
   return parts.join(' | ')

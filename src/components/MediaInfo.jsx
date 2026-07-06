@@ -1,4 +1,5 @@
-// 위시(영화/OTT)에서 가져온 TMDB 정보 표시. category 에 따라 항목이 달라진다.
+// 위시(OTT/영화/독서/게임)에서 가져온 정보 표시. category 에 따라 항목이 달라진다.
+import { platformKo } from '../lib/constants'
 
 // 특정 브랜드는 로고를 지정 이미지로 대체 (TMDB 로고가 마음에 안 들 때)
 const LOGO_OVERRIDE = [
@@ -6,6 +7,28 @@ const LOGO_OVERRIDE = [
   { test: /watcha/i, src: '/ott/watcha.png' },
 ]
 const badgeSrc = (name, logo) => LOGO_OVERRIDE.find((o) => o.test.test(name))?.src ?? logo
+
+// 게임 플랫폼 패밀리 → 배지 로고. 없으면 텍스트 칩으로 대체.
+const PLATFORM_LOGO = {
+  PlayStation: '/platform/playstation.svg',
+  Xbox: '/platform/xbox.svg',
+  Nintendo: '/platform/nintendo.svg',
+  PC: '/platform/windows.svg',
+  Mac: '/platform/apple.svg',
+  iOS: '/platform/apple.svg',
+  Android: '/platform/android.svg',
+}
+function PlatformBadges({ list }) {
+  return (
+    <span className="ott-badges">
+      {list.map((name, i) => (
+        PLATFORM_LOGO[name]
+          ? <img key={i} className="ott-badge" src={PLATFORM_LOGO[name]} alt={platformKo(name)} title={platformKo(name)} />
+          : <span key={i} className="ott-badge ott-badge-text" title={platformKo(name)}>{platformKo(name)}</span>
+      ))}
+    </span>
+  )
+}
 
 // OTT 제공처를 앱 아이콘(동그란 배지)로. logo 없으면 텍스트 칩으로 대체.
 function ProviderBadges({ list, suffix }) {
@@ -43,9 +66,9 @@ export default function MediaInfo({ category, info, onClear }) {
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.page_count) rows.push(['페이지', `${info.page_count} 쪽`])
   } else if (category === '게임') {
-    if (info.release_date) rows.push(['출시일', info.release_date])
+    if (info.platforms?.length) rows.push(['플랫폼', <PlatformBadges list={info.platforms} />])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
-    if (info.platforms?.length) rows.push(['플랫폼', info.platforms.join(', ')])
+    rows.push(['출시일', info.release_date || '-']) // 출시일 없으면 하이픈
   }
 
   const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : '🎬'
