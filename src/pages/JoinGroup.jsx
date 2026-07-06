@@ -53,8 +53,8 @@ export default function JoinGroup() {
           <p className="muted">그룹 관리자에게 받은 초대 코드를 입력하세요.</p>
           <form onSubmit={lookup} className="form">
             <input autoFocus value={code} onChange={(e) => setCode(e.target.value)}
-              placeholder="초대 코드 (예: a1b2c3d4e5f6)" className="mono" />
-            {error && <div className="alert alert-error">{error}</div>}
+              placeholder="초대 코드 (예: a1b2c3d4e5f6)" />
+            {error && <p className="field-error">{error}</p>}
             <button className="btn btn-primary btn-block" disabled={busy}>
               {busy ? '확인 중…' : '다음'}
             </button>
@@ -99,7 +99,7 @@ export default function JoinGroup() {
             </label>
           )}
 
-          {error && <div className="alert alert-error">{error}</div>}
+          {error && <p className="field-error">{error}</p>}
           <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={join}>
             {busy ? '가입 중…' : '가입하기'}
           </button>
