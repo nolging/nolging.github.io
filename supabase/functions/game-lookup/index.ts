@@ -43,6 +43,13 @@ async function igdb(endpoint: string, body: string) {
 }
 
 const yearOf = (ts?: number) => (ts ? String(new Date(ts * 1000).getUTCFullYear()) : '')
+// 유닉스초 → YYYY-MM-DD (출시일)
+const dateOf = (ts?: number) => {
+  if (!ts) return null
+  const d = new Date(ts * 1000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`
+}
 
 // IGDB 장르(영문) → 한글. 없으면 원문 유지.
 const GENRE_KO: Record<string, string> = {
@@ -91,16 +98,14 @@ Deno.serve(async (req) => {
 
     if (action === 'detail') {
       const rows = await igdb('games',
-        `fields name, cover.image_id, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher; where id = ${Number(id)}; limit 1;`)
+        `fields name, cover.image_id, first_release_date, platforms.name, genres.name; where id = ${Number(id)}; limit 1;`)
       const g = rows?.[0]
       if (!g) return json({ error: '게임 정보를 찾을 수 없어요.' }, 404)
-      const ic = (g.involved_companies ?? []) as { company?: { name: string }; developer?: boolean; publisher?: boolean }[]
       return json({
         kind: 'game',
         title: g.name,
         poster: g.cover?.image_id ? IMG + g.cover.image_id + '.jpg' : null,
-        developers: [...new Set(ic.filter((c) => c.developer).map((c) => c.company?.name).filter(Boolean))],
-        publishers: [...new Set(ic.filter((c) => c.publisher).map((c) => c.company?.name).filter(Boolean))],
+        release_date: dateOf(g.first_release_date),
         genres: (g.genres ?? []).map((x: { name: string }) => koGenre(x.name)),
         platforms: platforms(g.platforms),
       })

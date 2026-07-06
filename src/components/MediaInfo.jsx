@@ -40,14 +40,12 @@ export default function MediaInfo({ category, info, onClear }) {
     if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
   } else if (category === '독서') {
     if (info.author) rows.push(['저자', info.author])
-    if (info.publisher) rows.push(['출판사', info.publisher])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.page_count) rows.push(['페이지', `${info.page_count} 쪽`])
   } else if (category === '게임') {
-    if (info.platforms?.length) rows.push(['플랫폼', info.platforms.join(', ')])
+    if (info.release_date) rows.push(['출시일', info.release_date])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
-    if (info.developers?.length) rows.push(['개발사', info.developers.join(', ')])
-    if (info.publishers?.length) rows.push(['배급사', info.publishers.join(', ')])
+    if (info.platforms?.length) rows.push(['플랫폼', info.platforms.join(', ')])
   }
 
   const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : '🎬'
