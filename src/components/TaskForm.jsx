@@ -73,7 +73,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
                 {lookupBusy ? '불러오는 중…' : '🎬 정보 가져오기'}
               </button>
               <p className="muted sm" style={{ margin: '2px 2px 0' }}>
-                {category === '영화' ? '현재 극장 상영 중인 영화만 검색돼요.' : '구독·구매로 볼 수 있는 작품만 나와요(상영 중 제외).'}
+                {category === '영화' ? '현재 극장 상영 중인 영화만 검색돼요.' : '현재 극장 상영 중인 영화는 제외돼요.'}
               </p>
             </>
           )}

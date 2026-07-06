@@ -113,26 +113,24 @@ Deno.serve(async (req) => {
         })
       }
 
-      // multi(OTT 유형): 영화+시리즈. KR 에서 볼 수 없거나(제공처 0) 현재 상영 중인 영화는 제외
+      // multi(OTT 유형): 영화+시리즈. 현재 상영 중인 영화만 제외(그건 영화 유형에서 다룸).
+      // 제공처가 없어도(쿠팡플레이 등 데이터 누락) 포함 — 제공처는 상세 조회 때 확인.
       const [d, np] = await Promise.all([
         tmdb('/search/multi', { language: 'ko-KR', query: q, include_adult: 'false' }),
         nowPlayingKR(),
       ])
-      const cands = (d.results ?? [])
-        .filter((m: Record<string, unknown>) => m.media_type === 'movie' || m.media_type === 'tv')
-        .slice(0, 12)
-      const checked = await Promise.all(cands.map(async (m: Record<string, unknown>) => {
-        if (m.media_type === 'movie' && np.has(m.id as number)) return { m, ok: false } // 상영 중은 OTT 제외
-        const prov = await providersKR(m.media_type as string, m.id as number)
-        return { m, ok: prov.sub.length > 0 || prov.buy.length > 0 }
-      }))
       return json({
-        results: checked.filter((x) => x.ok).slice(0, 8).map(({ m }) => ({
-          id: m.id, media: m.media_type,
-          title: m.media_type === 'tv' ? m.name : m.title,
-          year: yearOf((m.media_type === 'tv' ? m.first_air_date : m.release_date) as string),
-          poster: m.poster_path ? IMG_SM + m.poster_path : null,
-        })),
+        results: (d.results ?? [])
+          .filter((m: Record<string, unknown>) =>
+            (m.media_type === 'movie' || m.media_type === 'tv') &&
+            !(m.media_type === 'movie' && np.has(m.id as number)))
+          .slice(0, 8)
+          .map((m: Record<string, unknown>) => ({
+            id: m.id, media: m.media_type,
+            title: m.media_type === 'tv' ? m.name : m.title,
+            year: yearOf((m.media_type === 'tv' ? m.first_air_date : m.release_date) as string),
+            poster: m.poster_path ? IMG_SM + m.poster_path : null,
+          })),
       })
     }
 

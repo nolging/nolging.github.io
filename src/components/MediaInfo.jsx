@@ -27,6 +27,7 @@ export default function MediaInfo({ category, info, onClear }) {
   if (category === 'OTT') {
     if (info.providers?.length) rows.push(['OTT', <ProviderBadges list={info.providers} />])
     else if (info.providers_buy?.length) rows.push(['OTT', <ProviderBadges list={info.providers_buy} suffix="(개별 구매)" />])
+    else rows.push(['OTT', <span className="muted">정보 없음</span>])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count}부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime}분`])
