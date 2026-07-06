@@ -404,6 +404,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   padding: 12px 14px calc(24px + env(safe-area-inset-bottom));
   max-width: 1080px; width: 100%; margin: 0 auto;
 }
+/* 키보드가 올라오면 세이프에어리어/추가 여백이 필요 없어, 위(12px)와 같은 여백으로 */
+.app-shell.kb-open .composer { padding-bottom: 12px; }
 .composer-row { display: flex; gap: 8px; align-items: stretch; }
 .composer input { flex: 1; }
 .composer .btn { flex-shrink: 0; min-height: 46px; }
