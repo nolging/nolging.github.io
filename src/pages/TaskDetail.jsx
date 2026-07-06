@@ -31,7 +31,7 @@ export default function TaskDetail() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const focusCommentId = searchParams.get('c') // 알림에서 넘어온 강조 대상 댓글
-  const fromSchedule = location.state?.from === 'schedule' // 일정 탭에서 진입 시 뒤로가기는 일정으로
+  const from = location.state?.from // 진입 경로별 뒤로가기 (일정/알림)
   const { setTaskHeading, setTaskBackTo } = useOutletContext()
 
   const [group, setGroup] = useState(null)
@@ -116,13 +116,18 @@ export default function TaskDetail() {
 
   useEffect(() => { load() }, [load])
 
-  // 상단바: 진행 상태별 명칭(위시리스트/약속/추억) + 뒤로가기는 해당 상태 탭으로
+  // 상단바: 진행 상태별 명칭(위시/약속/추억) + 진입 경로별 뒤로가기
   useEffect(() => {
     if (task && group) {
       setTaskHeading(taskTerms().status[task.status])
-      setTaskBackTo(fromSchedule ? '/schedule' : `/groups/${groupId}?tab=${task.status}`)
+      // 일정/알림에서 진입했으면 히스토리 pop('back')으로 되돌아가 무한반복 방지,
+      // 그 외(그룹 상세에서 진입)는 해당 상태 탭으로 이동
+      const backTo = (from === 'schedule' || from === 'notifications')
+        ? 'back'
+        : `/groups/${groupId}?tab=${task.status}`
+      setTaskBackTo(backTo)
     }
-  }, [task?.status, group, groupId, fromSchedule, setTaskHeading, setTaskBackTo])
+  }, [task?.status, group, groupId, from, setTaskHeading, setTaskBackTo])
   useEffect(() => () => { setTaskHeading(null); setTaskBackTo(null) }, [setTaskHeading, setTaskBackTo])
 
   // 알림에서 넘어온 경우(?c=댓글id): 로딩 완료 후 그 댓글로 스크롤 + 강조

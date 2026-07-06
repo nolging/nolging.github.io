@@ -236,7 +236,9 @@ export default function Layout() {
     const id = taskDetailMatch.params.groupId
     topbar = (
       <header className="topbar">
-        <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        {taskBackTo === 'back'
+          ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
       </header>
     )

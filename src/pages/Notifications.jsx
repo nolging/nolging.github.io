@@ -64,7 +64,7 @@ export default function Notifications() {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
-    if (to) navigate(to)
+    if (to) navigate(to, { state: { from: 'notifications' } })
   }
 
   async function markAll() {
