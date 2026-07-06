@@ -173,8 +173,8 @@ export default function GroupDetail() {
               participants={partsByTask[t.id] || []}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
               onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
-              onComplete={() => runAction(() => completeTask(t.id))}
-              onReopen={() => runAction(() => reopenTask(t.id))}
+              onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
+              onReview={() => {}}
               onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
               onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
               onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
@@ -217,7 +217,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReopen, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
   const stop = (e) => e.stopPropagation()
@@ -250,9 +250,12 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   }
   // 카드가 밀리는 거리 = 좌측 여백(8) + 버튼들(40) + 버튼 간격(8). 우측 여백 0(삭제 우측 끝=카드 우측 끝).
   const openW = actions.length ? actions.length * 40 + (actions.length - 1) * 8 + 8 : 0
-  // 열려 있는(open) 위시는 오른쪽 스와이프로 좌측에 '놀기 신청' 버튼(48원형) 노출
-  const showAccept = task.status === 'open'
-  const openL = showAccept ? 48 + 8 : 0
+  // 오른쪽 스와이프 시 좌측에 뜨는 원형 버튼 (상태별). open→놀기신청, accepted(내 것)→완료, done→리뷰 작성(준비 중)
+  let leftAction = null
+  if (task.status === 'open') leftAction = { lines: terms.accept.split(' '), onClick: onAccept }
+  else if (task.status === 'accepted' && mine) leftAction = { lines: ['완료'], onClick: onComplete }
+  else if (task.status === 'done') leftAction = { lines: ['리뷰', '작성'], onClick: onReview }
+  const openL = leftAction ? 48 + 8 : 0
 
   // 스와이프로 액션 노출. touch-action: pan-y 라 세로 스크롤은 그대로 동작.
   const [dx, setDx] = useState(0)
@@ -261,7 +264,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const movedRef = useRef(false)
 
   function onPointerDown(e) {
-    if ((!actions.length && !showAccept) || (e.pointerType === 'mouse' && e.button !== 0)) return
+    if ((!actions.length && !leftAction) || (e.pointerType === 'mouse' && e.button !== 0)) return
     movedRef.current = false // 새 제스처 시작마다 초기화(스와이프 후 click 미발생 기기 대비)
     drag.current = { x0: e.clientX, y0: e.clientY, base: dx, decided: false, horiz: false }
   }
@@ -294,11 +297,11 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
 
   return (
     <li className={`task-swipe ${dragging ? 'dragging' : ''}`}>
-      {showAccept && (
+      {leftAction && (
         <div className="task-swipe-accept" aria-hidden={dx <= 0}>
-          <button type="button" className="accept-btn" aria-label={terms.accept} title={terms.accept}
-            tabIndex={dx <= 0 ? -1 : 0} onClick={(e) => { stop(e); setDx(0); onAccept() }}>
-            {terms.accept.split(' ').map((w, i) => <span key={i}>{w}</span>)}
+          <button type="button" className="accept-btn" aria-label={leftAction.lines.join(' ')} title={leftAction.lines.join(' ')}
+            tabIndex={dx <= 0 ? -1 : 0} onClick={(e) => { stop(e); setDx(0); leftAction.onClick() }}>
+            {leftAction.lines.map((w, i) => <span key={i}>{w}</span>)}
           </button>
         </div>
       )}
@@ -358,9 +361,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
             </span>
           )}
           <div className="task-actions" onClick={stop}>
-            {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
             {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
-            {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
           </div>
         </div>
       </div>

@@ -372,9 +372,8 @@ export default function TaskDetail() {
           )}
           <div className="task-actions">
             {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
-            {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => runTaskAction(() => completeTask(task.id))}>완료</button>}
+            {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => { if (confirm('완료하시겠습니까?')) runTaskAction(() => completeTask(task.id)) }}>완료</button>}
             {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
-            {task.status === 'done' && !isScheduled && <button className="btn btn-sm btn-ghost" onClick={() => runTaskAction(() => reopenTask(task.id))}>다시 열기</button>}
           </div>
         </div>
       )}
