@@ -172,11 +172,11 @@ export default function GroupDetail() {
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
               participants={partsByTask[t.id] || []}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
-              onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`)}
+              onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
               onComplete={() => runAction(() => completeTask(t.id))}
               onReopen={() => runAction(() => reopenTask(t.id))}
               onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
-              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`)}
+              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
               onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
               onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
           ))}

@@ -228,11 +228,14 @@ export default function Layout() {
       </header>
     )
   } else if (taskScheduleMatch) {
-    // 약속 잡기 페이지: 좌측 뒤로(태스크 상세로), 제목 "약속 잡기"
+    // 약속 잡기 페이지: 그룹 카드에서 왔으면 그룹 상세(해당 탭)로, 그 외엔 태스크 상세로
     const { groupId: gid, taskId: tid } = taskScheduleMatch.params
+    const backTo = location.state?.from === 'group'
+      ? `/groups/${gid}?tab=${location.state?.tab || 'open'}`
+      : `/groups/${gid}/tasks/${tid}`
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${gid}/tasks/${tid}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={backTo} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">약속 잡기</span>
       </header>
     )
