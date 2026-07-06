@@ -18,6 +18,7 @@ import JoinGroup from './pages/JoinGroup'
 import SchedulePage from './pages/SchedulePage'
 import MyProfile from './pages/MyProfile'
 import Notifications from './pages/Notifications'
+import NotificationSettings from './pages/NotificationSettings'
 import Admin from './pages/Admin'
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/join" element={<JoinGroup />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/notifications/settings" element={<NotificationSettings />} />
         <Route path="/me" element={<MyProfile />} />
         <Route
           path="/admin"

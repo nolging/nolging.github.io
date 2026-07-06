@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useMatch, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { unreadNotificationCount } from '../lib/api'
@@ -21,6 +21,21 @@ function BellIcon() {
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
+function NotifSettingsIcon() {
+  // 종 + 우하단 톱니바퀴 (알림 설정)
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15.5 8a4 4 0 0 0-8 0c0 4.2-1.9 5.6-1.9 5.6h11.8" />
+      <path d="M9.3 16.5a1.6 1.6 0 0 0 3 0" />
+      <g strokeWidth="1.4">
+        <circle cx="17.5" cy="16.7" r="1.5" fill="var(--surface)" />
+        <path d="M17.5 13.6v1.2M17.5 18.6v1.2M14.4 16.7h1.2M19.4 16.7h1.2M15.3 14.5l.85.85M18.85 18.05l.85.85M19.7 14.5l-.85.85M16.15 18.05l-.85.85" />
+      </g>
     </svg>
   )
 }
@@ -53,6 +68,7 @@ const MyIcon = () => tabSvg(<>
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
@@ -63,6 +79,8 @@ export default function Layout() {
   const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
   const newGroupMatch = useMatch('/groups/new')
   const joinMatch = useMatch('/join')
+  const notifMatch = useMatch('/notifications')
+  const notifSettingsMatch = useMatch('/notifications/settings')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
@@ -85,7 +103,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -208,6 +226,23 @@ export default function Layout() {
           ? <button type="button" onClick={backHandler} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">초대장 찾기</span>
+      </header>
+    )
+  } else if (notifSettingsMatch) {
+    // 알림 설정 페이지: 좌측 뒤로(알림으로), 제목 "알림 설정"
+    topbar = (
+      <header className="topbar">
+        <Link to="/notifications" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">알림 설정</span>
+      </header>
+    )
+  } else if (notifMatch) {
+    // 알림 페이지: 좌측 뒤로, 제목 "알림", 우측 알림 설정(종+톱니) 아이콘
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">알림</span>
+        <Link to="/notifications/settings" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="알림 설정" title="알림 설정"><NotifSettingsIcon /></Link>
       </header>
     )
   } else if (groupMatch) {
