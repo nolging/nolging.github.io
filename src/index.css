@@ -34,7 +34,7 @@ button, input, textarea, select, optgroup { font-family: inherit; }
   .btn:hover { filter: none; }
   .btn-ghost:hover, .menu-pop button:hover, .avatar-menu button:hover,
   .toggle:hover, .bottomnav a:hover { background: transparent; }
-  .task-swipe:hover { box-shadow: var(--card-shadow); }
+  .task-item:hover { box-shadow: var(--card-shadow); }
   .cal-appt:hover, a:hover { background: transparent; }
 }
 html, body, #root { height: 100%; margin: 0; }
@@ -155,7 +155,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .me { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .content {
   flex: 1 1 auto; min-height: 0;
-  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  overflow-y: auto; overflow-x: hidden; /* 카드 스와이프 시 좌측 오버플로가 가로 스크롤 안 만들게 */
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   padding: 28px 24px; background: var(--bg); /* 회색 캔버스는 전체폭 content 가 담당 */
 }
 
@@ -331,9 +332,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 태스크 ---- */
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-/* 스와이프 컨테이너: 그림자·라운드는 여기(고정), 안쪽 카드가 좌로 슬라이드 */
-.task-swipe { position: relative; overflow: hidden; border-radius: var(--radius); box-shadow: var(--card-shadow); }
-.task-swipe:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
+/* 스와이프: 액션 버튼은 배경(뒤)에 고정, 카드가 그림자째 좌로 슬라이드하며 드러냄 */
+.task-swipe { position: relative; }
 .task-swipe-actions {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: 0;
   display: flex; align-items: center; gap: 8px; padding: 0 12px 0 4px;
@@ -346,9 +346,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .swipe-btn.danger { color: var(--danger); }
 .task-item {
   position: relative; z-index: 1; background: var(--surface); border: none; border-radius: var(--radius);
-  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
+  box-shadow: var(--card-shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
   touch-action: pan-y; transition: transform .18s cubic-bezier(.2, .8, .2, 1); will-change: transform;
 }
+.task-item:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
 .task-swipe.dragging .task-item { transition: none; }
 .task-item.status-done { opacity: .72; }
 .task-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
