@@ -79,12 +79,13 @@ export default function Layout() {
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
   const [pull, setPull] = useState(0)          // 당긴 거리(px)
+  const [dragging, setDragging] = useState(false) // 손가락으로 당기는 중(전환 애니메이션 off)
   const [refreshing, setRefreshing] = useState(false)
   const ptr = useRef({ startY: null, dist: 0, active: false })
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
-    const THRESH = 64, MAX = 100, DAMP = 0.5
+    const THRESH = 64, MAX = 90, DAMP = 0.5
     function onStart(e) {
       if (!refreshHandler || refreshing) { ptr.current.active = false; return }
       if (el.scrollTop <= 0) ptr.current = { startY: e.touches[0].clientY, dist: 0, active: true }
@@ -93,21 +94,23 @@ export default function Layout() {
     function onMove(e) {
       const g = ptr.current
       if (!g.active || g.startY == null) return
-      if (el.scrollTop > 0) { g.active = false; setPull(0); return }
+      if (el.scrollTop > 0) { g.active = false; setPull(0); setDragging(false); return }
       const dy = e.touches[0].clientY - g.startY
-      if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); e.preventDefault() }
-      else { g.dist = 0; setPull(0) }
+      if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); setDragging(true); e.preventDefault() }
+      else { g.dist = 0; setPull(0); setDragging(false) }
     }
     async function onEnd() {
       const g = ptr.current
       if (!g.active) return
       g.active = false
+      setDragging(false)
       if (g.dist >= THRESH && refreshHandler && !refreshing) {
-        setRefreshing(true); setPull(THRESH)
+        setRefreshing(true); setPull(0)
         try { await refreshHandler() } catch { /* noop */ }
         setRefreshing(false)
+      } else {
+        setPull(0)
       }
-      setPull(0)
     }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
@@ -240,6 +243,9 @@ export default function Layout() {
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
+        {taskBackTo === 'back' && (
+          <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm push-right topbar-link">그룹으로 이동</Link>
+        )}
       </header>
     )
   } else if (newGroupMatch) {
@@ -319,12 +325,14 @@ export default function Layout() {
     <div className="app-shell" ref={shellRef}>
       {topbar}
       {(pull > 0 || refreshing) && (
-        <div className="ptr" style={{ transform: `translateY(${(refreshing ? 44 : pull) - 8}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
+        <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
+          style={{ transform: `translateY(${(refreshing ? 46 : pull) * 0.5 - 13}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
           <span className={`ptr-spin ${refreshing ? 'on' : ''}`}
             style={refreshing ? undefined : { transform: `rotate(${pull * 4}deg)` }} />
         </div>
       )}
-      <main className="content" ref={contentRef}>
+      <main className={`content ${dragging ? 'ptr-drag' : ''}`} ref={contentRef}
+        style={(pull || refreshing) ? { transform: `translateY(${refreshing ? 46 : pull}px)` } : undefined}>
         <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler }} />
       </main>
       {showBottomNav && (

@@ -656,8 +656,15 @@ a.mp-tel:active { opacity: .55; }
 .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
 .center-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; }
 .spinner { width: 26px; height: 26px; border: 3px solid #e0e3ee; border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin: 24px auto; }
-/* 당겨서 새로고침 인디케이터 */
-.ptr { position: absolute; top: 58px; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; pointer-events: none; }
+/* 당겨서 새로고침: 본문·인디케이터가 함께 아래로 */
+.content { transition: transform .24s cubic-bezier(.2, .8, .2, 1); }
+.content.ptr-drag { transition: none; }
+.ptr {
+  position: absolute; top: 58px; left: 0; right: 0; z-index: 6;
+  display: flex; justify-content: center; pointer-events: none;
+  transition: transform .24s cubic-bezier(.2, .8, .2, 1), opacity .15s ease;
+}
+.ptr.ptr-drag { transition: opacity .1s ease; }
 .ptr-spin { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--border); border-top-color: var(--muted); background: var(--surface); box-shadow: 0 2px 8px rgba(20,22,40,.12); }
 .ptr-spin.on { animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
