@@ -68,9 +68,14 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
       {mediaCat && (
         <div className="media-lookup">
           {!mediaInfo && (
-            <button type="button" className="btn btn-block" disabled={!title.trim() || lookupBusy} onClick={doSearch}>
-              {lookupBusy ? '불러오는 중…' : '🎬 정보 가져오기'}
-            </button>
+            <>
+              <button type="button" className="btn btn-block" disabled={!title.trim() || lookupBusy} onClick={doSearch}>
+                {lookupBusy ? '불러오는 중…' : '🎬 정보 가져오기'}
+              </button>
+              <p className="muted sm" style={{ margin: '2px 2px 0' }}>
+                {category === '영화' ? '현재 극장 상영 중인 영화만 검색돼요.' : '구독·구매로 볼 수 있는 작품만 나와요(상영 중 제외).'}
+              </p>
+            </>
           )}
           {lookupErr && <p className="field-error">{lookupErr}</p>}
 

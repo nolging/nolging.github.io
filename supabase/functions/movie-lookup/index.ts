@@ -74,11 +74,13 @@ async function nowPlayingKR(): Promise<Set<number>> {
   if (npCache && now - npCache.at < 3600_000) return npCache.ids
   const ids = new Set<number>()
   try {
-    const pages = await Promise.all(
-      [1, 2, 3, 4, 5].map((p) =>
-        tmdb('/movie/now_playing', { language: 'ko-KR', region: 'KR', page: String(p) }).catch(() => null)),
-    )
-    for (const d of pages) for (const m of d?.results ?? []) ids.add(m.id)
+    const first = await tmdb('/movie/now_playing', { language: 'ko-KR', region: 'KR', page: '1' })
+    for (const m of first.results ?? []) ids.add(m.id)
+    const total = Math.min(first.total_pages ?? 1, 12)
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, total - 1) }, (_, i) =>
+        tmdb('/movie/now_playing', { language: 'ko-KR', region: 'KR', page: String(i + 2) }).catch(() => null)))
+    for (const d of rest) for (const m of d?.results ?? []) ids.add(m.id)
   } catch { /* ignore */ }
   npCache = { ids, at: now }
   return ids
@@ -95,21 +97,32 @@ Deno.serve(async (req) => {
       if (!q) return json({ results: [] })
 
       if (kind === 'movie') {
-        const d = await tmdb('/search/movie', { language: 'ko-KR', query: q, include_adult: 'false', region: 'KR' })
+        // 영화 유형: 현재 KR 극장 상영 중인 영화만
+        const [d, np] = await Promise.all([
+          tmdb('/search/movie', { language: 'ko-KR', query: q, include_adult: 'false', region: 'KR' }),
+          nowPlayingKR(),
+        ])
         return json({
-          results: (d.results ?? []).slice(0, 8).map((m: Record<string, unknown>) => ({
-            id: m.id, media: 'movie', title: m.title, year: yearOf(m.release_date as string),
-            poster: m.poster_path ? IMG_SM + m.poster_path : null,
-          })),
+          results: (d.results ?? [])
+            .filter((m: Record<string, unknown>) => np.has(m.id as number))
+            .slice(0, 8)
+            .map((m: Record<string, unknown>) => ({
+              id: m.id, media: 'movie', title: m.title, year: yearOf(m.release_date as string),
+              poster: m.poster_path ? IMG_SM + m.poster_path : null,
+            })),
         })
       }
 
-      // multi(OTT 유형): 영화+시리즈, KR 에서 볼 수 없는(구독·개별구매 모두 없음) 결과는 제외
-      const d = await tmdb('/search/multi', { language: 'ko-KR', query: q, include_adult: 'false' })
+      // multi(OTT 유형): 영화+시리즈. KR 에서 볼 수 없거나(제공처 0) 현재 상영 중인 영화는 제외
+      const [d, np] = await Promise.all([
+        tmdb('/search/multi', { language: 'ko-KR', query: q, include_adult: 'false' }),
+        nowPlayingKR(),
+      ])
       const cands = (d.results ?? [])
         .filter((m: Record<string, unknown>) => m.media_type === 'movie' || m.media_type === 'tv')
         .slice(0, 12)
       const checked = await Promise.all(cands.map(async (m: Record<string, unknown>) => {
+        if (m.media_type === 'movie' && np.has(m.id as number)) return { m, ok: false } // 상영 중은 OTT 제외
         const prov = await providersKR(m.media_type as string, m.id as number)
         return { m, ok: prov.sub.length > 0 || prov.buy.length > 0 }
       }))
