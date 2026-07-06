@@ -157,7 +157,9 @@ export default function Layout() {
       el.style.top = `${vv.offsetTop}px`
       // 키보드가 올라오면(가시 영역이 크게 줄면) 하단 탭은 원래 위치(키보드 뒤)에
       // 두는 대신 숨겨, 키보드 위로 따라 올라오지 않게 한다.
-      el.classList.toggle('kb-open', window.innerHeight - vv.height > 120)
+      // 기준 전체 높이는 innerHeight/clientHeight 중 큰 값(키보드에 따라 한쪽이 줄 수 있음).
+      const full = Math.max(window.innerHeight, document.documentElement.clientHeight)
+      el.classList.toggle('kb-open', full - vv.height > 120)
     }
     vv.addEventListener('resize', apply)
     vv.addEventListener('scroll', apply)
