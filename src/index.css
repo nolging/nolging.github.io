@@ -764,6 +764,8 @@ a.mp-tel:active { opacity: .55; }
 .media-info-row { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
 .media-info-row dt { flex: 0 0 58px; color: var(--muted); font-weight: 600; margin: 0; line-height: 1.3; }
 .media-info-row dd { flex: 1; min-width: 0; margin: 0; color: var(--text); word-break: break-word; line-height: 1.3; display: flex; align-items: center; }
+/* 길면 한 줄 말줄임(...) — 장르 등 */
+.media-info-row dd.mi-clip { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* OTT 앱 아이콘 배지 (행 높이에 맞춰 작게) */
 .ott-badges { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; line-height: 0; }
 .ott-badge { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; background: #fff; box-shadow: 0 1px 2px rgba(20,22,40,.22); display: block; }

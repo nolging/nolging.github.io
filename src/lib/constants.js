@@ -59,14 +59,16 @@ export const SUBSCRIBABLE_OTTS = [
 ]
 export const OTT_BY_KEY = Object.fromEntries(SUBSCRIBABLE_OTTS.map((o) => [o.key, o]))
 
-// 게임 플랫폼 패밀리 → 표기 명칭. 없으면 원문 유지.
-const PLATFORM_KO = {
-  PlayStation: '플스', Xbox: 'Xbox', Nintendo: '닌텐도',
-  PC: '윈도우', Windows: '윈도우', Mac: '맥', Linux: '리눅스', iOS: 'iOS', Android: '안드로이드',
-}
-export function platformKo(name) {
-  if (!name) return ''
-  return PLATFORM_KO[String(name).trim()] ?? name
+// 게임 플랫폼: 지정한 순서로 표기(그 외 Xbox/리눅스/모바일 등은 표기하지 않음)
+const PLATFORM_ORDER = [
+  { key: 'Nintendo', label: '닌텐도' },
+  { key: 'Mac', label: '맥' },
+  { key: 'PC', label: '윈도우' },
+  { key: 'PlayStation', label: '플스' },
+]
+export function gamePlatformLabels(list) {
+  const set = new Set(list || [])
+  return PLATFORM_ORDER.filter((p) => set.has(p.key)).map((p) => p.label)
 }
 
 // 위시 카드에 표시할 미디어 요약. 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
@@ -88,7 +90,8 @@ export function mediaCardLine(category, mi) {
     if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
     if (mi.author) parts.push(mi.author)
   } else if (category === '게임') {
-    if (mi.platforms?.length) parts.push(mi.platforms.map(platformKo).join(' '))
+    const plats = gamePlatformLabels(mi.platforms)
+    if (plats.length) parts.push(plats.join(' '))
     if (mi.genres?.length) parts.push(mi.genres.join(', '))
   } else return ''
   return parts.join(' | ')
