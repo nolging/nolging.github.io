@@ -155,7 +155,7 @@ returns table (
          public.is_group_member(g.id, auth.uid()) as already_member
   from public.groups g
   join public.profiles p on p.id = g.owner_id
-  where g.invite_code = lower(trim(p_code));
+  where upper(g.invite_code) = upper(trim(p_code));
 $$;
 grant execute on function public.preview_group(text) to authenticated;
 

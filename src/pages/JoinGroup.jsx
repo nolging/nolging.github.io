@@ -52,8 +52,8 @@ export default function JoinGroup() {
         <div className="card narrow">
           <p className="muted">그룹 관리자에게 받은 초대 코드를 입력하세요.</p>
           <form onSubmit={lookup} className="form">
-            <input autoFocus value={code} onChange={(e) => setCode(e.target.value)}
-              placeholder="초대 코드 (예: a1b2c3d4e5f6)" />
+            <input autoFocus value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="초대 코드 (예: A1B2C3)" />
             {error && <p className="field-error">{error}</p>}
             <button className="btn btn-primary btn-block" disabled={busy}>
               {busy ? '확인 중…' : '다음'}

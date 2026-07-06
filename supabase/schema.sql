@@ -5,6 +5,14 @@
 
 create extension if not exists pgcrypto;
 
+-- 초대 코드: 대문자 알파벳+숫자 6자리 랜덤
+create or replace function public.gen_invite_code()
+returns text language sql volatile as $$
+  select string_agg(
+    substr('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 1 + floor(random() * 36)::int, 1), '')
+  from generate_series(1, 6);
+$$;
+
 -- ----------------------------------------------------------------
 -- 테이블
 -- ----------------------------------------------------------------
@@ -23,7 +31,7 @@ create table if not exists public.groups (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   description text not null default '',
-  invite_code text unique not null default encode(gen_random_bytes(6), 'hex'),
+  invite_code text unique not null default public.gen_invite_code(),
   owner_id    uuid not null references public.profiles(id) on delete cascade,
   created_at  timestamptz not null default now()
 );
@@ -93,7 +101,7 @@ create or replace function public.join_group(p_code text)
 returns public.groups language plpgsql security definer set search_path = public as $$
 declare g public.groups;
 begin
-  select * into g from public.groups where invite_code = lower(trim(p_code));
+  select * into g from public.groups where upper(invite_code) = upper(trim(p_code));
   if g.id is null then
     raise exception '유효하지 않은 초대 코드입니다.';
   end if;
