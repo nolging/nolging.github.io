@@ -249,15 +249,18 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   }
   // 카드가 밀리는 거리 = 좌측 여백(8) + 버튼들(40) + 버튼 간격(8). 우측 여백 0(삭제 우측 끝=카드 우측 끝).
   const openW = actions.length ? actions.length * 40 + (actions.length - 1) * 8 + 8 : 0
+  // 열려 있는(open) 위시는 오른쪽 스와이프로 좌측에 '놀기 신청' 버튼(48원형) 노출
+  const showAccept = task.status === 'open'
+  const openL = showAccept ? 48 + 8 : 0
 
-  // 왼쪽 스와이프로 액션 노출. touch-action: pan-y 라 세로 스크롤은 그대로 동작.
+  // 스와이프로 액션 노출. touch-action: pan-y 라 세로 스크롤은 그대로 동작.
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const drag = useRef(null)
   const movedRef = useRef(false)
 
   function onPointerDown(e) {
-    if (!actions.length || (e.pointerType === 'mouse' && e.button !== 0)) return
+    if ((!actions.length && !showAccept) || (e.pointerType === 'mouse' && e.button !== 0)) return
     movedRef.current = false // 새 제스처 시작마다 초기화(스와이프 후 click 미발생 기기 대비)
     drag.current = { x0: e.clientX, y0: e.clientY, base: dx, decided: false, horiz: false }
   }
@@ -274,13 +277,13 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
     }
     if (!d.horiz) return
     movedRef.current = true
-    setDx(Math.max(-openW, Math.min(0, d.base + mx)))
+    setDx(Math.max(-openW, Math.min(openL, d.base + mx)))
   }
   function onPointerUp() {
     const d = drag.current
     drag.current = null
     setDragging(false)
-    if (d?.horiz) setDx((cur) => (cur < -openW / 2 ? -openW : 0))
+    if (d?.horiz) setDx((cur) => (cur > openL / 2 ? openL : cur < -openW / 2 ? -openW : 0))
   }
   function handleClick() {
     if (movedRef.current) { movedRef.current = false; return } // 스와이프였으면 이동 안 함
@@ -290,6 +293,14 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
 
   return (
     <li className={`task-swipe ${dragging ? 'dragging' : ''}`}>
+      {showAccept && (
+        <div className="task-swipe-accept" aria-hidden={dx <= 0}>
+          <button type="button" className="accept-btn" aria-label={terms.accept} title={terms.accept}
+            tabIndex={dx <= 0 ? -1 : 0} onClick={(e) => { stop(e); setDx(0); onAccept() }}>
+            {terms.accept.split(' ').map((w, i) => <span key={i}>{w}</span>)}
+          </button>
+        </div>
+      )}
       {actions.length > 0 && (
         <div className="task-swipe-actions" aria-hidden={dx === 0}>
           {actions.map((a) => (
