@@ -229,10 +229,10 @@ export default function Layout() {
       </header>
     )
   } else if (notifSettingsMatch) {
-    // 알림 설정 페이지: 좌측 뒤로(알림으로), 제목 "알림 설정"
+    // 알림 설정 페이지: 좌측 뒤로(이전 화면=알림), 제목 "알림 설정"
     topbar = (
       <header className="topbar">
-        <Link to="/notifications" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">알림 설정</span>
       </header>
     )
