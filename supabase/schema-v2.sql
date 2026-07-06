@@ -245,7 +245,7 @@ create policy notif_delete on public.notifications
 -- ---- 헬퍼: 유형별 명칭 / 수락 용어 / 그룹내 표시 닉네임 --------
 create or replace function public.notif_noun(p_type text)
 returns text language sql immutable as $$
-  select case when p_type = 'ilhaging' then '태스크' else '위시리스트' end;
+  select case when p_type = 'ilhaging' then '태스크' else '위시' end;
 $$;
 
 create or replace function public.notif_accept_term(p_type text)
@@ -285,8 +285,18 @@ begin
               v_actor || ': ' || NEW.body,
               NEW.group_id, NEW.task_id, NEW.id);
     end if;
+    -- (2) 대댓글이어도 위시 작성자에게 알림. 단, 부모 댓글 작성자와 같으면 (1)만 보냄
+    if v_task.created_by is not null
+       and v_task.created_by <> NEW.author_id
+       and v_task.created_by is distinct from v_parent then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id, comment_id)
+      values (v_task.created_by, NEW.author_id, 'task_comment',
+              '내 ' || public.notif_noun(v_group.group_type) || '에 댓글이 달렸어요',
+              v_actor || ': ' || NEW.body,
+              NEW.group_id, NEW.task_id, NEW.id);
+    end if;
   else
-    -- (2) 최상위 댓글: 태스크 작성자에게
+    -- (2) 최상위 댓글: 위시 작성자에게
     if v_task.created_by is not null and v_task.created_by <> NEW.author_id then
       insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id, comment_id)
       values (v_task.created_by, NEW.author_id, 'task_comment',
@@ -345,28 +355,11 @@ drop trigger if exists trg_notify_member_join on public.group_members;
 create trigger trg_notify_member_join after insert on public.group_members
   for each row execute function public.tg_notify_member_join();
 
--- ---- 트리거 5: 놀기 신청(수락) — 신청자 제외 그룹원 전체 -------
-create or replace function public.tg_notify_task_accept()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare v_group public.groups; v_actor text;
-begin
-  if OLD.status = 'open' and NEW.status = 'accepted' and NEW.assignee_id is not null then
-    select * into v_group from public.groups where id = NEW.group_id;
-    v_actor := public.notif_member_name(NEW.group_id, NEW.assignee_id);
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-    select gm.user_id, NEW.assignee_id, 'accept',
-           v_actor || ' 님의 ' || public.notif_accept_term(v_group.group_type) || '! [' || NEW.title || ']',
-           null,
-           NEW.group_id, NEW.id
-    from public.group_members gm
-    where gm.group_id = NEW.group_id and gm.user_id <> NEW.assignee_id;
-  end if;
-  return NEW;
-end;
-$$;
+-- ---- 트리거 5: (폐기) 놀기 신청 알림은 참여자 확정 후 schedule_task 안에서 발송 ----
+-- 트리거는 status 변경 시점에 실행되어 참여자(task_participants)가 아직 없으므로,
+-- 참여자에게만 보내려면 참여자 INSERT 이후인 schedule_task 내부에서 발송해야 한다.
 drop trigger if exists trg_notify_task_accept on public.tasks;
-create trigger trg_notify_task_accept after update on public.tasks
-  for each row execute function public.tg_notify_task_accept();
+drop function if exists public.tg_notify_task_accept();
 
 -- =============================================================
 --  웹 푸시 (휴대폰 알림센터)
@@ -530,6 +523,17 @@ begin
   insert into public.task_participants(task_id, user_id)
     select p_task_id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
     where public.is_group_member(v_gid, x) on conflict do nothing;
+
+  -- 놀기 신청 알림: 약속 참여자에게만 (신청자 본인 제외)
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+  select tp.user_id, auth.uid(), 'accept',
+         public.notif_member_name(v_gid, auth.uid()) || ' 님의 '
+           || public.notif_accept_term((select group_type from public.groups where id = v_gid))
+           || '! [' || r.title || ']',
+         null, v_gid, p_task_id
+  from public.task_participants tp
+  where tp.task_id = p_task_id and tp.user_id <> auth.uid();
+
   return r;
 end; $$;
 grant execute on function public.schedule_task(uuid, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
