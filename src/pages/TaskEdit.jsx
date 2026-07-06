@@ -24,7 +24,7 @@ export default function TaskEdit() {
       <TaskForm
         groupType={groupType}
         initial={task}
-        submitLabel={`${terms.noun} 수정`}
+        submitLabel="완료"
         onSubmit={async (values) => {
           await updateTask(taskId, values)
           navigate(`/groups/${groupId}`)

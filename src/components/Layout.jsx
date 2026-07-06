@@ -225,7 +225,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 편집</span>
+        <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 수정</span>
       </header>
     )
   } else if (taskScheduleMatch) {
