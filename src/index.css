@@ -351,11 +351,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .task-item:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
 .task-swipe.dragging .task-item { transition: none; }
-.task-item.status-done { opacity: .72; }
 .task-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .task-headline { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
 .task-name { font-weight: 600; min-width: 0; word-break: break-word; font-size: 16px; line-height: 1.25; }
-.task-item.status-done .task-name { text-decoration: line-through; }
 .task-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .task-author { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
 .task-author-name { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
