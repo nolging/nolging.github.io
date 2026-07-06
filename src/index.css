@@ -401,11 +401,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .composer {
   display: flex; flex-direction: column; gap: 8px;
   background: var(--surface); border-top: 1px solid var(--border);
-  padding: 12px 14px 18px; max-width: 1080px; width: 100%; margin: 0 auto;
+  padding: 12px 14px calc(24px + env(safe-area-inset-bottom));
+  max-width: 1080px; width: 100%; margin: 0 auto;
 }
-.composer-row { display: flex; gap: 8px; align-items: center; }
+.composer-row { display: flex; gap: 8px; align-items: stretch; }
 .composer input { flex: 1; }
-.composer .btn { flex-shrink: 0; }
+.composer .btn { flex-shrink: 0; min-height: 46px; }
 .composer-tag { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 .composer-tag-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer-cancel { flex-shrink: 0; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
