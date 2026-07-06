@@ -85,6 +85,24 @@ export default function GroupDetail() {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
   }
 
+  // 화면 좌우 스와이프로 위시-약속-추억 탭 전환 (카드/버튼/시트 위에서 시작한 스와이프는 제외)
+  const swipeRef = useRef(null)
+  function onTabTouchStart(e) {
+    if (e.touches.length !== 1) { swipeRef.current = null; return }
+    const skip = !!e.target.closest?.('.task-swipe, .fab, .sheet-root, .tabs-filter-btn')
+    swipeRef.current = skip ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }
+  }
+  function onTabTouchEnd(e) {
+    const s = swipeRef.current; swipeRef.current = null
+    if (!s) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - s.x, dy = t.clientY - s.y
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    const idx = TASK_STATUSES.indexOf(filter)
+    const next = dx < 0 ? Math.min(TASK_STATUSES.length - 1, idx + 1) : Math.max(0, idx - 1)
+    if (next !== idx) setFilter(TASK_STATUSES[next])
+  }
+
   const isOwner = group && group.owner_id === profile?.id
 
   // userId -> {name, avatar} (그룹 내 표시 이름)
@@ -134,7 +152,7 @@ export default function GroupDetail() {
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
   return (
-    <div className="page">
+    <div className="page" onTouchStart={onTabTouchStart} onTouchEnd={onTabTouchEnd}>
       <div className="gd-head">
         <div className="gd-title">
           <h1>{group.name}</h1>

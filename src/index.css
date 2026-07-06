@@ -331,7 +331,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tab.active { color: var(--text); border-bottom-color: var(--text); }
 
 /* ---- 태스크 ---- */
-.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+/* 하단 여백: 마지막 카드가 위시 작성 버튼(FAB) 뒤에 가려지지 않도록 */
+.task-list { list-style: none; margin: 0; padding: 0 0 calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
 /* 스와이프: 액션 버튼은 배경(뒤)에 고정, 카드가 그림자째 좌로 슬라이드하며 드러냄 */
 .task-swipe { position: relative; }
 .task-swipe-actions {
