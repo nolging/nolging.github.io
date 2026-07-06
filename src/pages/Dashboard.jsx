@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listMyGroups } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 
 export default function Dashboard() {
+  const { profile } = useAuth()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -92,8 +94,11 @@ export default function Dashboard() {
           {filtered.map((g) => {
             const members = g.group_members || []
             const extra = members.length - 3
+            // 관리자는 미가입 그룹도 보임 → 내가 멤버가 아니면 카드 반투명 처리
+            const isMember = members.some((m) => m.user_id === profile?.id)
             return (
-              <Link key={g.id} to={`/groups/${g.id}`} className="group-tile group-card">
+              <Link key={g.id} to={`/groups/${g.id}`}
+                className={`group-tile group-card ${isMember ? '' : 'not-joined'}`}>
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>

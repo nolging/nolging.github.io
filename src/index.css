@@ -224,6 +224,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .group-tile:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(20, 22, 40, .09); }
 .group-card.group-tile { background: var(--surface); border: none; box-shadow: 0 4px 14px rgba(20, 22, 40, .06); }
+/* 관리자에게만 보이는 미가입 그룹: 흰 배경을 살짝 투명하게 (뒤 회색이 비쳐 흐릿) */
+.group-card.group-tile.not-joined { background: rgba(255, 255, 255, .45); box-shadow: 0 4px 14px rgba(20, 22, 40, .04); }
 /* 첫 칸: 그룹 만들기 / 가입하기 (상하 분리, 카드와 동일한 정방형) */
 .tile-name {
   margin: 0; font-size: 1rem; font-weight: 700;
