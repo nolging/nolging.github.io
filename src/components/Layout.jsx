@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { unreadNotificationCount } from '../lib/api'
 import Brand from './Brand'
+import PushPrompt from './PushPrompt'
 
 function GearIcon() {
   return (
@@ -354,6 +355,7 @@ export default function Layout() {
       )}
       {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}
       <div id="app-bottom" className="app-bottom" />
+      <PushPrompt />
     </div>
   )
 }

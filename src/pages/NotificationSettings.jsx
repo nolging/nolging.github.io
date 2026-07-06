@@ -70,7 +70,7 @@ export default function NotificationSettings() {
 
           {on && (
             <div className="card np-cats">
-              <p className="muted sm np-hint">끄면 해당 알림은 휴대폰 푸시만 오지 않고, 알림 목록에는 계속 표시돼요.</p>
+              <p className="muted sm np-hint">푸시 알림을 꺼도 알림 목록에서는 계속 확인할 수 있어요.</p>
               {CATS.map((c) => (
                 <div className="switch-row" key={c.key}>
                   <span>{c.label}</span>

@@ -690,6 +690,10 @@ a.mp-tel:active { opacity: .55; }
 .sheet.dragging { transition: none; }
 .sheet-handle { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 4px auto 14px; }
 .sheet-title { font-size: 1.05rem; margin: 0 0 14px; text-align: center; }
+/* 첫 실행 푸시 허용 프롬프트 */
+.push-prompt-desc { margin: 0 0 18px; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.push-prompt-actions { display: flex; gap: 10px; }
+.push-prompt-actions .btn { flex: 1; }
 
 /* ---- 요청 목록 ---- */
 .request-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
