@@ -1,7 +1,10 @@
 // 위시(영화/OTT)에서 가져온 TMDB 정보 표시. category 에 따라 항목이 달라진다.
 
 // 특정 브랜드는 로고를 지정 이미지로 대체 (TMDB 로고가 마음에 안 들 때)
-const LOGO_OVERRIDE = [{ test: /watcha/i, src: '/ott/watcha.svg' }]
+const LOGO_OVERRIDE = [
+  { test: /wavve/i, src: '/ott/wavve.png' },
+  { test: /watcha/i, src: '/ott/watcha.png' },
+]
 const badgeSrc = (name, logo) => LOGO_OVERRIDE.find((o) => o.test.test(name))?.src ?? logo
 
 // OTT 제공처를 앱 아이콘(동그란 배지)로. logo 없으면 텍스트 칩으로 대체.
