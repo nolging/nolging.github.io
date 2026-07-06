@@ -6,7 +6,7 @@ import {
   completeTask, reopenTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
-  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle,
+  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -212,6 +212,8 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const isParticipant = isCreator || parts.includes(meId)
   const showMenu = isScheduled ? isParticipant : canManage
 
+  const mediaLine = mediaCardLine(task.category, task.media_info)
+
   return (
     <li className={`task-item status-${task.status}`} onClick={onOpen}>
       <div className="task-head">
@@ -276,6 +278,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
       )}
 
       {task.description && <p className="task-desc">{task.description}</p>}
+      {mediaLine && <p className="task-media-line">{mediaLine}</p>}
 
       <div className="task-foot">
         {task.assignee_id && !showParts && (

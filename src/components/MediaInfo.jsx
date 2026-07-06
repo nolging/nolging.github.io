@@ -39,7 +39,6 @@ export default function MediaInfo({ category, info, onClear }) {
     if (info.release_date) rows.push(['개봉일', info.release_date])
     if (info.runtime) rows.push(['러닝타임', `${info.runtime}분`])
   }
-  if (info.kind === 'movie' && info.in_theaters) rows.push(['상영', '현재 상영 중 🎬'])
 
   return (
     <div className="media-info">

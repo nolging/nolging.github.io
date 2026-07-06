@@ -368,6 +368,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .menu-pop button:hover { background: rgba(0, 0, 0, .05); }
 .menu-pop .menu-danger { color: var(--danger); }
 .task-desc { margin: 0; color: var(--muted); font-size: 14px; }
+.task-media-line { margin: 0; color: var(--muted); font-size: 12.5px; }
 /* 약속 카드: 시간/반복/알림 정보 줄 */
 .task-appt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; font-weight: 600; }
 .task-appt-when { color: var(--text); }

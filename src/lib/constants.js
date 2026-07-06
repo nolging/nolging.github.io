@@ -27,6 +27,39 @@ export const TASK_STATUSES = ['open', 'accepted', 'done']
 // 위시 카테고리
 export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
 
+// OTT 제공처 영문명(TMDB) → 한글 표기. 없으면 원문 유지.
+const OTT_NAME_KO = {
+  'Netflix': '넷플릭스',
+  'Wavve': '웨이브', 'wavve': '웨이브',
+  'Watcha': '왓챠', 'watcha': '왓챠',
+  'Disney Plus': '디즈니플러스', 'Disney+': '디즈니플러스',
+  'Tving': '티빙', 'TVING': '티빙',
+  'Coupang Play': '쿠팡플레이',
+  'Amazon Prime Video': '프라임비디오',
+  'Apple TV': '애플TV+', 'Apple TV Plus': '애플TV+', 'Apple TV+': '애플TV+',
+  'Laftel': '라프텔', 'laftel': '라프텔',
+}
+export function ottNameKo(name) {
+  if (!name) return ''
+  const n = String(name).trim()
+  return OTT_NAME_KO[n] ?? n
+}
+
+// 위시 카드에 표시할 미디어 요약 (OTT: 러닝타임 | 볼 수 있는 OTT, 영화: 러닝타임 | 개봉일 개봉)
+export function mediaCardLine(category, mi) {
+  if (!mi || (category !== 'OTT' && category !== '영화')) return ''
+  const parts = []
+  if (mi.runtime) parts.push(`${mi.runtime}분`)
+  if (category === 'OTT') {
+    const list = (mi.providers?.length ? mi.providers : mi.providers_buy) || []
+    const names = list.map((p) => ottNameKo(typeof p === 'string' ? p : p?.name)).filter(Boolean)
+    if (names.length) parts.push(names.join(' '))
+  } else if (mi.release_date) {
+    parts.push(`${mi.release_date} 개봉`)
+  }
+  return parts.join(' | ')
+}
+
 // 카테고리별 파스텔 색 (배경/글자) — 칩으로 유형을 한눈에 구분
 export const CATEGORY_COLORS = {
   OTT:  { bg: '#ECE6FB', fg: '#6C4BD6' }, // 라벤더
