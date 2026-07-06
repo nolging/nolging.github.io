@@ -513,9 +513,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .notif {
   display: flex; gap: 10px; align-items: flex-start; position: relative;
   padding: 12px 34px 12px 12px; border-radius: 12px;
-  background: var(--surface); border: none; box-shadow: var(--card-shadow);
+  background: #eceef3; border: none; box-shadow: var(--card-shadow); /* 읽음: 살짝 회색 */
 }
-.notif.unread { background: #f3f1fe; border-color: #ddd6fb; }
+.notif.unread { background: var(--surface); } /* 안읽음: 흰색 */
 .notif.clickable { cursor: pointer; }
 .notif-icon { font-size: 18px; line-height: 1.35; flex-shrink: 0; }
 .notif-body { flex: 1; min-width: 0; }
