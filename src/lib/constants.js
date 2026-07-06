@@ -87,12 +87,11 @@ export function mediaCardLine(category, mi) {
     if (mi.runtime) parts.push(`${mi.runtime} 분`)
     if (mi.release_date) parts.push(`${mi.release_date} 개봉`)
   } else if (category === '독서') {
-    if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
     if (mi.author) parts.push(mi.author)
+    if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
   } else if (category === '게임') {
     const plats = gamePlatformLabels(mi.platforms)
     if (plats.length) parts.push(plats.join(' '))
-    if (mi.genres?.length) parts.push(mi.genres.join(', '))
   } else return ''
   return parts.join(' | ')
 }

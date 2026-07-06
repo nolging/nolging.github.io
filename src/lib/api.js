@@ -140,6 +140,16 @@ export async function listTasks(groupId) {
   return data ?? []
 }
 
+// 그룹 내 태스크별 댓글 수 맵 { task_id: count }
+export async function listCommentCounts(groupId) {
+  const { data, error } = await supabase
+    .from('task_comments').select('task_id').eq('group_id', groupId)
+  if (error) throw error
+  const map = {}
+  for (const r of data ?? []) map[r.task_id] = (map[r.task_id] || 0) + 1
+  return map
+}
+
 export async function createTask({ groupId, title, description, category, media_info, createdBy }) {
   const row = { group_id: groupId, title, description: description ?? '', created_by: createdBy }
   // category 는 값이 있을 때만 전송 (컬럼 미적용 환경에서 일반 태스크는 정상 동작)

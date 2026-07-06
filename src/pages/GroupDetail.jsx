@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, listMemberCards, listTasks, listParticipantsByTasks,
-  completeTask, reopenTask, deleteTask, cancelAppointment,
+  getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
+  completeTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -72,6 +72,7 @@ export default function GroupDetail() {
   const [members, setMembers] = useState([])
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
+  const [commentCounts, setCommentCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -97,8 +98,10 @@ export default function GroupDetail() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, m, t] = await Promise.all([getGroup(groupId), listMemberCards(groupId), listTasks(groupId)])
-      setGroup(g); setMembers(m); setTasks(t)
+      const [g, m, t, cc] = await Promise.all([
+        getGroup(groupId), listMemberCards(groupId), listTasks(groupId), listCommentCounts(groupId),
+      ])
+      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
@@ -170,7 +173,7 @@ export default function GroupDetail() {
         <ul className="task-list">
           {visibleTasks.map((t) => (
             <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
-              participants={partsByTask[t.id] || []}
+              participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
               onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
               onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
               onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
@@ -217,7 +220,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
+function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, commentCount = 0, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
   const stop = (e) => e.stopPropagation()
@@ -262,6 +265,16 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const [dragging, setDragging] = useState(false)
   const drag = useRef(null)
   const movedRef = useRef(false)
+  const rootRef = useRef(null)
+
+  // 스와이프로 열린 상태에서 카드 바깥을 누르면 원위치로 닫기
+  const isOpen = dx !== 0
+  useEffect(() => {
+    if (!isOpen) return
+    const onDocDown = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setDx(0) }
+    document.addEventListener('pointerdown', onDocDown)
+    return () => document.removeEventListener('pointerdown', onDocDown)
+  }, [isOpen])
 
   function onPointerDown(e) {
     if ((!actions.length && !leftAction) || (e.pointerType === 'mouse' && e.button !== 0)) return
@@ -296,7 +309,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   }
 
   return (
-    <li className={`task-swipe ${dragging ? 'dragging' : ''}`}>
+    <li ref={rootRef} className={`task-swipe ${dragging ? 'dragging' : ''}`}>
       {leftAction && (
         <div className="task-swipe-accept" aria-hidden={dx <= 0}>
           <button type="button" className="accept-btn" aria-label={leftAction.lines.join(' ')} title={leftAction.lines.join(' ')}
@@ -360,8 +373,9 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
               담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
             </span>
           )}
-          <div className="task-actions" onClick={stop}>
+          <div className="task-foot-right">
             {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
+            <span className="task-cc">댓글 {commentCount}</span>
           </div>
         </div>
       </div>
