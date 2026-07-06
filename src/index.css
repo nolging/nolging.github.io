@@ -352,7 +352,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-item:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
 .task-swipe.dragging .task-item { transition: none; }
 .task-item.status-done { opacity: .72; }
-.task-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.task-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .task-headline { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
 .task-name { font-weight: 600; min-width: 0; word-break: break-word; font-size: 16px; line-height: 1.25; }
 .task-item.status-done .task-name { text-decoration: line-through; }
