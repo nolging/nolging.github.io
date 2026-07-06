@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { previewGroup, joinGroupWithProfile } from '../lib/api'
 import AvatarEditor from '../components/AvatarEditor'
@@ -7,11 +7,18 @@ import AvatarEditor from '../components/AvatarEditor'
 export default function JoinGroup() {
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { setBackHandler } = useOutletContext()
 
   const [code, setCode] = useState('')
   const [preview, setPreview] = useState(null) // 미리보기 대상 그룹
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // 상단바 뒤로가기: 2단계(프로필)면 1단계(코드 입력)로, 1단계면 기본(내 그룹)
+  useEffect(() => {
+    setBackHandler(() => (preview ? () => setPreview(null) : null))
+  }, [preview, setBackHandler])
+  useEffect(() => () => setBackHandler(() => null), [setBackHandler])
 
   // 프로필 설정(2단계)
   const [form, setForm] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false })

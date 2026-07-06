@@ -60,6 +60,7 @@ export default function Layout() {
   const taskScheduleMatch = useMatch('/groups/:groupId/tasks/:taskId/schedule')
   const taskDetailMatch = useMatch('/groups/:groupId/tasks/:taskId')
   const newGroupMatch = useMatch('/groups/new')
+  const joinMatch = useMatch('/join')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
@@ -82,7 +83,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -195,6 +196,16 @@ export default function Layout() {
           ? <button type="button" onClick={backHandler} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">그룹 만들기</span>
+      </header>
+    )
+  } else if (joinMatch) {
+    // 초대장 찾기(그룹 가입) 페이지: 좌측 뒤로 — 핸들러 있으면(2단계→1단계) 그걸, 아니면 내 그룹으로
+    topbar = (
+      <header className="topbar">
+        {backHandler
+          ? <button type="button" onClick={backHandler} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
+        <span className="topbar-heading">초대장 찾기</span>
       </header>
     )
   } else if (groupMatch) {
