@@ -161,6 +161,10 @@ export default function TaskDetail() {
     if (!confirm('삭제하시겠습니까? 약속과 댓글도 함께 삭제됩니다.')) return
     try { await deleteTask(taskId); navigate(`/groups/${groupId}`) } catch (err) { setError(err.message) }
   }
+  function goEditWish() {
+    setHeadMenu(false)
+    navigate(`/groups/${groupId}/tasks/${taskId}/edit`, { state: { task } })
+  }
 
   // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
   async function submit(e) {
@@ -311,6 +315,24 @@ export default function TaskDetail() {
                     <button type="button" onClick={goEditAppointment}>편집</button>
                     <button type="button" onClick={doCancelAppointment}>약속 취소</button>
                     {isCreator && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {!isScheduled && (isCreator || isOwner) && (
+            <div className="task-menu-wrap">
+              <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                </svg>
+              </button>
+              {headMenu && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
+                  <div className="menu-pop" role="menu">
+                    {isCreator && <button type="button" onClick={goEditWish}>편집</button>}
+                    {(isCreator || isOwner) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
                   </div>
                 </>
               )}

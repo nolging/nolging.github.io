@@ -1,15 +1,28 @@
 // 위시(영화/OTT)에서 가져온 TMDB 정보 표시. category 에 따라 항목이 달라진다.
+
+// OTT 제공처를 앱 아이콘(동그란 배지)로. logo 없으면 텍스트 칩으로 대체.
+function ProviderBadges({ list, suffix }) {
+  return (
+    <span className="ott-badges">
+      {list.map((p, i) => {
+        const name = typeof p === 'string' ? p : p.name
+        const logo = typeof p === 'object' ? p.logo : null
+        return logo
+          ? <img key={i} className="ott-badge" src={logo} alt={name} title={name} />
+          : <span key={i} className="ott-badge ott-badge-text" title={name}>{name}</span>
+      })}
+      {suffix && <span className="ott-suffix">{suffix}</span>}
+    </span>
+  )
+}
+
 export default function MediaInfo({ category, info, onClear }) {
   if (!info) return null
-  const rows = []
+  const rows = [] // [label, node]
 
   if (category === 'OTT') {
-    // 구독으로 볼 수 있으면 그것, 없으면 개별 구매처 + (개별 구매)
-    if (info.providers?.length) {
-      rows.push(['볼 수 있는 곳', info.providers.join(', ')])
-    } else if (info.providers_buy?.length) {
-      rows.push(['볼 수 있는 곳', `${info.providers_buy.join(', ')} (개별 구매)`])
-    }
+    if (info.providers?.length) rows.push(['OTT', <ProviderBadges list={info.providers} />])
+    else if (info.providers_buy?.length) rows.push(['OTT', <ProviderBadges list={info.providers_buy} suffix="(개별 구매)" />])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count}부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime}분`])
@@ -34,8 +47,8 @@ export default function MediaInfo({ category, info, onClear }) {
             )}
           </div>
           <dl className="media-info-rows">
-            {rows.map(([k, v]) => (
-              <div className="media-info-row" key={k}>
+            {rows.map(([k, v], i) => (
+              <div className="media-info-row" key={i}>
                 <dt>{k}</dt><dd>{v}</dd>
               </div>
             ))}

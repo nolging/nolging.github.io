@@ -7,6 +7,7 @@ const TMDB = 'https://api.themoviedb.org/3'
 const KEY = Deno.env.get('TMDB_API_KEY') ?? ''
 const IMG_SM = 'https://image.tmdb.org/t/p/w92'
 const IMG_MD = 'https://image.tmdb.org/t/p/w185'
+const IMG_LOGO = 'https://image.tmdb.org/t/p/w92'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -25,14 +26,19 @@ async function tmdb(path: string, params: Record<string, string> = {}) {
   return r.json()
 }
 const yearOf = (d?: string) => (d ? String(d).slice(0, 4) : '')
-const names = (arr?: { provider_name: string }[]) => (arr ?? []).map((p) => p.provider_name)
+type Prov = { provider_name: string; logo_path?: string }
+type Provider = { name: string; logo: string | null }
+const provs = (arr?: Prov[]): Provider[] =>
+  (arr ?? []).map((p) => ({ name: p.provider_name, logo: p.logo_path ? IMG_LOGO + p.logo_path : null }))
 
-// 한국(KR) 시청 제공처: flatrate(구독), buy/rent(개별 구매·대여)
-async function providersKR(media: string, id: number): Promise<{ sub: string[]; buy: string[] }> {
+// 한국(KR) 시청 제공처: flatrate(구독), buy/rent(개별 구매·대여) — 각각 {name, logo}
+async function providersKR(media: string, id: number): Promise<{ sub: Provider[]; buy: Provider[] }> {
   try {
     const d = await tmdb(`/${media}/${id}/watch/providers`)
     const kr = d?.results?.KR
-    return { sub: names(kr?.flatrate), buy: [...new Set([...names(kr?.buy), ...names(kr?.rent)])] }
+    const buyMap = new Map<string, Provider>()
+    for (const p of [...provs(kr?.buy), ...provs(kr?.rent)]) if (!buyMap.has(p.name)) buyMap.set(p.name, p)
+    return { sub: provs(kr?.flatrate), buy: [...buyMap.values()] }
   } catch { return { sub: [], buy: [] } }
 }
 
