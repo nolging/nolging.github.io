@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -35,6 +35,28 @@ const FilterIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+  </svg>
+)
+// 스와이프 액션 아이콘
+const EditIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+)
+const TrashIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+)
+const CalendarXIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" />
+    <line x1="8" y1="2" x2="8" y2="6" /><line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="9.5" y1="14" x2="14.5" y2="19" /><line x1="14.5" y1="14" x2="9.5" y2="19" />
   </svg>
 )
 
@@ -198,7 +220,6 @@ export default function GroupDetail() {
 function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, onOpen, onAccept, onComplete, onReopen, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner
-  const [menuOpen, setMenuOpen] = useState(false)
   const stop = (e) => e.stopPropagation()
 
   // 약속/추억 카드: 참여자 프로필 + 약속 시간/반복/알림 표기
@@ -206,92 +227,129 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const showParts = parts.length > 0
   const extra = parts.length - 3
 
-  // 약속(일정이 잡힌) 카드는 상세와 동일한 메뉴(편집/약속취소/삭제)
+  // 약속(일정이 잡힌) 카드는 상세와 동일한 동작(수정/약속취소/삭제)
   const isScheduled = !!task.scheduled_at
   const isCreator = task.created_by === meId
   const isParticipant = isCreator || parts.includes(meId)
-  const showMenu = isScheduled ? isParticipant : canManage
+  const canAct = isScheduled ? isParticipant : canManage
 
   const mediaLine = mediaCardLine(task.category, task.media_info)
 
-  return (
-    <li className={`task-item status-${task.status}`} onClick={onOpen}>
-      <div className="task-head">
-        <div className="task-headline">
-          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
-          <span className="task-name">{task.title}</span>
-        </div>
-        <div className="task-head-right">
-          {showParts ? (
-            <span className={`task-parts ${parts.length > 1 ? 'multi' : ''}`}>
-              {parts.slice(0, 3).map((uid) => (
-                <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={24} />
-              ))}
-              {extra > 0 && <span className="task-parts-more">+{extra}</span>}
-              {parts.length === 1 && <span className="task-author-name">{nameOf(parts[0])}</span>}
-            </span>
-          ) : (
-            <span className="task-author">
-              <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
-              <span className="task-author-name">{nameOf(task.created_by)}</span>
-            </span>
-          )}
-          {showMenu && (
-            <div className="task-menu-wrap" onClick={stop}>
-              <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((v) => !v)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                </svg>
-              </button>
-              {menuOpen && (
-                <>
-                  <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-                  <div className="menu-pop" role="menu">
-                    {isScheduled ? (
-                      <>
-                        <button type="button" onClick={() => { setMenuOpen(false); onEditAppointment() }}>편집</button>
-                        <button type="button" onClick={() => { setMenuOpen(false); onCancelAppointment() }}>약속 취소</button>
-                        {isCreator && <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>}
-                      </>
-                    ) : (
-                      <>
-                        <button type="button" onClick={() => { setMenuOpen(false); onEdit() }}>편집</button>
-                        <button type="button" className="menu-danger" onClick={() => { setMenuOpen(false); onDelete() }}>삭제</button>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+  // 스와이프 시 오른쪽에 뜨는 원형 액션들 (기존 ⋮ 메뉴 대체)
+  const actions = []
+  if (canAct) {
+    if (isScheduled) {
+      actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEditAppointment })
+      actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
+      if (isCreator) actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
+    } else {
+      actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEdit })
+      actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
+    }
+  }
+  const openW = actions.length ? actions.length * 40 + (actions.length - 1) * 8 + 16 : 0
 
-      {task.scheduled_at && (
-        <div className="task-appt">
-          <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
-          {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
-          {task.remind_min !== null && task.remind_min !== undefined && (
-            <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
-          )}
+  // 왼쪽 스와이프로 액션 노출. touch-action: pan-y 라 세로 스크롤은 그대로 동작.
+  const [dx, setDx] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const drag = useRef(null)
+  const movedRef = useRef(false)
+
+  function onPointerDown(e) {
+    if (!actions.length || (e.pointerType === 'mouse' && e.button !== 0)) return
+    movedRef.current = false // 새 제스처 시작마다 초기화(스와이프 후 click 미발생 기기 대비)
+    drag.current = { x0: e.clientX, y0: e.clientY, base: dx, decided: false, horiz: false }
+  }
+  function onPointerMove(e) {
+    const d = drag.current
+    if (!d) return
+    const mx = e.clientX - d.x0
+    const my = e.clientY - d.y0
+    if (!d.decided) {
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return
+      d.decided = true
+      d.horiz = Math.abs(mx) > Math.abs(my)
+      if (d.horiz) { setDragging(true); e.currentTarget.setPointerCapture?.(e.pointerId) }
+    }
+    if (!d.horiz) return
+    movedRef.current = true
+    setDx(Math.max(-openW, Math.min(0, d.base + mx)))
+  }
+  function onPointerUp() {
+    const d = drag.current
+    drag.current = null
+    setDragging(false)
+    if (d?.horiz) setDx((cur) => (cur < -openW / 2 ? -openW : 0))
+  }
+  function handleClick() {
+    if (movedRef.current) { movedRef.current = false; return } // 스와이프였으면 이동 안 함
+    if (dx !== 0) { setDx(0); return }                         // 열려 있으면 닫기
+    onOpen()
+  }
+
+  return (
+    <li className={`task-swipe ${dragging ? 'dragging' : ''}`}>
+      {actions.length > 0 && (
+        <div className="task-swipe-actions" aria-hidden={dx === 0}>
+          {actions.map((a) => (
+            <button key={a.key} type="button" className={`swipe-btn ${a.danger ? 'danger' : ''}`}
+              aria-label={a.label} title={a.label} tabIndex={dx === 0 ? -1 : 0}
+              onClick={(e) => { stop(e); setDx(0); a.onClick() }}>{a.icon}</button>
+          ))}
         </div>
       )}
+      <div className={`task-item status-${task.status}`} style={{ transform: `translateX(${dx}px)` }}
+        onClick={handleClick} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+        <div className="task-head">
+          <div className="task-headline">
+            {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
+            <span className="task-name">{task.title}</span>
+          </div>
+          <div className="task-head-right">
+            {showParts ? (
+              <span className={`task-parts ${parts.length > 1 ? 'multi' : ''}`}>
+                {parts.slice(0, 3).map((uid) => (
+                  <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={24} />
+                ))}
+                {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+                {parts.length === 1 && <span className="task-author-name">{nameOf(parts[0])}</span>}
+              </span>
+            ) : (
+              <span className="task-author">
+                <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+                <span className="task-author-name">{nameOf(task.created_by)}</span>
+              </span>
+            )}
+          </div>
+        </div>
 
-      {task.description && <p className="task-desc">{task.description}</p>}
-
-      <div className="task-foot">
-        {mediaLine && <span className="task-media-line">{mediaLine}</span>}
-        {task.assignee_id && !showParts && (
-          <span className="task-person">
-            <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
-            담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
-          </span>
+        {task.scheduled_at && (
+          <div className="task-appt">
+            <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+            {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
+            {task.remind_min !== null && task.remind_min !== undefined && (
+              <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
+            )}
+          </div>
         )}
-        <div className="task-actions" onClick={stop}>
-          {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
-          {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
-          {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
-          {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
+
+        {task.description && <p className="task-desc">{task.description}</p>}
+
+        <div className="task-foot">
+          {mediaLine && <span className="task-media-line">{mediaLine}</span>}
+          {task.assignee_id && !showParts && (
+            <span className="task-person">
+              <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
+              담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
+            </span>
+          )}
+          <div className="task-actions" onClick={stop}>
+            {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
+            {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
+            {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
+            {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
+          </div>
         </div>
       </div>
     </li>
