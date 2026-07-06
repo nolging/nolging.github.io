@@ -398,10 +398,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* 약속 카드: 시간/반복/알림 정보 줄 */
-.task-appt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; font-weight: 600; }
-.task-appt-when { color: var(--text); }
-.task-appt-rep { font-size: 12px; font-weight: 600; color: var(--muted); }
-.task-appt-bell { display: inline-flex; align-items: center; color: var(--muted); }
+/* 약속 줄: 한 줄 유지. 날짜·댓글은 항상, 반복은 길면 말줄임 */
+.task-appt { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; font-size: 13px; font-weight: 600; }
+.task-appt-when { color: var(--text); flex-shrink: 0; }
+.task-appt-rep { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-appt-bell { display: inline-flex; align-items: center; color: var(--muted); flex-shrink: 0; }
+.task-appt-cc { margin-left: auto; flex-shrink: 0; font-weight: 400; }
 .task-foot { display: flex; align-items: center; gap: 8px; }
 .task-foot .task-person { font-size: 12px; color: var(--muted); }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }

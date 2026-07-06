@@ -237,6 +237,10 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const canAct = isScheduled ? isParticipant : canManage
 
   const mediaLine = mediaCardLine(task.category, task.media_info)
+  // 약속/추억(scheduled) 카드는 댓글 수를 약속 정보(🗓) 라인에, 그 외(open)는 foot 에
+  const ccOnAppt = !!task.scheduled_at
+  const showProgress = task.status === 'accepted' && !mine
+  const showFoot = mediaLine || (task.assignee_id && !showParts) || showProgress || !ccOnAppt
 
   // 스와이프 시 오른쪽에 뜨는 원형 액션들 (기존 ⋮ 메뉴 대체)
   const actions = []
@@ -355,21 +359,23 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
 
         {task.description && <p className="task-desc">{task.description}</p>}
 
-        <div className="task-foot">
-          {mediaLine && <span className="task-media-line">{mediaLine}</span>}
-          {task.assignee_id && !showParts && (
-            <span className="task-person">
-              <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
-              담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
-            </span>
-          )}
-          <div className="task-foot-right">
-            {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
-            <span className="task-cc">댓글 {commentCount}</span>
+        {showFoot && (
+          <div className="task-foot">
+            {mediaLine && <span className="task-media-line">{mediaLine}</span>}
+            {task.assignee_id && !showParts && (
+              <span className="task-person">
+                <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
+                담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
+              </span>
+            )}
+            <div className="task-foot-right">
+              {showProgress && <span className="muted sm">진행 중</span>}
+              {!ccOnAppt && <span className="task-cc">댓글 {commentCount}</span>}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* 약속 시간: 상세 정보(foot) 아래에 배치 */}
+        {/* 약속 시간: 상세 정보(foot) 아래. 댓글 수도 이 라인에 맞춤 */}
         {task.scheduled_at && (
           <div className="task-appt">
             <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
@@ -377,6 +383,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
             {task.remind_min !== null && task.remind_min !== undefined && (
               <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
             )}
+            <span className="task-cc task-appt-cc">댓글 {commentCount}</span>
           </div>
         )}
       </div>
