@@ -113,18 +113,26 @@ Deno.serve(async (req) => {
         })
       }
 
-      // multi(OTT 유형): 영화+시리즈. 현재 상영 중인 영화만 제외(그건 영화 유형에서 다룸).
-      // 제공처가 없어도(쿠팡플레이 등 데이터 누락) 포함 — 제공처는 상세 조회 때 확인.
+      // multi(OTT 유형): 영화+시리즈. 현재 상영 중인 영화는 원칙적으로 제외(그건 영화 유형)
+      // 하되, 재개봉 등으로 OTT 제공처(구독/개별구매)가 있으면 포함.
+      // 그 외(비상영 영화·시리즈)는 제공처 없어도(쿠팡플레이 등 누락) 포함.
       const [d, np] = await Promise.all([
         tmdb('/search/multi', { language: 'ko-KR', query: q, include_adult: 'false' }),
         nowPlayingKR(),
       ])
+      const cands = (d.results ?? [])
+        .filter((m: Record<string, unknown>) => m.media_type === 'movie' || m.media_type === 'tv')
+        .slice(0, 10)
+      // 상영 중 영화만 제공처 확인해서 있을 때만 남긴다(호출 수 최소화).
+      const kept = await Promise.all(cands.map(async (m: Record<string, unknown>) => {
+        if (m.media_type === 'movie' && np.has(m.id as number)) {
+          const prov = await providersKR('movie', m.id as number)
+          if (!prov.sub.length && !prov.buy.length) return null
+        }
+        return m
+      }))
       return json({
-        results: (d.results ?? [])
-          .filter((m: Record<string, unknown>) =>
-            (m.media_type === 'movie' || m.media_type === 'tv') &&
-            !(m.media_type === 'movie' && np.has(m.id as number)))
-          .slice(0, 8)
+        results: kept.filter(Boolean).slice(0, 8)
           .map((m: Record<string, unknown>) => ({
             id: m.id, media: m.media_type,
             title: m.media_type === 'tv' ? m.name : m.title,
