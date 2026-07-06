@@ -263,7 +263,7 @@ export default function ScheduleAppointment() {
 
         {error && <div className="alert alert-error">{error}</div>}
         <button className="btn btn-primary btn-block" disabled={saving}>
-          {saving ? '저장 중…' : isReschedule ? '약속 수정' : '놀기 신청 완료'}
+          {saving ? '저장 중…' : isReschedule ? '약속 수정' : '놀기 신청'}
         </button>
       </form>
     </div>
