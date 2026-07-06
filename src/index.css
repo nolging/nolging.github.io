@@ -464,6 +464,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* iOS 스타일 스위치 */
 .switch { position: relative; display: inline-flex; width: 46px; height: 28px; flex-shrink: 0; }
+.switch.disabled { opacity: .45; pointer-events: none; }
+/* 알림 설정 카테고리 목록 */
+.np-hint { margin-top: 8px; }
+.np-cats .np-hint { margin: 0 0 4px; }
+.np-cats .switch-row { padding: 11px 0; }
+.np-cats .switch-row + .switch-row { border-top: 1px solid var(--border); }
 .switch input { opacity: 0; width: 0; height: 0; }
 .switch .slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 999px; transition: .2s; }
 .switch .slider::before {

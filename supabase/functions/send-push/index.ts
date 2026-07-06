@@ -31,6 +31,24 @@ Deno.serve(async (req) => {
     const record = payload?.record ?? payload
     if (!record?.user_id) return json({ skipped: 'no user_id' })
 
+    // 카테고리별 푸시 설정 확인 — OFF 면 푸시만 생략(알림 행은 이미 생성됨).
+    // 댓글 알림(comment) = task_comment + reply
+    const TYPE_TO_CAT: Record<string, string> = {
+      new_member: 'new_member', new_task: 'new_task', accept: 'accept',
+      task_comment: 'comment', reply: 'comment', reminder: 'reminder',
+    }
+    const cat = TYPE_TO_CAT[record.type as string]
+    if (cat) {
+      const { data: pref } = await supabase
+        .from('notification_prefs')
+        .select(cat)
+        .eq('user_id', record.user_id)
+        .maybeSingle()
+      if (pref && (pref as Record<string, boolean>)[cat] === false) {
+        return json({ skipped: 'pref off', cat })
+      }
+    }
+
     const { data: subs, error } = await supabase
       .from('push_subscriptions')
       .select('*')

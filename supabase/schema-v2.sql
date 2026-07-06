@@ -391,6 +391,29 @@ drop policy if exists ps_delete on public.push_subscriptions;
 create policy ps_delete on public.push_subscriptions
   for delete to authenticated using (user_id = auth.uid());
 
+-- ---- 알림 카테고리별 푸시 설정 (OFF 여도 알림 행은 생성, 푸시만 생략) ----
+create table if not exists public.notification_prefs (
+  user_id    uuid primary key references public.profiles(id) on delete cascade,
+  new_member boolean not null default true,
+  new_task   boolean not null default true,
+  accept     boolean not null default true,
+  comment    boolean not null default true,  -- task_comment + reply
+  reminder   boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+alter table public.notification_prefs enable row level security;
+
+-- 본인 설정만 관리 (Edge Function 은 service_role 로 RLS 우회하여 조회)
+drop policy if exists np_select on public.notification_prefs;
+create policy np_select on public.notification_prefs
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists np_insert on public.notification_prefs;
+create policy np_insert on public.notification_prefs
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists np_update on public.notification_prefs;
+create policy np_update on public.notification_prefs
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
 -- =============================================================
 --  약속 잡기 (놀깅: 놀기 신청 → 날짜/시간/반복/참여멤버)
 -- =============================================================

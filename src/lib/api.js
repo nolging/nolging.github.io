@@ -86,6 +86,23 @@ export async function leaveGroup(groupId, userId) {
   if (error) throw error
 }
 
+// ---- 알림 카테고리별 푸시 설정 (없으면 전체 허용) ----------------
+export async function getNotifPrefs() {
+  const { data, error } = await supabase
+    .from('notification_prefs')
+    .select('new_member, new_task, accept, comment, reminder')
+    .maybeSingle()
+  if (error) throw error
+  return data // 없으면 null → 프론트에서 전체 true 기본값
+}
+
+export async function updateNotifPrefs(prefs, userId) {
+  const { error } = await supabase
+    .from('notification_prefs')
+    .upsert({ user_id: userId, ...prefs }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
 // ---- 멤버 (프라이버시 규칙 적용된 카드) ----------------------
 
 export async function listMemberCards(groupId) {
