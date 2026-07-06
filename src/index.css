@@ -326,7 +326,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: flex; align-items: center; justify-content: center;
 }
 .tabs {
-  display: flex; gap: 4px; justify-content: center;
+  display: flex; gap: 4px; justify-content: center; position: relative;
   border-bottom: 1px solid var(--border);
   /* 밑줄을 화면 끝까지: content 좌우 패딩을 상쇄해 전체폭으로 */
   margin-inline: calc(50% - 50vw);
@@ -336,7 +336,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   border: none; background: none; padding: 11px 8px; cursor: pointer; color: var(--muted);
   font-weight: 600; font-size: 14px; border-bottom: 2px solid transparent; display: flex; align-items: center;
 }
-.tab.active { color: var(--text); border-bottom-color: var(--text); }
+.tab.active { color: var(--text); }
+/* 활성 탭 밑줄: 스와이프 시 손가락을 따라 실시간으로 이동 */
+.tab-underline {
+  position: absolute; left: 0; bottom: -1px; height: 2px;
+  background: var(--text); pointer-events: none; will-change: transform, width;
+}
 
 /* ---- 태스크 ---- */
 /* 하단 여백: 마지막 카드가 위시 작성 버튼(FAB) 뒤에 가려지지 않도록 */

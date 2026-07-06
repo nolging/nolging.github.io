@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -93,23 +93,64 @@ export default function GroupDetail() {
     setFilter(next)
   }
 
-  // 화면 좌우 스와이프로 위시-약속-추억 탭 전환 (카드/버튼/시트 위에서 시작한 스와이프는 제외)
-  const swipeRef = useRef(null)
+  // 좌우 스와이프로 탭 전환 — 손가락을 따라 화면(pane)과 탭 밑줄이 실시간으로 움직임
+  const paneRef = useRef(null)
+  const tabsRef = useRef(null)
+  const swipeRef = useRef(null) // { x0, y0, locked: null|'h'|'v', paneW }
+  const [drag, setDrag] = useState({ x: 0, active: false })
+  const [tabGeo, setTabGeo] = useState([]) // 각 탭 버튼의 {left,width}
+  const [paneW, setPaneW] = useState(0)
+
   function onTabTouchStart(e) {
     if (e.touches.length !== 1) { swipeRef.current = null; return }
     const skip = !!e.target.closest?.('.task-swipe, .fab, .sheet-root, .tabs-filter-btn')
-    swipeRef.current = skip ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    if (skip) { swipeRef.current = null; return }
+    swipeRef.current = {
+      x0: e.touches[0].clientX, y0: e.touches[0].clientY, locked: null,
+      paneW: paneRef.current?.offsetWidth || window.innerWidth,
+    }
+  }
+  function onTabTouchMove(e) {
+    const s = swipeRef.current
+    if (!s || e.touches.length !== 1) return
+    const dx = e.touches[0].clientX - s.x0
+    const dy = e.touches[0].clientY - s.y0
+    if (s.locked === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      s.locked = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v'
+      if (s.locked === 'v') { swipeRef.current = null; return } // 세로 스크롤에 양보
+    }
+    if (s.locked !== 'h') return
+    const idx = TASK_STATUSES.indexOf(filter)
+    let d = dx
+    // 가장자리(첫 탭에서 오른쪽/마지막 탭에서 왼쪽)에는 저항을 줘 끝임을 알림
+    if ((d > 0 && idx === 0) || (d < 0 && idx === TASK_STATUSES.length - 1)) d *= 0.35
+    setDrag({ x: d, active: true })
   }
   function onTabTouchEnd(e) {
     const s = swipeRef.current; swipeRef.current = null
-    if (!s) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - s.x, dy = t.clientY - s.y
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    if (!s || s.locked !== 'h') { setDrag((p) => (p.active || p.x ? { x: 0, active: false } : p)); return }
+    const dx = e.changedTouches[0].clientX - s.x0
     const idx = TASK_STATUSES.indexOf(filter)
-    const next = dx < 0 ? Math.min(TASK_STATUSES.length - 1, idx + 1) : Math.max(0, idx - 1)
-    changeTab(TASK_STATUSES[next])
+    const threshold = Math.min(80, s.paneW * 0.22)
+    if (Math.abs(dx) >= threshold) {
+      const next = dx < 0 ? Math.min(TASK_STATUSES.length - 1, idx + 1) : Math.max(0, idx - 1)
+      if (next !== idx) changeTab(TASK_STATUSES[next])
+    }
+    setDrag({ x: 0, active: false }) // 전환/스냅백 모두 원위치로 (전환 시 새 pane 키프레임 재생)
   }
+
+  // 탭 버튼/‌pane 폭 측정 (밑줄을 손가락 비율만큼 이동시키기 위함)
+  useLayoutEffect(() => {
+    function measure() {
+      const btns = tabsRef.current ? [...tabsRef.current.querySelectorAll('.tab')] : []
+      setTabGeo(btns.map((b) => ({ left: b.offsetLeft, width: b.offsetWidth })))
+      setPaneW(paneRef.current?.offsetWidth || 0)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [group, filter])
 
   const isOwner = group && group.owner_id === profile?.id
 
@@ -159,8 +200,31 @@ export default function GroupDetail() {
   const matchesCat = (t) => catFilter.length === 0 || catFilter.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
+  // pane: 손가락 따라 이동, 놓으면 트랜지션으로 원위치
+  const paneStyle = {
+    transform: drag.x ? `translateX(${drag.x}px)` : undefined,
+    transition: drag.active ? 'none' : 'transform .2s ease',
+  }
+  // 밑줄: 현재 탭 → 인접 탭으로 드래그 비율만큼 선형 보간해 이동
+  const activeIdx = TASK_STATUSES.indexOf(filter)
+  const cur = tabGeo[activeIdx]
+  let uLeft = cur?.left ?? 0, uWidth = cur?.width ?? 0
+  if (cur && paneW) {
+    if (drag.x < 0 && activeIdx < TASK_STATUSES.length - 1) {
+      const nb = tabGeo[activeIdx + 1], t = Math.min(1, -drag.x / paneW)
+      uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
+    } else if (drag.x > 0 && activeIdx > 0) {
+      const nb = tabGeo[activeIdx - 1], t = Math.min(1, drag.x / paneW)
+      uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
+    }
+  }
+  const underlineStyle = tabGeo.length
+    ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`,
+        transition: drag.active ? 'none' : 'transform .2s ease, width .2s ease' }
+    : { opacity: 0 }
+
   return (
-    <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchEnd={onTabTouchEnd}>
+    <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       <div className="gd-head">
         <div className="gd-title">
           <h1>{group.name}</h1>
@@ -176,12 +240,13 @@ export default function GroupDetail() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="tabs">
+      <div className="tabs" ref={tabsRef}>
         {TASK_STATUSES.map((f) => (
           <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => changeTab(f)}>
             {terms.status[f]}
           </button>
         ))}
+        <span className="tab-underline" style={underlineStyle} />
       </div>
 
       <div className="tabs-toolbar">
@@ -193,7 +258,7 @@ export default function GroupDetail() {
         <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
 
-      <div className="tab-pane" key={filter} data-dir={slideDir}>
+      <div className="tab-pane" key={filter} data-dir={slideDir} ref={paneRef} style={paneStyle}>
       {visibleTasks.length === 0 ? (
         <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
       ) : (
