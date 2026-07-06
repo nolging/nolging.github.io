@@ -14,29 +14,56 @@ export function AuthProvider({ children }) {
       return
     }
     // contact/birthdate 는 프라이버시로 일반 조회에서 제외됨 → 필요한 컬럼만
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, nickname, role, status, created_at')
-      .eq('id', userId)
-      .single()
-    setProfile(data ?? null)
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, nickname, role, status, created_at')
+        .eq('id', userId)
+        .single()
+      setProfile(data ?? null)
+    } catch {
+      // 네트워크 오류 등으로 프로필 조회 실패해도 앱이 멈추지 않게
+      setProfile(null)
+    }
   }, [])
 
   useEffect(() => {
     let mounted = true
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
-      setSession(data.session)
-      await loadProfile(data.session?.user?.id)
+    let settled = false
+    let timer
+    // 로딩은 항상 해제되도록 보장 (한 번만)
+    const settle = () => {
+      if (!mounted || settled) return
+      settled = true
+      clearTimeout(timer)
       setLoading(false)
-    })
+    }
+    // 장시간 백그라운드 후 재개 시 getSession(토큰 갱신 락)이 멈추면 무한 로딩이 됨 →
+    // 최대 6초 뒤 강제로 로딩 해제하여 스피너에 갇히지 않게 한다.
+    timer = setTimeout(settle, 6000)
+
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!mounted) return
+        setSession(data.session)
+        await loadProfile(data.session?.user?.id)
+      } catch {
+        if (mounted) { setSession(null); setProfile(null) }
+      } finally {
+        settle()
+      }
+    })()
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return
       setSession(newSession)
       await loadProfile(newSession?.user?.id)
+      settle() // 인증 이벤트가 먼저 도착하면 그 시점에 로딩 해제
     })
     return () => {
       mounted = false
+      clearTimeout(timer)
       sub.subscription.unsubscribe()
     }
   }, [loadProfile])
