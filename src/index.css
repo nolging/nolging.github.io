@@ -168,6 +168,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .gd-page .tab-pane { flex: 1 1 auto; }
 .tab-pane { animation: tab-in-next .22s ease; }
 .tab-pane[data-dir="prev"] { animation-name: tab-in-prev; }
+/* 스와이프로 전환한 경우엔 이미 손가락 추종 이동을 했으므로 진입 애니메이션 생략 */
+.tab-pane[data-anim="n"] { animation: none; }
 @keyframes tab-in-next { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
 @keyframes tab-in-prev { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }

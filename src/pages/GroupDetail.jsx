@@ -86,22 +86,36 @@ export default function GroupDetail() {
   }
 
   // 탭 전환(슬라이드 방향 포함). next=왼쪽으로(다음 탭), prev=오른쪽으로(이전 탭)
-  const [slideDir, setSlideDir] = useState('next')
-  function changeTab(next) {
-    if (next === filter) return
-    setSlideDir(TASK_STATUSES.indexOf(next) > TASK_STATUSES.indexOf(filter) ? 'next' : 'prev')
-    setFilter(next)
-  }
-
-  // 좌우 스와이프로 탭 전환 — 손가락을 따라 화면(pane)과 탭 밑줄이 실시간으로 움직임
   const paneRef = useRef(null)
   const tabsRef = useRef(null)
-  const swipeRef = useRef(null) // { x0, y0, locked: null|'h'|'v', paneW }
-  const [drag, setDrag] = useState({ x: 0, active: false })
+  const [slideDir, setSlideDir] = useState('next')
+  const [paneAnim, setPaneAnim] = useState(true) // 버튼 클릭 전환은 진입 애니메이션, 스와이프는 끔
+  function scrollPaneTop() { paneRef.current?.closest('.content')?.scrollTo({ top: 0 }) }
+  function changeTab(next, { anim = true } = {}) {
+    if (next === filter) return
+    setSlideDir(TASK_STATUSES.indexOf(next) > TASK_STATUSES.indexOf(filter) ? 'next' : 'prev')
+    setPaneAnim(anim)
+    setFilter(next)
+    scrollPaneTop()
+  }
+
+  // 좌우 스와이프: 현재 pane 과 넘어오는 탭 pane 이 손가락을 따라 함께 이동
+  const swipeRef = useRef(null)   // { x0, y0, locked, paneW }
+  const boxRef = useRef(null)     // 넘어오는 pane 을 뷰포트에 고정 배치하기 위한 위치
+  const settleRef = useRef(null)  // 정착(스냅) 애니메이션 정리 타이머
+  const [gesture, setGesture] = useState(null) // { x, targetIdx|null, settling }
   const [tabGeo, setTabGeo] = useState([]) // 각 탭 버튼의 {left,width}
   const [paneW, setPaneW] = useState(0)
 
+  const neighborOf = (idx, x) => {
+    const last = TASK_STATUSES.length - 1
+    if (x < 0) return idx < last ? idx + 1 : null
+    if (x > 0) return idx > 0 ? idx - 1 : null
+    return null
+  }
+
   function onTabTouchStart(e) {
+    if (settleRef.current) { clearTimeout(settleRef.current); settleRef.current = null }
     if (e.touches.length !== 1) { swipeRef.current = null; return }
     const skip = !!e.target.closest?.('.task-swipe, .fab, .sheet-root, .tabs-filter-btn')
     if (skip) { swipeRef.current = null; return }
@@ -119,26 +133,40 @@ export default function GroupDetail() {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
       s.locked = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v'
       if (s.locked === 'v') { swipeRef.current = null; return } // 세로 스크롤에 양보
+      // 넘어오는 pane 을 뷰포트에 고정 배치하기 위해 현재 pane·콘텐츠 위치 캡처
+      const r = paneRef.current?.getBoundingClientRect()
+      const cr = paneRef.current?.closest('.content')?.getBoundingClientRect()
+      boxRef.current = r ? { top: r.top, left: r.left, width: r.width, contentTop: cr?.top ?? 0 } : null
     }
     if (s.locked !== 'h') return
     const idx = TASK_STATUSES.indexOf(filter)
-    let d = dx
-    // 가장자리(첫 탭에서 오른쪽/마지막 탭에서 왼쪽)에는 저항을 줘 끝임을 알림
-    if ((d > 0 && idx === 0) || (d < 0 && idx === TASK_STATUSES.length - 1)) d *= 0.35
-    setDrag({ x: d, active: true })
+    let x = dx
+    const targetIdx = neighborOf(idx, x)
+    if (targetIdx === null) x *= 0.35 // 가장자리 저항
+    setGesture({ x, targetIdx, settling: false })
   }
   function onTabTouchEnd(e) {
     const s = swipeRef.current; swipeRef.current = null
-    if (!s || s.locked !== 'h') { setDrag((p) => (p.active || p.x ? { x: 0, active: false } : p)); return }
+    if (!s || s.locked !== 'h') { if (gesture) setGesture(null); return }
     const dx = e.changedTouches[0].clientX - s.x0
     const idx = TASK_STATUSES.indexOf(filter)
+    const targetIdx = neighborOf(idx, dx)
     const threshold = Math.min(80, s.paneW * 0.22)
-    if (Math.abs(dx) >= threshold) {
-      const next = dx < 0 ? Math.min(TASK_STATUSES.length - 1, idx + 1) : Math.max(0, idx - 1)
-      if (next !== idx) changeTab(TASK_STATUSES[next])
+    if (Math.abs(dx) >= threshold && targetIdx !== null) {
+      // 현재 pane 은 밖으로, 넘어온 pane 은 완전히 안으로 정착시킨 뒤 탭 전환
+      setGesture({ x: dx < 0 ? -s.paneW : s.paneW, targetIdx, settling: true })
+      settleRef.current = setTimeout(() => {
+        settleRef.current = null
+        changeTab(TASK_STATUSES[targetIdx], { anim: false })
+        setGesture(null)
+      }, 235)
+    } else {
+      // 원위치 스냅백 (넘어온 pane 도 함께 되돌아감)
+      setGesture((g) => (g ? { ...g, x: 0, settling: true } : null))
+      settleRef.current = setTimeout(() => { settleRef.current = null; setGesture(null) }, 235)
     }
-    setDrag({ x: 0, active: false }) // 전환/스냅백 모두 원위치로 (전환 시 새 pane 키프레임 재생)
   }
+  useEffect(() => () => { if (settleRef.current) clearTimeout(settleRef.current) }, [])
 
   // 탭 버튼/‌pane 폭 측정 (밑줄을 손가락 비율만큼 이동시키기 위함)
   useLayoutEffect(() => {
@@ -200,27 +228,64 @@ export default function GroupDetail() {
   const matchesCat = (t) => catFilter.length === 0 || catFilter.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
-  // pane: 손가락 따라 이동, 놓으면 트랜지션으로 원위치
+  // 특정 상태(탭)의 카드 목록 렌더 (현재 pane 과 넘어오는 ghost pane 이 공용)
+  function renderTaskList(status) {
+    const list = tasks.filter((t) => t.status === status && matchesCat(t))
+    if (list.length === 0) return <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
+    return (
+      <ul className="task-list">
+        {list.map((t) => (
+          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+            participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
+            onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
+            onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
+            onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
+            onReview={() => {}}
+            onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
+            onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
+            onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
+            onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
+        ))}
+      </ul>
+    )
+  }
+
+  const gx = gesture?.x || 0
+  const gActive = !!gesture && !gesture.settling // 드래그 중=트랜지션 off, 놓은 후=on
+  const activeIdx = TASK_STATUSES.indexOf(filter)
+
+  // 현재 pane: 손가락 따라 이동, 놓으면 트랜지션으로 정착
   const paneStyle = {
-    transform: drag.x ? `translateX(${drag.x}px)` : undefined,
-    transition: drag.active ? 'none' : 'transform .2s ease',
+    transform: gx ? `translateX(${gx}px)` : undefined,
+    transition: gActive ? 'none' : 'transform .21s ease',
+  }
+  // 넘어오는(ghost) pane: 뷰포트 고정 배치 + 현재 pane 과 paneW 만큼 떨어져 함께 이동
+  const box = boxRef.current
+  const ghostStatus = gesture && gesture.targetIdx != null ? TASK_STATUSES[gesture.targetIdx] : null
+  let ghostTop = 0, ghostStyle = null
+  if (ghostStatus && box) {
+    ghostTop = Math.max(box.top, box.contentTop) // 스크롤로 탭이 가려져도 보이는 영역 상단에 정렬
+    const off = (gesture.targetIdx > activeIdx ? paneW : -paneW) + gx
+    ghostStyle = {
+      position: 'absolute', top: 0, left: box.left, width: box.width, animation: 'none',
+      transform: `translateX(${off}px)`, transition: gActive ? 'none' : 'transform .21s ease',
+    }
   }
   // 밑줄: 현재 탭 → 인접 탭으로 드래그 비율만큼 선형 보간해 이동
-  const activeIdx = TASK_STATUSES.indexOf(filter)
   const cur = tabGeo[activeIdx]
   let uLeft = cur?.left ?? 0, uWidth = cur?.width ?? 0
   if (cur && paneW) {
-    if (drag.x < 0 && activeIdx < TASK_STATUSES.length - 1) {
-      const nb = tabGeo[activeIdx + 1], t = Math.min(1, -drag.x / paneW)
+    if (gx < 0 && activeIdx < TASK_STATUSES.length - 1) {
+      const nb = tabGeo[activeIdx + 1], t = Math.min(1, -gx / paneW)
       uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
-    } else if (drag.x > 0 && activeIdx > 0) {
-      const nb = tabGeo[activeIdx - 1], t = Math.min(1, drag.x / paneW)
+    } else if (gx > 0 && activeIdx > 0) {
+      const nb = tabGeo[activeIdx - 1], t = Math.min(1, gx / paneW)
       uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
     }
   }
   const underlineStyle = tabGeo.length
     ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`,
-        transition: drag.active ? 'none' : 'transform .2s ease, width .2s ease' }
+        transition: gActive ? 'none' : 'transform .21s ease, width .21s ease' }
     : { opacity: 0 }
 
   return (
@@ -258,26 +323,18 @@ export default function GroupDetail() {
         <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
 
-      <div className="tab-pane" key={filter} data-dir={slideDir} ref={paneRef} style={paneStyle}>
-      {visibleTasks.length === 0 ? (
-        <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
-      ) : (
-        <ul className="task-list">
-          {visibleTasks.map((t) => (
-            <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
-              participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
-              onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
-              onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
-              onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
-              onReview={() => {}}
-              onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
-              onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
-              onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
-              onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
-          ))}
-        </ul>
-      )}
+      <div className="tab-pane" key={filter} data-dir={slideDir} data-anim={paneAnim ? 'y' : 'n'} ref={paneRef} style={paneStyle}>
+        {renderTaskList(filter)}
       </div>
+
+      {/* 넘어오는 탭 pane: 스와이프 중 옆에서 함께 밀려 들어옴 (뷰포트 고정, 입력 차단) */}
+      {ghostStatus && box && (
+        <div className="tab-ghost-clip" style={{ position: 'fixed', top: ghostTop, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 20 }}>
+          <div className="tab-pane tab-ghost" style={ghostStyle}>
+            {renderTaskList(ghostStatus)}
+          </div>
+        </div>
+      )}
 
       {/* 태스크 작성 버튼 (고정) */}
       <button className="fab" aria-label={`${terms.noun} 작성`} title={`${terms.noun} 작성`}
