@@ -51,7 +51,7 @@ export default function MySettings({ group, me, onSaved }) {
       )}
 
       {error && <div className="alert alert-error">{error}</div>}
-      <button type="button" className="btn btn-primary" disabled={busy} onClick={save}>{busy ? '저장 중…' : '저장'}</button>
+      <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={save}>{busy ? '저장 중…' : '저장'}</button>
     </div>
   )
 }

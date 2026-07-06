@@ -46,7 +46,9 @@ const CalendarIcon = () => tabSvg(<>
   <rect x="3" y="4" width="18" height="18" rx="2" />
   <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
 </>)
-const AdminIcon = () => tabSvg(<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />)
+const MyIcon = () => tabSvg(<>
+  <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+</>)
 
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
@@ -225,7 +227,7 @@ export default function Layout() {
         <nav className="topnav">
           <NavLink to="/" end>내 그룹</NavLink>
           <NavLink to="/join">그룹 가입</NavLink>
-          {isAdmin && <NavLink to="/admin">관리자</NavLink>}
+          <NavLink to="/me">마이</NavLink>
         </nav>
         <div className="topbar-right">
           <span className="me">
@@ -236,7 +238,6 @@ export default function Layout() {
             <BellIcon />
             {unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
           </NavLink>
-          <NavLink to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="내 정보" title="내 정보"><GearIcon /></NavLink>
         </div>
       </header>
     )
@@ -255,7 +256,7 @@ export default function Layout() {
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
-          {isAdmin && <NavLink to="/admin"><AdminIcon /><span>관리</span></NavLink>}
+          <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
         </nav>
       )}
       {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}

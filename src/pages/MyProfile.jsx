@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile, changeMyPassword } from '../lib/api'
 
@@ -19,7 +19,7 @@ function formatPhone(value) {
 }
 
 export default function MyProfile() {
-  const { logout } = useAuth()
+  const { logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ contact: '', birthdate: '' })
@@ -133,10 +133,14 @@ export default function MyProfile() {
           {error && <div className="alert alert-error">{error}</div>}
           {ok && <div className="alert alert-success">{ok}</div>}
 
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={saveInfo}>
+          <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={saveInfo}>
             {busy ? '저장 중…' : '저장'}
           </button>
         </div>
+
+        {isAdmin && (
+          <Link to="/admin" className="btn btn-block admin-entry">관리자 페이지</Link>
+        )}
 
         <div className="logout-bar">
           <button type="button" className="btn btn-danger btn-block" onClick={handleLogout}>
