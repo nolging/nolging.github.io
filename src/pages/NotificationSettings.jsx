@@ -16,7 +16,7 @@ const CATS = [
 const DEFAULT_PREFS = { new_member: true, new_task: true, accept: true, comment: true, reminder: true }
 
 const STATUS_MSG = {
-  default: '켜면 앱을 열지 않아도 알림센터로 알림을 받아요.',
+  default: '앱을 켜지 않아도 휴대폰 알림 센터로 알림을 받아요.',
   denied: '브라우저 설정에서 이 사이트의 알림을 허용해 주세요.',
   'need-standalone': '아이폰은 홈 화면에 추가한 뒤 이 화면에서 켤 수 있어요.',
   unsupported: '이 브라우저는 휴대폰 알림(푸시)을 지원하지 않아요.',

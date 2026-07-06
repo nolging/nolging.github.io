@@ -40,10 +40,10 @@ export default function PushPrompt() {
 
   return (
     <BottomSheet open={open} onClose={dismiss}>
-      <h3 className="sheet-title">알림을 받으시겠어요?</h3>
+      <h3 className="sheet-title">푸시 알림을 허용해 주세요.</h3>
       <p className="push-prompt-desc">
-        새 위시·놀기 신청·댓글·일정 알림을 휴대폰으로 받아볼 수 있어요.
-        푸시 알림을 꺼도 알림 목록에서는 계속 확인할 수 있어요.
+        앱을 켜지 않아도 휴대폰 알림 센터로 알림을 받아요.<br />
+        푸시 알림을 꺼도 앱 내 알림 목록에서는 계속 확인할 수 있어요.
       </p>
       {err && <p className="field-error" style={{ textAlign: 'center' }}>{err}</p>}
       <div className="push-prompt-actions">
