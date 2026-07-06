@@ -11,6 +11,8 @@ import {
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
 
+const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
+
 const BellIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -154,7 +156,7 @@ export default function GroupDetail() {
     const threshold = Math.min(80, s.paneW * 0.22)
     if (Math.abs(dx) >= threshold && targetIdx !== null) {
       // 현재 pane 은 밖으로, 넘어온 pane 은 완전히 안으로 정착시킨 뒤 탭 전환
-      setGesture({ x: dx < 0 ? -s.paneW : s.paneW, targetIdx, settling: true })
+      setGesture({ x: (dx < 0 ? -1 : 1) * (s.paneW + PANE_GAP), targetIdx, settling: true })
       settleRef.current = setTimeout(() => {
         settleRef.current = null
         changeTab(TASK_STATUSES[targetIdx], { anim: false })
@@ -265,7 +267,7 @@ export default function GroupDetail() {
   let ghostTop = 0, ghostStyle = null
   if (ghostStatus && box) {
     ghostTop = Math.max(box.top, box.contentTop) // 스크롤로 탭이 가려져도 보이는 영역 상단에 정렬
-    const off = (gesture.targetIdx > activeIdx ? paneW : -paneW) + gx
+    const off = (gesture.targetIdx > activeIdx ? paneW + PANE_GAP : -(paneW + PANE_GAP)) + gx
     ghostStyle = {
       position: 'absolute', top: 0, left: box.left, width: box.width, animation: 'none',
       transform: `translateX(${off}px)`, transition: gActive ? 'none' : 'transform .21s ease',
