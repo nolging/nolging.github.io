@@ -490,11 +490,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 2px;
 }
 .sched-row.sub { height: auto; min-height: 44px; }
-.sched-row-label { font-weight: 600; font-size: 15px; flex-shrink: 0; }
-.sched-spacer { flex: 1; }
+/* 라벨은 고정폭 컬럼 → 값들의 왼쪽 가장자리가 한 줄로 정렬. 스위치는 오른쪽 끝으로. */
+.sched-row-label { font-weight: 600; font-size: 15px; flex: 0 0 88px; }
+.sched-spacer { display: none; }
+.sched-row .switch { margin-left: auto; }
 .sched-val {
   border: none; background: none; font-size: 15px; color: var(--text);
-  text-align: right; padding: 4px 0; max-width: 60%;
+  text-align: left; padding: 4px 0; max-width: 100%;
 }
 .sched-val:focus { outline: none; }
 .sched-num { width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
