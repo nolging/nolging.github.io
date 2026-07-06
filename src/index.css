@@ -65,7 +65,7 @@ h3 { margin: 0; }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn-ghost:hover { background: rgba(0,0,0,.04); }
 .btn-sm { padding: 5px 10px; font-size: 13px; }
-.btn-block { width: 100%; }
+.btn-block { width: 100%; min-height: 46px; }
 .btn-icon { color: var(--muted); padding: 5px 9px; }
 .btn-icon:hover { color: var(--danger); }
 .icon-btn { padding: 6px; line-height: 0; }
@@ -93,6 +93,8 @@ h3 { margin: 0; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
 /* 인풋 하단 주의 문구 (배경 없이 빨간 글자만) */
 .field-error { color: var(--danger); font-size: 13px; font-weight: 500; }
+/* .form 직속 에러문구는 입력창에 더 붙게 (라벨/필드 감싼 경우는 이미 붙어있음) */
+.form > .field-error { margin-top: -8px; }
 /* 라벨 + 토글 한 줄 (체크박스 대체) */
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; color: var(--text); padding: 2px 0; }
 .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -103,13 +105,17 @@ input, textarea, select {
   border-radius: 999px; background: #fff; color: var(--text); width: 100%;
   font-size: 14px; /* 확대는 viewport maximum-scale=1 로 차단 → 16px 미만 사용 가능 */
 }
-input:focus, textarea:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
+/* 텍스트형 입력·선택 높이를 submit 버튼(.btn-block)과 통일 (체크박스/라디오 제외) */
+input:not([type="checkbox"]):not([type="radio"]), select { min-height: 46px; }
+/* 컴팩트/특수 입력은 자체 크기 유지 */
+.gs-input, .sched-val, .sched-num, .sched-title-input { min-height: 0; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--text); outline-offset: -1px; border-color: var(--text); }
 textarea { resize: vertical; border-radius: 20px; }
 
 /* date 인풋: iOS/모바일에서 높이·정렬 깨지는 것 방지 (텍스트 인풋과 통일) */
 input[type="date"] {
   -webkit-appearance: none; appearance: none;
-  min-height: 44px; text-align: left;
+  min-height: 46px; text-align: left;
 }
 input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
 input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
@@ -429,7 +435,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   width: 100%; border: none; border-bottom: 1px solid var(--border); background: none;
   font-size: 1.15rem; font-weight: 700; padding: 6px 2px;
 }
-.sched-title-input:focus { outline: none; border-bottom-color: var(--primary); }
+.sched-title-input:focus { outline: none; border-bottom-color: var(--text); }
 .sched-rows { margin-bottom: 22px; }
 .sched-row {
   display: flex; align-items: center; gap: 10px; min-height: 48px;
