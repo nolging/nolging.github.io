@@ -162,6 +162,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 페이지 ---- */
 .page { display: flex; flex-direction: column; gap: 18px; max-width: 1080px; width: 100%; margin: 0 auto; }
+
+/* 그룹 상세: 카드가 적어도 페이지가 화면 높이를 채워야 하단 빈 공간에서도 스와이프가 먹힘 */
+.gd-page { min-height: 100%; }
+.gd-page .tab-pane { flex: 1 1 auto; }
+.tab-pane { animation: tab-in-next .22s ease; }
+.tab-pane[data-dir="prev"] { animation-name: tab-in-prev; }
+@keyframes tab-in-next { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes tab-in-prev { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .page-actions { display: flex; justify-content: flex-end; }
 .breadcrumb { color: var(--muted); font-size: 13px; }

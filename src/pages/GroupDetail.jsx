@@ -85,6 +85,14 @@ export default function GroupDetail() {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
   }
 
+  // 탭 전환(슬라이드 방향 포함). next=왼쪽으로(다음 탭), prev=오른쪽으로(이전 탭)
+  const [slideDir, setSlideDir] = useState('next')
+  function changeTab(next) {
+    if (next === filter) return
+    setSlideDir(TASK_STATUSES.indexOf(next) > TASK_STATUSES.indexOf(filter) ? 'next' : 'prev')
+    setFilter(next)
+  }
+
   // 화면 좌우 스와이프로 위시-약속-추억 탭 전환 (카드/버튼/시트 위에서 시작한 스와이프는 제외)
   const swipeRef = useRef(null)
   function onTabTouchStart(e) {
@@ -100,7 +108,7 @@ export default function GroupDetail() {
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
     const idx = TASK_STATUSES.indexOf(filter)
     const next = dx < 0 ? Math.min(TASK_STATUSES.length - 1, idx + 1) : Math.max(0, idx - 1)
-    if (next !== idx) setFilter(TASK_STATUSES[next])
+    changeTab(TASK_STATUSES[next])
   }
 
   const isOwner = group && group.owner_id === profile?.id
@@ -152,7 +160,7 @@ export default function GroupDetail() {
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
   return (
-    <div className="page" onTouchStart={onTabTouchStart} onTouchEnd={onTabTouchEnd}>
+    <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchEnd={onTabTouchEnd}>
       <div className="gd-head">
         <div className="gd-title">
           <h1>{group.name}</h1>
@@ -170,7 +178,7 @@ export default function GroupDetail() {
 
       <div className="tabs">
         {TASK_STATUSES.map((f) => (
-          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => changeTab(f)}>
             {terms.status[f]}
           </button>
         ))}
@@ -185,6 +193,7 @@ export default function GroupDetail() {
         <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
 
+      <div className="tab-pane" key={filter} data-dir={slideDir}>
       {visibleTasks.length === 0 ? (
         <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
       ) : (
@@ -203,6 +212,7 @@ export default function GroupDetail() {
           ))}
         </ul>
       )}
+      </div>
 
       {/* 태스크 작성 버튼 (고정) */}
       <button className="fab" aria-label={`${terms.noun} 작성`} title={`${terms.noun} 작성`}
