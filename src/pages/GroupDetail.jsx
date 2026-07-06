@@ -170,17 +170,24 @@ export default function GroupDetail() {
   }
   useEffect(() => () => { if (settleRef.current) clearTimeout(settleRef.current) }, [])
 
-  // 탭 버튼/‌pane 폭 측정 (밑줄을 손가락 비율만큼 이동시키기 위함)
+  // 탭 버튼/‌pane 폭 측정 (밑줄 위치·드래그 비율 계산용).
+  // ResizeObserver 로 탭이 실제 폭을 갖는 순간에도 다시 측정 → 첫 진입 시 밑줄이
+  // 폭 0(측정 시점이 일러 안 보임) 으로 남는 문제 방지.
   useLayoutEffect(() => {
-    function measure() {
-      const btns = tabsRef.current ? [...tabsRef.current.querySelectorAll('.tab')] : []
+    const tabsEl = tabsRef.current
+    if (!tabsEl) return
+    const measure = () => {
+      const btns = [...tabsEl.querySelectorAll('.tab')]
       setTabGeo(btns.map((b) => ({ left: b.offsetLeft, width: b.offsetWidth })))
       setPaneW(paneRef.current?.offsetWidth || 0)
     }
     measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [group, filter])
+    const ro = new ResizeObserver(measure)
+    ro.observe(tabsEl)
+    return () => ro.disconnect()
+    // loading 포함: 로딩 종료(스피너→탭 렌더)는 group 변경과 다른 렌더에서 일어나므로
+    // loading 이 빠지면 탭이 처음 붙는 순간 측정이 안 돼 밑줄이 안 보임
+  }, [group, filter, loading])
 
   const isOwner = group && group.owner_id === profile?.id
 
@@ -285,7 +292,7 @@ export default function GroupDetail() {
       uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
     }
   }
-  const underlineStyle = tabGeo.length
+  const underlineStyle = cur && cur.width
     ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`,
         transition: gActive ? 'none' : 'transform .21s ease, width .21s ease' }
     : { opacity: 0 }
