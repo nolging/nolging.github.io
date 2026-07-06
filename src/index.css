@@ -495,7 +495,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .sched-spacer { display: none; }
 .sched-row .switch { margin-left: auto; }
 .sched-val {
-  border: none; background: none; font-size: 15px; color: var(--text);
+  /* width:auto 로 전역 input{width:100%} 를 덮어써 내용 폭으로 → iOS 시간 input 도 값이 왼쪽에 */
+  width: auto; flex: 0 1 auto; border: none; background: none; font-size: 15px; color: var(--text);
   text-align: left; padding: 4px 0; max-width: 100%;
 }
 .sched-val:focus { outline: none; }
