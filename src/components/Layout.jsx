@@ -25,21 +25,6 @@ function BellIcon() {
   )
 }
 
-function NotifSettingsIcon() {
-  // 종 + 우하단 톱니바퀴 (알림 설정)
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15.5 8a4 4 0 0 0-8 0c0 4.2-1.9 5.6-1.9 5.6h11.8" />
-      <path d="M9.3 16.5a1.6 1.6 0 0 0 3 0" />
-      <g strokeWidth="1.4">
-        <circle cx="17.5" cy="16.7" r="1.5" fill="var(--surface)" />
-        <path d="M17.5 13.6v1.2M17.5 18.6v1.2M14.4 16.7h1.2M19.4 16.7h1.2M15.3 14.5l.85.85M18.85 18.05l.85.85M19.7 14.5l-.85.85M16.15 18.05l-.85.85" />
-      </g>
-    </svg>
-  )
-}
-
 function BackIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -88,6 +73,53 @@ export default function Layout() {
   const [taskBackTo, setTaskBackTo] = useState(null)
   // 페이지가 상단바 뒤로가기 동작을 가로챌 수 있게 (예: 그룹 만들기 2단계 → 1단계)
   const [backHandler, setBackHandler] = useState(null)
+  // 페이지가 "당겨서 새로고침" 핸들러를 등록할 수 있게 (예: 알림 페이지)
+  const [refreshHandler, setRefreshHandler] = useState(null)
+
+  // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
+  const contentRef = useRef(null)
+  const [pull, setPull] = useState(0)          // 당긴 거리(px)
+  const [refreshing, setRefreshing] = useState(false)
+  const ptr = useRef({ startY: null, dist: 0, active: false })
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    const THRESH = 64, MAX = 100, DAMP = 0.5
+    function onStart(e) {
+      if (!refreshHandler || refreshing) { ptr.current.active = false; return }
+      if (el.scrollTop <= 0) ptr.current = { startY: e.touches[0].clientY, dist: 0, active: true }
+      else ptr.current.active = false
+    }
+    function onMove(e) {
+      const g = ptr.current
+      if (!g.active || g.startY == null) return
+      if (el.scrollTop > 0) { g.active = false; setPull(0); return }
+      const dy = e.touches[0].clientY - g.startY
+      if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); e.preventDefault() }
+      else { g.dist = 0; setPull(0) }
+    }
+    async function onEnd() {
+      const g = ptr.current
+      if (!g.active) return
+      g.active = false
+      if (g.dist >= THRESH && refreshHandler && !refreshing) {
+        setRefreshing(true); setPull(THRESH)
+        try { await refreshHandler() } catch { /* noop */ }
+        setRefreshing(false)
+      }
+      setPull(0)
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    el.addEventListener('touchcancel', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+    }
+  }, [refreshHandler, refreshing])
 
   // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + 60초 주기로 갱신
   const [unread, setUnread] = useState(0)
@@ -242,7 +274,7 @@ export default function Layout() {
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">알림</span>
-        <Link to="/notifications/settings" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="알림 설정" title="알림 설정"><NotifSettingsIcon /></Link>
+        <Link to="/notifications/settings" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="알림 설정" title="알림 설정"><GearIcon /></Link>
       </header>
     )
   } else if (groupMatch) {
@@ -284,8 +316,14 @@ export default function Layout() {
   return (
     <div className="app-shell" ref={shellRef}>
       {topbar}
-      <main className="content">
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler }} />
+      {(pull > 0 || refreshing) && (
+        <div className="ptr" style={{ transform: `translateY(${(refreshing ? 44 : pull) - 8}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
+          <span className={`ptr-spin ${refreshing ? 'on' : ''}`}
+            style={refreshing ? undefined : { transform: `rotate(${pull * 4}deg)` }} />
+        </div>
+      )}
+      <main className="content" ref={contentRef}>
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">

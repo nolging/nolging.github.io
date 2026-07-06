@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
   listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification,
 } from '../lib/api'
@@ -27,6 +27,7 @@ const ICONS = {
 
 export default function Notifications() {
   const navigate = useNavigate()
+  const { setRefreshHandler } = useOutletContext()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -38,6 +39,15 @@ export default function Notifications() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+
+  // 당겨서 새로고침: 전체 로딩 스피너 없이 목록만 갱신
+  const refresh = useCallback(async () => {
+    try { setItems(await listNotifications()) } catch (err) { setError(err.message) }
+  }, [])
+  useEffect(() => {
+    setRefreshHandler(() => refresh)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, refresh])
 
   function targetOf(n) {
     if (n.task_id && n.group_id) {
