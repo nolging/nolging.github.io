@@ -4,9 +4,10 @@
 --  Supabase SQL Editor 에 붙여넣어 한 번 실행하세요. (기존 schema.sql 적용 이후)
 -- =============================================================
 
--- ---- profiles: 연락처 / 생년월일 / pending 상태 --------------
+-- ---- profiles: 연락처 / 생년월일 / 구독 OTT / pending 상태 -----
 alter table public.profiles add column if not exists contact   text;
 alter table public.profiles add column if not exists birthdate date;
+alter table public.profiles add column if not exists subscribed_ott text[] not null default '{}';
 
 alter table public.profiles drop constraint if exists profiles_status_check;
 alter table public.profiles add  constraint profiles_status_check
@@ -17,6 +18,7 @@ alter table public.groups add column if not exists group_type    text not null d
 alter table public.groups add column if not exists theme         text not null default 'default';
 alter table public.groups add column if not exists show_contact  boolean not null default false;
 alter table public.groups add column if not exists show_birthdate boolean not null default false;
+alter table public.groups add column if not exists show_ott       boolean not null default false;
 
 alter table public.groups drop constraint if exists groups_type_check;
 alter table public.groups add  constraint groups_type_check
@@ -34,6 +36,7 @@ alter table public.group_members add column if not exists display_nickname text;
 alter table public.group_members add column if not exists avatar_url       text;  -- data URI (정방형 → 원형 표시)
 alter table public.group_members add column if not exists show_contact     boolean not null default false;
 alter table public.group_members add column if not exists show_birthdate   boolean not null default false;
+alter table public.group_members add column if not exists show_ott         boolean not null default false;
 
 -- 멤버가 자신의 그룹내 설정을 수정할 수 있도록 update 정책 추가
 drop policy if exists gm_update on public.group_members;
@@ -66,18 +69,20 @@ returns public.profiles language sql security definer stable set search_path = p
 $$;
 grant execute on function public.my_profile() to authenticated;
 
-create or replace function public.update_my_profile(p_contact text, p_birthdate date)
+drop function if exists public.update_my_profile(text, date);
+create or replace function public.update_my_profile(p_contact text, p_birthdate date, p_ott text[])
 returns public.profiles language plpgsql security definer set search_path = public as $$
 declare r public.profiles;
 begin
   update public.profiles
-     set contact = p_contact, birthdate = p_birthdate
+     set contact = p_contact, birthdate = p_birthdate,
+         subscribed_ott = coalesce(p_ott, '{}')
    where id = auth.uid()
   returning * into r;
   return r;
 end;
 $$;
-grant execute on function public.update_my_profile(text, date) to authenticated;
+grant execute on function public.update_my_profile(text, date, text[]) to authenticated;
 
 -- ---- RPC: 그룹 멤버 카드 (프라이버시 규칙 적용) --------------
 -- 그룹 설정 공개여부 AND 멤버 개인 공개여부가 모두 Y 일 때만 연락처/생년월일 노출.
@@ -93,6 +98,7 @@ returns table (
   is_self boolean,
   contact text,
   birthdate date,
+  subscribed_ott text[],
   joined_at timestamptz
 ) language plpgsql security definer stable set search_path = public as $$
 declare g public.groups;
@@ -112,6 +118,7 @@ begin
       (gm.user_id = auth.uid()),
       case when (g.show_contact and gm.show_contact) then p.contact else null end,
       case when (g.show_birthdate and gm.show_birthdate) then p.birthdate else null end,
+      case when (g.show_ott and gm.show_ott) then p.subscribed_ott else null end,
       gm.joined_at
     from public.group_members gm
     join public.profiles p on p.id = gm.user_id
@@ -137,6 +144,7 @@ grant execute on function public.admin_list_users() to authenticated;
 
 -- ---- RPC: 초대코드로 그룹 미리보기 (가입 전, 비멤버 조회) ------
 -- 가입 전 그룹명/소유자/공개설정을 보여주기 위함. 가입은 시키지 않음.
+drop function if exists public.preview_group(text);
 create or replace function public.preview_group(p_code text)
 returns table (
   id uuid,
@@ -147,11 +155,12 @@ returns table (
   owner_nickname text,
   show_contact boolean,
   show_birthdate boolean,
+  show_ott boolean,
   already_member boolean
 ) language sql security definer stable set search_path = public as $$
   select g.id, g.name, g.description, g.group_type, g.theme,
          p.nickname as owner_nickname,
-         g.show_contact, g.show_birthdate,
+         g.show_contact, g.show_birthdate, g.show_ott,
          public.is_group_member(g.id, auth.uid()) as already_member
   from public.groups g
   join public.profiles p on p.id = g.owner_id

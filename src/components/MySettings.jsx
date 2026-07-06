@@ -11,6 +11,7 @@ export default function MySettings({ group, me, onSaved }) {
     avatar_url: me?.avatar_url || '',
     show_contact: !!me?.show_contact,
     show_birthdate: !!me?.show_birthdate,
+    show_ott: !!me?.show_ott,
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -24,6 +25,7 @@ export default function MySettings({ group, me, onSaved }) {
         avatar_url: form.avatar_url || null,
         show_contact: form.show_contact,
         show_birthdate: form.show_birthdate,
+        show_ott: form.show_ott,
       })
       // 저장 성공 후, 교체·삭제된 이전 스토리지 아바타 정리 (best-effort)
       if (me.avatar_url && me.avatar_url !== form.avatar_url) deleteAvatarByUrl(me.avatar_url)
@@ -48,6 +50,10 @@ export default function MySettings({ group, me, onSaved }) {
       {group.show_birthdate && (
         <div className="switch-row"><span>이 그룹에 내 생년월일 공개</span>
           <Switch checked={form.show_birthdate} onChange={(v) => set({ show_birthdate: v })} /></div>
+      )}
+      {group.show_ott && (
+        <div className="switch-row"><span>이 그룹에 내 구독 OTT 공개</span>
+          <Switch checked={form.show_ott} onChange={(v) => set({ show_ott: v })} /></div>
       )}
 
       {error && <div className="alert alert-error">{error}</div>}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile, changeMyPassword } from '../lib/api'
+import { SUBSCRIBABLE_OTTS } from '../lib/constants'
 
 // 한국 전화번호 자동 하이픈: 숫자만 입력해도 010-1111-1234 형태로 표시
 function formatPhone(value) {
@@ -22,7 +23,7 @@ export default function MyProfile() {
   const { logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ contact: '', birthdate: '' })
+  const [form, setForm] = useState({ contact: '', birthdate: '', subscribed_ott: [] })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [ok, setOk] = useState('')
@@ -35,6 +36,12 @@ export default function MyProfile() {
   const [pwOk, setPwOk] = useState('')
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+  const toggleOtt = (key) => setForm((f) => ({
+    ...f,
+    subscribed_ott: f.subscribed_ott.includes(key)
+      ? f.subscribed_ott.filter((k) => k !== key)
+      : [...f.subscribed_ott, key],
+  }))
 
   useEffect(() => {
     let mounted = true
@@ -46,6 +53,7 @@ export default function MyProfile() {
           contact: p?.contact ? formatPhone(p.contact) : '',
           // date 컬럼은 'YYYY-MM-DD' 로 오므로 date 인풋에 그대로 사용
           birthdate: p?.birthdate ? String(p.birthdate).slice(0, 10) : '',
+          subscribed_ott: Array.isArray(p?.subscribed_ott) ? p.subscribed_ott : [],
         })
       } catch (err) {
         if (mounted) setError(err.message)
@@ -59,7 +67,7 @@ export default function MyProfile() {
   async function saveInfo() {
     setBusy(true); setError(''); setOk('')
     try {
-      await updateMyProfile({ contact: form.contact.trim(), birthdate: form.birthdate || null })
+      await updateMyProfile({ contact: form.contact.trim(), birthdate: form.birthdate || null, subscribed_ott: form.subscribed_ott })
       setOk('저장되었습니다.')
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
@@ -102,7 +110,17 @@ export default function MyProfile() {
             <input type="date" value={form.birthdate}
               onChange={(e) => set({ birthdate: e.target.value })} /></label>
 
-          <p className="muted sm">연락처·생년월일은 그룹 공개 설정이 켜져 있을 때만 다른 멤버에게 노출됩니다.</p>
+          <div className="field"><span>구독 OTT</span>
+            <div className="chip-row ott-pick">
+              {SUBSCRIBABLE_OTTS.map((o) => (
+                <button type="button" key={o.key}
+                  className={`chip ${form.subscribed_ott.includes(o.key) ? 'active' : ''}`}
+                  onClick={() => toggleOtt(o.key)}>{o.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <p className="muted sm">연락처·생년월일·구독 OTT는 그룹 공개 설정이 켜져 있을 때만 다른 멤버에게 노출됩니다.</p>
 
           {/* 비밀번호 변경 (저장 버튼 위) */}
           {!pwOpen ? (

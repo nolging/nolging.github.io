@@ -21,7 +21,7 @@ export default function JoinGroup() {
   useEffect(() => () => setBackHandler(() => null), [setBackHandler])
 
   // 프로필 설정(2단계)
-  const [form, setForm] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false })
+  const [form, setForm] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false, show_ott: false })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   async function lookup(e) {
@@ -33,7 +33,7 @@ export default function JoinGroup() {
       if (!g) { setError('유효하지 않은 초대 코드입니다.'); return }
       if (g.already_member) { navigate(`/groups/${g.id}`); return }
       setPreview(g)
-      setForm({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false })
+      setForm({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false, show_ott: false })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
@@ -96,6 +96,12 @@ export default function JoinGroup() {
             <label className="check">
               <input type="checkbox" checked={form.show_birthdate} onChange={(e) => set({ show_birthdate: e.target.checked })} />
               이 그룹에 내 생년월일 공개
+            </label>
+          )}
+          {preview.show_ott && (
+            <label className="check">
+              <input type="checkbox" checked={form.show_ott} onChange={(e) => set({ show_ott: e.target.checked })} />
+              이 그룹에 내 구독 OTT 공개
             </label>
           )}
 

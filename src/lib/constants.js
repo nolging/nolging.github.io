@@ -48,6 +48,17 @@ export function ottNameKo(name) {
 // 정보 자동 조회를 지원하는 위시 유형
 export const MEDIA_LOOKUP_CATS = ['OTT', '영화', '독서', '게임']
 
+// 회원이 구독 여부를 관리하는 OTT 목록 (프로필 · 멤버 카드 배지)
+export const SUBSCRIBABLE_OTTS = [
+  { key: 'netflix', label: '넷플릭스', logo: '/ott/netflix.jpg' },
+  { key: 'tving', label: '티빙', logo: '/ott/tving.png' },
+  { key: 'wavve', label: '웨이브', logo: '/ott/wavve.png' },
+  { key: 'disney', label: '디즈니플러스', logo: '/ott/disney.png' },
+  { key: 'watcha', label: '왓챠', logo: '/ott/watcha.png' },
+  { key: 'coupang', label: '쿠팡플레이', logo: '/ott/coupang.png' },
+]
+export const OTT_BY_KEY = Object.fromEntries(SUBSCRIBABLE_OTTS.map((o) => [o.key, o]))
+
 // 게임 플랫폼 패밀리 → 표기 명칭. 없으면 원문 유지.
 const PLATFORM_KO = {
   PlayStation: '플스', Xbox: 'Xbox', Nintendo: '닌텐도',

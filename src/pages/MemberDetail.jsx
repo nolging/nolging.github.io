@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { listMemberCards } from '../lib/api'
 import CrownIcon from '../components/CrownIcon'
+import OttBadges from '../components/OttBadges'
 
 function joinLabel(iso) {
   try {
@@ -39,7 +40,8 @@ export default function MemberDetail() {
   if (!member) return <div className="page"><div className="empty"><p className="muted">멤버를 찾을 수 없어요.</p></div></div>
 
   const initial = (member.display_nickname || '?').trim()[0]?.toUpperCase() || '?'
-  const hasInfo = member.contact || member.birthdate
+  const ott = Array.isArray(member.subscribed_ott) ? member.subscribed_ott : []
+  const hasInfo = member.contact || member.birthdate || ott.length
 
   return (
     <div className="page member-detail">
@@ -71,6 +73,9 @@ export default function MemberDetail() {
             )}
             {member.birthdate && (
               <div className="mp-row"><span className="mp-k">생년월일</span><span className="mp-v">{birthLabel(member.birthdate)}</span></div>
+            )}
+            {ott.length > 0 && (
+              <div className="mp-row"><span className="mp-k">구독 OTT</span><span className="mp-v"><OttBadges list={ott} /></span></div>
             )}
           </>
         ) : (

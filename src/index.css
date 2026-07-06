@@ -768,6 +768,8 @@ a.mp-tel:active { opacity: .55; }
 
 /* 위시리스트 유형 칩 (한 줄, 넘치면 가로 스크롤) */
 .chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+/* 구독 OTT 선택: 여러 줄로 감싸기 */
+.ott-pick { flex-wrap: wrap; overflow: visible; margin-top: 6px; }
 .chip {
   flex: 0 0 auto; border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;

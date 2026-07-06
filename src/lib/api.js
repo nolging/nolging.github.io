@@ -21,7 +21,7 @@ export async function getGroup(groupId) {
   return data
 }
 
-export async function createGroup({ name, description, ownerId, groupType, theme, showContact, showBirthdate }) {
+export async function createGroup({ name, description, ownerId, groupType, theme, showContact, showBirthdate, showOtt }) {
   const { data, error } = await supabase
     .from('groups')
     .insert({
@@ -32,6 +32,7 @@ export async function createGroup({ name, description, ownerId, groupType, theme
       theme: theme ?? 'default',
       show_contact: !!showContact,
       show_birthdate: !!showBirthdate,
+      show_ott: !!showOtt,
     })
     .select()
     .single()
@@ -69,13 +70,14 @@ export async function previewGroup(code) {
 }
 
 // 프로필(사진/닉네임/공개토글) 설정과 함께 가입
-export async function joinGroupWithProfile(code, userId, { display_nickname, avatar_url, show_contact, show_birthdate }) {
+export async function joinGroupWithProfile(code, userId, { display_nickname, avatar_url, show_contact, show_birthdate, show_ott }) {
   const group = await joinGroupByCode(code)
   await updateMyGroupMember(group.id, userId, {
     display_nickname: display_nickname?.trim() || null,
     avatar_url: avatar_url || null,
     show_contact: !!show_contact,
     show_birthdate: !!show_birthdate,
+    show_ott: !!show_ott,
   })
   return group
 }
@@ -122,7 +124,7 @@ export async function updateMyGroupMember(groupId, userId, patch) {
 export async function getMyGroupMember(groupId, userId) {
   const { data, error } = await supabase
     .from('group_members')
-    .select('display_nickname, avatar_url, show_contact, show_birthdate')
+    .select('display_nickname, avatar_url, show_contact, show_birthdate, show_ott')
     .eq('group_id', groupId).eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
@@ -371,10 +373,11 @@ export async function getMyProfile() {
   return Array.isArray(data) ? data[0] : data
 }
 
-export async function updateMyProfile({ contact, birthdate }) {
+export async function updateMyProfile({ contact, birthdate, subscribed_ott }) {
   const { data, error } = await supabase.rpc('update_my_profile', {
     p_contact: contact || null,
     p_birthdate: birthdate || null,
+    p_ott: subscribed_ott ?? [],
   })
   if (error) throw error
   return Array.isArray(data) ? data[0] : data

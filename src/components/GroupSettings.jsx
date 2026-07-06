@@ -8,6 +8,7 @@ export default function GroupSettings({ group, onSaved }) {
     description: group.description || '',
     show_contact: group.show_contact,
     show_birthdate: group.show_birthdate,
+    show_ott: group.show_ott,
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -22,6 +23,7 @@ export default function GroupSettings({ group, onSaved }) {
         description: form.description.trim(),
         show_contact: form.show_contact,
         show_birthdate: form.show_birthdate,
+        show_ott: form.show_ott,
       })
       onSaved(saved)
     } catch (err) { setError(err.message) } finally { setBusy(false) }
@@ -41,6 +43,10 @@ export default function GroupSettings({ group, onSaved }) {
       <div className="switch-row">
         <span>생년월일 공개 허용</span>
         <Switch checked={form.show_birthdate} onChange={(v) => set({ show_birthdate: v })} />
+      </div>
+      <div className="switch-row">
+        <span>멤버 보유 OTT 공개 허용</span>
+        <Switch checked={form.show_ott} onChange={(v) => set({ show_ott: v })} />
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}

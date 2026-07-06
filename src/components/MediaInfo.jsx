@@ -5,6 +5,10 @@ import { platformKo } from '../lib/constants'
 const LOGO_OVERRIDE = [
   { test: /wavve/i, src: '/ott/wavve.png' },
   { test: /watcha/i, src: '/ott/watcha.png' },
+  { test: /netflix/i, src: '/ott/netflix.jpg' },
+  { test: /tving/i, src: '/ott/tving.png' },
+  { test: /disney/i, src: '/ott/disney.png' },
+  { test: /coupang/i, src: '/ott/coupang.png' },
 ]
 const badgeSrc = (name, logo) => LOGO_OVERRIDE.find((o) => o.test.test(name))?.src ?? logo
 

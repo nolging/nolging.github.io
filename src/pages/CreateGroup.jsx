@@ -16,12 +16,12 @@ export default function CreateGroup() {
   const [error, setError] = useState('')
 
   // 1단계: 그룹 정보
-  const [ginfo, setGinfo] = useState({ name: '', description: '', showContact: false, showBirthdate: false })
+  const [ginfo, setGinfo] = useState({ name: '', description: '', showContact: false, showBirthdate: false, showOtt: false })
   const setG = (patch) => setGinfo((f) => ({ ...f, ...patch }))
   const [nameErr, setNameErr] = useState('')
 
   // 2단계: 소유자의 그룹 내 프로필
-  const [prof, setProf] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false })
+  const [prof, setProf] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false, show_ott: false })
   const setP = (patch) => setProf((f) => ({ ...f, ...patch }))
   const [nickErr, setNickErr] = useState('')
 
@@ -49,12 +49,14 @@ export default function CreateGroup() {
         theme: DEFAULT_THEME,
         showContact: ginfo.showContact,
         showBirthdate: ginfo.showBirthdate,
+        showOtt: ginfo.showOtt,
       })
       await updateMyGroupMember(group.id, profile.id, {
         display_nickname: prof.display_nickname.trim(),
         avatar_url: prof.avatar_url || null,
         show_contact: !!prof.show_contact,
         show_birthdate: !!prof.show_birthdate,
+        show_ott: !!prof.show_ott,
       })
       navigate(`/groups/${group.id}`)
     } catch (err) { setError(err.message); setBusy(false) }
@@ -81,6 +83,10 @@ export default function CreateGroup() {
           <div className="switch-row">
             <span>멤버 생년월일 공개 허용</span>
             <Switch checked={ginfo.showBirthdate} onChange={(v) => setG({ showBirthdate: v })} />
+          </div>
+          <div className="switch-row">
+            <span>멤버 보유 OTT 공개 허용</span>
+            <Switch checked={ginfo.showOtt} onChange={(v) => setG({ showOtt: v })} />
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
@@ -115,6 +121,12 @@ export default function CreateGroup() {
           <div className="switch-row">
             <span>이 그룹에 내 생년월일 공개</span>
             <Switch checked={prof.show_birthdate} onChange={(v) => setP({ show_birthdate: v })} />
+          </div>
+        )}
+        {ginfo.showOtt && (
+          <div className="switch-row">
+            <span>이 그룹에 내 구독 OTT 공개</span>
+            <Switch checked={prof.show_ott} onChange={(v) => setP({ show_ott: v })} />
           </div>
         )}
 
