@@ -495,21 +495,24 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .sched-title-input:focus { outline: none; border-bottom-color: var(--text); }
 .sched-rows { margin-bottom: 22px; }
+/* 3-컬럼 그리드: [라벨 고정폭] [값(좌측 정렬)] [스위치(우측)]. 값 왼쪽 가장자리가 항상 한 줄. */
 .sched-row {
-  display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 2px;
+  display: grid; grid-template-columns: 88px 1fr auto;
+  align-items: center; column-gap: 10px; height: 52px; padding: 0 2px;
 }
-.sched-row.sub { height: auto; min-height: 44px; }
-/* 라벨은 고정폭 컬럼 → 값들의 왼쪽 가장자리가 한 줄로 정렬. 스위치는 오른쪽 끝으로. */
-.sched-row-label { font-weight: 600; font-size: 15px; flex: 0 0 88px; }
+.sched-row.sub { display: flex; height: auto; min-height: 44px; gap: 10px; }
+.sched-row-label { grid-column: 1; font-weight: 600; font-size: 15px; }
 .sched-spacer { display: none; }
-.sched-row .switch { margin-left: auto; }
+.sched-row .switch { grid-column: 3; justify-self: end; }
 .sched-val {
-  /* width:auto 로 전역 input{width:100%} 를 덮어써 내용 폭으로 → iOS 시간 input 도 값이 왼쪽에 */
-  width: auto; flex: 0 1 auto; border: none; background: none; font-size: 15px; color: var(--text);
-  text-align: left; padding: 4px 0; max-width: 100%;
+  grid-column: 2; justify-self: start;
+  width: auto; max-width: 100%; border: none; background: none; font-size: 15px; color: var(--text);
+  text-align: left; padding: 4px 0;
 }
+/* iOS 네이티브 date/time input 의 값 정렬 편차 제거 → 값을 좌측 텍스트처럼 렌더 */
+.sched-val[type="date"], .sched-val[type="time"] { -webkit-appearance: none; appearance: none; }
 .sched-val:focus { outline: none; }
-.sched-num { width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
+.sched-num { grid-column: 2; width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
 .sched-custom { padding: 2px 2px 12px; }
 .weekday-row { display: flex; gap: 6px; margin-top: 8px; }
 .weekday {

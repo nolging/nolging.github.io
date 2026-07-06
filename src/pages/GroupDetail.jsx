@@ -239,8 +239,9 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const actions = []
   if (canAct) {
     if (isScheduled) {
+      // 약속(accepted): 수정/약속취소/삭제, 추억(done): 수정/삭제 (약속취소 없음)
       actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEditAppointment })
-      actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
+      if (task.status !== 'done') actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
       if (isCreator) actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
     } else {
       actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEdit })
@@ -357,7 +358,6 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
             </span>
           )}
           <div className="task-actions" onClick={stop}>
-            {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={onAccept}>{terms.accept}</button>}
             {task.status === 'accepted' && mine && <button className="btn btn-sm btn-success" onClick={onComplete}>완료</button>}
             {task.status === 'accepted' && !mine && <span className="muted sm">진행 중</span>}
             {task.status === 'done' && <button className="btn btn-sm btn-ghost" onClick={onReopen}>다시 열기</button>}
