@@ -247,7 +247,8 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
       actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
     }
   }
-  const openW = actions.length ? actions.length * 40 + (actions.length - 1) * 8 + 16 : 0
+  // 카드가 밀리는 거리 = 좌측 여백(8) + 버튼들(40) + 버튼 간격(8). 우측 여백 0(삭제 우측 끝=카드 우측 끝).
+  const openW = actions.length ? actions.length * 40 + (actions.length - 1) * 8 + 8 : 0
 
   // 왼쪽 스와이프로 액션 노출. touch-action: pan-y 라 세로 스크롤은 그대로 동작.
   const [dx, setDx] = useState(0)

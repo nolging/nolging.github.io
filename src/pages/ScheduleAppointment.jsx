@@ -6,6 +6,7 @@ import {
 } from '../lib/api'
 import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import MediaInfo from '../components/MediaInfo'
 
 const pad = (n) => String(n).padStart(2, '0')
 const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -165,6 +166,10 @@ export default function ScheduleAppointment() {
         </div>
       )}
 
+      {(category === 'OTT' || category === '영화') && task.media_info && (
+        <MediaInfo category={category} info={task.media_info} />
+      )}
+
       <form onSubmit={submit}>
         <div className="sched-rows">
           <div className="sched-row">
@@ -226,7 +231,7 @@ export default function ScheduleAppointment() {
 
           {dateOn && (
             <div className="sched-row">
-              <span className="sched-row-label">마감 예정 미리 알림</span>
+              <span className="sched-row-label">알림</span>
               <span className="sched-spacer" />
               <select className="sched-val" value={remind} onChange={(e) => setRemind(e.target.value)}>
                 {REMIND_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

@@ -336,7 +336,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-swipe { position: relative; }
 .task-swipe-actions {
   position: absolute; top: 0; right: 0; bottom: 0; z-index: 0;
-  display: flex; align-items: center; gap: 8px; padding: 0 12px 0 4px;
+  display: flex; align-items: center; gap: 8px; padding: 0 0 0 8px;
 }
 .swipe-btn {
   flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
@@ -487,10 +487,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .sched-title-input:focus { outline: none; border-bottom-color: var(--text); }
 .sched-rows { margin-bottom: 22px; }
 .sched-row {
-  display: flex; align-items: center; gap: 10px; min-height: 48px;
-  padding: 10px 2px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 2px;
 }
-.sched-row.sub { border-bottom: none; padding-bottom: 4px; }
+.sched-row.sub { height: auto; min-height: 44px; }
 .sched-row-label { font-weight: 600; font-size: 15px; flex-shrink: 0; }
 .sched-spacer { flex: 1; }
 .sched-val {
@@ -499,7 +498,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .sched-val:focus { outline: none; }
 .sched-num { width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
-.sched-custom { padding: 2px 2px 12px; border-bottom: 1px solid var(--border); }
+.sched-custom { padding: 2px 2px 12px; }
 .weekday-row { display: flex; gap: 6px; margin-top: 8px; }
 .weekday {
   flex: 1; max-width: 42px; height: 38px; border-radius: 50%;
