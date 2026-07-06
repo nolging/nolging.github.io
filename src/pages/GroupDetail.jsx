@@ -6,7 +6,7 @@ import {
   completeTask, reopenTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
-  taskTerms, TASK_STATUSES, formatWhen, repeatCycleText, categoryStyle,
+  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -31,6 +31,12 @@ const InviteIcon = () => (
     <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 7L2 7" />
   </svg>
 )
+const FilterIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+  </svg>
+)
 
 export default function GroupDetail() {
   const { groupId } = useParams()
@@ -49,6 +55,12 @@ export default function GroupDetail() {
   const [copied, setCopied] = useState(false)
   const [filter, setFilter] = useState(initialTab)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [catFilter, setCatFilter] = useState([]) // 선택된 위시 유형(중복 가능). 빈 배열=전체
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  function toggleCat(c) {
+    setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
+  }
 
   const isOwner = group && group.owner_id === profile?.id
 
@@ -93,7 +105,8 @@ export default function GroupDetail() {
   }
 
   const terms = taskTerms()
-  const visibleTasks = tasks.filter((t) => t.status === filter)
+  const matchesCat = (t) => catFilter.length === 0 || catFilter.includes(t.category)
+  const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
   return (
     <div className="page">
@@ -111,6 +124,15 @@ export default function GroupDetail() {
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
+
+      <div className="tabs-toolbar">
+        <button className="btn btn-ghost btn-sm icon-btn tabs-filter-btn" aria-label="유형 필터" title="유형 필터"
+          onClick={() => setFilterOpen(true)}>
+          <FilterIcon />
+          {catFilter.length > 0 && <span className="filter-badge">{catFilter.length}</span>}
+        </button>
+        <span className="tabs-count">{visibleTasks.length}개</span>
+      </div>
 
       <div className="tabs">
         {TASK_STATUSES.map((f) => (
@@ -149,6 +171,25 @@ export default function GroupDetail() {
         <div className="invite-box">
           <code className="mono">{group.invite_code}</code>
           <button className="btn btn-sm" onClick={copyCode}>{copied ? '복사됨!' : '복사'}</button>
+        </div>
+      </BottomSheet>
+
+      {/* 유형 필터 시트 (중복 선택) */}
+      <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
+        <h3 className="sheet-title">위시 유형 필터</h3>
+        <div className="chip-row filter-chips">
+          {WISH_CATEGORIES.map((c) => {
+            const on = catFilter.includes(c)
+            return (
+              <button key={c} type="button" className={`chip ${on ? 'active' : ''}`}
+                style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
+            )
+          })}
+        </div>
+        <div className="filter-actions">
+          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
+            onClick={() => setCatFilter([])}>초기화</button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setFilterOpen(false)}>적용</button>
         </div>
       </BottomSheet>
     </div>
