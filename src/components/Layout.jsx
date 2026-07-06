@@ -244,7 +244,8 @@ export default function Layout() {
           : <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
         {taskBackTo === 'back' && (
-          <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm push-right topbar-link">그룹으로 이동</Link>
+          <Link to={`/groups/${id}`} replace state={{ from: location.state?.from }}
+            className="btn btn-ghost btn-sm push-right topbar-link">그룹으로 이동</Link>
         )}
       </header>
     )
@@ -286,11 +287,15 @@ export default function Layout() {
       </header>
     )
   } else if (groupMatch) {
-    // 그룹 상세 페이지: 좌측 뒤로(내 그룹), 우측 그룹 설정 톱니바퀴
+    // 그룹 상세 페이지: 좌측 뒤로(기본=내 그룹), 우측 그룹 설정 톱니바퀴
+    // 알림/일정에서 "그룹으로 이동"(replace)으로 왔으면 히스토리 pop 으로 그 페이지 복귀
     const id = groupMatch.params.groupId
+    const gFrom = location.state?.from
     topbar = (
       <header className="topbar">
-        <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>
+        {(gFrom === 'notifications' || gFrom === 'schedule')
+          ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
         <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn push-right" aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
       </header>
     )
