@@ -410,7 +410,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
 
 /* ---- 태스크 상세 + 댓글 ---- */
-.td-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.td-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .td-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .td-name { font-size: 1.15rem; }
 .td-desc { margin: 0; color: var(--text); font-size: 15px; white-space: pre-wrap; word-break: break-word; }

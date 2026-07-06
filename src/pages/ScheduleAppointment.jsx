@@ -162,7 +162,7 @@ export default function ScheduleAppointment() {
       ) : (
         <div className="sched-headline">
           {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
-          <span className="task-name">{task.title}</span>
+          <span className="task-name td-name">{task.title}</span>
         </div>
       )}
 
