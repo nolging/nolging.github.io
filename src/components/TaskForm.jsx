@@ -1,15 +1,43 @@
 import { useState } from 'react'
 import { WISH_CATEGORIES, categoryStyle } from '../lib/constants'
+import { searchMedia, getMediaDetail } from '../lib/api'
+import MediaInfo from './MediaInfo'
 
-// 태스크 작성/편집 공용 폼. onSubmit(values) 는 저장(생성/수정)을 처리하고
+const MEDIA_CATS = ['OTT', '영화'] // 정보 가져오기 지원 유형
+
+// 위시 작성/편집 공용 폼. onSubmit(values) 는 저장(생성/수정)을 처리하고
 // 성공 시 페이지 이동을 담당한다. (실패 시 throw)
 export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
-  const isNolging = true // 모든 그룹이 놀 때 컨셉 → 카테고리 칩 + 제목(설명 없음)
   const [title, setTitle] = useState(initial.title || '')
-  const [desc, setDesc] = useState(initial.description || '')
   const [category, setCategory] = useState(initial.category || '')
+  const [mediaInfo, setMediaInfo] = useState(initial.media_info || null)
+  const [results, setResults] = useState(null) // null=미검색, []=결과목록
+  const [lookupBusy, setLookupBusy] = useState(false)
+  const [lookupErr, setLookupErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  const mediaCat = MEDIA_CATS.includes(category)
+
+  function pickCategory(c) {
+    const next = category === c ? '' : c
+    setCategory(next)
+    if (!MEDIA_CATS.includes(next)) { setMediaInfo(null); setResults(null); setLookupErr('') }
+  }
+
+  async function doSearch() {
+    if (!title.trim()) return
+    setLookupBusy(true); setLookupErr(''); setResults(null)
+    try {
+      const kind = category === '영화' ? 'movie' : 'multi'
+      setResults(await searchMedia(title.trim(), kind))
+    } catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
+  }
+  async function pickResult(item) {
+    setLookupBusy(true); setLookupErr('')
+    try { setMediaInfo(await getMediaDetail(item.id, item.media)); setResults(null) }
+    catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -18,33 +46,54 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
     try {
       await onSubmit({
         title: title.trim(),
-        description: isNolging ? '' : desc.trim(),
-        category: isNolging ? (category || null) : null,
+        description: '',
+        category: category || null,
+        media_info: mediaCat ? mediaInfo : null,
       })
     } catch (err) { setError(err.message); setBusy(false) }
   }
 
   return (
     <form onSubmit={submit} className="form">
-      {isNolging && (
-        <div className="chip-row">
-          {WISH_CATEGORIES.map((c) => (
-            <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
-              style={category === c ? categoryStyle(c) : undefined}
-              onClick={() => setCategory(category === c ? '' : c)}>{c}</button>
-          ))}
-        </div>
-      )}
+      <div className="chip-row">
+        {WISH_CATEGORIES.map((c) => (
+          <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
+            style={category === c ? categoryStyle(c) : undefined}
+            onClick={() => pickCategory(c)}>{c}</button>
+        ))}
+      </div>
 
-      {isNolging ? (
-        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" />
-      ) : (
-        <>
-          <label className="field"><span>제목</span>
-            <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="할 일 제목" /></label>
-          <label className="field"><span>설명 (선택)</span>
-            <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="설명" rows={4} /></label>
-        </>
+      <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" />
+
+      {mediaCat && (
+        <div className="media-lookup">
+          {!mediaInfo && (
+            <button type="button" className="btn btn-block" disabled={!title.trim() || lookupBusy} onClick={doSearch}>
+              {lookupBusy ? '불러오는 중…' : '🎬 정보 가져오기'}
+            </button>
+          )}
+          {lookupErr && <p className="field-error">{lookupErr}</p>}
+
+          {results && (
+            <div className="media-results">
+              {results.length === 0 ? (
+                <p className="muted sm" style={{ padding: '4px 2px' }}>검색 결과가 없어요. 제목을 확인해 주세요.</p>
+              ) : results.map((it) => (
+                <button type="button" key={`${it.media}-${it.id}`} className="media-result" onClick={() => pickResult(it)}>
+                  {it.poster
+                    ? <img src={it.poster} alt="" className="media-poster" />
+                    : <span className="media-poster media-poster-empty" aria-hidden="true">🎬</span>}
+                  <span className="media-result-info">
+                    <span className="media-result-title">{it.title}</span>
+                    <span className="muted sm">{[it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mediaInfo && <MediaInfo category={category} info={mediaInfo} onClear={() => setMediaInfo(null)} />}
+        </div>
       )}
 
       {error && <div className="alert alert-error">{error}</div>}

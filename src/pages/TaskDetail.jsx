@@ -8,6 +8,7 @@ import {
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, categoryStyle } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import MediaInfo from '../components/MediaInfo'
 
 function formatTime(iso) {
   try {
@@ -337,6 +338,10 @@ export default function TaskDetail() {
       )}
 
       {task.description && <p className="td-desc">{task.description}</p>}
+
+      {task.media_info && (task.category === 'OTT' || task.category === '영화') && (
+        <MediaInfo category={task.category} info={task.media_info} />
+      )}
 
       {showActions && (
         <div className="td-actions">

@@ -138,12 +138,27 @@ export async function listTasks(groupId) {
   return data ?? []
 }
 
-export async function createTask({ groupId, title, description, category, createdBy }) {
+export async function createTask({ groupId, title, description, category, media_info, createdBy }) {
   const row = { group_id: groupId, title, description: description ?? '', created_by: createdBy }
   // category 는 값이 있을 때만 전송 (컬럼 미적용 환경에서 일반 태스크는 정상 동작)
   if (category) row.category = category
+  if (media_info) row.media_info = media_info
   const { data, error } = await supabase.from('tasks').insert(row).select().single()
   if (error) throw error
+  return data
+}
+
+// 영화/드라마 정보 조회 (movie-lookup Edge Function → TMDB)
+export async function searchMedia(query, kind) {
+  const { data, error } = await supabase.functions.invoke('movie-lookup', { body: { action: 'search', query, kind } })
+  if (error) throw new Error('정보 조회에 실패했어요. 잠시 후 다시 시도해 주세요.')
+  if (data?.error) throw new Error(data.error)
+  return data?.results ?? []
+}
+export async function getMediaDetail(id, media) {
+  const { data, error } = await supabase.functions.invoke('movie-lookup', { body: { action: 'detail', id, media } })
+  if (error) throw new Error('정보 조회에 실패했어요. 잠시 후 다시 시도해 주세요.')
+  if (data?.error) throw new Error(data.error)
   return data
 }
 
@@ -153,9 +168,10 @@ export async function getTask(taskId) {
   return data
 }
 
-export async function updateTask(taskId, { title, description, category }) {
+export async function updateTask(taskId, { title, description, category, media_info }) {
   const patch = { title, description: description ?? '' }
   patch.category = category || null // 컬럼 존재 가정(schema-v2 적용됨)
+  if (media_info !== undefined) patch.media_info = media_info ?? null
   const { data, error } = await supabase.from('tasks').update(patch).eq('id', taskId).select().single()
   if (error) throw error
   return data

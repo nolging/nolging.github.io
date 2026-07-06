@@ -674,6 +674,29 @@ a.mp-tel:active { opacity: .55; }
 .brand .brand-word { font-size: 1.2rem; }
 .auth-logo .brand-word { font-size: 1.7rem; }
 
+/* ---- 영화/OTT 정보 가져오기 ---- */
+.media-lookup { display: flex; flex-direction: column; gap: 10px; }
+.media-results { display: flex; flex-direction: column; gap: 8px; }
+.media-result {
+  display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  background: var(--surface); border: none; box-shadow: var(--card-shadow);
+  border-radius: 12px; padding: 8px 12px; color: var(--text);
+}
+.media-poster { width: 40px; height: 60px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #e4e6ec; }
+.media-poster-empty { display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+.media-result-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.media-result-title { font-weight: 600; font-size: 14px; }
+.media-info {
+  background: var(--surface); box-shadow: var(--card-shadow); border-radius: 12px; padding: 12px 14px;
+}
+.media-info-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.media-info-title { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; }
+.media-info-clear { border: none; background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; flex-shrink: 0; }
+.media-info-rows { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.media-info-row { display: flex; gap: 10px; font-size: 14px; }
+.media-info-row dt { flex: 0 0 84px; color: var(--muted); font-weight: 600; margin: 0; }
+.media-info-row dd { margin: 0; color: var(--text); word-break: break-word; }
+
 /* ---- 토글 버튼 그룹 ---- */
 .toggle-group { display: inline-flex; background: #eef0f5; border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
 .toggle {

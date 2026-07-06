@@ -162,6 +162,8 @@ grant execute on function public.preview_group(text) to authenticated;
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;
+-- 영화/OTT 위시의 TMDB 정보(OTT 제공처/장르/러닝타임/부작수 등). movie-lookup 함수가 채움.
+alter table public.tasks add column if not exists media_info jsonb;
 
 -- ---- task_comments: 태스크별 댓글 -----------------------------
 create table if not exists public.task_comments (
