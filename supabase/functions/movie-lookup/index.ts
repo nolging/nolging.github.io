@@ -31,16 +31,41 @@ type Provider = { name: string; logo: string | null }
 const provs = (arr?: Prov[]): Provider[] =>
   (arr ?? []).map((p) => ({ name: p.provider_name, logo: p.logo_path ? IMG_LOGO + p.logo_path : null }))
 
-// 한국(KR) 시청 제공처: flatrate(구독), buy/rent(개별 구매·대여) — 각각 {name, logo}
+// 광고형/채널 변형을 대표 브랜드로 합쳐 중복 제거 (예: "Netflix Standard with Ads" → "Netflix")
+const isVariant = (n: string) => /(with ads|amazon channel|apple tv channel)/i.test(n)
+const baseName = (n: string) => n
+  .replace(/\s+(standard|basic|premium)?\s*with ads$/i, '')
+  .replace(/\s+(amazon|apple tv)\s+channel$/i, '')
+  .trim()
+function dedupeProviders(list: Provider[]): Provider[] {
+  const sorted = [...list].sort((a, b) => (isVariant(a.name) ? 1 : 0) - (isVariant(b.name) ? 1 : 0))
+  const seen = new Map<string, Provider>()
+  for (const p of sorted) {
+    const key = baseName(p.name).toLowerCase()
+    if (!seen.has(key)) seen.set(key, { ...p, name: baseName(p.name) })
+  }
+  return [...seen.values()]
+}
+
+// 한국(KR) 시청 제공처: flatrate(구독), buy/rent(개별 구매·대여) — 각각 {name, logo}, 중복 제거
 async function providersKR(media: string, id: number): Promise<{ sub: Provider[]; buy: Provider[] }> {
   try {
     const d = await tmdb(`/${media}/${id}/watch/providers`)
     const kr = d?.results?.KR
-    const buyMap = new Map<string, Provider>()
-    for (const p of [...provs(kr?.buy), ...provs(kr?.rent)]) if (!buyMap.has(p.name)) buyMap.set(p.name, p)
-    return { sub: provs(kr?.flatrate), buy: [...buyMap.values()] }
+    return {
+      sub: dedupeProviders(provs(kr?.flatrate)),
+      buy: dedupeProviders([...provs(kr?.buy), ...provs(kr?.rent)]),
+    }
   } catch { return { sub: [], buy: [] } }
 }
+
+// TMDB 가 영어로 주는 (주로 TV) 장르 → 한글
+const GENRE_KO: Record<string, string> = {
+  'Action & Adventure': '액션 & 어드벤처', 'Sci-Fi & Fantasy': 'SF & 판타지',
+  'War & Politics': '전쟁 & 정치', 'Kids': '키즈', 'News': '뉴스',
+  'Reality': '리얼리티', 'Soap': '연속극', 'Talk': '토크', 'Western': '서부극',
+}
+const koGenres = (arr?: { name: string }[]) => (arr ?? []).map((g) => GENRE_KO[g.name] ?? g.name)
 
 // 현재 KR 극장 상영 중 영화 id 집합 (모듈 스코프 1시간 캐시)
 let npCache: { ids: Set<number>; at: number } | null = null
@@ -107,7 +132,7 @@ Deno.serve(async (req) => {
         return json({
           kind: 'movie', title: d.title,
           poster: d.poster_path ? IMG_MD + d.poster_path : null,
-          genres: (d.genres ?? []).map((g: { name: string }) => g.name),
+          genres: koGenres(d.genres),
           runtime: d.runtime ?? null, release_date: d.release_date ?? null,
           providers: prov.sub, providers_buy: prov.buy,
           in_theaters: np.has(mid),
@@ -118,7 +143,7 @@ Deno.serve(async (req) => {
         return json({
           kind: 'tv', title: d.name,
           poster: d.poster_path ? IMG_MD + d.poster_path : null,
-          genres: (d.genres ?? []).map((g: { name: string }) => g.name),
+          genres: koGenres(d.genres),
           episode_count: d.number_of_episodes ?? null,
           runtime: (d.episode_run_time && d.episode_run_time[0]) ?? null,
           release_date: d.first_air_date ?? null,

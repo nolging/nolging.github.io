@@ -690,19 +690,19 @@ a.mp-tel:active { opacity: .55; }
   background: var(--surface); box-shadow: var(--card-shadow); border-radius: 12px; padding: 12px 14px;
 }
 .media-info-body { display: flex; gap: 12px; align-items: stretch; }
-.media-info-poster { width: 64px; align-self: stretch; height: auto; min-height: 92px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #e4e6ec; }
-.media-info-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.media-info-poster { width: 60px; align-self: stretch; height: auto; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #e4e6ec; }
+.media-info-main { flex: 1; min-width: 0; }
 .media-info-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .media-info-title { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; }
 .media-info-clear { border: none; background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; flex-shrink: 0; }
-.media-info-rows { margin: 0; display: flex; flex-direction: column; justify-content: space-between; flex: 1; gap: 5px; }
-.media-info-row { display: flex; gap: 10px; align-items: center; font-size: 12.5px; line-height: 1.25; }
-.media-info-row dt { flex: 0 0 58px; color: var(--muted); font-weight: 600; margin: 0; }
-.media-info-row dd { margin: 0; color: var(--text); word-break: break-word; }
-/* OTT 앱 아이콘 배지 */
-.ott-badges { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-.ott-badge { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #fff; box-shadow: 0 1px 3px rgba(20,22,40,.2); }
-.ott-badge-text { display: inline-flex; align-items: center; justify-content: center; width: auto; height: 22px; border-radius: 11px; padding: 0 8px; font-size: 11px; font-weight: 600; background: #eceef3; color: var(--muted); box-shadow: none; }
+.media-info-rows { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.media-info-row { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+.media-info-row dt { flex: 0 0 58px; color: var(--muted); font-weight: 600; margin: 0; line-height: 1.3; }
+.media-info-row dd { flex: 1; min-width: 0; margin: 0; color: var(--text); word-break: break-word; line-height: 1.3; display: flex; align-items: center; }
+/* OTT 앱 아이콘 배지 (행 높이에 맞춰 작게) */
+.ott-badges { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; line-height: 0; }
+.ott-badge { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; background: #fff; box-shadow: 0 1px 2px rgba(20,22,40,.22); display: block; }
+.ott-badge-text { display: inline-flex; align-items: center; justify-content: center; width: auto; height: 16px; border-radius: 8px; padding: 0 7px; font-size: 10.5px; font-weight: 600; background: #eceef3; color: var(--muted); box-shadow: none; }
 .ott-suffix { font-size: 11px; color: var(--muted); }
 
 /* ---- 토글 버튼 그룹 ---- */
