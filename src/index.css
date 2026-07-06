@@ -292,8 +292,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .col-main, .col-side { display: flex; flex-direction: column; gap: 16px; }
 
 /* ---- 탭 ---- */
-/* 탭 위 툴바: 좌측 유형 필터 아이콘, 우측 현재 탭 개수 */
-.tabs-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+/* 탭 아래 툴바: 좌측 유형 필터 아이콘, 우측 현재 탭 개수 */
+.tabs-toolbar { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
 .tabs-filter-btn { position: relative; }
 .tabs-filter-btn .filter-badge {
   position: absolute; top: -2px; right: -2px; min-width: 15px; height: 15px; padding: 0 3px;
@@ -301,8 +301,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   background: var(--text); color: #fff; border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 1;
 }
 .tabs-count { font-size: 13px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
-.filter-chips { flex-wrap: wrap; overflow: visible; }
-.filter-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+/* 필터 시트: 제목 좌측 정렬 + 초기화, 유형 칩은 한 줄에 다 보이게 작게 */
+.filter-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.filter-title { margin: 0; text-align: left; }
+.filter-chips { flex-wrap: nowrap; overflow: visible; gap: 6px; }
+/* 유형 칩을 동일 폭으로 늘려 어떤 화면 폭에서도 한 줄에 꽉 차게 */
+.filter-chips .chip {
+  flex: 1 1 0; min-width: 0; padding: 7px 4px; font-size: 12.5px;
+  display: flex; align-items: center; justify-content: center;
+}
 .tabs {
   display: flex; gap: 4px; justify-content: center;
   border-bottom: 1px solid var(--border);

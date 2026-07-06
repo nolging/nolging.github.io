@@ -125,6 +125,14 @@ export default function GroupDetail() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
+      <div className="tabs">
+        {TASK_STATUSES.map((f) => (
+          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+            {terms.status[f]}
+          </button>
+        ))}
+      </div>
+
       <div className="tabs-toolbar">
         <button className="btn btn-ghost btn-sm icon-btn tabs-filter-btn" aria-label="유형 필터" title="유형 필터"
           onClick={() => setFilterOpen(true)}>
@@ -132,14 +140,6 @@ export default function GroupDetail() {
           {catFilter.length > 0 && <span className="filter-badge">{catFilter.length}</span>}
         </button>
         <span className="tabs-count">{visibleTasks.length}개</span>
-      </div>
-
-      <div className="tabs">
-        {TASK_STATUSES.map((f) => (
-          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {terms.status[f]}
-          </button>
-        ))}
       </div>
 
       {visibleTasks.length === 0 ? (
@@ -174,9 +174,13 @@ export default function GroupDetail() {
         </div>
       </BottomSheet>
 
-      {/* 유형 필터 시트 (중복 선택) */}
+      {/* 유형 필터 시트 (중복 선택, 즉시 적용) */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
-        <h3 className="sheet-title">위시 유형 필터</h3>
+        <div className="filter-head">
+          <h3 className="sheet-title filter-title">위시 유형 필터</h3>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
+            onClick={() => setCatFilter([])}>초기화</button>
+        </div>
         <div className="chip-row filter-chips">
           {WISH_CATEGORIES.map((c) => {
             const on = catFilter.includes(c)
@@ -185,11 +189,6 @@ export default function GroupDetail() {
                 style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
             )
           })}
-        </div>
-        <div className="filter-actions">
-          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
-            onClick={() => setCatFilter([])}>초기화</button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setFilterOpen(false)}>적용</button>
         </div>
       </BottomSheet>
     </div>
