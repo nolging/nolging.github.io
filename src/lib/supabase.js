@@ -12,7 +12,31 @@ if (!url || !anonKey) {
   )
 }
 
-export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key')
+// 장시간 백그라운드 후 재개 시 첫 요청이 무한 대기(연결 stale)하는 문제 대응:
+// 모든 요청에 타임아웃을 걸고, 읽기(GET/HEAD)는 타임아웃 시 1회 자동 재시도해
+// 새 연결로 회복시킨다. (쓰기/업로드는 재시도하지 않음 — 중복 방지)
+function timeoutFetch(input, init = {}, attempt = 0) {
+  const method = (init.method || 'GET').toUpperCase()
+  const isRead = method === 'GET' || method === 'HEAD'
+  const limit = isRead ? 10000 : 30000
+  const ctrl = new AbortController()
+  let timedOut = false
+  const t = setTimeout(() => { timedOut = true; ctrl.abort() }, limit)
+  if (init.signal) {
+    if (init.signal.aborted) ctrl.abort()
+    else init.signal.addEventListener('abort', () => ctrl.abort(), { once: true })
+  }
+  return fetch(input, { ...init, signal: ctrl.signal })
+    .catch((err) => {
+      if (timedOut && isRead && attempt < 1) return timeoutFetch(input, init, attempt + 1)
+      throw err
+    })
+    .finally(() => clearTimeout(t))
+}
+
+export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key', {
+  global: { fetch: timeoutFetch },
+})
 
 // 닉네임 -> 내부 로그인 이메일
 export function nicknameToEmail(nickname) {
