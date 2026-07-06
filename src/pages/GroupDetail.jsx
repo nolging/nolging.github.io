@@ -278,9 +278,9 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
       )}
 
       {task.description && <p className="task-desc">{task.description}</p>}
-      {mediaLine && <p className="task-media-line">{mediaLine}</p>}
 
       <div className="task-foot">
+        {mediaLine && <span className="task-media-line">{mediaLine}</span>}
         {task.assignee_id && !showParts && (
           <span className="task-person">
             <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
