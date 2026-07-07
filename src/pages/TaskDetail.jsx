@@ -11,23 +11,46 @@ import { taskTerms, repeatLabel, remindLabel, categoryStyle, MEDIA_LOOKUP_CATS }
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 
-// 별점 선택기(작성용) / 표시용
+// 0.5 단위 별점 셀 (회색 별 위에 금색 별을 width% 만큼 덮어 반 개 표현)
+function starCells(value) {
+  return [1, 2, 3, 4, 5].map((i) => {
+    const fill = value >= i ? 100 : value >= i - 0.5 ? 50 : 0
+    return (
+      <span className="star-cell" key={i}>
+        <span className="star-bg">★</span>
+        <span className="star-fill" style={{ width: `${fill}%` }}>★</span>
+      </span>
+    )
+  })
+}
+// 드래그/탭으로 0.5 단위 조정 가능한 별점 선택기
 function StarPicker({ value, onChange }) {
+  const ref = useRef(null)
+  const valFromX = (clientX) => {
+    const el = ref.current
+    if (!el) return value
+    const r = el.getBoundingClientRect()
+    const v = Math.ceil(((clientX - r.left) / r.width) * 10) / 2 // 0.5 단위
+    return Math.max(0.5, Math.min(5, v))
+  }
+  const down = (e) => {
+    e.preventDefault()
+    try { ref.current?.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    onChange(valFromX(e.clientX))
+  }
+  const move = (e) => {
+    if (!ref.current?.hasPointerCapture?.(e.pointerId)) return // 누른 채 이동일 때만
+    onChange(valFromX(e.clientX))
+  }
   return (
-    <div className="star-picker" role="radiogroup" aria-label="별점 선택">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button type="button" key={n} className={`star-btn ${n <= value ? 'on' : ''}`}
-          aria-label={`${n}점`} aria-pressed={n <= value} onClick={() => onChange(n)}>★</button>
-      ))}
+    <div className="star-picker" ref={ref} onPointerDown={down} onPointerMove={move}
+      role="slider" aria-label="별점 선택" aria-valuemin={0.5} aria-valuemax={5} aria-valuenow={value}>
+      {starCells(value)}
     </div>
   )
 }
 function Stars({ value }) {
-  return (
-    <span className="stars-view" aria-label={`별점 ${value}점`}>
-      {[1, 2, 3, 4, 5].map((n) => <span key={n} className={n <= value ? 'on' : ''}>★</span>)}
-    </span>
-  )
+  return <span className="stars-view" aria-label={`별점 ${value}점`}>{starCells(value)}</span>
 }
 const SUB_TABS = ['comments', 'reviews']
 

@@ -673,7 +673,7 @@ create table if not exists public.task_reviews (
   task_id    uuid not null references public.tasks(id)    on delete cascade,
   group_id   uuid not null references public.groups(id)   on delete cascade,
   author_id  uuid not null references public.profiles(id),
-  rating     int  not null check (rating between 1 and 5),
+  rating     numeric(2,1) not null check (rating >= 0.5 and rating <= 5 and (rating * 2) = floor(rating * 2)), -- 0.5 단위
   comment    text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -698,8 +698,9 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 grant execute on function public.is_task_participant(uuid, uuid) to authenticated;
 
--- 리뷰 작성/수정(업서트). 참여자 + 완료 상태에서만.
-create or replace function public.submit_review(p_task_id uuid, p_rating int, p_comment text)
+-- 리뷰 작성/수정(업서트). 참여자 + 완료 상태에서만. 별점은 0.5 단위.
+drop function if exists public.submit_review(uuid, int, text);
+create or replace function public.submit_review(p_task_id uuid, p_rating numeric, p_comment text)
 returns public.task_reviews language plpgsql security definer set search_path = public as $$
 declare v_gid uuid; v_status text; r public.task_reviews;
 begin
@@ -711,8 +712,8 @@ begin
     raise exception '완료된 추억에만 리뷰를 남길 수 있습니다.'; end if;
   if not public.is_task_participant(p_task_id, auth.uid()) then
     raise exception '약속에 참여한 멤버만 리뷰를 작성할 수 있습니다.'; end if;
-  if p_rating is null or p_rating < 1 or p_rating > 5 then
-    raise exception '별점은 1~5 사이여야 합니다.'; end if;
+  if p_rating is null or p_rating < 0.5 or p_rating > 5 or (p_rating * 2) <> floor(p_rating * 2) then
+    raise exception '별점은 0.5~5 사이 0.5 단위여야 합니다.'; end if;
 
   insert into public.task_reviews(task_id, group_id, author_id, rating, comment)
     values (p_task_id, v_gid, auth.uid(), p_rating, coalesce(p_comment, ''))
@@ -722,7 +723,7 @@ begin
   return r;
 end;
 $$;
-grant execute on function public.submit_review(uuid, int, text) to authenticated;
+grant execute on function public.submit_review(uuid, numeric, text) to authenticated;
 
 -- 리뷰 열람(게이팅 적용). { is_participant, has_reviewed, reviews:[...] } 반환.
 -- 코멘트는 (참여자 && 본인 작성) 또는 본인 리뷰일 때만 실제 값, 그 외엔 null.
