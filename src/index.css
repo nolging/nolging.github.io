@@ -470,11 +470,23 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-time { color: var(--muted); font-size: 11px; }
 .comment.editing { background: #eef0fb; border-radius: 10px; padding: 8px 10px; margin: -8px -10px; }
 .comment.replying { background: #eef0fb; border-radius: 10px; padding: 8px 10px; margin: -8px -10px; }
-/* 방금 작성/수정한 댓글: 연보라색이 잠깐 들어왔다가 서서히 사라짐(레이아웃 영향 없이 box-shadow 로) */
-.comment.highlight { border-radius: 10px; animation: commentHighlight 1.8s ease-out; }
+/* 방금 작성/수정한 댓글: 연보라색이 잠깐 들어왔다가 서서히 사라짐.
+   화면 끝까지 닿는 직사각형으로 표시(좌우 여백·라운드 없음). 콘텐츠 위치는
+   padding 으로 되돌려 유지, 음수 margin 으로 레이아웃 영향 없이 배경만 확장 */
+.comment.highlight {
+  border-radius: 0;
+  margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
+  margin-top: -6px; margin-bottom: -6px;
+  padding: 6px var(--pad-x);
+  animation: commentHighlight 1.8s ease-out;
+}
+/* 답글은 22px 더 들여써 있으므로 왼쪽으로 그만큼 더 확장 */
+.comment-replies .comment.highlight {
+  margin-left: calc(-1 * (var(--pad-x) + 22px)); padding-left: calc(var(--pad-x) + 22px);
+}
 @keyframes commentHighlight {
-  0%, 18%   { background: #e6e0fb; box-shadow: 0 0 0 6px #e6e0fb; }
-  100%      { background: transparent; box-shadow: 0 0 0 6px transparent; }
+  0%, 18%   { background: #e6e0fb; }
+  100%      { background: transparent; }
 }
 /* 답글: 부모 아래로 한 단계 들여쓰기 (답글의 답글도 동일 단계) */
 .comment-replies { list-style: none; margin: 12px 0 0; padding: 0 0 0 22px; display: flex; flex-direction: column; gap: 14px; }
