@@ -888,6 +888,10 @@ a.mp-tel:active { opacity: .55; }
 }
 .fab:hover { background: var(--text); filter: brightness(1.3); text-decoration: none; }
 .fab:active { transform: scale(.94); }
+/* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
+@media (max-width: 640px) {
+  .fab-above-nav { bottom: calc(74px + env(safe-area-inset-bottom)); }
+}
 
 /* ---- 하단 시트 (초대 등) ---- */
 .sheet-root { position: fixed; inset: 0; z-index: 50; }

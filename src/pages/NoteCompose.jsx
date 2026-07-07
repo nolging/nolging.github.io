@@ -49,7 +49,6 @@ export default function NoteCompose() {
             <span className="note-field-value">
               <Avatar src={recipient.avatar} name={recipient.name} size={28} />
               {recipient.name}
-              <span className="note-field-sub">{recipient.groupName}</span>
             </span>
           ) : (
             <span className="note-field-placeholder">받는 사람을 선택하세요</span>

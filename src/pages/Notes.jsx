@@ -114,7 +114,7 @@ export default function Notes() {
         })()}
       </Modal>
 
-      <Link to="/notes/new" className="fab" aria-label="쪽지 쓰기" title="쪽지 쓰기">
+      <Link to="/notes/new" className="fab fab-above-nav" aria-label="쪽지 쓰기" title="쪽지 쓰기">
         <NoteFabIcon />
       </Link>
     </div>
