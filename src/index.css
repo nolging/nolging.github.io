@@ -140,6 +140,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10;
 }
 .topbar-heading { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.topbar-link:hover { text-decoration: none; }
 .push-right { margin-left: auto; }
 .brand { font-weight: 800; font-size: 1.15rem; color: var(--text); }
 .brand span { color: var(--primary); font-size: .7rem; margin-left: 5px; letter-spacing: .5px; }
