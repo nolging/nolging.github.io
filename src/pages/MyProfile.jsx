@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getMyProfile, updateMyProfile, changeMyPassword } from '../lib/api'
-import { SUBSCRIBABLE_OTTS } from '../lib/constants'
+import { getMyProfile, updateMyProfile, changeMyPassword, getMyCoinBalance } from '../lib/api'
+import { SUBSCRIBABLE_OTTS, formatCoin } from '../lib/constants'
 
 // 한국 전화번호 자동 하이픈: 숫자만 입력해도 010-1111-1234 형태로 표시
 function formatPhone(value) {
@@ -23,6 +23,7 @@ export default function MyProfile() {
   const { logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [coin, setCoin] = useState(0)
   const [form, setForm] = useState({ contact: '', birthdate: '', subscribed_ott: [] })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -47,8 +48,9 @@ export default function MyProfile() {
     let mounted = true
     ;(async () => {
       try {
-        const p = await getMyProfile()
+        const [p, bal] = await Promise.all([getMyProfile(), getMyCoinBalance()])
         if (!mounted) return
+        setCoin(bal)
         setForm({
           contact: p?.contact ? formatPhone(p.contact) : '',
           // date 컬럼은 'YYYY-MM-DD' 로 오므로 date 인풋에 그대로 사용
@@ -100,6 +102,11 @@ export default function MyProfile() {
         <div className="spinner" />
       ) : (
         <>
+        <div className="coin-card">
+          <span className="coin-label">내 츄르</span>
+          <span className="coin-amount">{formatCoin(coin)}</span>
+        </div>
+
         <div className="card form">
           <label className="field"><span>연락처</span>
             <input value={form.contact} inputMode="numeric"

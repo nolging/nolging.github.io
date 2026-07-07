@@ -27,6 +27,13 @@ export const TASK_STATUSES = ['open', 'accepted', 'done']
 // 위시 카테고리
 export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
 
+// 화폐: 시스템 네이밍은 coin, UI 표기는 "츄르". 표기는 항상 이 헬퍼로 통일.
+export const COIN_UNIT = '츄르'
+export function formatCoin(amount) {
+  const n = Number(amount) || 0
+  return `${n.toLocaleString('ko-KR')} ${COIN_UNIT}`
+}
+
 // OTT 제공처 영문명(TMDB) → 한글 표기. 없으면 원문 유지.
 const OTT_NAME_KO = {
   'Netflix': '넷플릭스',

@@ -427,6 +427,13 @@ export async function updateMyProfile({ contact, birthdate, subscribed_ott }) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// 내 잔액(츄르/coin) 조회. 원장이 아직 없거나 RPC 미배포 시 0 으로 폴백.
+export async function getMyCoinBalance() {
+  const { data, error } = await supabase.rpc('my_coin_balance')
+  if (error) return 0
+  return Number(data) || 0
+}
+
 // 내 비밀번호 변경 (Supabase Auth)
 export async function changeMyPassword(newPassword) {
   const { error } = await supabase.auth.updateUser({ password: newPassword })

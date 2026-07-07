@@ -781,3 +781,37 @@ begin
 end;
 $$;
 grant execute on function public.delete_review(uuid) to authenticated;
+
+-- =============================================================
+--  coin(화폐) : UI 표기는 "츄르", 시스템 네이밍은 coin
+--  - 원장(ledger) 기반: 모든 적립/사용은 coin_ledger 에 append.
+--    잔액 = sum(delta). (적립 +, 사용 -)
+--  - 지금은 개념/잔액 조회만. 적립·사용 기능은 이후 정의자 RPC 로 추가.
+--  - 직접 쓰기 불가(RLS): 조회만 본인/관리자. 지급/차감은 SECURITY DEFINER 함수 경유.
+-- =============================================================
+create table if not exists public.coin_ledger (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  delta      integer not null,                              -- 적립 +, 사용 -
+  reason     text not null default '',                       -- 사유(표시용)
+  ref_type   text,                                           -- 연관 도메인(task/review/admin 등)
+  ref_id     uuid,                                           -- 연관 레코드 id
+  created_by uuid references public.profiles(id),            -- 지급/차감 주체(관리자/시스템)
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_coin_ledger_user on public.coin_ledger(user_id, created_at desc);
+alter table public.coin_ledger enable row level security;
+
+-- 본인(또는 관리자) 원장만 조회. 직접 insert/update/delete 정책은 없음 → 정의자 RPC 로만 기록.
+drop policy if exists coin_ledger_select on public.coin_ledger;
+create policy coin_ledger_select on public.coin_ledger
+  for select to authenticated
+  using (user_id = auth.uid() or public.is_admin(auth.uid()));
+
+-- 내 잔액(츄르) 조회. 원장이 없으면 0.
+create or replace function public.my_coin_balance()
+returns integer language sql security definer stable set search_path = public as $$
+  select coalesce(sum(delta), 0)::integer
+  from public.coin_ledger where user_id = auth.uid();
+$$;
+grant execute on function public.my_coin_balance() to authenticated;

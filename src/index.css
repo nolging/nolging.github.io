@@ -184,6 +184,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 카드 / 그리드 ---- */
 .card { background: var(--surface); border: none; border-radius: var(--radius); padding: 18px; box-shadow: var(--card-shadow); }
+/* 츄르(화폐) 잔액 카드 */
+.coin-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), var(--primary-d));
+  color: #fff; box-shadow: var(--card-shadow);
+}
+.coin-label { font-size: 14px; font-weight: 600; opacity: .92; }
+.coin-amount { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
 .card-title { font-size: 15px; margin-bottom: 12px; }
 .card.narrow { max-width: 460px; }
 .join-group-info { text-align: center; }
