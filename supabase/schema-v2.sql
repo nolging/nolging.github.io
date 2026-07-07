@@ -936,3 +936,41 @@ begin
 end;
 $$;
 grant execute on function public.send_note(uuid, uuid, text) to authenticated;
+
+-- =============================================================
+--  상점 구매 (츄르 차감)
+--  아이템 정가는 서버에서 확정(클라이언트 값 신뢰 안 함).
+--  프론트 STORE_ITEMS(constants.js) 와 id/가격을 동일하게 유지할 것.
+--  잔액 부족/선물전용 아이템은 거절. 성공 시 coin_ledger 에 -가격 기록하고 새 잔액 반환.
+-- =============================================================
+create or replace function public.purchase_item(p_item_id text)
+returns integer language plpgsql security definer set search_path = public as $$
+declare v_price integer; v_name text; v_gift_only boolean := false; v_balance integer;
+begin
+  case p_item_id
+    when 'wish'        then v_price := 5;    v_name := '소원권';       v_gift_only := true;
+    when 'couple-ring' then v_price := 5000; v_name := '커플링';
+    when 'friend-ring' then v_price := 3000; v_name := '우정링';
+    when 'telescope'   then v_price := 3;    v_name := '천체 망원경';
+    when 'eraser'      then v_price := 3;    v_name := '지우개';
+    when 'cassette'    then v_price := 5;    v_name := '카세트 테이프';
+    else raise exception '존재하지 않는 아이템입니다.';
+  end case;
+
+  if v_gift_only then
+    raise exception '선물만 가능한 아이템입니다.';
+  end if;
+
+  select coalesce(sum(delta), 0)::integer into v_balance
+    from public.coin_ledger where user_id = auth.uid();
+  if v_balance < v_price then
+    raise exception '츄르가 부족해요.';
+  end if;
+
+  insert into public.coin_ledger(user_id, delta, reason, ref_type)
+    values (auth.uid(), -v_price, v_name || ' 구매', 'purchase');
+
+  return v_balance - v_price;
+end;
+$$;
+grant execute on function public.purchase_item(text) to authenticated;

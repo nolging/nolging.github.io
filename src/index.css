@@ -1083,6 +1083,8 @@ a.mp-tel:active { opacity: .55; }
 .store-detail-desc { font-size: 13.5px; color: var(--muted); line-height: 1.55; white-space: pre-line; margin: 0; }
 .store-detail-price { font-size: 15px; font-weight: 800; color: var(--primary); }
 .store-notice { font-size: 13px; color: var(--muted); background: var(--bg); border-radius: 10px; padding: 8px 12px; }
+.store-notice.is-ok { color: #067a51; background: #e7f6ef; }
+.store-notice.is-err { color: #b91c1c; background: #fdecec; }
 .store-detail-actions { display: flex; gap: 10px; width: 100%; margin-top: 8px; }
 .store-detail-actions .btn { flex: 1; min-height: 44px; }
 

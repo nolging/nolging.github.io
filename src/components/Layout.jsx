@@ -169,6 +169,8 @@ export default function Layout() {
     getMyCoinBalance().then((b) => { if (on) setCoin(b) }).catch(() => {})
     return () => { on = false }
   }, [needCoin, location.pathname])
+  // 페이지(상점 등)가 잔액 변동 후 상단바 츄르를 갱신할 수 있게
+  const refreshCoin = () => getMyCoinBalance().then(setCoin).catch(() => {})
 
   // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
@@ -444,7 +446,7 @@ export default function Layout() {
       )}
       <main className={`content ${dragging ? 'ptr-drag' : ''}`} ref={contentRef}
         style={(pull || refreshing) ? { transform: `translateY(${refreshing ? 46 : pull}px)` } : undefined}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, refreshCoin }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">

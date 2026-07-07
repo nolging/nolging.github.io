@@ -1,19 +1,40 @@
 import { useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { STORE_ITEMS, formatCoin } from '../lib/constants'
+import { purchaseItem } from '../lib/api'
 
 export default function Store() {
+  const { refreshCoin } = useOutletContext()
   const [selected, setSelected] = useState(null)
-  // 준비 중 안내(구매/선물 버튼) — 아직 미구현
-  const [notice, setNotice] = useState('')
+  const [buying, setBuying] = useState(false)
+  // 안내 메시지 { type: 'ok' | 'err' | 'info', text }
+  const [notice, setNotice] = useState(null)
 
   function open(item) {
-    setNotice('')
+    setNotice(null)
+    setBuying(false)
     setSelected(item)
   }
   function close() {
     setSelected(null)
-    setNotice('')
+    setNotice(null)
+    setBuying(false)
+  }
+
+  async function handleBuy() {
+    if (!selected || buying) return
+    setBuying(true)
+    setNotice(null)
+    try {
+      await purchaseItem(selected.id)
+      await refreshCoin?.()
+      setNotice({ type: 'ok', text: `${selected.name} 구매 완료! 🎉` })
+    } catch (err) {
+      setNotice({ type: 'err', text: err.message })
+    } finally {
+      setBuying(false)
+    }
   }
 
   return (
@@ -36,21 +57,26 @@ export default function Store() {
             <p className="store-detail-desc">{selected.desc}</p>
             <div className="store-detail-price">{formatCoin(selected.price)}</div>
 
-            {notice && <div className="store-notice">{notice}</div>}
+            {notice && (
+              <div className={`store-notice ${notice.type === 'err' ? 'is-err' : notice.type === 'ok' ? 'is-ok' : ''}`}>
+                {notice.text}
+              </div>
+            )}
 
             <div className="store-detail-actions">
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={selected.giftOnly}
-                onClick={() => setNotice('아직 준비 중인 기능이에요 🐾')}
+                disabled={selected.giftOnly || buying || notice?.type === 'ok'}
+                onClick={handleBuy}
               >
-                구매하기
+                {buying ? '구매 중…' : '구매하기'}
               </button>
               <button
                 type="button"
                 className="btn"
-                onClick={() => setNotice('아직 준비 중인 기능이에요 🐾')}
+                disabled={buying}
+                onClick={() => setNotice({ type: 'info', text: '아직 준비 중인 기능이에요 🐾' })}
               >
                 선물하기
               </button>

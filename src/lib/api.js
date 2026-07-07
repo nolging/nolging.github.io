@@ -449,6 +449,19 @@ export async function sendNote({ groupId, recipientId, body }) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// ---- 상점 ----------------------------------------------------
+// 아이템 구매(츄르 차감). 정가/검증은 서버(purchase_item)에서. 반환=새 잔액.
+export async function purchaseItem(itemId) {
+  const { data, error } = await supabase.rpc('purchase_item', { p_item_id: itemId })
+  if (error) {
+    if (error.code === 'PGRST202' || /purchase_item/.test(error.message || '')) {
+      throw new Error('상점 구매 기능이 아직 DB에 설정되지 않았습니다. (purchase_item 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Number(data) || 0
+}
+
 // ---- 내 프로필 (연락처/생년월일 포함) ------------------------
 
 export async function getMyProfile() {
