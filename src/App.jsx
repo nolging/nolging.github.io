@@ -17,6 +17,8 @@ import GroupConfigPage from './pages/GroupConfigPage'
 import JoinGroup from './pages/JoinGroup'
 import SchedulePage from './pages/SchedulePage'
 import MyProfile from './pages/MyProfile'
+import ProfileEdit from './pages/ProfileEdit'
+import CoinHistory from './pages/CoinHistory'
 import Notifications from './pages/Notifications'
 import NotificationSettings from './pages/NotificationSettings'
 import Admin from './pages/Admin'
@@ -50,6 +52,8 @@ export default function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/notifications/settings" element={<NotificationSettings />} />
         <Route path="/me" element={<MyProfile />} />
+        <Route path="/me/edit" element={<ProfileEdit />} />
+        <Route path="/me/coins" element={<CoinHistory />} />
         <Route
           path="/admin"
           element={

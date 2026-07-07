@@ -434,6 +434,20 @@ export async function getMyCoinBalance() {
   return Number(data) || 0
 }
 
+// 내 츄르(coin) 적립/사용 내역 (RLS 로 본인 것만). 최신순.
+export async function getMyCoinHistory(limit = 200) {
+  const { data, error } = await supabase
+    .from('coin_ledger')
+    .select('id, delta, reason, ref_type, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) {
+    if (error.code === '42P01') return [] // 테이블 미생성 시 빈 배열
+    throw error
+  }
+  return data ?? []
+}
+
 // 내 비밀번호 변경 (Supabase Auth)
 export async function changeMyPassword(newPassword) {
   const { error } = await supabase.auth.updateUser({ password: newPassword })

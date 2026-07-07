@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
-import { unreadNotificationCount } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
 
@@ -77,6 +77,9 @@ export default function Layout() {
   const notifMatch = useMatch('/notifications')
   const notifSettingsMatch = useMatch('/notifications/settings')
   const scheduleMatch = useMatch('/schedule')
+  const meMatch = useMatch('/me')
+  const profileEditMatch = useMatch('/me/edit')
+  const coinHistoryMatch = useMatch('/me/coins')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
@@ -147,11 +150,21 @@ export default function Layout() {
   }, [])
   useEffect(() => { refreshUnread() }, [location.pathname])
 
+  // 마이 페이지 상단바의 츄르 알약: /me 진입 시 잔액 조회
+  const [coin, setCoin] = useState(null)
+  const onMe = !!meMatch
+  useEffect(() => {
+    if (!onMe) return
+    let on = true
+    getMyCoinBalance().then((b) => { if (on) setCoin(b) }).catch(() => {})
+    return () => { on = false }
+  }, [onMe, location.pathname])
+
   // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -315,6 +328,33 @@ export default function Layout() {
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
         <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn push-right" aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
+      </header>
+    )
+  } else if (profileEditMatch) {
+    // 프로필 수정: 좌측 뒤로(마이 페이지로), 제목 "프로필 수정"
+    topbar = (
+      <header className="topbar">
+        <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">프로필 수정</span>
+      </header>
+    )
+  } else if (coinHistoryMatch) {
+    // 츄르 내역: 좌측 뒤로(마이 페이지로), 제목 "적립·사용 내역"
+    topbar = (
+      <header className="topbar">
+        <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">적립·사용 내역</span>
+      </header>
+    )
+  } else if (meMatch) {
+    // 마이 페이지: 좌측 "마이 페이지" 제목, 우측 츄르 알약(누르면 내역으로)
+    topbar = (
+      <header className="topbar">
+        <span className="topbar-heading">마이 페이지</span>
+        <Link to="/me/coins" className="coin-pill push-right" aria-label="적립·사용 내역">
+          <span className="coin-pill-paw" aria-hidden="true">🐾</span>
+          <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
+        </Link>
       </header>
     )
   } else if (scheduleMatch) {

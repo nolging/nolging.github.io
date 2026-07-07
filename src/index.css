@@ -193,6 +193,39 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .coin-label { font-size: 14px; font-weight: 600; opacity: .92; }
 .coin-amount { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+
+/* 마이 페이지 상단바: 츄르 알약 버튼 (🐾 + 숫자) */
+.coin-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px; min-height: 32px; border-radius: 999px;
+  background: #efecfe; color: var(--primary); text-decoration: none;
+  font-weight: 800; font-size: 14px; line-height: 1;
+}
+.coin-pill:hover { text-decoration: none; }
+.coin-pill-paw { font-size: 14px; }
+.coin-pill-num { font-variant-numeric: tabular-nums; min-width: 8px; }
+
+/* 마이 페이지: 내 정보 조회 카드 */
+.pv-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.pv-row:first-child { padding-top: 0; }
+.profile-view .pv-row:last-of-type { border-bottom: none; }
+.pv-label { flex: 0 0 72px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.pv-value { flex: 1; min-width: 0; color: var(--text); font-size: 14px; font-weight: 500; word-break: break-word; }
+.pv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pv-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.profile-view .btn { margin-top: 16px; }
+
+/* 츄르 적립·사용 내역 */
+.coin-hist { padding: 6px 18px; }
+.coin-hist-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.coin-hist-row:last-child { border-bottom: none; }
+.chr-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.chr-reason { font-size: 14px; font-weight: 600; color: var(--text); }
+.chr-date { font-size: 12px; color: var(--muted); }
+.chr-delta { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.chr-delta.plus { color: var(--success); }
+.chr-delta.minus { color: var(--danger); }
+.coin-empty { text-align: center; margin-top: 24px; }
 .card-title { font-size: 15px; margin-bottom: 12px; }
 .card.narrow { max-width: 460px; }
 .join-group-info { text-align: center; }
