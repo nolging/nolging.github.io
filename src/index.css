@@ -312,12 +312,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 날짜 헤더는 다음 날짜 전까지 스크롤 영역 상단에 고정 */
 .cal-day-group .cal-list-title {
   position: sticky; top: 0; z-index: 2;
-  margin-bottom: 0; padding: 6px 0 8px; background: var(--bg);
+  margin-bottom: 0; padding: 6px 0 10px; background: var(--bg);
 }
 .cal-appt {
   width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
   color: var(--text);
-  background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px; margin-bottom: 8px;
+  /* 그림자 반경을 작게 → 스티키 헤더 밑으로 올라갈 때 헤더 아래로 삐져나오지 않음 */
+  background: var(--surface); border: none; box-shadow: 0 1px 3px rgba(20, 22, 40, .10); border-radius: 14px; padding: 12px; margin-bottom: 8px;
 }
 .cal-appt.done { opacity: .62; } /* 추억(지난 약속): 확인한 알림처럼 살짝 흐리게 */
 .cal-appt-time { font-weight: 700; font-size: 14px; color: var(--text); flex-shrink: 0; min-width: 42px; }
