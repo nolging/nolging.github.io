@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief } from '../lib/api'
-import { repeatLabel, categoryStyle } from '../lib/constants'
+import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import BottomSheet from '../components/BottomSheet'
 
 const pad = (n) => String(n).padStart(2, '0')
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -98,6 +99,34 @@ export default function SchedulePage() {
     setSelected(key)
     setSearchParams({ date: key }, { replace: true })
   }
+  function goToday() {
+    setView({ y: today.getFullYear(), m: today.getMonth() })
+    selectDay(ymd(today))
+  }
+
+  // 유형 필터(상단바 필터 버튼 → 하단 시트) + 제목 검색(본문 돋보기)
+  const [catFilter, setCatFilter] = useState([])
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const inputRef = useRef(null)
+  const toggleCat = (c) => setCatFilter((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
+
+  // 상단바 필터 버튼 동작/뱃지 카운트 등록
+  const { setHeaderFilter } = useOutletContext()
+  useEffect(() => {
+    setHeaderFilter?.({ onClick: () => setFilterOpen(true), count: catFilter.length })
+    return () => setHeaderFilter?.(null)
+  }, [catFilter, setHeaderFilter])
+
+  useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
+  function openSearch() { setSearchOpen(true) }
+  function closeSearch() {
+    if (document.activeElement === inputRef.current) return
+    setSearchOpen(false); setQ('')
+  }
+  function onSearchBlur() { setTimeout(closeSearch, 120) }
+  function clearSearch() { setQ(''); inputRef.current?.focus() }
 
   useEffect(() => {
     (async () => {
@@ -115,16 +144,23 @@ export default function SchedulePage() {
   const partsOf = (a) => (a.task_participants || [])
     .map((p) => memberMap[`${a.group_id}:${p.user_id}`]).filter(Boolean)
 
+  // 유형 필터 + 제목 검색 적용 (달력 점·목록에 공통)
+  const query = q.trim().toLowerCase()
+  const shown = useMemo(() => appts.filter((a) =>
+    (catFilter.length === 0 || catFilter.includes(a.category)) &&
+    (!query || (a.title || '').toLowerCase().includes(query))
+  ), [appts, catFilter, query])
+
   // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
   const daysWithAppt = useMemo(() => {
     const set = new Set()
     const daysIn = new Date(view.y, view.m + 1, 0).getDate()
     for (let day = 1; day <= daysIn; day++) {
       const d = new Date(view.y, view.m, day)
-      if (appts.some((a) => occursOn(a, d))) set.add(ymd(d))
+      if (shown.some((a) => occursOn(a, d))) set.add(ymd(d))
     }
     return set
-  }, [appts, view])
+  }, [shown, view])
 
   // 달력 셀 (앞뒤 빈칸 포함)
   const cells = useMemo(() => {
@@ -147,8 +183,8 @@ export default function SchedulePage() {
   // 선택한 날짜의 약속 (반복 전개, 시간순)
   const dayList = useMemo(() => {
     const d = new Date(`${selected}T00:00:00`)
-    return appts.filter((a) => occursOn(a, d)).sort((x, y) => minutesOf(x.scheduled_at) - minutesOf(y.scheduled_at))
-  }, [appts, selected])
+    return shown.filter((a) => occursOn(a, d)).sort((x, y) => minutesOf(x.scheduled_at) - minutesOf(y.scheduled_at))
+  }, [shown, selected])
 
   const selDate = new Date(`${selected}T00:00:00`)
   const selLabel = `${selDate.getMonth() + 1}월 ${selDate.getDate()}일 (${WD[selDate.getDay()]})`
@@ -160,6 +196,34 @@ export default function SchedulePage() {
 
   return (
     <div className="page">
+      {/* 캘린더 위 툴바: 좌측 검색(돋보기, 내 그룹과 동일), 우측 "오늘" */}
+      <div className={`group-search sched-toolbar ${searchOpen ? 'open' : ''}`}>
+        <button type="button" className="gs-btn"
+          onMouseDown={(e) => e.preventDefault()} onClick={openSearch}
+          aria-label="검색" aria-expanded={searchOpen}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+        <span className="gs-spacer" aria-hidden="true" />
+        <div className="gs-actions">
+          <button type="button" className="sched-today" onClick={goToday}>오늘</button>
+        </div>
+        <input ref={inputRef} className="gs-input" type="text" value={q}
+          onChange={(e) => setQ(e.target.value)} placeholder={searchOpen ? '제목 검색' : ''}
+          aria-label="약속 검색" enterKeyHint="search"
+          autoComplete="off" autoCorrect="off" autoCapitalize="none"
+          tabIndex={searchOpen ? 0 : -1}
+          onBlur={onSearchBlur}
+          onKeyDown={(e) => e.key === 'Escape' && inputRef.current?.blur()} />
+        {searchOpen && q && (
+          <button type="button" className="gs-clear"
+            onMouseDown={(e) => e.preventDefault()} onClick={clearSearch}
+            aria-label="검색어 지우기">×</button>
+        )}
+      </div>
+
       <div className="cal">
         <div className="cal-head">
           <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
@@ -196,7 +260,7 @@ export default function SchedulePage() {
         <div className="cal-list">
           <div className="cal-list-title">{selLabel}</div>
           {dayList.length === 0 ? (
-            <p className="muted sm">이 날은 약속이 없어요.</p>
+            <p className="muted sm cal-empty">약속이 없는 날이에요.</p>
           ) : (
             dayList.map((a) => {
               const parts = partsOf(a)
@@ -226,6 +290,24 @@ export default function SchedulePage() {
           )}
         </div>
       )}
+
+      {/* 유형 필터 시트 (그룹 상세와 동일, 중복 선택·즉시 적용) */}
+      <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
+        <div className="filter-head">
+          <h3 className="sheet-title filter-title">위시 유형 필터</h3>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
+            onClick={() => setCatFilter([])}>초기화</button>
+        </div>
+        <div className="chip-row filter-chips">
+          {WISH_CATEGORIES.map((c) => {
+            const on = catFilter.includes(c)
+            return (
+              <button key={c} type="button" className={`chip ${on ? 'active' : ''}`}
+                style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
+            )
+          })}
+        </div>
+      </BottomSheet>
     </div>
   )
 }

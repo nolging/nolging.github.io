@@ -35,6 +35,15 @@ function BackIcon() {
   )
 }
 
+function FilterIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+    </svg>
+  )
+}
+
 const tabSvg = (children) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
@@ -67,6 +76,7 @@ export default function Layout() {
   const joinMatch = useMatch('/join')
   const notifMatch = useMatch('/notifications')
   const notifSettingsMatch = useMatch('/notifications/settings')
+  const scheduleMatch = useMatch('/schedule')
   const groupMatch = useMatch('/groups/:groupId')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
@@ -76,6 +86,8 @@ export default function Layout() {
   const [backHandler, setBackHandler] = useState(null)
   // 페이지가 "당겨서 새로고침" 핸들러를 등록할 수 있게 (예: 알림 페이지)
   const [refreshHandler, setRefreshHandler] = useState(null)
+  // 페이지가 상단바 필터 버튼 동작/뱃지를 등록할 수 있게 (예: 일정 페이지)
+  const [headerFilter, setHeaderFilter] = useState(null)
 
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
@@ -305,6 +317,18 @@ export default function Layout() {
         <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn push-right" aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
       </header>
     )
+  } else if (scheduleMatch) {
+    // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유)
+    topbar = (
+      <header className="topbar">
+        <span className="topbar-heading">일정</span>
+        <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
+          aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
+          <FilterIcon />
+          {headerFilter?.count > 0 && <span className="filter-badge">{headerFilter.count}</span>}
+        </button>
+      </header>
+    )
   } else {
     // 기본 상단바
     topbar = (
@@ -344,7 +368,7 @@ export default function Layout() {
       )}
       <main className={`content ${dragging ? 'ptr-drag' : ''}`} ref={contentRef}
         style={(pull || refreshing) ? { transform: `translateY(${refreshing ? 46 : pull}px)` } : undefined}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">

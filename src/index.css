@@ -225,6 +225,22 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   font-size: 22px; line-height: 1; cursor: pointer;
 }
 
+/* 일정 페이지 툴바(캘린더 위): 검색(좌) + "오늘"(우) */
+.sched-toolbar { margin-bottom: 0; }
+.sched-today {
+  flex-shrink: 0; height: 40px; padding: 0 18px; border-radius: 20px;
+  background: var(--surface); color: var(--text); border: none; box-shadow: var(--card-shadow);
+  font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.cal-empty { text-align: center; }
+/* 상단바 유형 필터 버튼 뱃지 */
+.sched-filter-btn { position: relative; }
+.sched-filter-btn .filter-badge {
+  position: absolute; top: 0; right: 0; min-width: 15px; height: 15px; padding: 0 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--text); color: #fff; border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 1;
+}
+
 .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 700px) {
   .group-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
