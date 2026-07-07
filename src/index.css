@@ -314,11 +314,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   position: sticky; top: 0; z-index: 2;
   margin-bottom: 0; padding: 6px 0 10px; background: var(--bg);
 }
+/* 스티키 헤더 밑으로 (거의) 다 올라간 카드는 그림자 제거 → 헤더 아래로 그림자 잔상이 안 남음 */
+.cal-appt.under-header { box-shadow: none; }
 .cal-appt {
   width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
   color: var(--text);
-  /* 그림자 없이 테두리로 구분 → 스티키 헤더 밑으로 올라가도 삐져나올 그림자가 없음 */
-  background: var(--surface); border: 1px solid var(--border); box-shadow: none; border-radius: 14px; padding: 12px; margin-bottom: 8px;
+  background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px; margin-bottom: 8px;
 }
 .cal-appt.done { opacity: .62; } /* 추억(지난 약속): 확인한 알림처럼 살짝 흐리게 */
 .cal-appt-time { font-weight: 700; font-size: 14px; color: var(--text); flex-shrink: 0; min-width: 42px; }

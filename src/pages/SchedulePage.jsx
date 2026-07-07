@@ -123,6 +123,7 @@ export default function SchedulePage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
+  const scrollRef = useRef(null)
   const toggleCat = (c) => setCatFilter((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
   const toggleGroup = (id) => setGroupFilter((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
@@ -223,6 +224,27 @@ export default function SchedulePage() {
     return out
   }, [shown, selected, datePicked, monthAll, view, today])
 
+  // 카드가 sticky 날짜 헤더 아래로 (거의) 가려지면 그림자까지 완전히 숨김
+  // (그림자는 카드 박스 밖 투명 간격으로 번져 CSS만으론 헤더가 다 못 가림)
+  useEffect(() => {
+    const sc = scrollRef.current
+    if (!sc) return
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const top = sc.getBoundingClientRect().top
+      const h = sc.querySelector('.cal-list-title')?.offsetHeight || 32
+      const line = top + h
+      sc.querySelectorAll('.cal-appt').forEach((el) => {
+        el.classList.toggle('under-header', el.getBoundingClientRect().bottom <= line + 14)
+      })
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
+    sc.addEventListener('scroll', onScroll, { passive: true })
+    update()
+    return () => { sc.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf) }
+  }, [dayGroups])
+
   const timeOf = (a) => {
     const d = new Date(a.scheduled_at)
     return a.scheduled_time_set === false ? '종일' : `${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -316,7 +338,7 @@ export default function SchedulePage() {
       {error && <div className="alert alert-error">{error}</div>}
 
       {/* 캘린더 아래 영역만 스크롤. 날짜 헤더는 다음 날짜 전까지 상단 고정(sticky) */}
-      <div className="cal-scroll">
+      <div className="cal-scroll" ref={scrollRef}>
         {loading ? (
           <div className="spinner" />
         ) : datePicked ? (
