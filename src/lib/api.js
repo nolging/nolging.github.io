@@ -480,3 +480,27 @@ export async function adminListUsers() {
   if (error) throw error
   return data ?? []
 }
+
+// 관리자: 사용자별 츄르(coin) 잔액 { user_id: balance } 맵
+export async function adminCoinBalances() {
+  const { data, error } = await supabase.rpc('admin_coin_balances')
+  if (error) {
+    if (error.code === 'PGRST202') return {} // RPC 미배포 시 빈 맵
+    throw error
+  }
+  const map = {}
+  for (const r of data ?? []) map[r.user_id] = Number(r.balance) || 0
+  return map
+}
+
+// 관리자: 츄르 수동 지급(+)/차감(-). 반환=대상의 새 잔액.
+export async function adminGrantCoin({ userId, amount, reason }) {
+  const { data, error } = await supabase.rpc('admin_grant_coin', {
+    p_user_id: userId, p_amount: amount, p_reason: reason ?? '',
+  })
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('츄르 지급 기능이 아직 DB에 설정되지 않았습니다. (admin_grant_coin 함수를 먼저 적용해 주세요)')
+    throw error
+  }
+  return Number(data) || 0
+}

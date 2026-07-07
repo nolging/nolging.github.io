@@ -213,9 +213,10 @@ export default function TaskDetail() {
     if (!confirm('리뷰는 작성 후 수정, 삭제할 수 없습니다. 이대로 작성할까요?')) return
     setSavingReview(true); setError('')
     try {
-      await submitReview({ taskId, rating, comment: reviewComment.trim() })
+      const res = await submitReview({ taskId, rating, comment: reviewComment.trim() })
       await loadReviews()
       setReviewComment(''); setRating(0)
+      if (res?.rewarded) setToast('리뷰 작성 완료 · 1 츄르 적립!')
     } catch (err) { setError(err.message) } finally { setSavingReview(false) }
   }
 

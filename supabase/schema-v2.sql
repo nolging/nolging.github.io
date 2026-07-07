@@ -699,10 +699,13 @@ $$;
 grant execute on function public.is_task_participant(uuid, uuid) to authenticated;
 
 -- 리뷰 작성/수정(업서트). 참여자 + 완료 상태에서만. 별점은 0.5 단위.
+-- 최초 작성 시에만 1 츄르(coin) 적립(중복 지급 방지: 아래 uq_coin_review_reward).
+-- 반환: { id, rating, comment, rewarded(이번에 지급됐나), balance(내 현재 잔액) }
 drop function if exists public.submit_review(uuid, int, text);
+drop function if exists public.submit_review(uuid, numeric, text);
 create or replace function public.submit_review(p_task_id uuid, p_rating numeric, p_comment text)
-returns public.task_reviews language plpgsql security definer set search_path = public as $$
-declare v_gid uuid; v_status text; r public.task_reviews;
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_gid uuid; v_status text; r public.task_reviews; v_rewarded boolean; v_balance integer;
 begin
   select group_id, status into v_gid, v_status from public.tasks where id = p_task_id;
   if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
@@ -720,7 +723,23 @@ begin
   on conflict (task_id, author_id) do update
     set rating = excluded.rating, comment = excluded.comment, updated_at = now()
   returning * into r;
-  return r;
+
+  -- 리뷰 작성 보상 1 츄르 (태스크당 1회, 수정 재작성해도 중복 지급 안 됨)
+  with ins as (
+    insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
+      values (auth.uid(), 1, '리뷰 작성 보상', 'review_reward', p_task_id)
+    on conflict do nothing
+    returning 1
+  )
+  select exists (select 1 from ins) into v_rewarded;
+
+  select coalesce(sum(delta), 0)::integer into v_balance
+    from public.coin_ledger where user_id = auth.uid();
+
+  return jsonb_build_object(
+    'id', r.id, 'rating', r.rating, 'comment', r.comment,
+    'rewarded', v_rewarded, 'balance', v_balance
+  );
 end;
 $$;
 grant execute on function public.submit_review(uuid, numeric, text) to authenticated;
@@ -815,3 +834,46 @@ returns integer language sql security definer stable set search_path = public as
   from public.coin_ledger where user_id = auth.uid();
 $$;
 grant execute on function public.my_coin_balance() to authenticated;
+
+-- 리뷰 작성 보상 중복 지급 방지: (사용자, 태스크)당 review_reward 1건만.
+create unique index if not exists uq_coin_review_reward
+  on public.coin_ledger(user_id, ref_id) where ref_type = 'review_reward';
+
+-- ---- 관리자: 츄르 수동 지급/차감 ----------------------------
+-- p_amount 양수=지급, 음수=차감. 사유(선택) 저장. 반환=대상의 새 잔액.
+create or replace function public.admin_grant_coin(p_user_id uuid, p_amount integer, p_reason text)
+returns integer language plpgsql security definer set search_path = public as $$
+declare v_balance integer;
+begin
+  if not public.is_admin(auth.uid()) then
+    raise exception '관리자만 지급할 수 있습니다.'; end if;
+  if p_amount is null or p_amount = 0 then
+    raise exception '지급/차감 수량을 입력해 주세요.'; end if;
+  if not exists (select 1 from public.profiles where id = p_user_id) then
+    raise exception '존재하지 않는 사용자입니다.'; end if;
+
+  insert into public.coin_ledger(user_id, delta, reason, ref_type, created_by)
+    values (p_user_id, p_amount, coalesce(nullif(btrim(p_reason), ''), '관리자 지급'), 'admin_grant', auth.uid());
+
+  select coalesce(sum(delta), 0)::integer into v_balance
+    from public.coin_ledger where user_id = p_user_id;
+  return v_balance;
+end;
+$$;
+grant execute on function public.admin_grant_coin(uuid, integer, text) to authenticated;
+
+-- ---- 관리자: 사용자별 잔액 목록 (사용자 목록/지급 화면용) -----
+create or replace function public.admin_coin_balances()
+returns table (user_id uuid, balance integer)
+language plpgsql security definer stable set search_path = public as $$
+begin
+  if not public.is_admin(auth.uid()) then
+    raise exception '관리자만 조회할 수 있습니다.'; end if;
+  return query
+    select p.id, coalesce(sum(cl.delta), 0)::integer
+    from public.profiles p
+    left join public.coin_ledger cl on cl.user_id = p.id
+    group by p.id;
+end;
+$$;
+grant execute on function public.admin_coin_balances() to authenticated;
