@@ -462,6 +462,20 @@ export async function purchaseItem(itemId) {
   return Number(data) || 0
 }
 
+// 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.
+export async function giftItem(itemId, groupId, recipientId) {
+  const { data, error } = await supabase.rpc('gift_item', {
+    p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /gift_item/.test(error.message || '')) {
+      throw new Error('선물 기능이 아직 DB에 설정되지 않았습니다. (gift_item 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Number(data) || 0
+}
+
 // ---- 내 프로필 (연락처/생년월일 포함) ------------------------
 
 export async function getMyProfile() {

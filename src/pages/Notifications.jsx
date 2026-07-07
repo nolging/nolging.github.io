@@ -23,6 +23,7 @@ const ICONS = {
   new_member: '👋',
   accept: '🙌',
   reminder: '⏰',
+  gift: '🎁',
 }
 
 export default function Notifications() {

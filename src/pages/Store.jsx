@@ -1,30 +1,32 @@
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import Modal from '../components/Modal'
+import RecipientPicker from '../components/RecipientPicker'
 import { STORE_ITEMS, formatCoin } from '../lib/constants'
-import { purchaseItem } from '../lib/api'
+import { purchaseItem, giftItem } from '../lib/api'
 
 export default function Store() {
   const { refreshCoin } = useOutletContext()
   const [selected, setSelected] = useState(null)
-  const [buying, setBuying] = useState(false)
+  const [busy, setBusy] = useState(false)        // 구매/선물 처리 중
+  const [pickOpen, setPickOpen] = useState(false) // 선물 받는 사람 선택
   // 안내 메시지 { type: 'ok' | 'err' | 'info', text }
   const [notice, setNotice] = useState(null)
 
   function open(item) {
     setNotice(null)
-    setBuying(false)
+    setBusy(false)
     setSelected(item)
   }
   function close() {
     setSelected(null)
     setNotice(null)
-    setBuying(false)
+    setBusy(false)
   }
 
   async function handleBuy() {
-    if (!selected || buying) return
-    setBuying(true)
+    if (!selected || busy) return
+    setBusy(true)
     setNotice(null)
     try {
       await purchaseItem(selected.id)
@@ -33,9 +35,27 @@ export default function Store() {
     } catch (err) {
       setNotice({ type: 'err', text: err.message })
     } finally {
-      setBuying(false)
+      setBusy(false)
     }
   }
+
+  async function handleGift(r) {
+    if (!selected || busy) return
+    setPickOpen(false)
+    setBusy(true)
+    setNotice(null)
+    try {
+      await giftItem(selected.id, r.groupId, r.userId)
+      await refreshCoin?.()
+      setNotice({ type: 'ok', text: `${r.name} 님에게 ${selected.name}을(를) 선물했어요! 🎁` })
+    } catch (err) {
+      setNotice({ type: 'err', text: err.message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const done = notice?.type === 'ok'
 
   return (
     <div className="page">
@@ -67,16 +87,16 @@ export default function Store() {
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={selected.giftOnly || buying || notice?.type === 'ok'}
+                disabled={selected.giftOnly || busy || done}
                 onClick={handleBuy}
               >
-                {buying ? '구매 중…' : '구매하기'}
+                {busy ? '처리 중…' : '구매하기'}
               </button>
               <button
                 type="button"
                 className="btn"
-                disabled={buying}
-                onClick={() => setNotice({ type: 'info', text: '아직 준비 중인 기능이에요 🐾' })}
+                disabled={busy || done}
+                onClick={() => { setNotice(null); setPickOpen(true) }}
               >
                 선물하기
               </button>
@@ -84,6 +104,8 @@ export default function Store() {
           </div>
         )}
       </Modal>
+
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handleGift} title="선물 받는 사람" />
     </div>
   )
 }
