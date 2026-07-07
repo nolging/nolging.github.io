@@ -744,6 +744,7 @@ begin
   select coalesce(jsonb_agg(obj order by ord), '[]'::jsonb) into v_reviews
   from (
     select jsonb_build_object(
+      'id', r.id,
       'author_id', r.author_id,
       'nickname',  coalesce(nullif(gm.display_nickname, ''), p.nickname),
       'avatar_url', gm.avatar_url,
@@ -768,3 +769,15 @@ begin
 end;
 $$;
 grant execute on function public.task_reviews_view(uuid) to authenticated;
+
+-- 리뷰 삭제: 관리자만. (RLS 상 직접 삭제 불가 → 정의자 RPC 경유)
+create or replace function public.delete_review(p_review_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin(auth.uid()) then
+    raise exception '관리자만 삭제할 수 있습니다.';
+  end if;
+  delete from public.task_reviews where id = p_review_id;
+end;
+$$;
+grant execute on function public.delete_review(uuid) to authenticated;

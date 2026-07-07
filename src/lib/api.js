@@ -371,6 +371,11 @@ export async function submitReview({ taskId, rating, comment }) {
   return data
 }
 
+export async function deleteReview(reviewId) {
+  const { error } = await supabase.rpc('delete_review', { p_review_id: reviewId })
+  if (error) throw error
+}
+
 // ---- 알림 ----------------------------------------------------
 
 export async function listNotifications(limit = 50) {

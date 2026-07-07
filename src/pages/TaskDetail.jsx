@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
-  getTaskReviews, submitReview,
+  getTaskReviews, submitReview, deleteReview,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import Avatar from '../components/Avatar'
@@ -80,7 +80,7 @@ function formatWhen(iso, timeSet = true) {
 
 export default function TaskDetail() {
   const { groupId, taskId } = useParams()
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -196,12 +196,19 @@ export default function TaskDetail() {
 
   async function saveReview() {
     if (!rating || savingReview) return
+    if (!confirm('리뷰는 작성 후 수정, 삭제할 수 없습니다. 이대로 작성할까요?')) return
     setSavingReview(true); setError('')
     try {
       await submitReview({ taskId, rating, comment: reviewComment.trim() })
       await loadReviews()
       setReviewComment(''); setRating(0)
     } catch (err) { setError(err.message) } finally { setSavingReview(false) }
+  }
+
+  async function removeReview(id) {
+    if (!confirm('이 리뷰를 삭제하시겠습니까?')) return
+    setError('')
+    try { await deleteReview(id); await loadReviews() } catch (err) { setError(err.message) }
   }
 
   // 댓글↔리뷰 서브탭 전환 + 좌우 스와이프
@@ -435,6 +442,10 @@ export default function TaskDetail() {
               <Avatar src={rv.avatar_url} name={rv.nickname} size={30} />
               <span className="review-author">{rv.nickname}</span>
               <Stars value={rv.rating} />
+              {isAdmin && (
+                <button type="button" className="review-del" aria-label="리뷰 삭제" title="리뷰 삭제"
+                  onClick={() => removeReview(rv.id)}>✕</button>
+              )}
             </div>
             {rv.comment == null
               ? (rv.comment_len > 0 ? <p className="review-comment blurred" aria-hidden="true">{loremOf(rv.comment_len)}</p> : null)
