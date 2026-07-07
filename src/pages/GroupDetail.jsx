@@ -366,7 +366,6 @@ export default function GroupDetail() {
           <button type="button" className="btn btn-ghost btn-sm" disabled={!catActive}
             onClick={() => setCatFilter([...WISH_CATEGORIES])}>초기화</button>
         </div>
-        <div className="filter-section-label">유형</div>
         <div className="chip-row filter-chips">
           {WISH_CATEGORIES.map((c) => {
             const on = catFilter.includes(c)
