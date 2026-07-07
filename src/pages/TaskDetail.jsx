@@ -118,9 +118,16 @@ export default function TaskDetail() {
   const bodyRef = useRef(null)
   const subSwipe = useRef(null) // { x0, y0, locked, w }
   const reviewInputRef = useRef(null)
-  // 리뷰 입력에 포커스 → 키보드가 올라와 셸이 축소된 뒤 입력창을 저장 버튼 바로 위로 스크롤
+  // 리뷰 입력에 포커스 → 키보드로 셸이 축소된 뒤 입력창(아래 여백 포함)을 저장 버튼 위로 스크롤
   function onReviewFocus() {
-    const scroll = () => reviewInputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    const scroll = () => {
+      const el = reviewInputRef.current
+      const content = el?.closest('.content')
+      if (!el || !content) return
+      const gap = 20 // 입력창 아래에 남길 여백
+      const delta = el.getBoundingClientRect().bottom + gap - content.getBoundingClientRect().bottom
+      if (delta > 0) content.scrollTo({ top: content.scrollTop + delta, behavior: 'smooth' })
+    }
     setTimeout(scroll, 200)
     setTimeout(scroll, 450)
   }
