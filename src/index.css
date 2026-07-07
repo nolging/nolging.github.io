@@ -505,7 +505,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 키보드가 올라오면 세이프에어리어/추가 여백이 필요 없어, 위(12px)와 같은 여백으로 */
 .app-shell.kb-open .composer { padding-bottom: 12px; }
 .composer-row { display: flex; gap: 8px; align-items: stretch; }
-.composer input { flex: 1; font-size: 14px; min-height: 40px; padding: 8px 16px; }
+/* :not() 패턴으로 전역 input min-height:46px(0,2,1) 보다 특이도를 높여 40px 적용 */
+.composer input:not([type="checkbox"]):not([type="radio"]) { flex: 1; font-size: 14px; min-height: 40px; padding: 8px 16px; }
 .composer .btn { flex-shrink: 0; font-size: 14px; min-height: 40px; }
 .composer-tag { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 .composer-tag-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
