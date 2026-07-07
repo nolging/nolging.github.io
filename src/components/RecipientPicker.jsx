@@ -1,55 +1,58 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import Avatar from './Avatar'
 import Modal from './Modal'
-import { listMyGroups, listMemberCards } from '../lib/api'
+import { listMyGroups } from '../lib/api'
 
 // 그룹 → 멤버 선택 모달. "선택" 시 onPick 호출:
-//   { groupId, groupName, userId, name, myName }
-// myName = 그 그룹에서의 내 표시 닉네임 (쪽지 From. 자동 채움용)
+//   { groupId, groupName, userId, name, avatar, myName, myAvatar }
+// - 그룹 목록: 내가 가입돼 있고 나 이외 멤버가 있는 그룹만
+// - 멤버 목록: 아바타 + 닉네임 (탭해서 선택)
 export default function RecipientPicker({ open, onClose, onPick, title = '받는 사람' }) {
+  const { user } = useAuth()
+  const myId = user?.id
   const [groups, setGroups] = useState([])
   const [groupId, setGroupId] = useState('')
-  const [cards, setCards] = useState([])
   const [memberId, setMemberId] = useState('')
-  const [loadingMembers, setLoadingMembers] = useState(false)
   const [error, setError] = useState('')
 
-  // 최초 오픈 시 내 그룹 목록 로드
+  // 최초 오픈 시 내 그룹 목록 로드 (각 그룹의 전체 멤버 포함)
   useEffect(() => {
     if (!open || groups.length) return
     listMyGroups().then(setGroups).catch((e) => setError(e.message))
   }, [open, groups.length])
 
-  // 모달을 닫으면 멤버 선택 초기화 (그룹 목록은 캐시 유지)
+  // 닫으면 선택 초기화 (그룹 목록 캐시는 유지)
   useEffect(() => {
-    if (!open) { setGroupId(''); setMemberId(''); setCards([]); setError('') }
+    if (!open) { setGroupId(''); setMemberId(''); setError('') }
   }, [open])
 
-  // 그룹 선택 시 멤버 카드 로드
-  useEffect(() => {
-    if (!groupId) { setCards([]); setMemberId(''); return }
-    let on = true
-    setLoadingMembers(true)
-    setMemberId('')
-    listMemberCards(groupId)
-      .then((rows) => { if (on) setCards(rows) })
-      .catch((e) => { if (on) setError(e.message) })
-      .finally(() => { if (on) setLoadingMembers(false) })
-    return () => { on = false }
-  }, [groupId])
+  useEffect(() => { setMemberId('') }, [groupId])
 
-  const myCard = cards.find((c) => c.is_self)
-  const others = cards.filter((c) => !c.is_self)
+  const memberName = (m) => m.display_nickname || m.profiles?.nickname || '?'
+
+  // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만
+  const eligibleGroups = useMemo(() => groups.filter((g) => {
+    const ms = g.group_members || []
+    return ms.some((m) => m.user_id === myId) && ms.some((m) => m.user_id !== myId)
+  }), [groups, myId])
+
+  const group = eligibleGroups.find((g) => g.id === groupId)
+  const members = group?.group_members || []
+  const others = members.filter((m) => m.user_id !== myId)
+  const myMember = members.find((m) => m.user_id === myId)
 
   function confirm() {
-    const g = groups.find((x) => x.id === groupId)
-    const m = cards.find((c) => c.user_id === memberId)
-    if (!g || !m) return
+    const m = others.find((x) => x.user_id === memberId)
+    if (!group || !m) return
     onPick({
-      groupId: g.id,
-      groupName: g.name,
+      groupId: group.id,
+      groupName: group.name,
       userId: m.user_id,
-      name: m.display_nickname,
-      myName: myCard?.display_nickname || '',
+      name: memberName(m),
+      avatar: m.avatar_url || null,
+      myName: myMember ? memberName(myMember) : '',
+      myAvatar: myMember?.avatar_url || null,
     })
   }
 
@@ -61,28 +64,33 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
         <label className="field">
           <span>그룹</span>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">그룹 선택</option>
-            {groups.map((g) => (
+            <option value="">
+              {eligibleGroups.length ? '그룹 선택' : '보낼 수 있는 그룹이 없어요'}
+            </option>
+            {eligibleGroups.map((g) => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </select>
         </label>
 
-        <label className="field">
-          <span>멤버</span>
-          <select
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-            disabled={!groupId || loadingMembers}
-          >
-            <option value="">
-              {loadingMembers ? '불러오는 중…' : !groupId ? '먼저 그룹을 선택하세요' : others.length ? '멤버 선택' : '보낼 수 있는 멤버가 없어요'}
-            </option>
-            {others.map((m) => (
-              <option key={m.user_id} value={m.user_id}>{m.display_nickname}</option>
-            ))}
-          </select>
-        </label>
+        {groupId && (
+          <div className="field">
+            <span>멤버</span>
+            <div className="picker-members">
+              {others.map((m) => (
+                <button
+                  type="button"
+                  key={m.user_id}
+                  className={`picker-member ${memberId === m.user_id ? 'active' : ''}`}
+                  onClick={() => setMemberId(m.user_id)}
+                >
+                  <Avatar src={m.avatar_url} name={memberName(m)} size={36} />
+                  <span className="picker-member-name">{memberName(m)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="note-pick-actions">
           <button type="button" className="btn" onClick={onClose}>취소</button>

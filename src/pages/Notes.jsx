@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Avatar from '../components/Avatar'
+import Modal from '../components/Modal'
 import { listReceivedNotes, listSentNotes } from '../lib/api'
 
 function NoteFabIcon() {
@@ -27,6 +29,7 @@ export default function Notes() {
   const [sent, setSent] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(null) // 열려 있는 쪽지
 
   useEffect(() => {
     if (!user?.id) return
@@ -48,6 +51,11 @@ export default function Notes() {
 
   const list = tab === 'received' ? received : sent
 
+  // 쪽지의 상대(카드/모달에 표시할 사람) 정보
+  const peer = (n) => tab === 'received'
+    ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄' }
+    : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게' }
+
   return (
     <div className="page">
       {error && <div className="alert alert-error">{error}</div>}
@@ -68,19 +76,43 @@ export default function Notes() {
         <div className="empty">{tab === 'received' ? '받은 쪽지가 없어요.' : '보낸 쪽지가 없어요.'}</div>
       ) : (
         <ul className="note-list">
-          {list.map((n) => (
-            <li key={n.id} className="note-card">
-              <div className="note-card-head">
-                <span className="note-card-peer">
-                  {tab === 'received' ? `${n.sender_name} 님이 보냄` : `${n.recipient_name} 님에게`}
-                </span>
-                <span className="note-card-date">{formatDate(n.created_at)}</span>
-              </div>
-              <p className="note-card-body">{n.body}</p>
-            </li>
-          ))}
+          {list.map((n) => {
+            const p = peer(n)
+            return (
+              <li key={n.id}>
+                <button type="button" className="note-card" onClick={() => setOpen(n)}>
+                  <Avatar src={p.avatar} name={p.name} size={40} />
+                  <div className="note-card-main">
+                    <div className="note-card-head">
+                      <span className="note-card-peer">{p.name} <span className="note-card-rel">{p.label}</span></span>
+                      <span className="note-card-date">{formatDate(n.created_at)}</span>
+                    </div>
+                    <p className="note-card-body">{n.body}</p>
+                  </div>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
+
+      <Modal open={!!open} onClose={() => setOpen(null)}>
+        {open && (() => {
+          const p = peer(open)
+          return (
+            <div className="note-view">
+              <div className="note-view-head">
+                <Avatar src={p.avatar} name={p.name} size={44} />
+                <div className="note-view-who">
+                  <span className="note-view-peer">{p.name} <span className="note-card-rel">{p.label}</span></span>
+                  <span className="note-view-date">{formatDate(open.created_at)}</span>
+                </div>
+              </div>
+              <p className="note-view-body">{open.body}</p>
+            </div>
+          )
+        })()}
+      </Modal>
 
       <Link to="/notes/new" className="fab" aria-label="쪽지 쓰기" title="쪽지 쓰기">
         <NoteFabIcon />

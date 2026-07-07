@@ -890,10 +890,15 @@ create table if not exists public.notes (
   recipient_id  uuid not null references public.profiles(id) on delete cascade,
   sender_name   text not null,   -- 보낸 사람의 그룹 내 닉네임(스냅샷)
   recipient_name text not null,  -- 받는 사람의 그룹 내 닉네임(스냅샷)
+  sender_avatar    text,         -- 보낸 사람의 그룹 내 아바타(스냅샷)
+  recipient_avatar text,         -- 받는 사람의 그룹 내 아바타(스냅샷)
   body          text not null,
   is_read       boolean not null default false,
   created_at    timestamptz not null default now()
 );
+-- 기존 설치 대상 컬럼 추가
+alter table public.notes add column if not exists sender_avatar    text;
+alter table public.notes add column if not exists recipient_avatar text;
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -913,7 +918,7 @@ create policy notes_update on public.notes
 -- 같은 그룹의 다른 멤버에게만. 내용은 최대 150자. 표시 닉네임을 스냅샷 저장.
 create or replace function public.send_note(p_group_id uuid, p_recipient_id uuid, p_body text)
 returns public.notes language plpgsql security definer set search_path = public as $$
-declare r public.notes; v_sender text; v_recipient text;
+declare r public.notes; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text;
 begin
   if not public.is_group_member(p_group_id, auth.uid()) then
     raise exception '그룹 멤버만 보낼 수 있습니다.'; end if;
@@ -928,9 +933,11 @@ begin
 
   v_sender    := public.notif_member_name(p_group_id, auth.uid());
   v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+  select avatar_url into v_sender_av    from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_recipient_av from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
 
-  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, body)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, btrim(p_body))
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, btrim(p_body))
     returning * into r;
   return r;
 end;

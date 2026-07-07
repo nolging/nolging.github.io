@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RecipientPicker from '../components/RecipientPicker'
+import Avatar from '../components/Avatar'
 import { sendNote } from '../lib/api'
 
 const MAX = 150
@@ -8,17 +9,17 @@ const MAX = 150
 export default function NoteCompose() {
   const navigate = useNavigate()
 
-  // 확정된 수신인 { groupId, groupName, userId, name } / 내 그룹내 닉네임
+  // 확정된 수신인 { groupId, groupName, userId, name, avatar } / 내 그룹내 닉네임·아바타
   const [recipient, setRecipient] = useState(null)
-  const [myName, setMyName] = useState('')
+  const [me, setMe] = useState({ name: '', avatar: null })
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [pickOpen, setPickOpen] = useState(false)
 
   function handlePick(r) {
-    setRecipient({ groupId: r.groupId, groupName: r.groupName, userId: r.userId, name: r.name })
-    setMyName(r.myName)
+    setRecipient({ groupId: r.groupId, groupName: r.groupName, userId: r.userId, name: r.name, avatar: r.avatar })
+    setMe({ name: r.myName, avatar: r.myAvatar })
     setPickOpen(false)
   }
 
@@ -46,6 +47,7 @@ export default function NoteCompose() {
           <span className="note-field-label">To.</span>
           {recipient ? (
             <span className="note-field-value">
+              <Avatar src={recipient.avatar} name={recipient.name} size={28} />
               {recipient.name}
               <span className="note-field-sub">{recipient.groupName}</span>
             </span>
@@ -70,9 +72,14 @@ export default function NoteCompose() {
         {/* From. */}
         <div className="note-field note-from">
           <span className="note-field-label">From.</span>
-          <span className={`note-field-value ${myName ? '' : 'is-empty'}`}>
-            {myName || '받는 사람을 선택하면 자동으로 채워져요'}
-          </span>
+          {me.name ? (
+            <span className="note-field-value">
+              <Avatar src={me.avatar} name={me.name} size={28} />
+              {me.name}
+            </span>
+          ) : (
+            <span className="note-field-value is-empty">받는 사람을 선택하면 자동으로 채워져요</span>
+          )}
         </div>
 
         <button type="button" className="btn btn-primary btn-block" onClick={handleSend} disabled={sending}>
