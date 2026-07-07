@@ -3,6 +3,21 @@ import { Link } from 'react-router-dom'
 import { requestAccess } from '../lib/api'
 import Brand from '../components/Brand'
 
+// 숫자만 입력받아 한국 전화번호 형식으로 자동 하이픈 삽입
+function formatPhone(input) {
+  const d = String(input).replace(/\D/g, '').slice(0, 11)
+  if (d.startsWith('02')) { // 서울 지역번호(02)
+    if (d.length <= 2) return d
+    if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`
+    if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`
+    return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`
+  }
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`
+  if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7, 11)}`
+}
+
 export default function RequestAccess() {
   const [form, setForm] = useState({ nickname: '', password: '', contact: '', birthdate: '' })
   const [error, setError] = useState('')
@@ -52,7 +67,7 @@ export default function RequestAccess() {
           </>
         ) : (
           <>
-            <p className="auth-sub">관리자 승인 후 로그인할 수 있습니다. (<b>아이디·비밀번호</b>는 필수)</p>
+            <p className="auth-sub">관리자 승인 후 로그인할 수 있습니다.</p>
             <form onSubmit={handleSubmit} className="form">
               <label className="field">
                 <span>아이디 *</span>
@@ -66,7 +81,9 @@ export default function RequestAccess() {
               </label>
               <label className="field">
                 <span>연락처 (선택)</span>
-                <input value={form.contact} onChange={set('contact')} placeholder="예: 010-1234-5678" />
+                <input value={form.contact} type="tel" inputMode="numeric"
+                  onChange={(e) => setForm((f) => ({ ...f, contact: formatPhone(e.target.value) }))}
+                  placeholder="예: 010-1234-5678" />
               </label>
               <label className="field">
                 <span>생년월일 (선택)</span>
