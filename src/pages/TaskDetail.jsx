@@ -5,10 +5,31 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
+  getTaskReviews, submitReview,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
+
+// 별점 선택기(작성용) / 표시용
+function StarPicker({ value, onChange }) {
+  return (
+    <div className="star-picker" role="radiogroup" aria-label="별점 선택">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button type="button" key={n} className={`star-btn ${n <= value ? 'on' : ''}`}
+          aria-label={`${n}점`} aria-pressed={n <= value} onClick={() => onChange(n)}>★</button>
+      ))}
+    </div>
+  )
+}
+function Stars({ value }) {
+  return (
+    <span className="stars-view" aria-label={`별점 ${value}점`}>
+      {[1, 2, 3, 4, 5].map((n) => <span key={n} className={n <= value ? 'on' : ''}>★</span>)}
+    </span>
+  )
+}
+const SUB_TABS = ['comments', 'reviews']
 
 function formatTime(iso) {
   try {
@@ -52,6 +73,18 @@ export default function TaskDetail() {
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
   const inputRef = useRef(null)
+
+  // ---- 추억 리뷰 서브탭(댓글/리뷰) ----
+  const [subTab, setSubTab] = useState('comments')
+  const [subDir, setSubDir] = useState('next')
+  const [reviews, setReviews] = useState([])
+  const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false })
+  const [rating, setRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [savingReview, setSavingReview] = useState(false)
+  const [subDrag, setSubDrag] = useState({ x: 0, active: false })
+  const bodyRef = useRef(null)
+  const subSwipe = useRef(null) // { x0, y0, locked, w }
 
   useEffect(() => {
     if (!toast) return
@@ -116,6 +149,66 @@ export default function TaskDetail() {
   }, [groupId, taskId])
 
   useEffect(() => { load() }, [load])
+
+  // 추억(완료)일 때만 리뷰 로드
+  const loadReviews = useCallback(async () => {
+    try {
+      const r = await getTaskReviews(taskId)
+      setReviews(r.reviews || [])
+      setReviewMeta({ is_participant: !!r.is_participant, has_reviewed: !!r.has_reviewed })
+    } catch {
+      setReviews([]); setReviewMeta({ is_participant: false, has_reviewed: false })
+    }
+  }, [taskId])
+  useEffect(() => { if (task?.status === 'done') loadReviews() }, [task?.status, loadReviews])
+
+  async function saveReview() {
+    if (!rating || savingReview) return
+    setSavingReview(true); setError('')
+    try {
+      await submitReview({ taskId, rating, comment: reviewComment.trim() })
+      await loadReviews()
+      setReviewComment(''); setRating(0)
+    } catch (err) { setError(err.message) } finally { setSavingReview(false) }
+  }
+
+  // 댓글↔리뷰 서브탭 전환 + 좌우 스와이프
+  function changeSub(next) {
+    if (next === subTab) return
+    setSubDir(SUB_TABS.indexOf(next) > SUB_TABS.indexOf(subTab) ? 'next' : 'prev')
+    setSubTab(next)
+  }
+  function onSubTouchStart(e) {
+    if (task?.status !== 'done' || e.touches.length !== 1) { subSwipe.current = null; return }
+    if (e.target.closest?.('.star-picker, textarea, .composer, button, a')) { subSwipe.current = null; return }
+    subSwipe.current = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, locked: null, w: bodyRef.current?.offsetWidth || window.innerWidth }
+  }
+  function onSubTouchMove(e) {
+    const s = subSwipe.current
+    if (!s || e.touches.length !== 1) return
+    const dx = e.touches[0].clientX - s.x0, dy = e.touches[0].clientY - s.y0
+    if (s.locked === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      s.locked = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v'
+      if (s.locked === 'v') { subSwipe.current = null; return }
+    }
+    if (s.locked !== 'h') return
+    const idx = SUB_TABS.indexOf(subTab)
+    let x = dx
+    if ((x > 0 && idx === 0) || (x < 0 && idx === SUB_TABS.length - 1)) x *= 0.35
+    setSubDrag({ x, active: true })
+  }
+  function onSubTouchEnd(e) {
+    const s = subSwipe.current; subSwipe.current = null
+    if (!s || s.locked !== 'h') { if (subDrag.active || subDrag.x) setSubDrag({ x: 0, active: false }); return }
+    const dx = e.changedTouches[0].clientX - s.x0
+    const idx = SUB_TABS.indexOf(subTab)
+    if (Math.abs(dx) >= Math.min(70, s.w * 0.22)) {
+      const n = dx < 0 ? Math.min(1, idx + 1) : Math.max(0, idx - 1)
+      if (n !== idx) changeSub(SUB_TABS[n])
+    }
+    setSubDrag({ x: 0, active: false })
+  }
 
   // 상단바: 진행 상태별 명칭(위시/약속/추억) + 진입 경로별 뒤로가기
   useEffect(() => {
@@ -279,6 +372,53 @@ export default function TaskDetail() {
   const extra = participants.length - 3
   const canComplete = task.status === 'accepted' && (isScheduled ? isParticipant : mine)
   const showActions = task.status !== 'done' || !isScheduled
+  const isDone = task.status === 'done'
+
+  // 서브탭 밑줄 위치(0=댓글, 1=리뷰). 드래그 중엔 손가락 비율만큼 보간
+  const subActiveIdx = subTab === 'reviews' ? 1 : 0
+  const subPaneW = bodyRef.current?.offsetWidth || 1
+  const subPos = subDrag.x
+    ? Math.min(1, Math.max(0, subActiveIdx + (-subDrag.x) / subPaneW))
+    : subActiveIdx
+
+  // 리뷰 탭 본문: 참여자·미작성=작성폼 / 그 외=리뷰목록(비참여자는 코멘트 블러)
+  const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed
+  function renderReviews() {
+    if (reviewMeta.is_participant && !reviewMeta.has_reviewed) {
+      return (
+        <div className="review-compose">
+          <div className="review-compose-label">별점</div>
+          <StarPicker value={rating} onChange={setRating} />
+          <textarea className="review-input" rows={4} value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)} placeholder="리뷰를 남겨 보세요" />
+        </div>
+      )
+    }
+    if (reviews.length === 0) return <p className="comment-empty">아직 작성된 리뷰가 없어요.</p>
+    return (
+      <ul className="review-list">
+        {reviews.map((rv) => (
+          <li key={rv.author_id} className="review-card">
+            <div className="review-card-head">
+              <Avatar src={rv.avatar_url} name={rv.nickname} size={30} />
+              <span className="review-author">{rv.nickname}</span>
+              <Stars value={rv.rating} />
+            </div>
+            {rv.comment == null
+              ? <p className="review-comment blurred" aria-hidden="true">리뷰를 작성한 참여자만 코멘트를 볼 수 있어요 가려진 내용입니다</p>
+              : (rv.comment ? <p className="review-comment">{rv.comment}</p> : null)}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  function renderComments() {
+    return comments.length === 0 ? (
+      <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+    ) : (
+      <ul className="comment-list">{roots.map((c) => renderThread(c))}</ul>
+    )
+  }
 
   return (
     <div className="page task-detail">
@@ -371,44 +511,66 @@ export default function TaskDetail() {
           {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
           {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => { if (confirm('완료하시겠습니까?')) runTaskAction(() => completeTask(task.id)) }}>완료</button>}
           {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
-          {task.status === 'done' && isParticipant && <button className="btn btn-sm btn-primary" onClick={() => {}}>리뷰 작성</button>}
+          {isDone && reviewMeta.is_participant && !reviewMeta.has_reviewed && <button className="btn btn-sm btn-primary" onClick={() => changeSub('reviews')}>리뷰 작성</button>}
         </div>
       </div>
 
       <div className="comment-section">
-        <div className="comment-head">
-          <div className="comment-title">댓글 <span className="muted">{comments.length}</span></div>
-        </div>
-        <div className="comment-body-area">
+        {isDone ? (
+          <div className="comment-head subtabs-head">
+            <div className="subtabs">
+              <button type="button" className={`subtab ${subTab === 'comments' ? 'active' : ''}`} onClick={() => changeSub('comments')}>
+                댓글 <span className="muted">{comments.length}</span>
+              </button>
+              <button type="button" className={`subtab ${subTab === 'reviews' ? 'active' : ''}`} onClick={() => changeSub('reviews')}>
+                리뷰
+              </button>
+              <span className="subtab-underline"
+                style={{ transform: `translateX(${subPos * 100}%)`, transition: subDrag.active ? 'none' : 'transform .2s ease' }} />
+            </div>
+          </div>
+        ) : (
+          <div className="comment-head">
+            <div className="comment-title">댓글 <span className="muted">{comments.length}</span></div>
+          </div>
+        )}
+        <div className="comment-body-area" ref={bodyRef}
+          onTouchStart={onSubTouchStart} onTouchMove={onSubTouchMove} onTouchEnd={onSubTouchEnd}>
           {error && <div className="alert alert-error">{error}</div>}
-          {comments.length === 0 ? (
-            <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-          ) : (
-            <ul className="comment-list">
-              {roots.map((c) => renderThread(c))}
-            </ul>
-          )}
+          <div className={`sub-pane ${isDone ? 'swipeable' : ''}`} key={isDone ? subTab : 'comments'} data-dir={subDir}
+            style={{ transform: subDrag.x ? `translateX(${subDrag.x}px)` : undefined, transition: subDrag.active ? 'none' : 'transform .2s ease' }}>
+            {(!isDone || subTab === 'comments') ? renderComments() : renderReviews()}
+          </div>
         </div>
       </div>
 
       {toast && <div className="toast">{toast}</div>}
 
       {bottomEl && createPortal(
-        <form className="composer" onSubmit={submit}>
-          {(editingId || replyParent) && (
-            <div className="composer-tag">
-              <span className="composer-tag-text">
-                {editingId ? '댓글 수정 중' : `${nameOf(replyParent.author_id)}님에게 답글`}
-              </span>
-              <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
-            </div>
-          )}
-          <div className="composer-row">
-            <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
-              placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
-            <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+        reviewComposeMode ? (
+          <div className="composer review-save-bar">
+            <button type="button" className="btn btn-primary review-save-btn"
+              disabled={!rating || savingReview} onClick={saveReview}>
+              {savingReview ? '저장 중…' : '저장'}
+            </button>
           </div>
-        </form>,
+        ) : (isDone && subTab === 'reviews') ? null : (
+          <form className="composer" onSubmit={submit}>
+            {(editingId || replyParent) && (
+              <div className="composer-tag">
+                <span className="composer-tag-text">
+                  {editingId ? '댓글 수정 중' : `${nameOf(replyParent.author_id)}님에게 답글`}
+                </span>
+                <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
+              </div>
+            )}
+            <div className="composer-row">
+              <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
+                placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
+              <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+            </div>
+          </form>
+        ),
         bottomEl,
       )}
     </div>

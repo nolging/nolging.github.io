@@ -660,3 +660,108 @@ begin
   return r;
 end; $$;
 grant execute on function public.cancel_appointment(uuid) to authenticated;
+
+-- =============================================================
+--  task_reviews : 추억(완료된 약속)에 대한 리뷰 (별점 + 코멘트)
+--  - 약속 참여자(task_participants)만 작성 가능, 태스크당 1인 1리뷰
+--  - 열람 게이팅: 본인이 리뷰를 작성한 참여자만 남의 코멘트를 볼 수 있음.
+--    비참여자/미작성자에겐 코멘트를 서버에서 null 로 가려 전송(프론트 블러).
+--  => 직접 SELECT 는 본인 것만 허용하고, 열람은 아래 RPC 로만.
+-- =============================================================
+create table if not exists public.task_reviews (
+  id         uuid primary key default gen_random_uuid(),
+  task_id    uuid not null references public.tasks(id)    on delete cascade,
+  group_id   uuid not null references public.groups(id)   on delete cascade,
+  author_id  uuid not null references public.profiles(id),
+  rating     int  not null check (rating between 1 and 5),
+  comment    text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (task_id, author_id)
+);
+create index if not exists idx_task_reviews_task on public.task_reviews(task_id);
+alter table public.task_reviews enable row level security;
+
+-- 본인 리뷰만 직접 조회 가능(그 외 열람은 RPC 경유). 쓰기는 정의자 RPC 로만.
+drop policy if exists trv_select on public.task_reviews;
+create policy trv_select on public.task_reviews
+  for select to authenticated
+  using (author_id = auth.uid() or public.is_admin(auth.uid()));
+
+-- 참여자 판정: task_participants 에 등록된 멤버만 (위시 작성자라도 미참여면 제외)
+create or replace function public.is_task_participant(p_task_id uuid, p_uid uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.task_participants tp
+    where tp.task_id = p_task_id and tp.user_id = p_uid
+  );
+$$;
+grant execute on function public.is_task_participant(uuid, uuid) to authenticated;
+
+-- 리뷰 작성/수정(업서트). 참여자 + 완료 상태에서만.
+create or replace function public.submit_review(p_task_id uuid, p_rating int, p_comment text)
+returns public.task_reviews language plpgsql security definer set search_path = public as $$
+declare v_gid uuid; v_status text; r public.task_reviews;
+begin
+  select group_id, status into v_gid, v_status from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 가능합니다.'; end if;
+  if v_status <> 'done' then
+    raise exception '완료된 추억에만 리뷰를 남길 수 있습니다.'; end if;
+  if not public.is_task_participant(p_task_id, auth.uid()) then
+    raise exception '약속에 참여한 멤버만 리뷰를 작성할 수 있습니다.'; end if;
+  if p_rating is null or p_rating < 1 or p_rating > 5 then
+    raise exception '별점은 1~5 사이여야 합니다.'; end if;
+
+  insert into public.task_reviews(task_id, group_id, author_id, rating, comment)
+    values (p_task_id, v_gid, auth.uid(), p_rating, coalesce(p_comment, ''))
+  on conflict (task_id, author_id) do update
+    set rating = excluded.rating, comment = excluded.comment, updated_at = now()
+  returning * into r;
+  return r;
+end;
+$$;
+grant execute on function public.submit_review(uuid, int, text) to authenticated;
+
+-- 리뷰 열람(게이팅 적용). { is_participant, has_reviewed, reviews:[...] } 반환.
+-- 코멘트는 (참여자 && 본인 작성) 또는 본인 리뷰일 때만 실제 값, 그 외엔 null.
+create or replace function public.task_reviews_view(p_task_id uuid)
+returns jsonb language plpgsql security definer stable set search_path = public as $$
+declare v_gid uuid; v_part boolean; v_reviewed boolean; v_reveal boolean; v_reviews jsonb;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 조회할 수 있습니다.'; end if;
+
+  v_part     := public.is_task_participant(p_task_id, auth.uid());
+  v_reviewed := exists (select 1 from public.task_reviews r
+                        where r.task_id = p_task_id and r.author_id = auth.uid());
+  v_reveal   := v_part and v_reviewed;
+
+  select coalesce(jsonb_agg(obj order by ord), '[]'::jsonb) into v_reviews
+  from (
+    select jsonb_build_object(
+      'author_id', r.author_id,
+      'nickname',  coalesce(nullif(gm.display_nickname, ''), p.nickname),
+      'avatar_url', gm.avatar_url,
+      'rating', r.rating,
+      'comment', case when v_reveal or r.author_id = auth.uid() then r.comment else null end,
+      'is_self', (r.author_id = auth.uid()),
+      'created_at', r.created_at
+    ) as obj, r.created_at as ord
+    from public.task_reviews r
+    join public.profiles p on p.id = r.author_id
+    left join public.group_members gm on gm.group_id = v_gid and gm.user_id = r.author_id
+    where r.task_id = p_task_id
+  ) sub;
+
+  return jsonb_build_object(
+    'is_participant', v_part,
+    'has_reviewed', v_reviewed,
+    'reviews', v_reviews
+  );
+end;
+$$;
+grant execute on function public.task_reviews_view(uuid) to authenticated;

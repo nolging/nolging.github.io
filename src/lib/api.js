@@ -343,6 +343,34 @@ export async function deleteComment(commentId) {
   if (error) throw error
 }
 
+// ---- 태스크 리뷰(추억) ---------------------------------------
+// task_reviews_view RPC: { is_participant, has_reviewed, reviews:[{author_id,nickname,avatar_url,rating,comment|null,is_self,created_at}] }
+export async function getTaskReviews(taskId) {
+  const { data, error } = await supabase.rpc('task_reviews_view', { p_task_id: taskId })
+  if (error) {
+    if (error.code === 'PGRST202' || /task_reviews_view/.test(error.message || '')) {
+      const e = new Error('리뷰 기능이 아직 DB에 설정되지 않았습니다. (task_reviews_view 함수를 먼저 적용해 주세요)')
+      e.notReady = true
+      throw e
+    }
+    throw error
+  }
+  return data || { is_participant: false, has_reviewed: false, reviews: [] }
+}
+
+export async function submitReview({ taskId, rating, comment }) {
+  const { data, error } = await supabase.rpc('submit_review', {
+    p_task_id: taskId, p_rating: rating, p_comment: comment ?? '',
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /submit_review/.test(error.message || '')) {
+      throw new Error('리뷰 기능이 아직 DB에 설정되지 않았습니다. (submit_review 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // ---- 알림 ----------------------------------------------------
 
 export async function listNotifications(limit = 50) {

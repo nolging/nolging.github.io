@@ -461,6 +461,51 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .comment-empty {                               /* 빈 문구: 가로·세로 가운데 */
   margin: auto; text-align: center; color: var(--muted); font-size: 13px;
 }
+
+/* ---- 추억: 댓글/리뷰 서브탭 ---- */
+.subtabs-head { padding: 0; }                  /* 탭이 좌우 절반씩 꽉 차게 */
+.subtabs { display: flex; position: relative; }
+.subtab {
+  flex: 1 1 50%; text-align: center; padding: 11px 4px;
+  background: none; border: none; cursor: pointer;
+  font-weight: 700; font-size: .9rem; color: var(--muted);
+}
+.subtab.active { color: var(--text); }
+.subtab-underline {                            /* 머무는 탭 하단 진한 실선 (실선2 위) */
+  position: absolute; left: 0; bottom: -1px; width: 50%; height: 2px;
+  background: var(--text); pointer-events: none;
+}
+/* 서브탭 본문(스와이프 대상) */
+.sub-pane { flex: 1 1 auto; display: flex; flex-direction: column; gap: 14px; }
+.sub-pane.swipeable { animation: tab-in-next .2s ease; }
+.sub-pane.swipeable[data-dir="prev"] { animation-name: tab-in-prev; }
+
+/* ---- 리뷰 작성 ---- */
+.review-compose { display: flex; flex-direction: column; gap: 12px; }
+.review-compose-label { font-weight: 600; font-size: 13px; color: var(--muted); }
+.star-picker { display: flex; gap: 6px; }
+.star-btn {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-size: 30px; line-height: 1; color: #d9d9e0; transition: color .12s;
+}
+.star-btn.on { color: #f5b301; }
+.review-input {
+  width: 100%; min-height: 110px; resize: vertical;
+  border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5;
+}
+/* 하단 저장 바 */
+.review-save-btn { width: 100%; min-height: 44px; font-size: 15px; }
+
+/* ---- 리뷰 목록 ---- */
+.review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.review-card { display: flex; flex-direction: column; gap: 8px; }
+.review-card-head { display: flex; align-items: center; gap: 8px; }
+.review-author { font-weight: 600; font-size: 14px; }
+.review-card-head .stars-view { margin-left: auto; }
+.stars-view { display: inline-flex; gap: 1px; font-size: 15px; color: #d9d9e0; }
+.stars-view .on { color: #f5b301; }
+.review-comment { margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.review-comment.blurred { filter: blur(5px); user-select: none; color: var(--muted); }
 .comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .comment-item { list-style: none; }
 .comment { display: flex; gap: 10px; align-items: flex-start; }
