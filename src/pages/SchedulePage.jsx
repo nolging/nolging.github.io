@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
-import { listMyAppointments, listGroupMembersBrief } from '../lib/api'
+import { listMyAppointments, listGroupMembersBrief, listMyGroups } from '../lib/api'
 import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -83,6 +83,7 @@ export default function SchedulePage() {
   const navigate = useNavigate()
   const [appts, setAppts] = useState([])
   const [memberMap, setMemberMap] = useState({})
+  const [myGroups, setMyGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -104,20 +105,22 @@ export default function SchedulePage() {
     selectDay(ymd(today))
   }
 
-  // 유형 필터(상단바 필터 버튼 → 하단 시트) + 제목 검색(본문 돋보기)
+  // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹, 그리고 제목 검색(본문 돋보기)
   const [catFilter, setCatFilter] = useState([])
+  const [groupFilter, setGroupFilter] = useState([])
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
   const toggleCat = (c) => setCatFilter((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
+  const toggleGroup = (id) => setGroupFilter((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
-  // 상단바 필터 버튼 동작/뱃지 카운트 등록
+  // 상단바 필터 버튼 동작/뱃지 카운트(유형+그룹) 등록
   const { setHeaderFilter } = useOutletContext()
   useEffect(() => {
-    setHeaderFilter?.({ onClick: () => setFilterOpen(true), count: catFilter.length })
+    setHeaderFilter?.({ onClick: () => setFilterOpen(true), count: catFilter.length + groupFilter.length })
     return () => setHeaderFilter?.(null)
-  }, [catFilter, setHeaderFilter])
+  }, [catFilter, groupFilter, setHeaderFilter])
 
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
   function openSearch() { setSearchOpen(true) }
@@ -132,8 +135,8 @@ export default function SchedulePage() {
     (async () => {
       setLoading(true); setError('')
       try {
-        const a = await listMyAppointments()
-        setAppts(a)
+        const [a, gs] = await Promise.all([listMyAppointments(), listMyGroups()])
+        setAppts(a); setMyGroups(gs)
         setMemberMap(await listGroupMembersBrief(a.map((x) => x.group_id)))
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }
@@ -148,8 +151,9 @@ export default function SchedulePage() {
   const query = q.trim().toLowerCase()
   const shown = useMemo(() => appts.filter((a) =>
     (catFilter.length === 0 || catFilter.includes(a.category)) &&
+    (groupFilter.length === 0 || groupFilter.includes(a.group_id)) &&
     (!query || (a.title || '').toLowerCase().includes(query))
-  ), [appts, catFilter, query])
+  ), [appts, catFilter, groupFilter, query])
 
   // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
   const daysWithAppt = useMemo(() => {
@@ -291,19 +295,40 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* 유형 필터 시트 (그룹 상세와 동일, 중복 선택·즉시 적용) */}
+      {/* 필터 설정 시트: 유형(알약) + 그룹(체크) — 중복 선택·즉시 적용 */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
-          <h3 className="sheet-title filter-title">위시 유형 필터</h3>
-          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
-            onClick={() => setCatFilter([])}>초기화</button>
+          <h3 className="sheet-title filter-title">필터 설정</h3>
+          <button type="button" className="btn btn-ghost btn-sm"
+            disabled={catFilter.length === 0 && groupFilter.length === 0}
+            onClick={() => { setCatFilter([]); setGroupFilter([]) }}>초기화</button>
         </div>
+
+        <div className="filter-section-label">유형</div>
         <div className="chip-row filter-chips">
           {WISH_CATEGORIES.map((c) => {
             const on = catFilter.includes(c)
             return (
               <button key={c} type="button" className={`chip ${on ? 'active' : ''}`}
                 style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
+            )
+          })}
+        </div>
+
+        <div className="filter-section-label">그룹</div>
+        <div className="filter-groups">
+          {myGroups.length === 0 ? (
+            <p className="muted sm">가입된 그룹이 없어요.</p>
+          ) : myGroups.map((g) => {
+            const on = groupFilter.includes(g.id)
+            return (
+              <button key={g.id} type="button" className="filter-group-row" onClick={() => toggleGroup(g.id)}>
+                <span className="filter-group-name">{g.name}</span>
+                <span className={`filter-check ${on ? 'on' : ''}`} aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                </span>
+              </button>
             )
           })}
         </div>
