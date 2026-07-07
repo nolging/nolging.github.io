@@ -450,6 +450,23 @@ export async function sendNote({ groupId, recipientId, body }) {
 }
 
 // ---- 상점 ----------------------------------------------------
+// 판매 중인 아이템 목록. store_items 미배포(42P01) 시 빈 배열.
+export async function listStoreItems() {
+  const { data, error } = await supabase
+    .from('store_items')
+    .select('id, name, price, emoji, description, gift_only')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  if (error) {
+    if (error.code === '42P01') return []
+    throw error
+  }
+  return (data ?? []).map((r) => ({
+    id: r.id, name: r.name, price: r.price, emoji: r.emoji,
+    desc: r.description, giftOnly: r.gift_only,
+  }))
+}
+
 // 아이템 구매(츄르 차감). 정가/검증은 서버(purchase_item)에서. 반환=새 잔액.
 export async function purchaseItem(itemId) {
   const { data, error } = await supabase.rpc('purchase_item', { p_item_id: itemId })

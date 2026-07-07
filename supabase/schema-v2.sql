@@ -938,39 +938,63 @@ $$;
 grant execute on function public.send_note(uuid, uuid, text) to authenticated;
 
 -- =============================================================
+--  상점 아이템 (store_items) — 단일 소스
+--  이름/가격/이모지/설명/선물전용 을 DB 에서 관리. 프론트는 이 표를 조회.
+--  조회는 로그인 사용자 전체, 편집(추가/수정/삭제)은 관리자만.
+--  구매/선물 RPC 는 이 표에서 정가를 읽어 검증(클라이언트 값 신뢰 안 함).
+-- =============================================================
+create table if not exists public.store_items (
+  id          text primary key,                 -- 'wish', 'couple-ring', ...
+  name        text not null,
+  price       integer not null check (price >= 0),
+  emoji       text not null default '',          -- 임시 이미지(이모지). 추후 교체.
+  description text not null default '',
+  gift_only   boolean not null default false,    -- 구매 불가, 선물만 가능
+  sort_order  integer not null default 0,
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+alter table public.store_items enable row level security;
+
+drop policy if exists store_items_select on public.store_items;
+create policy store_items_select on public.store_items
+  for select to authenticated using (true);
+-- 편집은 관리자만 (직접 편집/관리자 UI 대비)
+drop policy if exists store_items_write on public.store_items;
+create policy store_items_write on public.store_items
+  for all to authenticated
+  using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
+
+-- 초기 6종 시드. 이미 있으면 유지(관리자 편집 보존) → do nothing.
+insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
+  ('wish',        '소원권',      5,    '🎫', E'상대방이 소원을 적어서 나에게 보내면 무엇이든 들어줘야 해요\n*선물만 가능', true,  1),
+  ('couple-ring', '커플링',      5000, '💍', E'연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',            false, 2),
+  ('friend-ring', '우정링',      3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 3),
+  ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 4),
+  ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
+  ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6)
+on conflict (id) do nothing;
+
+-- =============================================================
 --  상점 구매 (츄르 차감)
---  아이템 정가는 서버에서 확정(클라이언트 값 신뢰 안 함).
---  프론트 STORE_ITEMS(constants.js) 와 id/가격을 동일하게 유지할 것.
---  잔액 부족/선물전용 아이템은 거절. 성공 시 coin_ledger 에 -가격 기록하고 새 잔액 반환.
+--  정가/선물전용은 store_items 에서 읽어 검증. 성공 시 coin_ledger 에 -가격 기록.
 -- =============================================================
 create or replace function public.purchase_item(p_item_id text)
 returns integer language plpgsql security definer set search_path = public as $$
-declare v_price integer; v_name text; v_gift_only boolean := false; v_balance integer;
+declare it public.store_items; v_balance integer;
 begin
-  case p_item_id
-    when 'wish'        then v_price := 5;    v_name := '소원권';       v_gift_only := true;
-    when 'couple-ring' then v_price := 5000; v_name := '커플링';
-    when 'friend-ring' then v_price := 3000; v_name := '우정링';
-    when 'telescope'   then v_price := 3;    v_name := '천체 망원경';
-    when 'eraser'      then v_price := 3;    v_name := '지우개';
-    when 'cassette'    then v_price := 5;    v_name := '카세트 테이프';
-    else raise exception '존재하지 않는 아이템입니다.';
-  end case;
-
-  if v_gift_only then
-    raise exception '선물만 가능한 아이템입니다.';
-  end if;
+  select * into it from public.store_items where id = p_item_id and is_active;
+  if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
+  if it.gift_only then raise exception '선물만 가능한 아이템입니다.'; end if;
 
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();
-  if v_balance < v_price then
-    raise exception '츄르가 부족해요.';
-  end if;
+  if v_balance < it.price then raise exception '츄르가 부족해요.'; end if;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
-    values (auth.uid(), -v_price, v_name || ' 구매', 'purchase');
+    values (auth.uid(), -it.price, it.name || ' 구매', 'purchase');
 
-  return v_balance - v_price;
+  return v_balance - it.price;
 end;
 $$;
 grant execute on function public.purchase_item(text) to authenticated;
@@ -1004,17 +1028,10 @@ create policy item_gifts_select on public.item_gifts
 -- 정가는 서버에서 확정(구매와 동일). 받는 사람 츄르는 늘지 않고, 선물 기록만 남김.
 create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid)
 returns integer language plpgsql security definer set search_path = public as $$
-declare v_price integer; v_name text; v_balance integer; v_sender text; v_recipient text;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text;
 begin
-  case p_item_id
-    when 'wish'        then v_price := 5;    v_name := '소원권';
-    when 'couple-ring' then v_price := 5000; v_name := '커플링';
-    when 'friend-ring' then v_price := 3000; v_name := '우정링';
-    when 'telescope'   then v_price := 3;    v_name := '천체 망원경';
-    when 'eraser'      then v_price := 3;    v_name := '지우개';
-    when 'cassette'    then v_price := 5;    v_name := '카세트 테이프';
-    else raise exception '존재하지 않는 아이템입니다.';
-  end case;
+  select * into it from public.store_items where id = p_item_id and is_active;
+  if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
 
   if not public.is_group_member(p_group_id, auth.uid()) then
     raise exception '그룹 멤버만 선물할 수 있습니다.'; end if;
@@ -1025,21 +1042,21 @@ begin
 
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();
-  if v_balance < v_price then
+  if v_balance < it.price then
     raise exception '츄르가 부족해요.'; end if;
 
   v_sender    := public.notif_member_name(p_group_id, auth.uid());
   v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
-    values (auth.uid(), -v_price, v_name || ' 선물', 'gift');
+    values (auth.uid(), -it.price, it.name || ' 선물', 'gift');
   insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
-    values (p_group_id, auth.uid(), p_recipient_id, p_item_id, v_name, v_sender, v_recipient);
+    values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
   -- 받는 사람에게 알림(→ Database Webhook → 푸시)
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', v_name, p_group_id);
+    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name, p_group_id);
 
-  return v_balance - v_price;
+  return v_balance - it.price;
 end;
 $$;
 grant execute on function public.gift_item(text, uuid, uuid) to authenticated;
