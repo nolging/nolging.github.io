@@ -1070,20 +1070,18 @@ a.mp-tel:active { opacity: .55; }
 }
 .store-card:active { transform: scale(.96); }
 .store-card-img {
-  font-size: 38px; line-height: 1; width: 62px; height: 62px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg); border-radius: 16px; margin-bottom: 4px;
+  font-size: 52px; line-height: 1; width: 100%; max-width: 96px; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
 }
-.store-card-img img.store-img { width: 74%; height: 74%; object-fit: contain; }
-.store-detail-img img.store-img { width: 72%; height: 72%; object-fit: contain; }
+.store-card-img img.store-img { width: 100%; height: 100%; object-fit: contain; }
+.store-detail-img img.store-img { width: 100%; height: 100%; object-fit: contain; }
 .store-card-name { font-weight: 700; font-size: 13px; color: var(--text); }
 .store-card-price { font-size: 12px; font-weight: 700; color: var(--primary); }
 
 .store-detail { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .store-detail-img {
-  font-size: 62px; line-height: 1; width: 108px; height: 108px;
+  font-size: 96px; line-height: 1; width: 156px; height: 156px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--bg); border-radius: 22px;
 }
 .store-detail-name { font-size: 1.15rem; font-weight: 800; margin: 6px 0 0; color: var(--text); }
 .store-detail-desc { font-size: 13.5px; color: var(--muted); line-height: 1.55; white-space: pre-line; margin: 0; }
