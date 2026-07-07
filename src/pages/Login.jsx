@@ -33,7 +33,7 @@ export default function Login() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-logo"><Brand /></div>
-        <p className="auth-sub">그룹 태스크 관리</p>
+        <p className="auth-sub">심심하면 놀기 신청</p>
         <form onSubmit={handleSubmit} className="form">
           <label className="field">
             <span>아이디</span>
