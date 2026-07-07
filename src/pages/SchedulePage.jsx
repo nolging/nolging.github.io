@@ -88,21 +88,26 @@ export default function SchedulePage() {
   const [error, setError] = useState('')
 
   const today = useMemo(() => new Date(), [])
-  // 선택 날짜를 URL(?date=)에 보존 → 상세로 갔다가 뒤로 오면 그 날짜로 복원
+  // 선택 날짜를 URL(?date=)에 보존 → 상세로 갔다가 뒤로 오면 그 날짜로 복원.
+  // ?date 가 있으면 사용자가 특정 날짜를 고른 상태(datePicked). 없으면 기본(오늘 이후 이번 달) 표시.
   const [searchParams, setSearchParams] = useSearchParams()
   const paramDate = searchParams.get('date')
-  const initDate = /^\d{4}-\d{2}-\d{2}$/.test(paramDate || '') ? paramDate : ymd(today)
+  const hasParamDate = /^\d{4}-\d{2}-\d{2}$/.test(paramDate || '')
+  const initDate = hasParamDate ? paramDate : ymd(today)
   const initD = new Date(`${initDate}T00:00:00`)
   const [view, setView] = useState({ y: initD.getFullYear(), m: initD.getMonth() })
   const [selected, setSelected] = useState(initDate)
+  const [datePicked, setDatePicked] = useState(hasParamDate)
 
   function selectDay(key) {
-    setSelected(key)
+    setSelected(key); setDatePicked(true)
     setSearchParams({ date: key }, { replace: true })
   }
   function goToday() {
+    setDatePicked(false)
     setView({ y: today.getFullYear(), m: today.getMonth() })
-    selectDay(ymd(today))
+    setSelected(ymd(today))
+    setSearchParams({}, { replace: true })
   }
 
   // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크), 제목 검색(본문 돋보기)
@@ -190,19 +195,58 @@ export default function SchedulePage() {
     })
   }
 
-  // 선택한 날짜의 약속 (반복 전개, 시간순)
-  const dayList = useMemo(() => {
-    const d = new Date(`${selected}T00:00:00`)
-    return shown.filter((a) => occursOn(a, d)).sort((x, y) => minutesOf(x.scheduled_at) - minutesOf(y.scheduled_at))
-  }, [shown, selected])
+  const fmtDay = (d) => `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${WD[d.getDay()]}요일`
+  const dayAppts = (d) => shown.filter((a) => occursOn(a, d)).sort((x, y) => minutesOf(x.scheduled_at) - minutesOf(y.scheduled_at))
 
-  const selDate = new Date(`${selected}T00:00:00`)
-  const selLabel = `${selDate.getMonth() + 1}월 ${selDate.getDate()}일 (${WD[selDate.getDay()]})`
+  // 날짜를 고른 상태: 그 날짜 하나만. 기본 상태: 보고 있는 달에서 오늘 이후, 일정 있는 날짜별로 모두.
+  const dayGroups = useMemo(() => {
+    if (datePicked) {
+      const d = new Date(`${selected}T00:00:00`)
+      return [{ key: selected, label: fmtDay(d), appts: dayAppts(d) }]
+    }
+    const t0 = midnight(today)
+    const daysIn = new Date(view.y, view.m + 1, 0).getDate()
+    const out = []
+    for (let day = 1; day <= daysIn; day++) {
+      const d = new Date(view.y, view.m, day)
+      if (midnight(d) < t0) continue
+      const items = dayAppts(d)
+      if (items.length) out.push({ key: ymd(d), label: fmtDay(d), appts: items })
+    }
+    return out
+  }, [shown, selected, datePicked, view, today])
+
   const timeOf = (a) => {
     const d = new Date(a.scheduled_at)
     return a.scheduled_time_set === false ? '종일' : `${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
   const todayKey = ymd(today)
+
+  const renderAppt = (a) => {
+    const parts = partsOf(a)
+    const extra = parts.length - 3
+    return (
+      <button key={a.id} type="button" className={`cal-appt ${a.status === 'done' ? 'done' : ''}`}
+        onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } })}>
+        <span className="cal-appt-time">{timeOf(a)}</span>
+        <span className="cal-appt-body">
+          <span className="cal-appt-head">
+            {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
+            <span className="task-name">{a.title}</span>
+          </span>
+          {a.repeat_rule && (
+            <span className="cal-appt-meta"><span className="cal-appt-rep">{repeatLabel(a.repeat_rule)}</span></span>
+          )}
+        </span>
+        {parts.length > 0 && (
+          <span className={`cal-appt-avs task-parts ${parts.length > 1 ? 'multi' : ''}`}>
+            {parts.slice(0, 3).map((m, i) => <Avatar key={i} src={m.avatar} name={m.name} size={26} />)}
+            {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+          </span>
+        )}
+      </button>
+    )
+  }
 
   return (
     <div className="page">
@@ -266,38 +310,23 @@ export default function SchedulePage() {
 
       {loading ? (
         <div className="spinner" />
+      ) : datePicked ? (
+        <div className="cal-list">
+          <div className="cal-list-title">{dayGroups[0].label}</div>
+          {dayGroups[0].appts.length === 0 ? (
+            <p className="muted sm cal-empty">약속이 없는 날이에요.</p>
+          ) : dayGroups[0].appts.map(renderAppt)}
+        </div>
       ) : (
         <div className="cal-list">
-          <div className="cal-list-title">{selLabel}</div>
-          {dayList.length === 0 ? (
-            <p className="muted sm cal-empty">약속이 없는 날이에요.</p>
-          ) : (
-            dayList.map((a) => {
-              const parts = partsOf(a)
-              const extra = parts.length - 3
-              return (
-                <button key={a.id} type="button" className={`cal-appt ${a.status === 'done' ? 'done' : ''}`}
-                  onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } })}>
-                  <span className="cal-appt-time">{timeOf(a)}</span>
-                  <span className="cal-appt-body">
-                    <span className="cal-appt-head">
-                      {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
-                      <span className="task-name">{a.title}</span>
-                    </span>
-                    {a.repeat_rule && (
-                      <span className="cal-appt-meta"><span className="cal-appt-rep">{repeatLabel(a.repeat_rule)}</span></span>
-                    )}
-                  </span>
-                  {parts.length > 0 && (
-                    <span className={`cal-appt-avs task-parts ${parts.length > 1 ? 'multi' : ''}`}>
-                      {parts.slice(0, 3).map((m, i) => <Avatar key={i} src={m.avatar} name={m.name} size={26} />)}
-                      {extra > 0 && <span className="task-parts-more">+{extra}</span>}
-                    </span>
-                  )}
-                </button>
-              )
-            })
-          )}
+          {dayGroups.length === 0 ? (
+            <p className="muted sm cal-empty">이번 달 남은 일정이 없어요.</p>
+          ) : dayGroups.map((g) => (
+            <div key={g.key} className="cal-day-group">
+              <div className="cal-list-title">{g.label}</div>
+              {g.appts.map(renderAppt)}
+            </div>
+          ))}
         </div>
       )}
 

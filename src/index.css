@@ -299,7 +299,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
 .cal-dot.on { background: var(--primary); }
 
-.cal-list-title { font-weight: 700; font-size: .95rem; margin-bottom: 10px; }
+.cal-list-title { font-weight: 700; font-size: .95rem; margin-bottom: 10px; text-align: center; }
+.cal-day-group + .cal-day-group { margin-top: 18px; }
 .cal-appt {
   width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
   color: var(--text);
