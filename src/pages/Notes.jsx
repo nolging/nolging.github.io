@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
@@ -24,6 +24,7 @@ function formatDate(iso) {
 export default function Notes() {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
   const [received, setReceived] = useState([])
   const [sent, setSent] = useState([])
@@ -50,6 +51,18 @@ export default function Notes() {
   }, [user?.id])
 
   const list = tab === 'received' ? received : sent
+
+  // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
+  function replyTo(n) {
+    navigate('/notes/new', {
+      state: {
+        reply: {
+          recipient: { groupId: n.group_id, groupName: '', userId: n.sender_id, name: n.sender_name, avatar: n.sender_avatar },
+          me: { name: n.recipient_name, avatar: n.recipient_avatar },
+        },
+      },
+    })
+  }
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
   const peer = (n) => tab === 'received'
@@ -109,6 +122,11 @@ export default function Notes() {
                 </div>
               </div>
               <p className="note-view-body">{open.body}</p>
+              {open.recipient_id === user?.id && (
+                <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
+                  답장하기
+                </button>
+              )}
             </div>
           )
         })()}

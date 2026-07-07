@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import RecipientPicker from '../components/RecipientPicker'
 import Avatar from '../components/Avatar'
 import { sendNote } from '../lib/api'
@@ -8,10 +8,13 @@ const MAX = 150
 
 export default function NoteCompose() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // 답장으로 진입한 경우 To/From 자동 채움
+  const reply = location.state?.reply
 
   // 확정된 수신인 { groupId, groupName, userId, name, avatar } / 내 그룹내 닉네임·아바타
-  const [recipient, setRecipient] = useState(null)
-  const [me, setMe] = useState({ name: '', avatar: null })
+  const [recipient, setRecipient] = useState(reply?.recipient || null)
+  const [me, setMe] = useState(reply?.me || { name: '', avatar: null })
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
