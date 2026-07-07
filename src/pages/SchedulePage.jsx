@@ -98,13 +98,20 @@ export default function SchedulePage() {
   const [view, setView] = useState({ y: initD.getFullYear(), m: initD.getMonth() })
   const [selected, setSelected] = useState(initDate)
   const [datePicked, setDatePicked] = useState(hasParamDate)
+  const [monthAll, setMonthAll] = useState(false) // true=보고 있는 달 전체, false=오늘 이후만
 
   function selectDay(key) {
     setSelected(key); setDatePicked(true)
     setSearchParams({ date: key }, { replace: true })
   }
+  // 보고 있는 달 전체 일정 보기 (화살표 이동/제목 클릭)
+  function showMonth() {
+    setDatePicked(false); setMonthAll(true)
+    setSearchParams({}, { replace: true })
+  }
   function goToday() {
     // 오늘 날짜 셀을 클릭한 것과 동일: 오늘로 포커싱 + 그 날짜만 표시
+    setMonthAll(false)
     setView({ y: today.getFullYear(), m: today.getMonth() })
     selectDay(ymd(today))
   }
@@ -188,6 +195,7 @@ export default function SchedulePage() {
   }, [view])
 
   function move(delta) {
+    showMonth() // 다른 달로 이동하면 그 달 전체 일정 표시
     setView((v) => {
       const total = v.y * 12 + v.m + delta
       return { y: Math.floor(total / 12), m: ((total % 12) + 12) % 12 }
@@ -208,12 +216,12 @@ export default function SchedulePage() {
     const out = []
     for (let day = 1; day <= daysIn; day++) {
       const d = new Date(view.y, view.m, day)
-      if (midnight(d) < t0) continue
+      if (!monthAll && midnight(d) < t0) continue // 기본(월 미이동)은 오늘 이후만
       const items = dayAppts(d)
       if (items.length) out.push({ key: ymd(d), label: fmtDay(d), appts: items })
     }
     return out
-  }, [shown, selected, datePicked, view, today])
+  }, [shown, selected, datePicked, monthAll, view, today])
 
   const timeOf = (a) => {
     const d = new Date(a.scheduled_at)
@@ -280,7 +288,7 @@ export default function SchedulePage() {
       <div className="cal">
         <div className="cal-head">
           <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
-          <span className="cal-title">{view.y}년 {view.m + 1}월</span>
+          <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
           <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
         </div>
         <div className="cal-grid cal-wd">
@@ -323,7 +331,7 @@ export default function SchedulePage() {
         ) : (
           <div className="cal-list">
             {dayGroups.length === 0 ? (
-              <p className="muted sm cal-empty">이번 달 남은 일정이 없어요.</p>
+              <p className="muted sm cal-empty">{monthAll ? '이 달 일정이 없어요.' : '이번 달 남은 일정이 없어요.'}</p>
             ) : dayGroups.map((g) => (
               <div key={g.key} className="cal-day-group">
                 <div className="cal-list-title">{g.label}</div>
