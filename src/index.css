@@ -446,12 +446,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   margin-bottom: calc(-1 * var(--pad-y));      /* 흰 배경을 콘텐츠 하단 끝까지 */
   display: flex; flex-direction: column;
 }
-/* "댓글 N" 헤더 밴드: 위=실선1, 아래=실선2(전체폭), 상하 여백 --pad-y 로 대칭 */
+/* "댓글 N" 헤더 밴드: 위=실선1, 아래=실선2(전체폭) */
 .comment-head {
-  padding: var(--pad-y) var(--pad-x);
+  padding: 10px var(--pad-x);
   border-bottom: 1px solid var(--border);      /* 실선2: "댓글 N"↔댓글 영역 (화면 끝까지) */
 }
-.comment-title { font-weight: 700; font-size: 1rem; text-align: center; }
+.comment-title { font-weight: 700; font-size: .9rem; text-align: center; }
 /* 실제 댓글이 달리는 영역 */
 .comment-body-area {
   flex: 1 1 auto;
