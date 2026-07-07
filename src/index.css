@@ -1074,6 +1074,8 @@ a.mp-tel:active { opacity: .55; }
   display: flex; align-items: center; justify-content: center;
   background: var(--bg); border-radius: 16px; margin-bottom: 4px;
 }
+.store-card-img img.store-img { width: 74%; height: 74%; object-fit: contain; }
+.store-detail-img img.store-img { width: 72%; height: 72%; object-fit: contain; }
 .store-card-name { font-weight: 700; font-size: 13px; color: var(--text); }
 .store-card-price { font-size: 12px; font-weight: 700; color: var(--primary); }
 

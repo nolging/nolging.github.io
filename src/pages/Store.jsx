@@ -5,6 +5,19 @@ import RecipientPicker from '../components/RecipientPicker'
 import { formatCoin } from '../lib/constants'
 import { listStoreItems, purchaseItem, giftItem } from '../lib/api'
 
+// 아이템 이미지: public/store/{id}.svg 를 우선 사용하고, 없으면 이모지로 폴백.
+function ItemImage({ id, emoji, className }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { setFailed(false) }, [id])
+  return (
+    <span className={className} aria-hidden="true">
+      {failed
+        ? emoji
+        : <img className="store-img" src={`/store/${id}.svg`} alt="" onError={() => setFailed(true)} />}
+    </span>
+  )
+}
+
 export default function Store() {
   const { refreshCoin } = useOutletContext()
   const [items, setItems] = useState([])
@@ -81,7 +94,7 @@ export default function Store() {
         <div className="store-grid">
           {items.map((item) => (
             <button key={item.id} type="button" className="store-card" onClick={() => open(item)}>
-              <span className="store-card-img" aria-hidden="true">{item.emoji}</span>
+              <ItemImage id={item.id} emoji={item.emoji} className="store-card-img" />
               <span className="store-card-name">{item.name}</span>
               <span className="store-card-price">{formatCoin(item.price)}</span>
             </button>
@@ -92,7 +105,7 @@ export default function Store() {
       <Modal open={!!selected} onClose={close}>
         {selected && (
           <div className="store-detail">
-            <span className="store-detail-img" aria-hidden="true">{selected.emoji}</span>
+            <ItemImage id={selected.id} emoji={selected.emoji} className="store-detail-img" />
             <h3 className="store-detail-name">{selected.name}</h3>
             <p className="store-detail-desc">{selected.desc}</p>
             <div className="store-detail-price">{formatCoin(selected.price)}</div>
