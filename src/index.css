@@ -488,7 +488,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .star-bg { color: #d9d9e0; }
 .star-fill { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #f5b301; }
 .star-picker {
-  display: inline-flex; align-items: center; gap: 2px; font-size: 30px;
+  display: inline-flex; align-items: center; align-self: flex-start; gap: 2px; font-size: 30px;
   cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .review-input {
