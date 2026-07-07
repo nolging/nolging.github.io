@@ -10,16 +10,16 @@ export default function BottomSheet({ open, onClose, children }) {
   useEffect(() => {
     let raf, timer
     if (open) {
-      setMounted(true)
+      setMounted(true); setDragY(0)
       raf = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)))
     } else {
-      setShown(false)
-      timer = setTimeout(() => setMounted(false), 280)
+      // 드래그 위치를 0으로 되돌려 항상 base(translateY 100%)까지 쭉 슬라이드다운.
+      // 언마운트는 슬라이드(.28s)가 끝난 뒤에(버퍼 포함) → 도중에 끊겨 사라지지 않게.
+      setShown(false); setDragY(0)
+      timer = setTimeout(() => setMounted(false), 340)
     }
     return () => { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer) }
   }, [open])
-
-  useEffect(() => { if (shown) setDragY(0) }, [shown])
 
   function onTouchStart(e) { startY.current = e.touches[0].clientY }
   function onTouchMove(e) {

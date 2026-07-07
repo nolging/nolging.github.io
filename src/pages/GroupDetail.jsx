@@ -80,8 +80,9 @@ export default function GroupDetail() {
   const [copied, setCopied] = useState(false)
   const [filter, setFilter] = useState(initialTab)
   const [inviteOpen, setInviteOpen] = useState(false)
-  const [catFilter, setCatFilter] = useState([]) // 선택된 위시 유형(중복 가능). 빈 배열=전체
+  const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES]) // 선택된 위시 유형. 기본=전체 체크
   const [filterOpen, setFilterOpen] = useState(false)
+  const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
 
   function toggleCat(c) {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -234,7 +235,7 @@ export default function GroupDetail() {
   }
 
   const terms = taskTerms()
-  const matchesCat = (t) => catFilter.length === 0 || catFilter.includes(t.category)
+  const matchesCat = (t) => !WISH_CATEGORIES.includes(t.category) || catFilter.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
   // 특정 상태(탭)의 카드 목록 렌더 (현재 pane 과 넘어오는 ghost pane 이 공용)
@@ -327,7 +328,7 @@ export default function GroupDetail() {
         <button className="btn btn-ghost btn-sm icon-btn tabs-filter-btn" aria-label="유형 필터" title="유형 필터"
           onClick={() => setFilterOpen(true)}>
           <FilterIcon />
-          {catFilter.length > 0 && <span className="filter-badge">{catFilter.length}</span>}
+          {catActive && <span className="filter-dot" />}
         </button>
         <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
@@ -358,13 +359,14 @@ export default function GroupDetail() {
         </div>
       </BottomSheet>
 
-      {/* 유형 필터 시트 (중복 선택, 즉시 적용) */}
+      {/* 필터 설정 시트 (중복 선택, 즉시 적용). 기본=전체 체크 */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
-          <h3 className="sheet-title filter-title">위시 유형 필터</h3>
-          <button type="button" className="btn btn-ghost btn-sm" disabled={catFilter.length === 0}
-            onClick={() => setCatFilter([])}>초기화</button>
+          <h3 className="sheet-title filter-title">필터 설정</h3>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={!catActive}
+            onClick={() => setCatFilter([...WISH_CATEGORIES])}>초기화</button>
         </div>
+        <div className="filter-section-label">유형</div>
         <div className="chip-row filter-chips">
           {WISH_CATEGORIES.map((c) => {
             const on = catFilter.includes(c)

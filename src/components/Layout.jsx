@@ -325,7 +325,7 @@ export default function Layout() {
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
           aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
           <FilterIcon />
-          {headerFilter?.count > 0 && <span className="filter-badge">{headerFilter.count}</span>}
+          {headerFilter?.active && <span className="filter-dot" />}
         </button>
       </header>
     )

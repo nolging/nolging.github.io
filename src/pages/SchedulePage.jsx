@@ -105,9 +105,9 @@ export default function SchedulePage() {
     selectDay(ymd(today))
   }
 
-  // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹, 그리고 제목 검색(본문 돋보기)
-  const [catFilter, setCatFilter] = useState([])
-  const [groupFilter, setGroupFilter] = useState([])
+  // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크), 제목 검색(본문 돋보기)
+  const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES])
+  const [groupFilter, setGroupFilter] = useState([]) // 그룹 로드 후 전체로 채움
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
@@ -115,12 +115,17 @@ export default function SchedulePage() {
   const toggleCat = (c) => setCatFilter((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
   const toggleGroup = (id) => setGroupFilter((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
-  // 상단바 필터 버튼 동작/뱃지 카운트(유형+그룹) 등록
+  // 전체 체크가 기본 상태 → 하나라도 해제되면 "적용 중"(점 표시)
+  const catActive = catFilter.length < WISH_CATEGORIES.length
+  const groupActive = groupFilter.length < myGroups.length
+  const filterActive = catActive || groupActive
+
+  // 상단바 필터 버튼 동작/적용여부(점) 등록
   const { setHeaderFilter } = useOutletContext()
   useEffect(() => {
-    setHeaderFilter?.({ onClick: () => setFilterOpen(true), count: catFilter.length + groupFilter.length })
+    setHeaderFilter?.({ onClick: () => setFilterOpen(true), active: filterActive })
     return () => setHeaderFilter?.(null)
-  }, [catFilter, groupFilter, setHeaderFilter])
+  }, [filterActive, setHeaderFilter])
 
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
   function openSearch() { setSearchOpen(true) }
@@ -136,7 +141,7 @@ export default function SchedulePage() {
       setLoading(true); setError('')
       try {
         const [a, gs] = await Promise.all([listMyAppointments(), listMyGroups()])
-        setAppts(a); setMyGroups(gs)
+        setAppts(a); setMyGroups(gs); setGroupFilter(gs.map((g) => g.id)) // 기본=전체 그룹 체크
         setMemberMap(await listGroupMembersBrief(a.map((x) => x.group_id)))
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }
@@ -149,11 +154,12 @@ export default function SchedulePage() {
 
   // 유형 필터 + 제목 검색 적용 (달력 점·목록에 공통)
   const query = q.trim().toLowerCase()
+  const myGroupIds = useMemo(() => new Set(myGroups.map((g) => g.id)), [myGroups])
   const shown = useMemo(() => appts.filter((a) =>
-    (catFilter.length === 0 || catFilter.includes(a.category)) &&
-    (groupFilter.length === 0 || groupFilter.includes(a.group_id)) &&
+    (!WISH_CATEGORIES.includes(a.category) || catFilter.includes(a.category)) &&
+    (!myGroupIds.has(a.group_id) || groupFilter.includes(a.group_id)) &&
     (!query || (a.title || '').toLowerCase().includes(query))
-  ), [appts, catFilter, groupFilter, query])
+  ), [appts, catFilter, groupFilter, myGroupIds, query])
 
   // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
   const daysWithAppt = useMemo(() => {
@@ -299,9 +305,8 @@ export default function SchedulePage() {
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
           <h3 className="sheet-title filter-title">필터 설정</h3>
-          <button type="button" className="btn btn-ghost btn-sm"
-            disabled={catFilter.length === 0 && groupFilter.length === 0}
-            onClick={() => { setCatFilter([]); setGroupFilter([]) }}>초기화</button>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={!filterActive}
+            onClick={() => { setCatFilter([...WISH_CATEGORIES]); setGroupFilter(myGroups.map((g) => g.id)) }}>초기화</button>
         </div>
 
         <div className="filter-section-label">유형</div>
