@@ -54,6 +54,15 @@ function Stars({ value }) {
 }
 const SUB_TABS = ['comments', 'reviews']
 
+// 가려진 코멘트 자리에 원문과 비슷한 길이로 채울 로렘입섬(내용은 서버에서 안 옴, 길이만 옴)
+const LOREM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.'
+function loremOf(len) {
+  const n = Math.max(1, len || 0)
+  let s = LOREM
+  while (s.length < n) s += ' ' + LOREM
+  return s.slice(0, n)
+}
+
 function formatTime(iso) {
   try {
     return new Date(iso).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -428,7 +437,7 @@ export default function TaskDetail() {
               <Stars value={rv.rating} />
             </div>
             {rv.comment == null
-              ? <p className="review-comment blurred" aria-hidden="true">리뷰를 작성한 참여자만 코멘트를 볼 수 있어요 가려진 내용입니다</p>
+              ? (rv.comment_len > 0 ? <p className="review-comment blurred" aria-hidden="true">{loremOf(rv.comment_len)}</p> : null)
               : (rv.comment ? <p className="review-comment">{rv.comment}</p> : null)}
           </li>
         ))}

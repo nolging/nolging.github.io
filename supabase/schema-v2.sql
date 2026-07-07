@@ -749,6 +749,8 @@ begin
       'avatar_url', gm.avatar_url,
       'rating', r.rating,
       'comment', case when v_reveal or r.author_id = auth.uid() then r.comment else null end,
+      -- 가려진 경우 길이만(내용 미전송) → 프론트 로렘 블러. CJK 는 폭이 넓어 2배로 셈(표시폭 근사)
+      'comment_len', char_length(r.comment) + char_length(regexp_replace(r.comment, '[^가-힣一-鿿ぁ-ゟァ-ヿ]', '', 'g')),
       'is_self', (r.author_id = auth.uid()),
       'created_at', r.created_at
     ) as obj, r.created_at as ord
