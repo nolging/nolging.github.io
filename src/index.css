@@ -301,6 +301,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 .cal-list-title { font-weight: 700; font-size: .95rem; margin-bottom: 10px; text-align: center; }
 .cal-day-group + .cal-day-group { margin-top: 18px; }
+/* 일정 페이지: 캘린더는 고정, 아래 목록 영역만 스크롤 */
+.sched-page { height: 100%; }
+.cal-scroll {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; padding-bottom: 4px;
+}
+/* 날짜 헤더는 다음 날짜 전까지 스크롤 영역 상단에 고정 */
+.cal-day-group .cal-list-title {
+  position: sticky; top: 0; z-index: 2;
+  margin-bottom: 0; padding: 6px 0 8px; background: var(--bg);
+}
 .cal-appt {
   width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; cursor: pointer;
   color: var(--text);

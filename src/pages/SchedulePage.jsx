@@ -104,10 +104,9 @@ export default function SchedulePage() {
     setSearchParams({ date: key }, { replace: true })
   }
   function goToday() {
-    setDatePicked(false)
+    // 오늘 날짜 셀을 클릭한 것과 동일: 오늘로 포커싱 + 그 날짜만 표시
     setView({ y: today.getFullYear(), m: today.getMonth() })
-    setSelected(ymd(today))
-    setSearchParams({}, { replace: true })
+    selectDay(ymd(today))
   }
 
   // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크), 제목 검색(본문 돋보기)
@@ -249,7 +248,7 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="page">
+    <div className="page sched-page">
       {/* 캘린더 위 툴바: 좌측 검색(돋보기, 내 그룹과 동일), 우측 "오늘" */}
       <div className={`group-search sched-toolbar ${searchOpen ? 'open' : ''}`}>
         <button type="button" className="gs-btn"
@@ -308,27 +307,32 @@ export default function SchedulePage() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {loading ? (
-        <div className="spinner" />
-      ) : datePicked ? (
-        <div className="cal-list">
-          <div className="cal-list-title">{dayGroups[0].label}</div>
-          {dayGroups[0].appts.length === 0 ? (
-            <p className="muted sm cal-empty">약속이 없는 날이에요.</p>
-          ) : dayGroups[0].appts.map(renderAppt)}
-        </div>
-      ) : (
-        <div className="cal-list">
-          {dayGroups.length === 0 ? (
-            <p className="muted sm cal-empty">이번 달 남은 일정이 없어요.</p>
-          ) : dayGroups.map((g) => (
-            <div key={g.key} className="cal-day-group">
-              <div className="cal-list-title">{g.label}</div>
-              {g.appts.map(renderAppt)}
+      {/* 캘린더 아래 영역만 스크롤. 날짜 헤더는 다음 날짜 전까지 상단 고정(sticky) */}
+      <div className="cal-scroll">
+        {loading ? (
+          <div className="spinner" />
+        ) : datePicked ? (
+          <div className="cal-list">
+            <div className="cal-day-group">
+              <div className="cal-list-title">{dayGroups[0].label}</div>
+              {dayGroups[0].appts.length === 0 ? (
+                <p className="muted sm cal-empty">약속이 없는 날이에요.</p>
+              ) : dayGroups[0].appts.map(renderAppt)}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="cal-list">
+            {dayGroups.length === 0 ? (
+              <p className="muted sm cal-empty">이번 달 남은 일정이 없어요.</p>
+            ) : dayGroups.map((g) => (
+              <div key={g.key} className="cal-day-group">
+                <div className="cal-list-title">{g.label}</div>
+                {g.appts.map(renderAppt)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 필터 설정 시트: 유형(알약) + 그룹(체크) — 중복 선택·즉시 적용 */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
