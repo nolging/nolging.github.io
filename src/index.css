@@ -488,14 +488,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .star-bg { color: #d9d9e0; }
 .star-fill { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #f5b301; }
 .star-picker {
-  display: inline-flex; align-items: center; align-self: flex-start; gap: 2px; font-size: 30px;
-  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  display: inline-flex; align-items: center; align-self: center; gap: 3px; font-size: 42px;
+  margin: 4px 0; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .review-input {
   width: 100%; min-height: 110px; resize: vertical;
   border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5;
 }
-/* 하단 저장 바 */
+/* 하단 저장 바 (상단 실선 제거) */
+.composer.review-save-bar { border-top: none; }
 .review-save-btn { width: 100%; min-height: 44px; font-size: 15px; }
 
 /* ---- 리뷰 목록 ---- */

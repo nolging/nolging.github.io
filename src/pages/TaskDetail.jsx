@@ -107,7 +107,7 @@ export default function TaskDetail() {
   const inputRef = useRef(null)
 
   // ---- 추억 리뷰 서브탭(댓글/리뷰) ----
-  const [subTab, setSubTab] = useState('comments')
+  const [subTab, setSubTab] = useState(location.state?.openReview ? 'reviews' : 'comments')
   const [subDir, setSubDir] = useState('next')
   const [reviews, setReviews] = useState([])
   const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false })
@@ -424,12 +424,16 @@ export default function TaskDetail() {
   const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed
   function renderReviews() {
     if (reviewMeta.is_participant && !reviewMeta.has_reviewed) {
+      const ph = participants.length <= 1
+        ? '리뷰를 작성해 주세요'
+        : participants.length === 2
+          ? '리뷰를 작성해야 상대방의 리뷰를 볼 수 있어요'
+          : '리뷰를 작성해야 다른 참여자의 리뷰를 볼 수 있어요'
       return (
         <div className="review-compose">
-          <div className="review-compose-label">별점</div>
           <StarPicker value={rating} onChange={setRating} />
           <textarea className="review-input" rows={4} value={reviewComment}
-            onChange={(e) => setReviewComment(e.target.value)} placeholder="리뷰를 남겨 보세요" />
+            onChange={(e) => setReviewComment(e.target.value)} placeholder={ph} />
         </div>
       )
     }
@@ -554,7 +558,6 @@ export default function TaskDetail() {
           {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
           {task.status === 'accepted' && canComplete && <button className="btn btn-sm btn-success" onClick={() => { if (confirm('완료하시겠습니까?')) runTaskAction(() => completeTask(task.id)) }}>완료</button>}
           {task.status === 'accepted' && !canComplete && <span className="muted sm">진행 중</span>}
-          {isDone && reviewMeta.is_participant && !reviewMeta.has_reviewed && <button className="btn btn-sm btn-primary" onClick={() => changeSub('reviews')}>리뷰 작성</button>}
         </div>
       </div>
 
@@ -566,7 +569,7 @@ export default function TaskDetail() {
                 댓글 <span className="muted">{comments.length}</span>
               </button>
               <button type="button" className={`subtab ${subTab === 'reviews' ? 'active' : ''}`} onClick={() => changeSub('reviews')}>
-                리뷰
+                리뷰 <span className="muted">{reviews.length}</span>
               </button>
               <span className="subtab-underline"
                 style={{ transform: `translateX(${subPos * 100}%)`, transition: subDrag.active ? 'none' : 'transform .2s ease' }} />
