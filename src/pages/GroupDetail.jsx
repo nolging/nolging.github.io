@@ -363,8 +363,8 @@ export default function GroupDetail() {
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
           <h3 className="sheet-title filter-title">필터 설정</h3>
-          <button type="button" className="btn btn-ghost btn-sm" disabled={!catActive}
-            onClick={() => setCatFilter([...WISH_CATEGORIES])}>초기화</button>
+          <button type="button" className="btn btn-ghost btn-sm"
+            onClick={() => setCatFilter(catActive ? [...WISH_CATEGORIES] : [])}>전체</button>
         </div>
         <div className="chip-row filter-chips">
           {WISH_CATEGORIES.map((c) => {

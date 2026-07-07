@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 // 하단에서 올라오는 시트. 배경(어둡게) 탭 또는 아래로 드래그하면 닫힘.
 export default function BottomSheet({ open, onClose, children }) {
@@ -35,7 +36,9 @@ export default function BottomSheet({ open, onClose, children }) {
 
   if (!mounted) return null
 
-  return (
+  // document.body 로 포탈 → 스크롤 컨테이너(.content, iOS -webkit-overflow-scrolling)
+  // 안에 갇혀 상단바를 못 덮는 문제 방지. 백드롭이 화면 전체(상단바 포함)를 덮어 어디를 눌러도 닫힘.
+  return createPortal(
     <div className={`sheet-root ${shown ? 'shown' : ''}`}>
       <div className="sheet-backdrop" onClick={onClose} />
       <div
@@ -48,6 +51,7 @@ export default function BottomSheet({ open, onClose, children }) {
         <div className="sheet-handle" />
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

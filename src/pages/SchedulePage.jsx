@@ -305,8 +305,11 @@ export default function SchedulePage() {
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
           <h3 className="sheet-title filter-title">필터 설정</h3>
-          <button type="button" className="btn btn-ghost btn-sm" disabled={!filterActive}
-            onClick={() => { setCatFilter([...WISH_CATEGORIES]); setGroupFilter(myGroups.map((g) => g.id)) }}>초기화</button>
+          <button type="button" className="btn btn-ghost btn-sm"
+            onClick={() => {
+              if (filterActive) { setCatFilter([...WISH_CATEGORIES]); setGroupFilter(myGroups.map((g) => g.id)) }
+              else { setCatFilter([]); setGroupFilter([]) }
+            }}>전체</button>
         </div>
 
         <div className="filter-section-label">유형</div>
