@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief } from '../lib/api'
 import { repeatLabel, categoryStyle } from '../lib/constants'
 import Avatar from '../components/Avatar'
@@ -86,8 +86,18 @@ export default function SchedulePage() {
   const [error, setError] = useState('')
 
   const today = useMemo(() => new Date(), [])
-  const [view, setView] = useState({ y: today.getFullYear(), m: today.getMonth() })
-  const [selected, setSelected] = useState(ymd(today))
+  // 선택 날짜를 URL(?date=)에 보존 → 상세로 갔다가 뒤로 오면 그 날짜로 복원
+  const [searchParams, setSearchParams] = useSearchParams()
+  const paramDate = searchParams.get('date')
+  const initDate = /^\d{4}-\d{2}-\d{2}$/.test(paramDate || '') ? paramDate : ymd(today)
+  const initD = new Date(`${initDate}T00:00:00`)
+  const [view, setView] = useState({ y: initD.getFullYear(), m: initD.getMonth() })
+  const [selected, setSelected] = useState(initDate)
+
+  function selectDay(key) {
+    setSelected(key)
+    setSearchParams({ date: key }, { replace: true })
+  }
 
   useEffect(() => {
     (async () => {
@@ -169,7 +179,7 @@ export default function SchedulePage() {
             return (
               <button key={i} type="button"
                 className={`cal-cell ${key === selected ? 'sel' : ''} ${key === todayKey ? 'today' : ''}`}
-                onClick={() => setSelected(key)}>
+                onClick={() => selectDay(key)}>
                 <span className={`cal-day ${dow === 0 ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
                 <span className={`cal-dot ${daysWithAppt.has(key) ? 'on' : ''}`} />
               </button>
