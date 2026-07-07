@@ -157,7 +157,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; /* 카드 스와이프 시 좌측 오버플로가 가로 스크롤 안 만들게 */
   -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 28px 24px; background: var(--bg); /* 회색 캔버스는 전체폭 content 가 담당 */
+  --pad-y: 28px; --pad-x: 24px; /* 상단바↔제목 등 페이지 여백 기준값 (모바일에서 재정의) */
+  padding: var(--pad-y) var(--pad-x); background: var(--bg); /* 회색 캔버스는 전체폭 content 가 담당 */
 }
 
 /* ---- 페이지 ---- */
@@ -433,6 +434,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .td-name { font-size: 1.15rem; }
 .td-desc { margin: 0; color: var(--text); font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .td-actions { display: flex; align-items: center; gap: 8px; }
+/* 댓글 영역: 전체폭 흰색 패널. 상단 실선(border-top)이 화면 끝까지 닿고,
+   버튼↔실선·실선↔"댓글 N" 간격은 모두 상단바↔제목 간격(--pad-y)과 동일 */
+.task-detail { min-height: 100%; }
+.comment-section {
+  flex: 1 1 auto;
+  margin-inline: calc(50% - 50vw);            /* 전체폭 */
+  border-top: 1px solid var(--border);         /* 화면 끝까지 닿는 실선 */
+  background: #fff;                             /* 댓글 영역 흰색 */
+  padding: var(--pad-y) var(--pad-x) 0;        /* 상단=실선↔"댓글 N" 간격, 좌우=콘텐츠 인셋 */
+  margin-top: calc(var(--pad-y) - 18px);       /* 버튼↔실선 간격=--pad-y (.page gap 18 보정) */
+  margin-bottom: calc(-1 * var(--pad-y));      /* 흰 배경을 콘텐츠 하단 끝까지 */
+  padding-bottom: var(--pad-y);
+  display: flex; flex-direction: column; gap: 14px;
+}
 .comment-title { font-weight: 700; font-size: 1rem; }
 .comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .comment-item { list-style: none; }
@@ -861,7 +876,7 @@ a.mp-tel:active { opacity: .55; }
 /* ---- 반응형: 모바일 ---- */
 @media (max-width: 640px) {
   body { font-size: 14px; }
-  .content { padding: 16px 12px; }
+  .content { --pad-y: 16px; --pad-x: 12px; }
   .topbar {
     gap: 10px;
     padding: 0 14px; height: 54px;

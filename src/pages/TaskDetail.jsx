@@ -375,17 +375,17 @@ export default function TaskDetail() {
         </div>
       </div>
 
-      <hr className="divider" />
-
-      <div className="comment-title">댓글 <span className="muted">{comments.length}</span></div>
-      {error && <div className="alert alert-error">{error}</div>}
-      {comments.length === 0 ? (
-        <p className="muted sm">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
-      ) : (
-        <ul className="comment-list">
-          {roots.map((c) => renderThread(c))}
-        </ul>
-      )}
+      <div className="comment-section">
+        <div className="comment-title">댓글 <span className="muted">{comments.length}</span></div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {comments.length === 0 ? (
+          <p className="muted sm">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
+        ) : (
+          <ul className="comment-list">
+            {roots.map((c) => renderThread(c))}
+          </ul>
+        )}
+      </div>
 
       {toast && <div className="toast">{toast}</div>}
 
