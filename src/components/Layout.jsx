@@ -59,6 +59,13 @@ const CalendarIcon = () => tabSvg(<>
 const MyIcon = () => tabSvg(<>
   <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
 </>)
+const StoreIcon = () => tabSvg(<>
+  <path d="M4 4h16l-1 5H5z" /><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
+  <path d="M9 19v-5h6v5" />
+</>)
+const NoteIcon = () => tabSvg(<>
+  <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+</>)
 
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
@@ -77,6 +84,9 @@ export default function Layout() {
   const notifMatch = useMatch('/notifications')
   const notifSettingsMatch = useMatch('/notifications/settings')
   const scheduleMatch = useMatch('/schedule')
+  const storeMatch = useMatch('/store')
+  const notesMatch = useMatch('/notes')
+  const noteNewMatch = useMatch('/notes/new')
   const meMatch = useMatch('/me')
   const profileEditMatch = useMatch('/me/edit')
   const coinHistoryMatch = useMatch('/me/coins')
@@ -150,21 +160,21 @@ export default function Layout() {
   }, [])
   useEffect(() => { refreshUnread() }, [location.pathname])
 
-  // 마이 페이지 상단바의 츄르 알약: /me 진입 시 잔액 조회
+  // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
   const [coin, setCoin] = useState(null)
-  const onMe = !!meMatch
+  const needCoin = !!meMatch || !!storeMatch
   useEffect(() => {
-    if (!onMe) return
+    if (!needCoin) return
     let on = true
     getMyCoinBalance().then((b) => { if (on) setCoin(b) }).catch(() => {})
     return () => { on = false }
-  }, [onMe, location.pathname])
+  }, [needCoin, location.pathname])
 
   // 안전영역(상단 상태바 / 하단 홈 인디케이터)이 콘텐츠와 다른 색으로 "띠"처럼
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -369,6 +379,32 @@ export default function Layout() {
         </button>
       </header>
     )
+  } else if (storeMatch) {
+    // 상점: 좌측 "깜냥이 상점" 제목, 우측 보유 츄르 알약(표시용)
+    topbar = (
+      <header className="topbar">
+        <span className="topbar-heading">깜냥이 상점</span>
+        <span className="coin-pill push-right" aria-label="보유 츄르">
+          <span className="coin-pill-paw" aria-hidden="true">🐾</span>
+          <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
+        </span>
+      </header>
+    )
+  } else if (noteNewMatch) {
+    // 쪽지 쓰기: 좌측 뒤로(쪽지 목록으로), 제목 "쪽지 쓰기"
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">쪽지 쓰기</span>
+      </header>
+    )
+  } else if (notesMatch) {
+    // 쪽지: 좌측 "쪽지" 제목
+    topbar = (
+      <header className="topbar">
+        <span className="topbar-heading">쪽지</span>
+      </header>
+    )
   } else {
     // 기본 상단바
     topbar = (
@@ -414,6 +450,8 @@ export default function Layout() {
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
+          {isAdmin && <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>}
+          {isAdmin && <NavLink to="/notes"><NoteIcon /><span>쪽지</span></NavLink>}
           <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
         </nav>
       )}

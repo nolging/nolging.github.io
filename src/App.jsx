@@ -21,6 +21,9 @@ import ProfileEdit from './pages/ProfileEdit'
 import CoinHistory from './pages/CoinHistory'
 import Notifications from './pages/Notifications'
 import NotificationSettings from './pages/NotificationSettings'
+import Store from './pages/Store'
+import Notes from './pages/Notes'
+import NoteCompose from './pages/NoteCompose'
 import Admin from './pages/Admin'
 
 export default function App() {
@@ -54,6 +57,10 @@ export default function App() {
         <Route path="/me" element={<MyProfile />} />
         <Route path="/me/edit" element={<ProfileEdit />} />
         <Route path="/me/coins" element={<CoinHistory />} />
+        {/* 상점·쪽지: 아직 구현 전 → 관리자만 접근 */}
+        <Route path="/store" element={<ProtectedRoute adminOnly><Store /></ProtectedRoute>} />
+        <Route path="/notes" element={<ProtectedRoute adminOnly><Notes /></ProtectedRoute>} />
+        <Route path="/notes/new" element={<ProtectedRoute adminOnly><NoteCompose /></ProtectedRoute>} />
         <Route
           path="/admin"
           element={

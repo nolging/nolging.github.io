@@ -1041,6 +1041,81 @@ a.mp-tel:active { opacity: .55; }
 /* ---- 테이블 가로 스크롤 (모바일) ---- */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
+/* ---- 중앙 모달 (상점 아이템 / 쪽지 수신인 선택) ---- */
+.modal-root { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(20, 22, 40, 0); transition: background .2s ease; }
+.modal-root.shown .modal-backdrop { background: rgba(20, 22, 40, .45); }
+.modal-card {
+  position: relative; z-index: 1; width: 100%; max-width: 360px;
+  background: var(--surface); border-radius: 18px; padding: 24px 22px;
+  box-shadow: 0 12px 40px rgba(20, 22, 40, .28);
+  transform: translateY(12px) scale(.98); opacity: 0;
+  transition: transform .2s cubic-bezier(.2, .8, .2, 1), opacity .2s ease;
+  max-height: calc(100% - 48px); overflow-y: auto;
+}
+.modal-root.shown .modal-card { transform: none; opacity: 1; }
+.modal-title { font-size: 1.05rem; margin: 0 0 16px; text-align: center; color: var(--text); }
+
+/* ---- 상점 ---- */
+.store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.store-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--surface); border: none; border-radius: var(--radius);
+  box-shadow: var(--card-shadow); padding: 16px 8px 14px; cursor: pointer; text-align: center;
+  transition: transform .12s;
+}
+.store-card:active { transform: scale(.96); }
+.store-card-img {
+  font-size: 38px; line-height: 1; width: 62px; height: 62px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); border-radius: 16px; margin-bottom: 4px;
+}
+.store-card-name { font-weight: 700; font-size: 13px; color: var(--text); }
+.store-card-price { font-size: 12px; font-weight: 700; color: var(--primary); }
+
+.store-detail { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.store-detail-img {
+  font-size: 62px; line-height: 1; width: 108px; height: 108px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); border-radius: 22px;
+}
+.store-detail-name { font-size: 1.15rem; font-weight: 800; margin: 6px 0 0; color: var(--text); }
+.store-detail-desc { font-size: 13.5px; color: var(--muted); line-height: 1.55; white-space: pre-line; margin: 0; }
+.store-detail-price { font-size: 15px; font-weight: 800; color: var(--primary); }
+.store-notice { font-size: 13px; color: var(--muted); background: var(--bg); border-radius: 10px; padding: 8px 12px; }
+.store-detail-actions { display: flex; gap: 10px; width: 100%; margin-top: 8px; }
+.store-detail-actions .btn { flex: 1; min-height: 44px; }
+
+/* ---- 쪽지 목록 ---- */
+.note-list { list-style: none; margin: 0; padding: 0 0 calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+.note-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 14px 16px; }
+.note-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.note-card-peer { font-weight: 700; font-size: 14px; color: var(--text); }
+.note-card-date { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.note-card-body { margin: 0; font-size: 14px; color: var(--text); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+
+/* ---- 쪽지 쓰기 ---- */
+.note-compose { display: flex; flex-direction: column; gap: 14px; }
+.note-field { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 14px 16px; }
+.note-to, .note-from { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: none; }
+.note-to { cursor: pointer; }
+.note-from { cursor: default; }
+.note-field-label { font-weight: 800; font-size: 14px; color: var(--primary); flex-shrink: 0; }
+.note-field-value { font-weight: 600; font-size: 14px; color: var(--text); display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.note-field-value.is-empty { color: var(--muted); font-weight: 500; }
+.note-field-sub { font-size: 12px; color: var(--muted); font-weight: 500; }
+.note-field-placeholder { color: var(--muted); font-size: 14px; }
+.note-body-field { position: relative; padding: 0; }
+.note-body-input {
+  width: 100%; border: none; background: transparent; resize: none; box-shadow: none;
+  padding: 16px 16px 28px; font: inherit; font-size: 14px; line-height: 1.6; color: var(--text); border-radius: var(--radius);
+}
+.note-body-input:focus { outline: none; border-color: transparent; }
+.note-char-count { position: absolute; right: 14px; bottom: 10px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.note-pick { display: flex; flex-direction: column; gap: 14px; }
+.note-pick-actions { display: flex; gap: 10px; margin-top: 4px; }
+.note-pick-actions .btn { flex: 1; min-height: 44px; }
+
 /* ---- 반응형: 태블릿 ---- */
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }

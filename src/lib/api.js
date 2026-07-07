@@ -409,6 +409,46 @@ export async function deleteNotification(id) {
   if (error) throw error
 }
 
+// ---- 쪽지 (notes) -------------------------------------------
+// notes 테이블/RPC 미배포(42P01/PGRST202) 시 조회는 빈 배열로 폴백.
+
+export async function listReceivedNotes(userId) {
+  const { data, error } = await supabase
+    .from('notes').select('*')
+    .eq('recipient_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    if (error.code === '42P01') return []
+    throw error
+  }
+  return data ?? []
+}
+
+export async function listSentNotes(userId) {
+  const { data, error } = await supabase
+    .from('notes').select('*')
+    .eq('sender_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    if (error.code === '42P01') return []
+    throw error
+  }
+  return data ?? []
+}
+
+export async function sendNote({ groupId, recipientId, body }) {
+  const { data, error } = await supabase.rpc('send_note', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_body: body,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /send_note/.test(error.message || '')) {
+      throw new Error('쪽지 기능이 아직 DB에 설정되지 않았습니다. (send_note 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Array.isArray(data) ? data[0] : data
+}
+
 // ---- 내 프로필 (연락처/생년월일 포함) ------------------------
 
 export async function getMyProfile() {

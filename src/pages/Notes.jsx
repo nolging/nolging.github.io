@@ -1,0 +1,90 @@
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { listReceivedNotes, listSentNotes } from '../lib/api'
+
+function NoteFabIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  )
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('ko-KR', { year: '2-digit', month: 'long', day: 'numeric' })
+  } catch { return '' }
+}
+
+export default function Notes() {
+  const { user } = useAuth()
+  const location = useLocation()
+  const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
+  const [received, setReceived] = useState([])
+  const [sent, setSent] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!user?.id) return
+    let on = true
+    ;(async () => {
+      try {
+        const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
+        if (!on) return
+        setReceived(r)
+        setSent(s)
+      } catch (err) {
+        if (on) setError(err.message)
+      } finally {
+        if (on) setLoading(false)
+      }
+    })()
+    return () => { on = false }
+  }, [user?.id])
+
+  const list = tab === 'received' ? received : sent
+
+  return (
+    <div className="page">
+      {error && <div className="alert alert-error">{error}</div>}
+
+      <div className="tabs">
+        <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
+          받은 쪽지함
+        </button>
+        <button type="button" className={`tab ${tab === 'sent' ? 'active' : ''}`} onClick={() => setTab('sent')}>
+          보낸 쪽지함
+        </button>
+        <span className="tab-underline" style={{ width: '50%', transform: `translateX(${tab === 'received' ? '0' : '100%'})` }} />
+      </div>
+
+      {loading ? (
+        <div className="spinner" />
+      ) : list.length === 0 ? (
+        <div className="empty">{tab === 'received' ? '받은 쪽지가 없어요.' : '보낸 쪽지가 없어요.'}</div>
+      ) : (
+        <ul className="note-list">
+          {list.map((n) => (
+            <li key={n.id} className="note-card">
+              <div className="note-card-head">
+                <span className="note-card-peer">
+                  {tab === 'received' ? `${n.sender_name} 님이 보냄` : `${n.recipient_name} 님에게`}
+                </span>
+                <span className="note-card-date">{formatDate(n.created_at)}</span>
+              </div>
+              <p className="note-card-body">{n.body}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Link to="/notes/new" className="fab" aria-label="쪽지 쓰기" title="쪽지 쓰기">
+        <NoteFabIcon />
+      </Link>
+    </div>
+  )
+}

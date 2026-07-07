@@ -875,3 +875,64 @@ begin
 end;
 $$;
 grant execute on function public.admin_coin_balances() to authenticated;
+
+-- =============================================================
+--  쪽지 (notes)
+--  그룹 멤버끼리 주고받는 짧은 메모(최대 150자).
+--  - 보낸/받는 사람의 "그룹 내 표시 닉네임"을 스냅샷으로 저장.
+--  - 직접 INSERT 불가(RLS): send_note(정의자) 로만 기록.
+--  - 조회는 본인이 보낸/받은 것만.
+-- =============================================================
+create table if not exists public.notes (
+  id            uuid primary key default gen_random_uuid(),
+  group_id      uuid not null references public.groups(id)   on delete cascade,
+  sender_id     uuid not null references public.profiles(id) on delete cascade,
+  recipient_id  uuid not null references public.profiles(id) on delete cascade,
+  sender_name   text not null,   -- 보낸 사람의 그룹 내 닉네임(스냅샷)
+  recipient_name text not null,  -- 받는 사람의 그룹 내 닉네임(스냅샷)
+  body          text not null,
+  is_read       boolean not null default false,
+  created_at    timestamptz not null default now()
+);
+create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
+create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
+alter table public.notes enable row level security;
+
+-- 본인이 보내거나 받은 쪽지만 조회. INSERT 는 send_note(정의자)만.
+drop policy if exists notes_select on public.notes;
+create policy notes_select on public.notes
+  for select to authenticated
+  using (sender_id = auth.uid() or recipient_id = auth.uid());
+-- 받은 쪽지 읽음 처리(본인 수신분만)
+drop policy if exists notes_update on public.notes;
+create policy notes_update on public.notes
+  for update to authenticated
+  using (recipient_id = auth.uid()) with check (recipient_id = auth.uid());
+
+-- ---- RPC: 쪽지 보내기 ----------------------------------------
+-- 같은 그룹의 다른 멤버에게만. 내용은 최대 150자. 표시 닉네임을 스냅샷 저장.
+create or replace function public.send_note(p_group_id uuid, p_recipient_id uuid, p_body text)
+returns public.notes language plpgsql security definer set search_path = public as $$
+declare r public.notes; v_sender text; v_recipient text;
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 보낼 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then
+    raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then
+    raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+  if p_body is null or btrim(p_body) = '' then
+    raise exception '쪽지 내용을 입력해 주세요.'; end if;
+  if char_length(p_body) > 150 then
+    raise exception '쪽지는 최대 150자까지 작성할 수 있습니다.'; end if;
+
+  v_sender    := public.notif_member_name(p_group_id, auth.uid());
+  v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, body)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, btrim(p_body))
+    returning * into r;
+  return r;
+end;
+$$;
+grant execute on function public.send_note(uuid, uuid, text) to authenticated;

@@ -34,6 +34,35 @@ export function formatCoin(amount) {
   return `${n.toLocaleString('ko-KR')} ${COIN_UNIT}`
 }
 
+// 깜냥이 상점 아이템 (프론트 하드코딩 — 이미지는 임시 이모지, 추후 교체 예정)
+// giftOnly: 구매 불가, 선물만 가능
+export const STORE_ITEMS = [
+  {
+    id: 'wish', name: '소원권', price: 5, emoji: '🎫', giftOnly: true,
+    desc: '상대방이 소원을 적어서 나에게 보내면 무엇이든 들어줘야 해요\n*선물만 가능',
+  },
+  {
+    id: 'couple-ring', name: '커플링', price: 5000, emoji: '💍',
+    desc: '연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',
+  },
+  {
+    id: 'friend-ring', name: '우정링', price: 3000, emoji: '🤝',
+    desc: '친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',
+  },
+  {
+    id: 'telescope', name: '천체 망원경', price: 3, emoji: '🔭',
+    desc: '블러 처리된 리뷰를 볼 수 있어요',
+  },
+  {
+    id: 'eraser', name: '지우개', price: 3, emoji: '🧽',
+    desc: '내 이름을 지우고 쪽지를 보내 보세요',
+  },
+  {
+    id: 'cassette', name: '카세트 테이프', price: 5, emoji: '📼',
+    desc: '쪽지와 함께 음악을 선물해 보세요',
+  },
+]
+
 // OTT 제공처 영문명(TMDB) → 한글 표기. 없으면 원문 유지.
 const OTT_NAME_KO = {
   'Netflix': '넷플릭스',
