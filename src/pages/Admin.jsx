@@ -19,8 +19,8 @@ export default function Admin() {
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  // 츄르 수동 지급
-  const [grant, setGrant] = useState({ userId: '', amount: '', reason: '' })
+  // 츄르 수동 지급/차감 (모바일 숫자 키패드엔 - 키가 없어 부호는 토글로 선택)
+  const [grant, setGrant] = useState({ userId: '', sign: 1, amount: '', reason: '' })
   const [grantBusy, setGrantBusy] = useState(false)
   const setGrantField = (k) => (e) => setGrant((g) => ({ ...g, [k]: e.target.value }))
 
@@ -55,15 +55,16 @@ export default function Admin() {
   async function handleGrant(e) {
     e.preventDefault()
     setError(''); setNotice('')
-    const amount = parseInt(grant.amount, 10)
+    const mag = parseInt(grant.amount, 10)
     if (!grant.userId) { setError('지급할 사용자를 선택해 주세요.'); return }
-    if (!Number.isInteger(amount) || amount === 0) { setError('지급/차감 수량(0이 아닌 정수)을 입력해 주세요.'); return }
+    if (!Number.isInteger(mag) || mag <= 0) { setError('수량(1 이상 정수)을 입력해 주세요.'); return }
+    const amount = grant.sign * mag
     setGrantBusy(true)
     try {
       const bal = await adminGrantCoin({ userId: grant.userId, amount, reason: grant.reason })
       const who = users.find((u) => u.id === grant.userId)?.nickname || '사용자'
       setNotice(`'${who}' ${amount > 0 ? `+${amount}` : amount} 츄르 → 잔액 ${formatCoin(bal)}`)
-      setGrant({ userId: '', amount: '', reason: '' })
+      setGrant({ userId: '', sign: 1, amount: '', reason: '' })
       await load()
     } catch (err) { setError(err.message) } finally { setGrantBusy(false) }
   }
@@ -137,16 +138,25 @@ export default function Admin() {
       <div className="card">
         <h3 className="card-title">츄르 지급</h3>
         <form onSubmit={handleGrant} className="form">
+          <label className="field"><span>사용자 *</span>
+            <select value={grant.userId} onChange={setGrantField('userId')}>
+              <option value="">선택…</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.nickname} ({formatCoin(balances[u.id] || 0)})</option>
+              ))}
+            </select></label>
           <div className="field-row">
-            <label className="field"><span>사용자 *</span>
-              <select value={grant.userId} onChange={setGrantField('userId')}>
-                <option value="">선택…</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.nickname} ({formatCoin(balances[u.id] || 0)})</option>
-                ))}
-              </select></label>
-            <label className="field field-narrow"><span>수량 * (차감은 음수)</span>
-              <input type="number" inputMode="numeric" value={grant.amount} onChange={setGrantField('amount')} placeholder="예: 10" /></label>
+            <div className="field"><span>구분 *</span>
+              <div className="toggle-group">
+                <button type="button" className={`toggle ${grant.sign === 1 ? 'active' : ''}`}
+                  onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
+                <button type="button" className={`toggle ${grant.sign === -1 ? 'active' : ''}`}
+                  onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
+              </div>
+            </div>
+            <label className="field field-narrow"><span>수량 *</span>
+              <input type="number" inputMode="numeric" min="1" value={grant.amount}
+                onChange={setGrantField('amount')} placeholder="예: 10" /></label>
           </div>
           <label className="field"><span>사유 (선택)</span>
             <input value={grant.reason} onChange={setGrantField('reason')} placeholder="예: 이벤트 보상" /></label>
