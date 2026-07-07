@@ -117,6 +117,13 @@ export default function TaskDetail() {
   const [subDrag, setSubDrag] = useState({ x: 0, active: false })
   const bodyRef = useRef(null)
   const subSwipe = useRef(null) // { x0, y0, locked, w }
+  const reviewInputRef = useRef(null)
+  // 리뷰 입력에 포커스 → 키보드가 올라와 셸이 축소된 뒤 입력창을 저장 버튼 바로 위로 스크롤
+  function onReviewFocus() {
+    const scroll = () => reviewInputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    setTimeout(scroll, 200)
+    setTimeout(scroll, 450)
+  }
 
   useEffect(() => {
     if (!toast) return
@@ -432,7 +439,7 @@ export default function TaskDetail() {
       return (
         <div className="review-compose">
           <StarPicker value={rating} onChange={setRating} />
-          <textarea className="review-input" rows={4} value={reviewComment}
+          <textarea className="review-input" rows={4} value={reviewComment} ref={reviewInputRef} onFocus={onReviewFocus}
             onChange={(e) => setReviewComment(e.target.value)} placeholder={ph} />
         </div>
       )

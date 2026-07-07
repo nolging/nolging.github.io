@@ -38,6 +38,8 @@ function parseRule(rule) {
 function occursOn(appt, date) {
   const baseDay = midnight(new Date(appt.scheduled_at))
   const target = midnight(date)
+  // 추억(done)은 지난 일회성 기록이므로 반복 전개하지 않고 실제 날짜에만 표시
+  if (appt.status === 'done') return +target === +baseDay
   if (target < baseDay) return false
   if (appt.repeat_until && ymd(target) > appt.repeat_until) return false
 

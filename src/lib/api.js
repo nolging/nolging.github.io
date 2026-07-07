@@ -259,10 +259,11 @@ export async function rescheduleTask(opts) {
 
 // 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용
 export async function listMyAppointments() {
+  // accepted(약속) + done(추억) 모두 — 일정 캘린더에서 지난 추억도 보이도록
   const { data, error } = await supabase
     .from('tasks')
     .select('*, groups(name), task_participants(user_id)')
-    .eq('status', 'accepted')
+    .in('status', ['accepted', 'done'])
     .not('scheduled_at', 'is', null)
     .order('scheduled_at', { ascending: true })
   if (error) throw error
