@@ -354,8 +354,8 @@ begin
     from public.profiles p where p.id = NEW.user_id;
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
   select gm.user_id, NEW.user_id, 'new_member',
-         '[' || v_group.name || ']에 ' || v_name || ' 님이 가입했어요',
-         null,
+         '새 멤버가 가입했어요',
+         v_name || ' 님 입장!',
          NEW.group_id
   from public.group_members gm
   where gm.group_id = NEW.group_id and gm.user_id <> NEW.user_id;
@@ -561,10 +561,8 @@ begin
   -- 놀기 신청 알림: 약속 참여자에게만 (신청자 본인 제외)
   insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
   select tp.user_id, auth.uid(), 'accept',
-         public.notif_member_name(v_gid, auth.uid()) || ' 님의 '
-           || public.notif_accept_term((select group_type from public.groups where id = v_gid))
-           || '! [' || r.title || ']',
-         null, v_gid, p_task_id
+         public.notif_member_name(v_gid, auth.uid()) || ' 님의 놀기 신청!',
+         r.title, v_gid, p_task_id
   from public.task_participants tp
   where tp.task_id = p_task_id and tp.user_id <> auth.uid();
 
