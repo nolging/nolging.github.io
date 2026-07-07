@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="erBody" x1="64" y1="56" x2="64" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#EBE4D5"></stop>
+    </linearGradient>
+    <linearGradient id="erSleeve" x1="46" y1="54" x2="46" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5F92DB"></stop><stop offset="1" stop-color="#3D6BB5"></stop>
+    </linearGradient>
+    <filter id="erBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"></feGaussianBlur></filter>
+  </defs>
+  <g transform="rotate(-7 64 64)">
+    <polygon points="102,56 111,47 111,73 102,82" fill="#DFD7C6"></polygon>
+    <polygon points="26,56 35,47 111,47 102,56" fill="#F6F1E6"></polygon>
+    <rect x="26" y="56" width="76" height="26" rx="5" fill="url(#erBody)"></rect>
+    <rect x="68" y="56" width="5" height="26" fill="#000000" fill-opacity="0.09" filter="url(#erBlur)"></rect>
+    <line x1="76" y1="59.5" x2="96" y2="59.5" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="3" stroke-linecap="round"></line>
+    <polygon points="24,54 33,45 69,45 60,54" fill="#7EA8E3"></polygon>
+    <rect x="24" y="54" width="44" height="30" rx="4" fill="url(#erSleeve)"></rect>
+    <rect x="32" y="62" width="22" height="13" rx="3" fill="#FFFFFF"></rect>
+    <line x1="36" y1="66.5" x2="50" y2="66.5" stroke="#9FB6D9" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="36" y1="70.5" x2="46" y2="70.5" stroke="#9FB6D9" stroke-width="2" stroke-linecap="round"></line>
+    <circle cx="100" cy="90" r="2" fill="#D4CBB8"></circle>
+    <circle cx="108" cy="86" r="1.4" fill="#D4CBB8"></circle>
+  </g>
+</svg>

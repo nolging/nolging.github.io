@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="tsTube" x1="60" y1="50" x2="60" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5C8AD1"></stop><stop offset="1" stop-color="#33568F"></stop>
+    </linearGradient>
+    <filter id="tsBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"></feGaussianBlur></filter>
+  </defs>
+  <line x1="61" y1="72" x2="70" y2="110" stroke="#4A3A28" stroke-width="5.5" stroke-linecap="round"></line>
+  <line x1="61" y1="72" x2="37" y2="109" stroke="#6B4F33" stroke-width="6" stroke-linecap="round"></line>
+  <line x1="61" y1="72" x2="85" y2="109" stroke="#6B4F33" stroke-width="6" stroke-linecap="round"></line>
+  <g transform="rotate(-26 62 66)">
+    <rect x="14" y="56.5" width="7" height="7" rx="2.5" fill="#E8B23F"></rect>
+    <rect x="20" y="55" width="11" height="10" rx="3" fill="#2E4A7A"></rect>
+    <rect x="30" y="50" width="58" height="20" rx="5" fill="url(#tsTube)"></rect>
+    <rect x="56" y="50" width="5" height="20" fill="#E8B23F" fill-opacity="0.95"></rect>
+    <rect x="86" y="47" width="13" height="26" rx="5" fill="#2C4C86"></rect>
+    <rect x="83.5" y="48.5" width="4" height="23" rx="2" fill="#E8B23F"></rect>
+    <rect x="33" y="52" width="50" height="5" rx="2.5" fill="#FFFFFF" fill-opacity="0.35" filter="url(#tsBlur)"></rect>
+    <rect x="33" y="63.5" width="50" height="4.5" rx="2.2" fill="#000000" fill-opacity="0.14" filter="url(#tsBlur)"></rect>
+  </g>
+  <circle cx="61" cy="72" r="4.5" fill="#E8B23F"></circle>
+  <path d="M100 21 L101.75 26.25 L107 28 L101.75 29.75 L100 35 L98.25 29.75 L93 28 L98.25 26.25 Z" fill="#F2C14E"></path>
+  <circle cx="110" cy="42" r="1.8" fill="#F2C14E" fill-opacity="0.85"></circle>
+  <circle cx="90" cy="16" r="1.5" fill="#F2C14E" fill-opacity="0.7"></circle>
+</svg>

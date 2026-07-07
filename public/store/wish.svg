@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="tkA" x1="16" y1="37" x2="100" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB25E"></stop><stop offset="1" stop-color="#EF6F1A"></stop>
+    </linearGradient>
+    <linearGradient id="tkB" x1="24" y1="32" x2="100" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8ECD2"></stop><stop offset="1" stop-color="#E2CB9B"></stop>
+    </linearGradient>
+    <mask id="tkNotch" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect width="128" height="128" fill="#fff"></rect>
+      <circle cx="86" cy="37" r="5.5" fill="#000"></circle>
+      <circle cx="86" cy="91" r="5.5" fill="#000"></circle>
+    </mask>
+    <filter id="tkBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"></feGaussianBlur></filter>
+  </defs>
+  <g transform="rotate(4 64 64)">
+    <rect x="24" y="32" width="92" height="52" rx="9" fill="url(#tkB)"></rect>
+  </g>
+  <g transform="rotate(-9 64 64)">
+    <rect x="16" y="37" width="96" height="54" rx="9" fill="url(#tkA)" mask="url(#tkNotch)"></rect>
+    <line x1="86" y1="45" x2="86" y2="83" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round" stroke-dasharray="1.5 5"></line>
+    <rect x="25" y="46" width="52" height="36" rx="5" fill="#FFF6E8"></rect>
+    <polygon transform="translate(40 64)" points="0,-8 2,-2.75 7.61,-2.47 3.23,1.05 4.7,6.47 0,3.4 -4.7,6.47 -3.23,1.05 -7.61,-2.47 -2,-2.75" fill="#F2801E"></polygon>
+    <line x1="54" y1="58.5" x2="68" y2="58.5" stroke="#EDCB9C" stroke-width="3.5" stroke-linecap="round"></line>
+    <line x1="54" y1="69.5" x2="64" y2="69.5" stroke="#EDCB9C" stroke-width="3.5" stroke-linecap="round"></line>
+    <polygon transform="translate(99 64) scale(0.62)" points="0,-8 2,-2.75 7.61,-2.47 3.23,1.05 4.7,6.47 0,3.4 -4.7,6.47 -3.23,1.05 -7.61,-2.47 -2,-2.75" fill="#FFFFFF" fill-opacity="0.9"></polygon>
+    <rect x="20" y="40" width="88" height="5" rx="2.5" fill="#FFFFFF" fill-opacity="0.35" filter="url(#tkBlur)"></rect>
+    <rect x="20" y="84" width="88" height="5" rx="2.5" fill="#7A3708" fill-opacity="0.16" filter="url(#tkBlur)"></rect>
+  </g>
+</svg>
