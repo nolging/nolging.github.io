@@ -37,7 +37,7 @@ button, input, textarea, select, optgroup { font-family: inherit; }
   .btn-ghost:hover, .menu-pop button:hover, .avatar-menu button:hover,
   .toggle:hover, .bottomnav a:hover { background: transparent; }
   .task-item:hover { box-shadow: var(--card-shadow); }
-  .cal-appt:hover, a:hover { background: transparent; }
+  .cal-appt:hover, a:not(.mp-coin):hover { background: transparent; }
 }
 html, body, #root { height: 100%; margin: 0; }
 body {
@@ -269,8 +269,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 마이 페이지 (시안) ---- */
 .topbar-title-lg { font-size: 1.35rem; font-weight: 800; letter-spacing: -.5px; }
-.mp-coin { display: block; position: relative; overflow: hidden; background: var(--primary); border-radius: 24px; padding: 20px; color: #fff; text-decoration: none; }
+.mp-coin { display: block; position: relative; overflow: hidden; background: linear-gradient(135deg, #8574f2 0%, #7363e8 52%, #5f4ed9 100%); border-radius: 24px; padding: 20px; color: #fff; text-decoration: none; transition: transform .1s; }
 .mp-coin:hover { text-decoration: none; }
+.mp-coin:active { transform: scale(.99); }
 .mp-coin-amount { display: flex; align-items: baseline; gap: 6px; }
 .mp-coin-num { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
 .mp-coin-unit { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, .75); }
