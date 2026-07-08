@@ -1346,7 +1346,7 @@ a.mp-tel:active { opacity: .55; }
 /* 커플 링 수령/거절 버튼 */
 .couple-actions { display: flex; gap: 10px; }
 .couple-actions .btn { flex: 1; }
-.couple-actions .couple-reject { color: #cf5e88; background: rgba(207, 94, 136, .1); }
+.couple-actions .couple-reject { color: var(--muted); background: rgba(139, 135, 150, .12); }
 
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
