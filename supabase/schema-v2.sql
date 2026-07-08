@@ -986,6 +986,42 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
 on conflict (id) do nothing;
 
 -- =============================================================
+--  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템
+--  구매(purchase) 또는 선물(gift)로 획득. 선물은 준 사람 정보를 스냅샷.
+--  직접 INSERT 불가(RLS): 구매/선물/사용 RPC(정의자)만 기록. 조회는 본인 것만.
+-- =============================================================
+create table if not exists public.user_items (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references public.profiles(id) on delete cascade,  -- 소유자
+  item_id      text not null,
+  item_name    text not null,
+  source       text not null check (source in ('purchase', 'gift')),
+  from_user_id uuid references public.profiles(id) on delete set null,          -- 선물한 사람(구매는 null)
+  from_name    text,                                                            -- 선물한 사람 표시명(스냅샷)
+  from_avatar  text,                                                            -- 선물한 사람 아바타(스냅샷)
+  group_id     uuid references public.groups(id) on delete set null,            -- 선물 맥락 그룹
+  status       text not null default 'active' check (status in ('active', 'used')),
+  used_at      timestamptz,
+  created_at   timestamptz not null default now()
+);
+create index if not exists idx_user_items_owner on public.user_items(user_id, status, created_at desc);
+alter table public.user_items enable row level security;
+
+drop policy if exists user_items_select on public.user_items;
+create policy user_items_select on public.user_items
+  for select to authenticated using (user_id = auth.uid());
+
+-- 기존 선물 기록(item_gifts) → 인벤토리로 1회 이관 (재실행 안전)
+insert into public.user_items (user_id, item_id, item_name, source, from_user_id, from_name, group_id, created_at)
+  select g.recipient_id, g.item_id, g.item_name, 'gift', g.sender_id, g.sender_name, g.group_id, g.created_at
+  from public.item_gifts g
+  where not exists (
+    select 1 from public.user_items ui
+    where ui.user_id = g.recipient_id and ui.from_user_id = g.sender_id
+      and ui.item_id = g.item_id and ui.created_at = g.created_at
+  );
+
+-- =============================================================
 --  상점 구매 (츄르 차감)
 --  정가/선물전용은 store_items 에서 읽어 검증. 성공 시 coin_ledger 에 -가격 기록.
 -- =============================================================
@@ -1003,6 +1039,9 @@ begin
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
     values (auth.uid(), -it.price, it.name || ' 구매', 'purchase');
+  -- 인벤토리에 추가
+  insert into public.user_items(user_id, item_id, item_name, source)
+    values (auth.uid(), it.id, it.name, 'purchase');
 
   return v_balance - it.price;
 end;
@@ -1038,7 +1077,7 @@ create policy item_gifts_select on public.item_gifts
 -- 정가는 서버에서 확정(구매와 동일). 받는 사람 츄르는 늘지 않고, 선물 기록만 남김.
 create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer; v_sender text; v_recipient text;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text;
 begin
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
@@ -1057,11 +1096,15 @@ begin
 
   v_sender    := public.notif_member_name(p_group_id, auth.uid());
   v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+  select avatar_url into v_sender_av from public.group_members where group_id = p_group_id and user_id = auth.uid();
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
     values (auth.uid(), -it.price, it.name || ' 선물', 'gift');
   insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
     values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
+  -- 받는 사람 인벤토리에 추가(준 사람 정보 스냅샷)
+  insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id)
+    values (p_recipient_id, it.id, it.name, 'gift', auth.uid(), v_sender, v_sender_av, p_group_id);
   -- 받는 사람에게 알림(→ Database Webhook → 푸시)
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
     values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name, p_group_id);
@@ -1070,3 +1113,36 @@ begin
 end;
 $$;
 grant execute on function public.gift_item(text, uuid, uuid) to authenticated;
+
+-- =============================================================
+--  소원권 사용 (use_wish)
+--  내가 보유한, 특정 사람이 준 소원권 1장을 사용(used) 처리하고,
+--  그 사람에게 소원을 전달(알림 + 푸시). 소원권은 선물 전용이라 항상 준 사람이 있음.
+-- =============================================================
+create or replace function public.use_wish(p_from_user_id uuid, p_wish text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_name text;
+begin
+  if p_wish is null or btrim(p_wish) = '' then
+    raise exception '소원을 입력해 주세요.'; end if;
+  if char_length(p_wish) > 300 then
+    raise exception '소원이 너무 길어요.'; end if;
+
+  -- 해당 사람이 준 활성 소원권 1장 (오래된 것부터)
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'wish' and status = 'active'
+     and from_user_id = p_from_user_id
+   order by created_at asc limit 1;
+  if v_item.id is null then
+    raise exception '사용할 수 있는 소원권이 없습니다.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_name := coalesce(public.notif_member_name(v_item.group_id, auth.uid()), '');
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_from_user_id, auth.uid(), 'wish',
+            case when v_name <> '' then v_name || ' 님이 소원을 빌었어요' else '소원이 도착했어요' end,
+            btrim(p_wish), v_item.group_id);
+end;
+$$;
+grant execute on function public.use_wish(uuid, text) to authenticated;

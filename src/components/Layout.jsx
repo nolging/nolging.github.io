@@ -89,6 +89,7 @@ export default function Layout() {
   const notifSettingsMatch = useMatch('/notifications/settings')
   const scheduleMatch = useMatch('/schedule')
   const storeMatch = useMatch('/store')
+  const inventoryMatch = useMatch('/inventory')
   const notesMatch = useMatch('/notes')
   const noteNewMatch = useMatch('/notes/new')
   const meMatch = useMatch('/me')
@@ -180,7 +181,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -394,6 +395,14 @@ export default function Layout() {
           <span className="coin-pill-paw" aria-hidden="true">🐾</span>
           <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
         </span>
+      </header>
+    )
+  } else if (inventoryMatch) {
+    // 인벤토리: 좌측 뒤로(상점으로), 제목 "인벤토리"
+    topbar = (
+      <header className="topbar">
+        <Link to="/store" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">인벤토리</span>
       </header>
     )
   } else if (noteNewMatch) {

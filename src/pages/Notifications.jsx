@@ -24,6 +24,7 @@ const ICONS = {
   accept: '🙌',
   reminder: '⏰',
   gift: '🎁',
+  wish: '🌟',
 }
 
 export default function Notifications() {

@@ -485,6 +485,32 @@ export async function purchaseItem(itemId) {
   return Number(data) || 0
 }
 
+// 내 인벤토리(보유 아이템, 사용 안 한 것). user_items 미배포 시 빈 배열.
+export async function listInventory(userId) {
+  const { data, error } = await supabase
+    .from('user_items')
+    .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, created_at')
+    .eq('user_id', userId).eq('status', 'active')
+    .order('created_at', { ascending: false })
+  if (error) {
+    if (error.code === '42P01') return []
+    throw error
+  }
+  return data ?? []
+}
+
+// 소원권 사용: 준 사람(fromUserId)에게 소원을 보냄. 소원권 1장 소모.
+export async function useWish({ fromUserId, wish }) {
+  const { data, error } = await supabase.rpc('use_wish', { p_from_user_id: fromUserId, p_wish: wish })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_wish/.test(error.message || '')) {
+      throw new Error('소원권 기능이 아직 DB에 설정되지 않았습니다. (use_wish 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.
 export async function giftItem(itemId, groupId, recipientId) {
   const { data, error } = await supabase.rpc('gift_item', {

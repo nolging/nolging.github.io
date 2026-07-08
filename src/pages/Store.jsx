@@ -1,25 +1,14 @@
 import { useEffect, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
+import StoreItemImage from '../components/StoreItemImage'
 import { formatCoin } from '../lib/constants'
 import { listStoreItems, purchaseItem, giftItem } from '../lib/api'
 
-// 아이템 이미지: public/store/{id}.svg 를 우선 사용하고, 없으면 이모지로 폴백.
-function ItemImage({ id, emoji, className }) {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => { setFailed(false) }, [id])
-  return (
-    <span className={className} aria-hidden="true">
-      {failed
-        ? emoji
-        : <img className="store-img" src={`/store/${id}.svg`} alt="" onError={() => setFailed(true)} />}
-    </span>
-  )
-}
-
 export default function Store() {
   const { refreshCoin } = useOutletContext()
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -86,6 +75,12 @@ export default function Store() {
     <div className="page">
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
+      <div className="store-toolbar">
+        <button type="button" className="btn btn-sm inv-link" onClick={() => navigate('/inventory')}>
+          🎒 인벤토리
+        </button>
+      </div>
+
       {loading ? (
         <div className="spinner" />
       ) : items.length === 0 ? (
@@ -94,7 +89,7 @@ export default function Store() {
         <div className="store-grid">
           {items.map((item) => (
             <button key={item.id} type="button" className="store-card" onClick={() => open(item)}>
-              <ItemImage id={item.id} emoji={item.emoji} className="store-card-img" />
+              <StoreItemImage id={item.id} emoji={item.emoji} className="store-card-img" />
               <span className="store-card-name">{item.name}</span>
               <span className="store-card-price">{formatCoin(item.price)}</span>
             </button>
@@ -105,7 +100,7 @@ export default function Store() {
       <Modal open={!!selected} onClose={close}>
         {selected && (
           <div className="store-detail">
-            <ItemImage id={selected.id} emoji={selected.emoji} className="store-detail-img" />
+            <StoreItemImage id={selected.id} emoji={selected.emoji} className="store-detail-img" />
             <h3 className="store-detail-name">{selected.name}</h3>
             <p className="store-detail-desc">{selected.desc}</p>
             <div className="store-detail-price">{formatCoin(selected.price)}</div>
