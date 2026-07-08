@@ -102,7 +102,7 @@ export default function Notifications() {
             <li key={n.id}
               className={`notif ${n.is_read ? '' : 'unread'} ${targetOf(n) ? 'clickable' : ''}`}
               onClick={() => open(n)}>
-              <span className="notif-icon" aria-hidden="true">{ICONS[n.type] || '🔔'}</span>
+              <span className={`notif-icon notif-ic-${n.type}`} aria-hidden="true">{ICONS[n.type] || '🔔'}</span>
               <div className="notif-body">
                 <div className="notif-line">
                   {!n.is_read && <span className="notif-dot" aria-label="안읽음" />}

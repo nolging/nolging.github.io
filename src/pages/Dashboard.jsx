@@ -1,9 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { listMyGroups } from '../lib/api'
+import { Link, NavLink } from 'react-router-dom'
+import { listMyGroups, unreadNotificationCount } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
+
+function BellIcon() {
+  return (
+    <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3.4a5.6 5.6 0 0 0-5.6 5.6c0 3-.7 4.7-1.6 5.9-.5.7 0 1.6.8 1.6h12.8c.8 0 1.3-.9.8-1.6-.9-1.2-1.6-2.9-1.6-5.9A5.6 5.6 0 0 0 12 3.4Z" />
+      <path d="M10 20.6a2.4 2.4 0 0 0 4 0" />
+    </svg>
+  )
+}
+
+function dayGreeting() {
+  const d = new Date()
+  const wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
+  const h = d.getHours()
+  const period = h < 6 ? '새벽' : h < 12 ? '오전' : h < 18 ? '오후' : '저녁'
+  return `${wd}요일 ${period}`
+}
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -12,6 +30,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
+  const [unread, setUnread] = useState(0)
   const inputRef = useRef(null)
 
   async function load() {
@@ -21,6 +40,7 @@ export default function Dashboard() {
     finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
+  useEffect(() => { unreadNotificationCount().then(setUnread).catch(() => {}) }, [])
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
 
   // 접힘은 blur 로 처리 → iOS 어디를 누르든(포커스 해제) 안정적으로 닫힌다.
@@ -42,6 +62,17 @@ export default function Dashboard() {
 
   return (
     <div className="page">
+      <div className="dash-head">
+        <div>
+          <div className="dash-greet-when">{dayGreeting()}</div>
+          <h1 className="dash-greet-title">오늘은 뭐 하고 놀징</h1>
+        </div>
+        <NavLink to="/notifications" className="dash-bell" aria-label="알림" title="알림">
+          <BellIcon />
+          {unread > 0 && <span className="dash-bell-badge">{unread > 99 ? '99+' : unread}</span>}
+        </NavLink>
+      </div>
+
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className={`group-search ${searchOpen ? 'open' : ''}`}>

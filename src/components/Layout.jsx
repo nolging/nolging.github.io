@@ -96,6 +96,7 @@ export default function Layout() {
   const profileEditMatch = useMatch('/me/edit')
   const coinHistoryMatch = useMatch('/me/coins')
   const groupMatch = useMatch('/groups/:groupId')
+  const homeMatch = useMatch('/')
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
   const [taskHeading, setTaskHeading] = useState(null)
@@ -167,7 +168,7 @@ export default function Layout() {
 
   // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
   const [coin, setCoin] = useState(null)
-  const needCoin = !!meMatch || !!storeMatch
+  const needCoin = !!storeMatch
   useEffect(() => {
     if (!needCoin) return
     let on = true
@@ -364,14 +365,10 @@ export default function Layout() {
       </header>
     )
   } else if (meMatch) {
-    // 마이 페이지: 좌측 "마이 페이지" 제목, 우측 츄르 알약(누르면 내역으로)
+    // 마이 페이지: 좌측 "마이 페이지" 제목 (츄르 잔액은 페이지 내 카드로 이동)
     topbar = (
       <header className="topbar">
-        <span className="topbar-heading">마이 페이지</span>
-        <Link to="/me/coins" className="coin-pill push-right" aria-label="적립·사용 내역">
-          <span className="coin-pill-paw" aria-hidden="true">🐾</span>
-          <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
-        </Link>
+        <span className="topbar-heading topbar-title-lg">마이 페이지</span>
       </header>
     )
   } else if (scheduleMatch) {
@@ -448,7 +445,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className="app-shell" ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''}`} ref={shellRef}>
       {topbar}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
