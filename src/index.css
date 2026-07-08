@@ -1268,13 +1268,16 @@ a.mp-tel:active { opacity: .55; }
   margin-top: 2px; font-size: 12px; font-weight: 700; color: #7363e8;
   background: rgba(115, 99, 232, .12); border-radius: 999px; padding: 5px 12px;
 }
+.inv-equipped.inv-pending { color: #cf5e88; background: rgba(207, 94, 136, .12); }
 
-/* ---- 커플링 나눠 끼기 모달 ---- */
+/* ---- 커플 링 나눠 끼기 모달 ---- */
 .couple-modal { display: flex; flex-direction: column; gap: 14px; }
-.couple-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.couple-hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
 .couple-to { display: flex; align-items: center; gap: 10px; }
 .couple-to-label { font-weight: 800; font-size: 14px; color: var(--primary); flex-shrink: 0; }
 .couple-to-value { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--text); }
+.couple-msg { position: relative; }
+.couple-msg-count { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--muted); }
 
 /* ---- 소원권 사용 모달 ---- */
 .wish-modal { display: flex; flex-direction: column; gap: 14px; }
@@ -1337,8 +1340,13 @@ a.mp-tel:active { opacity: .55; }
   position: absolute; bottom: 12px; right: 12px; font-size: 10.5px; font-weight: 700; color: #fff;
   background: #cf5e88; border-radius: 999px; padding: 3px 9px; white-space: nowrap;
 }
+.note-claim-flag.note-claim-flag-off { background: var(--muted); }
 .modal-card.modal-couple { background: linear-gradient(160deg, #fdeef6, #f5f0ff); }
 .modal-couple .note-view-body { background: #fff; }
+/* 커플 링 수령/거절 버튼 */
+.couple-actions { display: flex; gap: 10px; }
+.couple-actions .btn { flex: 1; }
+.couple-actions .couple-reject { color: #cf5e88; background: rgba(207, 94, 136, .1); }
 
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }

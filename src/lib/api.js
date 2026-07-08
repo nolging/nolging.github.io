@@ -485,13 +485,13 @@ export async function purchaseItem(itemId) {
   return Number(data) || 0
 }
 
-// 내 인벤토리. 미사용(active) + 장착된 커플링(used)까지. user_items 미배포 시 빈 배열.
+// 내 인벤토리. 미사용(active) + 커플 링의 장착(used)/수락 대기(pending)까지. user_items 미배포 시 빈 배열.
 export async function listInventory(userId) {
   const { data, error } = await supabase
     .from('user_items')
     .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.eq.used)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending))')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
@@ -512,31 +512,45 @@ export async function useWish({ fromUserId, wish }) {
   return data
 }
 
-// 커플링 나눠 끼기: 2인 그룹에 장착 + 상대 쪽지함에 선물 발송.
-export async function useCoupleRing({ groupId, recipientId }) {
-  const { data, error } = await supabase.rpc('use_couple_ring', { p_group_id: groupId, p_recipient_id: recipientId })
+// 커플 링 나눠 끼기: 상대 쪽지함에 메시지와 함께 발송(수락 대기). 수락 전엔 그룹 미적용.
+export async function useCoupleRing({ groupId, recipientId, message }) {
+  const { data, error } = await supabase.rpc('use_couple_ring', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? null,
+  })
   if (error) {
     if (error.code === 'PGRST202' || /use_couple_ring/.test(error.message || '')) {
-      throw new Error('커플링 기능이 아직 DB에 설정되지 않았습니다. (use_couple_ring 함수를 먼저 적용해 주세요)')
+      throw new Error('커플 링 기능이 아직 DB에 설정되지 않았습니다. (use_couple_ring 함수를 먼저 적용해 주세요)')
     }
     throw error
   }
   return data
 }
 
-// 커플링 선물 수령(쪽지함). 내 인벤토리에 장착된 커플링 생성.
+// 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착 링 생성 + 그룹 프리미엄 적용.
 export async function claimCoupleRing(noteId) {
   const { data, error } = await supabase.rpc('claim_couple_ring', { p_note_id: noteId })
   if (error) {
     if (error.code === 'PGRST202' || /claim_couple_ring/.test(error.message || '')) {
-      throw new Error('커플링 기능이 아직 DB에 설정되지 않았습니다. (claim_couple_ring 함수를 먼저 적용해 주세요)')
+      throw new Error('커플 링 기능이 아직 DB에 설정되지 않았습니다. (claim_couple_ring 함수를 먼저 적용해 주세요)')
     }
     throw error
   }
   return data
 }
 
-// 커플링이 장착된(프리미엄) 그룹 id 목록.
+// 커플 링 거절: 보낸 사람 인벤토리에 다시 사용 가능한 상태로 복구.
+export async function rejectCoupleRing(noteId) {
+  const { data, error } = await supabase.rpc('reject_couple_ring', { p_note_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /reject_couple_ring/.test(error.message || '')) {
+      throw new Error('커플 링 기능이 아직 DB에 설정되지 않았습니다. (reject_couple_ring 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
+// 커플 링이 장착된(프리미엄) 그룹 id 목록.
 export async function listCoupleGroups(userId) {
   const { data, error } = await supabase
     .from('user_items').select('group_id')

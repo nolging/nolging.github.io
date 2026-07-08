@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
-import { listReceivedNotes, listSentNotes, claimCoupleRing } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing } from '../lib/api'
 
 function NoteFabIcon() {
   return (
@@ -31,7 +31,7 @@ export default function Notes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
-  const [claiming, setClaiming] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   async function load() {
     if (!user?.id) return
@@ -51,15 +51,26 @@ export default function Notes() {
     return () => { on = false }
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 커플링 수령: 인벤토리에 커플링이 들어오고 그룹이 프리미엄이 됨
-  async function claim(n) {
-    setClaiming(true); setError('')
+  // 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착되고 그룹이 프리미엄이 됨
+  async function accept(n) {
+    setBusy(true); setError('')
     try {
       await claimCoupleRing(n.id)
       await load()
       setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
     } catch (err) { setError(err.message) }
-    finally { setClaiming(false) }
+    finally { setBusy(false) }
+  }
+
+  // 커플 링 거절: 보낸 사람 인벤토리에 다시 사용 가능한 상태로 돌아감
+  async function reject(n) {
+    setBusy(true); setError('')
+    try {
+      await rejectCoupleRing(n.id)
+      await load()
+      setOpen((o) => (o && o.id === n.id ? { ...o, rejected: true, is_read: true } : o))
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
   }
 
   const list = tab === 'received' ? received : sent
@@ -105,7 +116,7 @@ export default function Notes() {
             const p = peer(n)
             const wish = n.kind === 'wish'
             const couple = n.kind === 'couple_ring'
-            const needClaim = couple && tab === 'received' && !n.claimed
+            const needClaim = couple && tab === 'received' && !n.claimed && !n.rejected
             return (
               <li key={n.id}>
                 <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''}`} onClick={() => setOpen(n)}>
@@ -114,7 +125,7 @@ export default function Notes() {
                     <div className="note-card-head">
                       <span className="note-card-peer">
                         {wish && <span className="note-tag">🌟 소원</span>}
-                        {couple && <span className="note-tag note-tag-couple">💍 커플링</span>}
+                        {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatDate(n.created_at)}</span>
@@ -122,6 +133,7 @@ export default function Notes() {
                     <p className="note-card-body">{n.body}</p>
                   </div>
                   {needClaim && <span className="note-claim-flag">수령하기</span>}
+                  {couple && n.rejected && <span className="note-claim-flag note-claim-flag-off">거절함</span>}
                 </button>
               </li>
             )
@@ -143,7 +155,7 @@ export default function Notes() {
                 <div className="note-view-who">
                   <span className="note-view-peer">
                     {wish && <span className="note-tag">🌟 소원</span>}
-                    {couple && <span className="note-tag note-tag-couple">💍 커플링</span>}
+                    {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatDate(open.created_at)}</span>
@@ -153,10 +165,17 @@ export default function Notes() {
               {couple && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 💍</button>
+                ) : open.rejected ? (
+                  <button type="button" className="btn btn-block" disabled>거절함</button>
                 ) : (
-                  <button type="button" className="btn btn-primary btn-block" onClick={() => claim(open)} disabled={claiming}>
-                    {claiming ? '수령 중…' : '수령하기'}
-                  </button>
+                  <div className="couple-actions">
+                    <button type="button" className="btn btn-ghost couple-reject" onClick={() => reject(open)} disabled={busy}>
+                      거절
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={() => accept(open)} disabled={busy}>
+                      {busy ? '처리 중…' : '나눠 끼기'}
+                    </button>
+                  </div>
                 )
               ) : !wish && !couple && mine ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>

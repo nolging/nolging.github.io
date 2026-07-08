@@ -7,8 +7,8 @@
 | 아이템 | id | 파일명 |
 |---|---|---|
 | 소원권 | `wish` | `wish.svg` |
-| 커플링 | `couple-ring` | `couple-ring.svg` |
-| 우정링 | `friend-ring` | `friend-ring.svg` |
+| 커플 링 | `couple-ring` | `couple-ring.svg` |
+| 우정 링 | `friend-ring` | `friend-ring.svg` |
 | 천체 망원경 | `telescope` | `telescope.svg` |
 | 지우개 | `eraser` | `eraser.svg` |
 | 카세트 테이프 | `cassette` | `cassette.svg` |

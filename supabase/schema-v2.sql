@@ -904,9 +904,10 @@ create table if not exists public.notes (
 alter table public.notes add column if not exists sender_avatar    text;
 alter table public.notes add column if not exists recipient_avatar text;
 alter table public.notes add column if not exists kind             text not null default 'note';
--- 커플링 선물(쪽지함 수령형): 대상 아이템 + 수령 여부
+-- 커플 링 선물(쪽지함 수령형): 대상 아이템 + 수령/거절 여부
 alter table public.notes add column if not exists item_id          text;
 alter table public.notes add column if not exists claimed          boolean not null default false;
+alter table public.notes add column if not exists rejected         boolean not null default false;
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -983,8 +984,8 @@ create policy store_items_write on public.store_items
 -- 초기 6종 시드. 이미 있으면 유지(관리자 편집 보존) → do nothing.
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
   ('wish',        '소원권',      5,    '🎫', E'상대방이 소원을 적어서 나에게 보내면 무엇이든 들어줘야 해요\n*선물만 가능', true,  1),
-  ('couple-ring', '커플링',      5000, '💍', E'연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',            false, 2),
-  ('friend-ring', '우정링',      3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 3),
+  ('couple-ring', '커플 링',     5000, '💍', E'연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',            false, 2),
+  ('friend-ring', '우정 링',     3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 3),
   ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 4),
   ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
   ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6)
@@ -1162,20 +1163,23 @@ $$;
 grant execute on function public.use_wish(uuid, text) to authenticated;
 
 -- =============================================================
---  커플링 나눠 끼기 (use_couple_ring / claim_couple_ring)
---  - 멤버 2명 그룹에서만. 사용자는 링을 '장착'(status=used, group_id=그룹)하고
---    상대 쪽지함에 커플링 선물(kind=couple_ring, 수령 대기)을 보낸다.
---  - 상대가 수령하면 상대 인벤토리에도 장착된 커플링이 생긴다.
---  - 장착된 커플링이 있는 그룹 = 프리미엄 그룹(내 그룹 상단 고정).
+--  커플 링 나눠 끼기 (use_couple_ring / claim_couple_ring / reject_couple_ring)
+--  - 멤버 2명 그룹에서만. 사용자는 링을 '수락 대기'(status=pending, group_id=그룹)로
+--    잠그고 상대 쪽지함에 커플 링 선물(kind=couple_ring)을 함께 보낼 메시지와 함께 보낸다.
+--  - 사용 시점에는 그룹에 적용되지 않고, 상대가 '나눠 끼기'로 수령해야 그때 적용된다.
+--    · 수령: 보낸 사람 링 pending→used(장착), 받은 사람 인벤토리에도 장착 링 생성.
+--    · 거절: 보낸 사람 링 pending→active(다시 사용 가능), 그룹 미적용.
+--  - 장착(used)된 커플 링이 있는 그룹 = 프리미엄 그룹(내 그룹 상단 고정).
 -- =============================================================
-create or replace function public.use_couple_ring(p_group_id uuid, p_recipient_id uuid)
+drop function if exists public.use_couple_ring(uuid, uuid);
+create or replace function public.use_couple_ring(p_group_id uuid, p_recipient_id uuid, p_message text default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text;
+declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
 begin
   select * into v_item from public.user_items
    where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active'
    order by created_at asc limit 1;
-  if v_item.id is null then raise exception '사용할 수 있는 커플링이 없습니다.'; end if;
+  if v_item.id is null then raise exception '사용할 수 있는 커플 링이 없습니다.'; end if;
 
   if not public.is_group_member(p_group_id, auth.uid()) then
     raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
@@ -1184,44 +1188,87 @@ begin
   if p_recipient_id = auth.uid() or not public.is_group_member(p_group_id, p_recipient_id) then
     raise exception '상대를 찾을 수 없습니다.'; end if;
   if exists (select 1 from public.user_items
-             where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id = p_group_id) then
-    raise exception '이미 이 그룹에 커플링을 끼고 있어요.'; end if;
+             where user_id = auth.uid() and item_id = 'couple-ring'
+               and status in ('used', 'pending') and group_id = p_group_id) then
+    raise exception '이미 이 그룹에 커플 링을 보냈거나 끼고 있어요.'; end if;
 
-  update public.user_items set status = 'used', group_id = p_group_id, used_at = now() where id = v_item.id;
+  -- 아직 그룹에 적용하지 않고 '수락 대기' 상태로만 잠근다(중복 사용 방지).
+  update public.user_items set status = 'pending', group_id = p_group_id, used_at = null where id = v_item.id;
 
   v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
   v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
   select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
   select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), '커플 링을 함께 끼자고 보냈어요 💍');
 
-  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, claimed)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, '커플링을 함께 끼자고 보냈어요 💍', 'couple_ring', 'couple-ring', false);
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, claimed, rejected)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'couple_ring', 'couple-ring', false, false);
 
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
     values (p_recipient_id, auth.uid(), 'couple_ring',
-            case when v_sender <> '' then v_sender || ' 님이 커플링을 보냈어요' else '커플링이 도착했어요' end,
-            '쪽지함에서 수령하세요', p_group_id);
+            case when v_sender <> '' then v_sender || ' 님이 커플 링을 보냈어요' else '커플 링이 도착했어요' end,
+            '쪽지함에서 확인하세요', p_group_id);
 end;
 $$;
-grant execute on function public.use_couple_ring(uuid, uuid) to authenticated;
+grant execute on function public.use_couple_ring(uuid, uuid, text) to authenticated;
 
--- 커플링 선물 수령: 쪽지(couple_ring)를 claimed 처리 + 내 인벤토리에 장착된 링 생성
+-- 커플 링 수령(나눠 끼기): 보낸 사람 링을 장착 처리 + 내 인벤토리에도 장착 링 생성
 create or replace function public.claim_couple_ring(p_note_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare n public.notes;
+declare n public.notes; v_actor text;
 begin
   select * into n from public.notes where id = p_note_id;
   if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'couple_ring' then
     raise exception '수령할 수 없는 선물입니다.'; end if;
   if n.claimed then raise exception '이미 수령했어요.'; end if;
+  if n.rejected then raise exception '이미 거절한 선물입니다.'; end if;
 
   update public.notes set claimed = true, is_read = true where id = n.id;
 
+  -- 보낸 사람의 '수락 대기' 링을 이제서야 그룹에 장착
+  update public.user_items set status = 'used', used_at = now()
+   where user_id = n.sender_id and item_id = 'couple-ring' and status = 'pending' and group_id = n.group_id;
+
+  -- 받은 사람 인벤토리에도 장착된 커플 링 생성
   if not exists (select 1 from public.user_items
                  where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id = n.group_id) then
     insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
-      values (auth.uid(), 'couple-ring', '커플링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
+      values (auth.uid(), 'couple-ring', '커플 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
   end if;
+
+  -- 보낸 사람에게 수락 알림
+  v_actor := coalesce(public.notif_member_name(n.group_id, auth.uid()), '');
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (n.sender_id, auth.uid(), 'couple_ring',
+            case when v_actor <> '' then v_actor || ' 님과 커플 링을 나눠 꼈어요' else '커플 링을 함께 끼게 됐어요' end,
+            '이제 프리미엄 그룹이에요 💍', n.group_id);
 end;
 $$;
 grant execute on function public.claim_couple_ring(uuid) to authenticated;
+
+-- 커플 링 거절: 쪽지를 거절 처리 + 보낸 사람 링을 다시 사용 가능(active)으로 복구
+create or replace function public.reject_couple_ring(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes; v_actor text;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'couple_ring' then
+    raise exception '처리할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령한 선물이라 거절할 수 없어요.'; end if;
+  if n.rejected then raise exception '이미 거절했어요.'; end if;
+
+  update public.notes set rejected = true, is_read = true where id = n.id;
+
+  -- 보낸 사람의 '수락 대기' 링을 다시 사용 가능 상태로 복구
+  update public.user_items set status = 'active', group_id = null, used_at = null
+   where user_id = n.sender_id and item_id = 'couple-ring' and status = 'pending' and group_id = n.group_id;
+
+  -- 보낸 사람에게 거절 알림
+  v_actor := coalesce(public.notif_member_name(n.group_id, auth.uid()), '');
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (n.sender_id, auth.uid(), 'couple_ring',
+            case when v_actor <> '' then v_actor || ' 님이 커플 링을 거절했어요' else '커플 링이 거절됐어요' end,
+            '커플 링은 다시 사용할 수 있어요', n.group_id);
+end;
+$$;
+grant execute on function public.reject_couple_ring(uuid) to authenticated;

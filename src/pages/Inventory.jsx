@@ -47,9 +47,9 @@ export default function Inventory() {
   }, [items, meta])
 
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])
-  // 이미 커플링이 장착된 그룹(중복 방지)
+  // 이미 커플 링을 보냈거나(수락 대기) 장착한 그룹(중복 방지)
   const coupleGroupIds = useMemo(
-    () => items.filter((r) => r.item_id === 'couple-ring' && r.status === 'used').map((r) => r.group_id).filter(Boolean),
+    () => items.filter((r) => r.item_id === 'couple-ring' && (r.status === 'used' || r.status === 'pending')).map((r) => r.group_id).filter(Boolean),
     [items],
   )
 
@@ -72,15 +72,21 @@ export default function Inventory() {
       ) : (
         <div className="store-grid">
           {groups.map((g) => {
-            const equipped = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'used')
             const hasActive = g.rows.some((r) => r.status === 'active')
-            const equippedOnly = equipped && !hasActive
+            const equipped = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'used')
+            const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
             return (
               <div key={g.id} className="store-card inv-card">
                 {g.count > 1 && <span className="inv-count">{g.count}</span>}
                 <StoreItemImage id={g.id} emoji={g.emoji} className="store-card-img" />
                 <span className="store-card-name">{g.name}</span>
-                {equippedOnly ? (
+                {hasActive ? (
+                  <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => useItem(g)}>
+                    사용하기
+                  </button>
+                ) : pending ? (
+                  <span className="inv-equipped inv-pending">수락 대기 중</span>
+                ) : equipped ? (
                   <span className="inv-equipped">장착 중</span>
                 ) : (
                   <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => useItem(g)}>
@@ -180,10 +186,13 @@ function WishModal({ open, onClose, wishRows, onUsed }) {
   )
 }
 
-// ---- 커플링 나눠 끼기 모달 ----
+// ---- 커플 링 나눠 끼기 모달 ----
+const MAX_COUPLE_MSG = 150
+
 function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
   const [groups, setGroups] = useState([])
   const [groupId, setGroupId] = useState('')
+  const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
@@ -191,10 +200,10 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
     if (!open || groups.length) return
     listMyGroups().then(setGroups).catch((e) => setError(e.message))
   }, [open, groups.length])
-  useEffect(() => { if (open) { setGroupId(''); setError('') } }, [open])
+  useEffect(() => { if (open) { setGroupId(''); setMessage(''); setError('') } }, [open])
 
   const memberName = (m) => m.display_nickname || m.profiles?.nickname || '?'
-  // 멤버 2명 + 내가 멤버 + 아직 커플링 안 낀 그룹
+  // 멤버 2명 + 내가 멤버 + 아직 커플 링 안 낀(보내지 않은) 그룹
   const eligible = useMemo(() => groups.filter((g) => {
     const ms = g.group_members || []
     return ms.length === 2 && ms.some((m) => m.user_id === myId) && !excludeGroupIds.includes(g.id)
@@ -207,17 +216,17 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
     if (!group || !other) { setError('그룹을 선택해 주세요.'); return }
     setSending(true); setError('')
     try {
-      await useCoupleRing({ groupId: group.id, recipientId: other.user_id })
+      await useCoupleRing({ groupId: group.id, recipientId: other.user_id, message: message.trim() })
       await onDone()
       onClose()
     } catch (e) { setError(e.message); setSending(false) }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="커플링 나눠 끼기">
+    <Modal open={open} onClose={onClose} title="커플 링 나눠 끼기">
       <div className="couple-modal">
         {error && <div className="alert alert-error">{error}</div>}
-        <p className="couple-hint">멤버가 2명인 그룹에서 함께 낄 수 있어요.</p>
+        <p className="couple-hint">멤버가 2명인 그룹에서 함께 낄 수 있어요. 상대가 수령하면 그때 적용돼요.</p>
 
         <label className="field">
           <span>그룹</span>
@@ -233,6 +242,12 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
             <span className="couple-to-value"><Avatar src={other.avatar_url} name={memberName(other)} size={28} />{memberName(other)}</span>
           </div>
         )}
+
+        <div className="couple-msg">
+          <textarea className="wish-input" placeholder="함께 보낼 메시지를 적어 보세요 (선택)"
+            value={message} maxLength={MAX_COUPLE_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
+          <span className="couple-msg-count">{message.length}/{MAX_COUPLE_MSG}</span>
+        </div>
 
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '보내는 중…' : '나눠 끼기'}
