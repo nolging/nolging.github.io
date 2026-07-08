@@ -58,11 +58,11 @@ export default function App() {
         <Route path="/me" element={<MyProfile />} />
         <Route path="/me/edit" element={<ProfileEdit />} />
         <Route path="/me/coins" element={<CoinHistory />} />
-        {/* 상점·쪽지: 아직 구현 전 → 관리자만 접근 */}
-        <Route path="/store" element={<ProtectedRoute adminOnly><Store /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute adminOnly><Inventory /></ProtectedRoute>} />
-        <Route path="/notes" element={<ProtectedRoute adminOnly><Notes /></ProtectedRoute>} />
-        <Route path="/notes/new" element={<ProtectedRoute adminOnly><NoteCompose /></ProtectedRoute>} />
+        {/* 상점·쪽지: 모든 로그인 사용자 접근 가능 */}
+        <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
+        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+        <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+        <Route path="/notes/new" element={<ProtectedRoute><NoteCompose /></ProtectedRoute>} />
         <Route
           path="/admin"
           element={

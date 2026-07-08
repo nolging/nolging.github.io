@@ -469,8 +469,8 @@ export default function Layout() {
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
-          {isAdmin && <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>}
-          {isAdmin && <NavLink to="/notes"><NoteIcon /><span>쪽지</span></NavLink>}
+          <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>
+          <NavLink to="/notes"><NoteIcon /><span>쪽지</span></NavLink>
           <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
         </nav>
       )}
