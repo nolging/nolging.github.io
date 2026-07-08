@@ -112,7 +112,7 @@ export default function GroupDetail() {
   const tabsRef = useRef(null)
   const [slideDir, setSlideDir] = useState('next')
   const [paneAnim, setPaneAnim] = useState(true) // 버튼 클릭 전환은 진입 애니메이션, 스와이프는 끔
-  function scrollPaneTop() { paneRef.current?.closest('.content')?.scrollTo({ top: 0 }) }
+  function scrollPaneTop() { paneRef.current?.scrollTo({ top: 0 }) }
   function changeTab(next, { anim = true } = {}) {
     if (next === filter) return
     setSlideDir(TASK_STATUSES.indexOf(next) > TASK_STATUSES.indexOf(filter) ? 'next' : 'prev')

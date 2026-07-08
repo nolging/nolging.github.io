@@ -217,20 +217,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 페이지 ---- */
 .page { display: flex; flex-direction: column; gap: 18px; max-width: 1080px; width: 100%; margin: 0 auto; }
 
-/* 그룹 상세: 카드가 적어도 페이지가 화면 높이를 채워야 하단 빈 공간에서도 스와이프가 먹힘 */
-.gd-page { min-height: 100%; }
-.gd-page .tab-pane { flex: 1 1 auto; }
-/* 그룹 정보 + 탭을 묶어 상단 고정. 그 아래 목록만 스크롤. */
-.gd-sticky-head {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; flex-direction: column; gap: 18px;
-  background: var(--bg);
-}
-/* content 의 상단 패딩만큼 위로 배경을 확장해 상단바-헤더 사이 틈으로 카드가 비치지 않게
-   (스크롤 위로 넘어가는 영역은 content overflow 로 잘려 상단바를 덮지 않음) */
-.gd-sticky-head::before {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
-  height: 120px; background: var(--bg);
+/* 그룹 상세: 페이지가 화면 높이를 꽉 채우고(스크롤 안 함), 그 안에서 목록만 스크롤 */
+.gd-page { height: 100%; }
+/* 그룹 정보 + 탭 = 고정 헤더(스크롤 밖) → 오버스크롤/바운스에도 안 움직임 */
+.gd-sticky-head { flex: 0 0 auto; display: flex; flex-direction: column; gap: 18px; }
+/* 목록만 스크롤. 좌우로 full-bleed 해 카드 그림자가 헤더 옆으로 새지 않게 하고,
+   상단에 약간의 배경색 여백을 둬 탭과 카드가 딱 붙지 않게 함(issue 2). */
+.gd-page .tab-pane {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  margin: 0 calc(-1 * var(--pad-x)); padding: 10px var(--pad-x) 0;
 }
 .tab-pane { animation: tab-in-next .22s ease; }
 .tab-pane[data-dir="prev"] { animation-name: tab-in-prev; }
