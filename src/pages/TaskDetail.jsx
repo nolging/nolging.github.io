@@ -365,8 +365,8 @@ export default function TaskDetail() {
   }
 
   function renderCard(c, depth) {
-    const canEdit = c.author_id === profile.id
-    const canDelete = c.author_id === profile.id || isOwner
+    const canEdit = c.author_id === profile.id || isAdmin
+    const canDelete = c.author_id === profile.id || isOwner || isAdmin
     return (
       <div data-cid={c.id} className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
         <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
@@ -504,7 +504,7 @@ export default function TaskDetail() {
               <span className="task-author-name">{nameOf(task.created_by)}</span>
             </span>
           )}
-          {isScheduled && isParticipant && (
+          {isScheduled && (isParticipant || isAdmin) && (
             <div className="task-menu-wrap">
               <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -517,13 +517,13 @@ export default function TaskDetail() {
                   <div className="menu-pop" role="menu">
                     <button type="button" onClick={goEditAppointment}>편집</button>
                     <button type="button" onClick={doCancelAppointment}>약속 취소</button>
-                    {isCreator && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
+                    {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
                   </div>
                 </>
               )}
             </div>
           )}
-          {!isScheduled && (isCreator || isOwner) && (
+          {!isScheduled && (isCreator || isOwner || isAdmin) && (
             <div className="task-menu-wrap">
               <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -534,8 +534,8 @@ export default function TaskDetail() {
                 <>
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
-                    {isCreator && <button type="button" onClick={goEditWish}>편집</button>}
-                    {(isCreator || isOwner) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
+                    {(isCreator || isAdmin) && <button type="button" onClick={goEditWish}>편집</button>}
+                    {(isCreator || isOwner || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
                   </div>
                 </>
               )}

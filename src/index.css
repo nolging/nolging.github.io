@@ -1101,6 +1101,9 @@ a.mp-tel:active { opacity: .55; }
 
 /* ---- 영화/OTT 정보 가져오기 ---- */
 .media-lookup { display: flex; flex-direction: column; gap: 10px; }
+.media-search-row { display: flex; gap: 8px; }
+.media-search-row input { flex: 1; min-width: 0; }
+.media-search-row .btn { flex-shrink: 0; white-space: nowrap; }
 .media-results { display: flex; flex-direction: column; gap: 8px; }
 .media-result {
   display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;

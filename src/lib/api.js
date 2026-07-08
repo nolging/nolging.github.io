@@ -202,6 +202,14 @@ export async function updateTask(taskId, { title, description, category, media_i
   return data
 }
 
+// 상세 정보(media_info)만 수정. 제목/유형은 건드리지 않음(작성자 아닌 사람도 상세 정보는 편집 가능).
+export async function updateTaskMedia(taskId, mediaInfo) {
+  const { data, error } = await supabase
+    .from('tasks').update({ media_info: mediaInfo ?? null }).eq('id', taskId).select().single()
+  if (error) throw error
+  return data
+}
+
 export async function acceptTask(taskId, userId) {
   const { data, error } = await supabase
     .from('tasks')
