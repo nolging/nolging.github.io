@@ -25,6 +25,7 @@ const ICONS = {
   reminder: '⏰',
   gift: '🎁',
   wish: '🌟',
+  couple_ring: '💍',
 }
 
 export default function Notifications() {

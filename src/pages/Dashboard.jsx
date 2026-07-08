@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { listMyGroups, unreadNotificationCount } from '../lib/api'
+import { listMyGroups, unreadNotificationCount, listCoupleGroups } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
@@ -26,6 +26,7 @@ function dayGreeting() {
 export default function Dashboard() {
   const { profile } = useAuth()
   const [groups, setGroups] = useState([])
+  const [premiumIds, setPremiumIds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
@@ -40,13 +41,20 @@ export default function Dashboard() {
   }
   useEffect(() => { load() }, [])
   useEffect(() => { unreadNotificationCount().then(setUnread).catch(() => {}) }, [])
+  useEffect(() => {
+    if (!profile?.id) return
+    listCoupleGroups(profile.id).then(setPremiumIds).catch(() => {})
+  }, [profile?.id])
 
+  const premiumSet = new Set(premiumIds)
   const query = q.trim().toLowerCase()
-  const filtered = query
+  const matched = query
     ? groups.filter((g) =>
         (g.name || '').toLowerCase().includes(query) ||
         (g.description || '').toLowerCase().includes(query))
     : groups
+  // 커플링이 적용된 프리미엄 그룹을 항상 최상단으로 고정
+  const filtered = [...matched].sort((a, b) => (premiumSet.has(b.id) ? 1 : 0) - (premiumSet.has(a.id) ? 1 : 0))
 
   return (
     <div className="page">
@@ -97,19 +105,32 @@ export default function Dashboard() {
             const extra = members.length - 3
             // 관리자는 미가입 그룹도 보임 → 내가 멤버가 아니면 카드 반투명 처리
             const isMember = members.some((m) => m.user_id === profile?.id)
+            const premium = premiumSet.has(g.id)
+            const memberRow = members.length > 0 && (
+              <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>
+                {members.slice(0, 3).map((m) => (
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || m.profiles?.nickname} size={24} />
+                ))}
+                {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+              </span>
+            )
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
-                className={`group-tile group-card ${isMember ? '' : 'not-joined'}`}>
-                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
-                <h3 className="tile-name">{g.name}</h3>
-                {g.description && <p className="tile-desc muted">{g.description}</p>}
-                {members.length > 0 && (
-                  <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>
-                    {members.slice(0, 3).map((m) => (
-                      <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || m.profiles?.nickname} size={24} />
-                    ))}
-                    {extra > 0 && <span className="task-parts-more">+{extra}</span>}
-                  </span>
+                className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''}`}>
+                {premium && <span className="tile-premium-tag">💍 커플</span>}
+                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={premium ? 44 : 34} radius={12} />
+                {premium ? (
+                  <div className="tile-body">
+                    <h3 className="tile-name">{g.name}</h3>
+                    {g.description && <p className="tile-desc muted">{g.description}</p>}
+                    {memberRow}
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="tile-name">{g.name}</h3>
+                    {g.description && <p className="tile-desc muted">{g.description}</p>}
+                    {memberRow}
+                  </>
                 )}
               </Link>
             )

@@ -904,6 +904,9 @@ create table if not exists public.notes (
 alter table public.notes add column if not exists sender_avatar    text;
 alter table public.notes add column if not exists recipient_avatar text;
 alter table public.notes add column if not exists kind             text not null default 'note';
+-- 커플링 선물(쪽지함 수령형): 대상 아이템 + 수령 여부
+alter table public.notes add column if not exists item_id          text;
+alter table public.notes add column if not exists claimed          boolean not null default false;
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -1157,3 +1160,68 @@ begin
 end;
 $$;
 grant execute on function public.use_wish(uuid, text) to authenticated;
+
+-- =============================================================
+--  커플링 나눠 끼기 (use_couple_ring / claim_couple_ring)
+--  - 멤버 2명 그룹에서만. 사용자는 링을 '장착'(status=used, group_id=그룹)하고
+--    상대 쪽지함에 커플링 선물(kind=couple_ring, 수령 대기)을 보낸다.
+--  - 상대가 수령하면 상대 인벤토리에도 장착된 커플링이 생긴다.
+--  - 장착된 커플링이 있는 그룹 = 프리미엄 그룹(내 그룹 상단 고정).
+-- =============================================================
+create or replace function public.use_couple_ring(p_group_id uuid, p_recipient_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text;
+begin
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 커플링이 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  select count(*) into v_cnt from public.group_members where group_id = p_group_id;
+  if v_cnt <> 2 then raise exception '멤버가 2명인 그룹에서만 나눠 낄 수 있어요.'; end if;
+  if p_recipient_id = auth.uid() or not public.is_group_member(p_group_id, p_recipient_id) then
+    raise exception '상대를 찾을 수 없습니다.'; end if;
+  if exists (select 1 from public.user_items
+             where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id = p_group_id) then
+    raise exception '이미 이 그룹에 커플링을 끼고 있어요.'; end if;
+
+  update public.user_items set status = 'used', group_id = p_group_id, used_at = now() where id = v_item.id;
+
+  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, claimed)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, '커플링을 함께 끼자고 보냈어요 💍', 'couple_ring', 'couple-ring', false);
+
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_recipient_id, auth.uid(), 'couple_ring',
+            case when v_sender <> '' then v_sender || ' 님이 커플링을 보냈어요' else '커플링이 도착했어요' end,
+            '쪽지함에서 수령하세요', p_group_id);
+end;
+$$;
+grant execute on function public.use_couple_ring(uuid, uuid) to authenticated;
+
+-- 커플링 선물 수령: 쪽지(couple_ring)를 claimed 처리 + 내 인벤토리에 장착된 링 생성
+create or replace function public.claim_couple_ring(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'couple_ring' then
+    raise exception '수령할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령했어요.'; end if;
+
+  update public.notes set claimed = true, is_read = true where id = n.id;
+
+  if not exists (select 1 from public.user_items
+                 where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id = n.group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
+      values (auth.uid(), 'couple-ring', '커플링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.claim_couple_ring(uuid) to authenticated;
