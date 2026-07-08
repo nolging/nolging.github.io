@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useOutletContext, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
@@ -67,6 +67,7 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { setHeaderFilter } = useOutletContext()
 
   const [searchParams] = useSearchParams()
   const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
@@ -84,6 +85,12 @@ export default function GroupDetail() {
   const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES]) // 선택된 위시 유형. 기본=전체 체크
   const [filterOpen, setFilterOpen] = useState(false)
   const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
+
+  // 유형 필터를 상단바(톱니 좌측)로 노출
+  useEffect(() => {
+    setHeaderFilter?.({ onClick: () => setFilterOpen(true), active: catActive })
+    return () => setHeaderFilter?.(null)
+  }, [setHeaderFilter, catActive])
 
   function toggleCat(c) {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -303,8 +310,8 @@ export default function GroupDetail() {
     <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       <div className="gd-head">
         <div className="gd-title gd-title-row">
-          <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={44} />
-          <div>
+          <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={56} radius={20} />
+          <div className="gd-title-text">
             <h1>{group.name}</h1>
             {group.description && <p className="muted">{group.description}</p>}
           </div>
@@ -326,15 +333,6 @@ export default function GroupDetail() {
           </button>
         ))}
         <span className="tab-underline" style={underlineStyle} />
-      </div>
-
-      <div className="tabs-toolbar">
-        <button className="btn btn-ghost btn-sm icon-btn tabs-filter-btn" aria-label="유형 필터" title="유형 필터"
-          onClick={() => setFilterOpen(true)}>
-          <FilterIcon />
-          {catActive && <span className="filter-dot" />}
-        </button>
-        <span className="tabs-count">{visibleTasks.length} 개</span>
       </div>
 
       <div className="tab-pane" key={filter} data-dir={slideDir} data-anim={paneAnim ? 'y' : 'n'} ref={paneRef} style={paneStyle}>

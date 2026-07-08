@@ -345,7 +345,14 @@ export default function Layout() {
         {(gFrom === 'notifications' || gFrom === 'schedule')
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
-        <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn push-right" aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
+        {headerFilter && (
+          <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
+            aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
+            <FilterIcon />
+            {headerFilter?.active && <span className="filter-dot" />}
+          </button>
+        )}
+        <Link to={`/groups/${id}/settings`} className={`btn btn-ghost btn-sm icon-btn ${headerFilter ? '' : 'push-right'}`} aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
       </header>
     )
   } else if (profileEditMatch) {

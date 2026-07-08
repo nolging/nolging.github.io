@@ -427,8 +427,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   line-height: 1; flex-shrink: 0; user-select: none;
 }
 .group-tile .group-badge { margin-bottom: 8px; }
-.gd-title-row { display: flex; align-items: center; gap: 12px; }
-.gd-title-row h1 { margin: 0; }
+.gd-title-row { display: flex; align-items: center; gap: 14px; }
+.gd-title-row h1 { margin: 0; font-size: 20px; font-weight: 800; line-height: 1.2; letter-spacing: -.4px; }
+.gd-title-text { min-width: 0; }
+.gd-title-text p { margin: 2px 0 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
 
 /* 이모지 + 배경색 선택 폼 */
 .emoji-field { display: flex; align-items: center; gap: 12px; }
@@ -1006,7 +1008,7 @@ a.mp-tel:active { opacity: .55; }
 .mp-empty { text-align: center; padding: 20px; }
 
 /* ---- 그룹 상세 헤더 (그룹명 + 멤버/초대 버튼) ---- */
-.gd-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.gd-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .gd-title { min-width: 0; }
 .gd-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
