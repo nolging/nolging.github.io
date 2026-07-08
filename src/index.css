@@ -409,7 +409,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* 커플 링이 적용된 프리미엄 그룹: 한 줄 전체(카드 2개 폭), 높이·요소 배치는 일반 카드와 동일 */
 .group-card.group-tile.premium {
-  grid-column: 1 / -1; aspect-ratio: 2 / 1; position: relative;
+  grid-column: span 2; aspect-ratio: 2 / 1; position: relative;
   background: linear-gradient(120deg, #f5f0ff 0%, #fdeef6 100%);
   box-shadow: 0 6px 20px rgba(115, 99, 232, .16);
 }
