@@ -63,10 +63,12 @@ const StoreIcon = () => tabSvg(<>
   <path d="M4 4h16l-1 5H5z" /><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
   <path d="M9 19v-5h6v5" />
 </>)
-// 접은 쪽지(편지): 아래 변 없이 옆변이 두 꼬리로 이어지고 가운데 노치 + X 접힘선
+// 접은 쪽지(편지): 아래 변 없는 네모 몸통 + X 접힘선 + 겹쳐 교차하는 두 꼬리
 const NoteIcon = () => tabSvg(<>
-  <path d="M6 4 H18 Q19 4 19 5 V15 L18 20.5 L12 16.5 L6 20.5 L5 15 V5 Q5 4 6 4 Z" />
+  <path d="M5 15 V5 Q5 4 6 4 H18 Q19 4 19 5 V15" />
   <path d="M5.5 5.5 18.5 14.5M18.5 5.5 5.5 14.5" />
+  <path d="M5 15 L14 17.5 L10 21 L4 18.5 Z" />
+  <path d="M19 15 L10 17.5 L14 21 L20 18.5 Z" />
 </>)
 
 export default function Layout() {
