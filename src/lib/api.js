@@ -228,6 +228,28 @@ export async function completeTask(taskId) {
   return data
 }
 
+// 추억 → 약속(accepted)으로 되돌리기. 리뷰가 있으면 서버에서 거부.
+export async function revertToAppointment(taskId) {
+  const { data, error } = await supabase.rpc('revert_to_appointment', { p_task_id: taskId })
+  if (error) {
+    if (error.code === 'PGRST202' || /revert_to_appointment/.test(error.message || '')) {
+      throw new Error('되돌리기 기능이 아직 DB에 설정되지 않았습니다. (revert_to_appointment 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
+// 그룹 내 리뷰가 있는 태스크 id 집합 (추억 되돌리기 버튼 노출 여부). 미배포 시 빈 Set.
+export async function listReviewedTaskIds(groupId) {
+  const { data, error } = await supabase.rpc('group_review_counts', { p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || error.code === '42P01') return new Set()
+    throw error
+  }
+  return new Set((data ?? []).filter((r) => (r.cnt ?? 0) > 0).map((r) => r.task_id))
+}
+
 export async function reopenTask(taskId) {
   const { data, error } = await supabase
     .from('tasks')

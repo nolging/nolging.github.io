@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
-  getTaskReviews, submitReview, deleteReview,
+  getTaskReviews, submitReview, deleteReview, revertToAppointment,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
@@ -306,6 +306,11 @@ export default function TaskDetail() {
     if (!confirm('약속을 취소하고 위시로 되돌릴까요?')) return
     try { await cancelAppointment(taskId); await load() } catch (err) { setError(err.message) }
   }
+  async function doRevertAppointment() {
+    setHeadMenu(false)
+    if (!confirm('이 추억을 약속으로 되돌릴까요?')) return
+    try { await revertToAppointment(taskId); await load() } catch (err) { setError(err.message) }
+  }
   async function doDeleteTask() {
     setHeadMenu(false)
     if (!confirm('삭제하시겠습니까? 약속과 댓글도 함께 삭제됩니다.')) return
@@ -523,7 +528,8 @@ export default function TaskDetail() {
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
                     <button type="button" onClick={goEditAppointment}>편집</button>
-                    <button type="button" onClick={doCancelAppointment}>약속 취소</button>
+                    {!isDone && <button type="button" onClick={doCancelAppointment}>약속 취소</button>}
+                    {isDone && reviews.length === 0 && <button type="button" onClick={doRevertAppointment}>약속으로 되돌리기</button>}
                     {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
                   </div>
                 </>

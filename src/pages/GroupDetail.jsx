@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext, Link } from 
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
-  completeTask, deleteTask, cancelAppointment,
+  completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewedTaskIds,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -67,7 +67,7 @@ const CalendarXIcon = () => (
 
 export default function GroupDetail() {
   const { groupId } = useParams()
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const { setHeaderFilter } = useOutletContext()
 
@@ -79,6 +79,7 @@ export default function GroupDetail() {
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
+  const [reviewedIds, setReviewedIds] = useState(new Set()) // 리뷰가 있는 추억 id (되돌리기 숨김용)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -219,6 +220,7 @@ export default function GroupDetail() {
       setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
+      listReviewedTaskIds(groupId).then(setReviewedIds).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -255,8 +257,8 @@ export default function GroupDetail() {
     return (
       <ul className="task-list">
         {list.map((t) => (
-          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
-            participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
+          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+            participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0} hasReviews={reviewedIds.has(t.id)}
             onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
             onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
@@ -264,6 +266,7 @@ export default function GroupDetail() {
             onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t } })}
             onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
+            onRevertAppointment={() => { if (confirm('이 추억을 약속으로 되돌릴까요?')) runAction(() => revertToAppointment(t.id)) }}
             onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
         ))}
       </ul>
@@ -403,9 +406,9 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, commentCount = 0, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onDelete }) {
+function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, participants, commentCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
   const mine = task.assignee_id === meId
-  const canManage = task.created_by === meId || isOwner
+  const canManage = task.created_by === meId || isOwner || isAdmin
   const stop = (e) => e.stopPropagation()
 
   // 약속/추억 카드: 참여자 프로필 + 약속 시간/반복/알림 표기
@@ -417,7 +420,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const isScheduled = !!task.scheduled_at
   const isCreator = task.created_by === meId
   const isParticipant = isCreator || parts.includes(meId)
-  const canAct = isScheduled ? isParticipant : canManage
+  const canAct = isScheduled ? (isParticipant || isAdmin) : canManage
 
   const mediaLine = mediaCardLine(task.category, task.media_info)
   // 약속/추억(scheduled) 카드는 댓글 수를 약속 정보(🗓) 라인에, 그 외(open)는 foot 에
@@ -429,10 +432,15 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
   const actions = []
   if (canAct) {
     if (isScheduled) {
-      // 약속(accepted): 수정/약속취소/삭제, 추억(done): 수정/삭제 (약속취소 없음)
+      // 약속(accepted): 수정/약속취소/삭제
+      // 추억(done): 수정 / (리뷰 없을 때만)약속으로 되돌리기 / 삭제
       actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEditAppointment })
-      if (task.status !== 'done') actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
-      if (isCreator) actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
+      if (task.status !== 'done') {
+        actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
+      } else if (!hasReviews) {
+        actions.push({ key: 'revert', label: '되돌리기', icon: <CalendarXIcon />, onClick: onRevertAppointment })
+      }
+      if (isCreator || isAdmin) actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
     } else {
       actions.push({ key: 'edit', label: '수정', icon: <EditIcon />, onClick: onEdit })
       actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })

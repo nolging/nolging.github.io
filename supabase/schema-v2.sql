@@ -830,6 +830,39 @@ end;
 $$;
 grant execute on function public.delete_review(uuid) to authenticated;
 
+-- 그룹 내 태스크별 리뷰 개수 (추억 '약속으로 되돌리기' 노출 여부 판단용).
+-- task_reviews SELECT 는 본인/관리자만 허용되므로 정의자 RPC 로 집계. 그룹 멤버/관리자만.
+create or replace function public.group_review_counts(p_group_id uuid)
+returns table(task_id uuid, cnt integer)
+language plpgsql security definer stable set search_path = public as $$
+begin
+  if not (public.is_group_member(p_group_id, auth.uid()) or public.is_admin(auth.uid())) then
+    return;
+  end if;
+  return query
+    select r.task_id, count(*)::int from public.task_reviews r
+    where r.group_id = p_group_id group by r.task_id;
+end;
+$$;
+grant execute on function public.group_review_counts(uuid) to authenticated;
+
+-- 추억(완료된 약속)을 다시 약속(accepted)으로 되돌리기. 리뷰가 하나라도 있으면 불가.
+create or replace function public.revert_to_appointment(p_task_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare t public.tasks;
+begin
+  select * into t from public.tasks where id = p_task_id;
+  if t.id is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not (public.is_group_member(t.group_id, auth.uid()) or public.is_admin(auth.uid())) then
+    raise exception '권한이 없습니다.'; end if;
+  if t.status <> 'done' then raise exception '추억만 약속으로 되돌릴 수 있습니다.'; end if;
+  if exists (select 1 from public.task_reviews where task_id = p_task_id) then
+    raise exception '리뷰가 있는 추억은 되돌릴 수 없어요.'; end if;
+  update public.tasks set status = 'accepted', completed_at = null where id = p_task_id;
+end;
+$$;
+grant execute on function public.revert_to_appointment(uuid) to authenticated;
+
 -- =============================================================
 --  coin(화폐) : UI 표기는 "츄르", 시스템 네이밍은 coin
 --  - 원장(ledger) 기반: 모든 적립/사용은 coin_ledger 에 append.

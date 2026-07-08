@@ -198,7 +198,7 @@ export default function ScheduleAppointment() {
               ))}
             </div>
           )}
-          <input className="sched-title-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" />
         </div>
       ) : (
         <div className="sched-headline">
