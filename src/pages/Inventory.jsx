@@ -3,9 +3,12 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing } from '../lib/api'
+import RecipientPicker from '../components/RecipientPicker'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette } from '../lib/api'
+import { parseMusicUrl } from '../components/MusicPlayer'
 
 const MAX_WISH = 300
+const MAX_CASSETTE_MSG = 150
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -15,6 +18,7 @@ export default function Inventory() {
   const [error, setError] = useState('')
   const [wishOpen, setWishOpen] = useState(false)
   const [coupleOpen, setCoupleOpen] = useState(false)
+  const [cassetteOpen, setCassetteOpen] = useState(false)
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -57,6 +61,7 @@ export default function Inventory() {
     setNotice('')
     if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
+    else if (g.id === 'cassette') setCassetteOpen(true)
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -101,7 +106,76 @@ export default function Inventory() {
 
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
       <CoupleModal open={coupleOpen} onClose={() => setCoupleOpen(false)} myId={user?.id} excludeGroupIds={coupleGroupIds} onDone={reload} />
+      <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
     </div>
+  )
+}
+
+// ---- 카세트 테이프: 음악 링크 + 메시지 보내기 ----
+function CassetteModal({ open, onClose, onDone }) {
+  const [message, setMessage] = useState('')
+  const [url, setUrl] = useState('')
+  const [recipient, setRecipient] = useState(null) // { groupId, userId, name, avatar }
+  const [pickOpen, setPickOpen] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
+  }, [open])
+
+  const parsed = parseMusicUrl(url.trim())
+  const urlOk = !url.trim() || !!parsed
+
+  async function send() {
+    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
+    if (!url.trim()) { setError('음악 링크를 입력해 주세요.'); return }
+    if (!parsed) { setError('유튜브 또는 사운드클라우드 링크만 보낼 수 있어요.'); return }
+    setSending(true); setError('')
+    try {
+      await useCassette({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: url.trim() })
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setSending(false) }
+  }
+
+  return (
+    <>
+      <Modal open={open && !pickOpen} onClose={onClose} title="카세트 테이프">
+        <div className="couple-modal">
+          {error && <div className="alert alert-error">{error}</div>}
+          <p className="couple-hint">쪽지와 함께 음악(유튜브·사운드클라우드)을 보내요.</p>
+
+          {recipient ? (
+            <div className="couple-to">
+              <span className="couple-to-label">To.</span>
+              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
+              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
+          )}
+
+          <label className="field">
+            <span>음악 링크</span>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="유튜브 / 사운드클라우드 링크" />
+          </label>
+          {!urlOk && <p className="field-error">유튜브 또는 사운드클라우드 링크만 가능해요.</p>}
+
+          <div className="couple-msg">
+            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
+              value={message} maxLength={MAX_CASSETTE_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
+            <span className="couple-msg-count">{message.length}/{MAX_CASSETTE_MSG}</span>
+          </div>
+
+          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
+            {sending ? '보내는 중…' : '보내기'}
+          </button>
+        </div>
+      </Modal>
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
+        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
+    </>
   )
 }
 

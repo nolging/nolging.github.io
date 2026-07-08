@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
+import MusicPlayer from '../components/MusicPlayer'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift } from '../lib/api'
 
 function NoteFabIcon() {
@@ -221,6 +222,7 @@ export default function Notes() {
             const wish = n.kind === 'wish'
             const couple = n.kind === 'couple_ring'
             const gift = n.kind === 'gift'
+            const cassette = n.kind === 'cassette'
             const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             return (
@@ -233,6 +235,7 @@ export default function Notes() {
                         {wish && <span className="note-tag">🌟 소원</span>}
                         {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
+                        {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
@@ -252,12 +255,13 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
           const couple = open.kind === 'couple_ring'
           const gift = open.kind === 'gift'
+          const cassette = open.kind === 'cassette'
           const mine = open.recipient_id === user?.id
           return (
             <div className="note-view">
@@ -268,12 +272,14 @@ export default function Notes() {
                     {wish && <span className="note-tag">🌟 소원</span>}
                     {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                     {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
+                    {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
                 </div>
               </div>
               <p className="note-view-body">{open.body}</p>
+              {cassette && open.media_url && <MusicPlayer url={open.media_url} />}
               {couple && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 💍</button>

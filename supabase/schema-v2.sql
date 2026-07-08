@@ -971,6 +971,7 @@ alter table public.notes add column if not exists item_id          text;
 alter table public.notes add column if not exists item_name        text;   -- 선물 아이템명 스냅샷
 alter table public.notes add column if not exists claimed          boolean not null default false;
 alter table public.notes add column if not exists rejected         boolean not null default false;
+alter table public.notes add column if not exists media_url        text;   -- 카세트 테이프: 음악 링크(유튜브/사운드클라우드)
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -1258,6 +1259,44 @@ begin
 end;
 $$;
 grant execute on function public.use_wish(uuid, text) to authenticated;
+
+-- =============================================================
+--  카세트 테이프: 쪽지와 함께 음악 링크(유튜브/사운드클라우드) 보내기
+--  카세트 1개 소모 → 상대 쪽지함에 kind=cassette + media_url 쪽지 생성
+-- =============================================================
+create or replace function public.use_cassette(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+begin
+  if p_url is null or btrim(p_url) = '' then raise exception '음악 링크를 입력해 주세요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'cassette' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 카세트 테이프가 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), '음악을 보냈어요 🎵');
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, media_url)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'cassette', 'cassette', btrim(p_url));
+
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_recipient_id, auth.uid(), 'cassette',
+            case when v_sender <> '' then v_sender || ' 님이 음악을 보냈어요' else '음악이 도착했어요' end,
+            '쪽지함에서 들어보세요 🎵', p_group_id);
+end;
+$$;
+grant execute on function public.use_cassette(uuid, uuid, text, text) to authenticated;
 
 -- =============================================================
 --  커플 링 나눠 끼기 (use_couple_ring / claim_couple_ring / reject_couple_ring)
