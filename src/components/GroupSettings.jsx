@@ -38,9 +38,9 @@ export default function GroupSettings({ group, onSaved }) {
   return (
     <form onSubmit={save} className="form">
       <label className="field"><span>그룹명</span>
-        <input value={form.name} onChange={(e) => set({ name: e.target.value })} /></label>
+        <input value={form.name} maxLength={9} onChange={(e) => set({ name: e.target.value })} placeholder="최대 9자" /></label>
       <label className="field"><span>설명</span>
-        <input value={form.description} onChange={(e) => set({ description: e.target.value })} /></label>
+        <input value={form.description} maxLength={14} onChange={(e) => set({ description: e.target.value })} placeholder="최대 14자" /></label>
 
       <GroupEmojiField emoji={form.emoji} bg={form.emoji_bg} name={form.name}
         onChange={({ emoji, bg }) => set({ emoji, emoji_bg: bg })} />

@@ -71,13 +71,14 @@ export default function CreateGroup() {
       <div className="page">
         <form onSubmit={next} className="form">
           <label className="field"><span>그룹명 *</span>
-            <input autoFocus value={ginfo.name}
+            <input autoFocus value={ginfo.name} maxLength={9}
               onChange={(e) => { setG({ name: e.target.value }); if (nameErr) setNameErr('') }}
-              placeholder="그룹 이름" />
+              placeholder="그룹 이름 (최대 9자)" />
             {nameErr && <span className="field-error">{nameErr}</span>}
           </label>
           <label className="field"><span>설명 (선택)</span>
-            <input value={ginfo.description} onChange={(e) => setG({ description: e.target.value })} placeholder="설명" /></label>
+            <input value={ginfo.description} maxLength={14}
+              onChange={(e) => setG({ description: e.target.value })} placeholder="설명 (최대 14자)" /></label>
 
           <GroupEmojiField emoji={ginfo.emoji} bg={ginfo.emojiBg} name={ginfo.name}
             onChange={({ emoji, bg }) => setG({ emoji, emojiBg: bg })} />

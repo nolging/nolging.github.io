@@ -564,12 +564,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   background: var(--canvas); border-radius: 999px; padding: 4px; border-bottom: none;
 }
 .tab {
-  flex: 1; justify-content: center;
+  flex: 1; justify-content: center; position: relative; z-index: 1;
   border: none; background: none; padding: 8px 4px; cursor: pointer; color: var(--muted);
   font-weight: 600; font-size: 13px; border-radius: 999px; display: flex; align-items: center; transition: color .12s;
 }
-.tab.active { color: var(--text); font-weight: 700; background: #fff; box-shadow: 0 2px 6px rgba(25, 23, 34, .08); }
-.tab-underline { display: none; }
+.tab.active { color: var(--text); font-weight: 700; }
+/* 활성 탭 흰색 알약: 스와이프 시 손가락을 따라 실시간 이동(위치/폭은 인라인) */
+.tab-underline {
+  position: absolute; left: 0; top: 4px; bottom: 4px; z-index: 0;
+  background: #fff; border-radius: 999px; box-shadow: 0 2px 6px rgba(25, 23, 34, .08);
+  pointer-events: none; will-change: transform, width;
+  transition: transform .2s ease, width .2s ease;
+}
 
 /* ---- 태스크 ---- */
 /* 하단 여백: 마지막 카드가 위시 작성 버튼(FAB) 뒤에 가려지지 않도록 */
