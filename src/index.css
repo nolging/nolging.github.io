@@ -376,7 +376,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   transition: transform .1s, box-shadow .1s;
 }
 .group-tile:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(25, 23, 34, .09); }
-.group-card.group-tile { background: var(--surface); border: none; box-shadow: var(--card-shadow); }
+.group-card.group-tile { background: var(--surface); border: none; box-shadow: var(--card-shadow); gap: 2px; }
 .group-tile .tile-name { margin-top: auto; }
 /* 관리자에게만 보이는 미가입 그룹: 배경 더 투명 + 내용까지 살짝 흐리게 */
 .group-card.group-tile.not-joined { background: rgba(255, 255, 255, .3); box-shadow: 0 4px 14px rgba(20, 22, 40, .03); opacity: .78; }
@@ -389,7 +389,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   margin: 2px 0 0; font-size: 11.5px; line-height: 1.3; color: var(--muted);
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
-.tile-members { margin-top: 10px; align-self: flex-start; }
+.tile-members { margin-top: 8px; align-self: flex-start; }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
 .empty-hint { margin-top: 16px; text-align: center; }
