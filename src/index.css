@@ -625,7 +625,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .task-item {
   position: relative; z-index: 1; background: var(--surface); border: none; border-radius: var(--radius);
-  box-shadow: var(--card-shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
+  box-shadow: var(--card-shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; cursor: pointer;
   touch-action: pan-y; transition: transform .18s cubic-bezier(.2, .8, .2, 1); will-change: transform;
 }
 .task-item:hover { box-shadow: 0 6px 18px rgba(20,22,40,.09); }
