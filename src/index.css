@@ -312,7 +312,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 내 그룹: 정방형 카드 2열 그리드 (모바일 기준) */
 /* 내 그룹 검색줄: 좌측 돋보기 + 우측 원형 액션(만들기/가입) — 검색 열리면 인풋이 덮어 가림 */
 /* 내 그룹 인사 헤더 (시안) */
-.dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
+.dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .dash-greet-when { font-size: 13px; font-weight: 600; color: var(--primary); }
 .dash-greet-title { margin: 2px 0 0; font-size: 23px; font-weight: 800; letter-spacing: -.8px; color: var(--text); }
 .dash-bell { position: relative; display: inline-flex; color: #b0b0b8; flex-shrink: 0; }
@@ -407,10 +407,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .group-new-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 
 /* 정적 검색바 + 초대 원형 버튼 (시안) */
-.dash-search { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.ds-box { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; background: var(--canvas); border-radius: 999px; padding: 13px 18px; }
+/* .page 기본 gap(18) 위에 얹혀 검색↔카드 간격을 시안(16)으로 */
+.dash-search { display: flex; align-items: center; gap: 10px; margin-bottom: -2px; }
+.ds-box { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; height: 46px; background: var(--canvas); border-radius: 999px; padding: 0 18px; }
 .ds-icon { color: #8b8798; flex-shrink: 0; }
-.ds-input { flex: 1; min-width: 0; min-height: 0; border: none; background: transparent; padding: 0; font: inherit; font-size: 14px; color: var(--text); outline: none; }
+.ds-input { flex: 1; min-width: 0; height: 100%; min-height: 0; border: none; background: transparent; padding: 0; font: inherit; font-size: 14px; line-height: 1.2; color: var(--text); outline: none; }
 .ds-input::placeholder { color: #8b8798; }
 .ds-clear { flex-shrink: 0; border: none; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; }
 .ds-join {
