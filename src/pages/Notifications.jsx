@@ -72,16 +72,21 @@ export default function Notifications() {
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
     if (to === '/notes') {
-      // 인벤토리로 보내야 하는 경우:
-      //  - 받는 사람이 이미 수령한 선물/커플 링 (내 인벤토리에 들어옴)
-      //  - 보낸 사람이 받는 커플 링 수락/거절 알림 (내 링이 장착되거나 다시 사용 가능해짐)
+      // 수령 상태에 따라 이동 목적지를 바꾼다:
+      //  - 커플 링 수락(claimed) → 링이 적용된 그룹 상세 페이지
+      //  - 커플 링 거절(보낸 사람) → 인벤토리(다시 사용 가능)
+      //  - 선물 수령(받는 사람) → 인벤토리(아이템 들어옴)
+      //  - 그 외(수령 전) → 받은 쪽지함
       if ((n.type === 'gift' || n.type === 'couple_ring') && n.note_id) {
         try {
           const note = await getNoteState(n.note_id)
           if (note) {
             const iAmRecipient = note.recipient_id === n.user_id
             const iAmSender = note.sender_id === n.user_id
-            const toInventory = (iAmRecipient && note.claimed) || (iAmSender && (note.claimed || note.rejected))
+            if (n.type === 'couple_ring' && note.claimed && n.group_id) {
+              navigate(`/groups/${n.group_id}`, { state: { from: 'notifications' } }); return
+            }
+            const toInventory = (iAmRecipient && note.claimed) || (iAmSender && note.rejected)
             if (toInventory) { navigate('/inventory', { state: { from: 'notifications' } }); return }
           }
         } catch { /* 조회 실패 시 쪽지함으로 폴백 */ }
