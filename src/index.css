@@ -1316,7 +1316,7 @@ a.mp-tel:active { opacity: .55; }
 .note-card .avatar { flex-shrink: 0; }
 .note-card-main { flex: 1; min-width: 0; }
 .note-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
-.note-card-peer { font-weight: 700; font-size: 14px; color: var(--text); min-width: 0; }
+.note-card-peer { font-weight: 700; font-size: 14px; color: var(--text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .note-card-rel { font-weight: 500; font-size: 12px; color: var(--muted); }
 .note-card-date { font-size: 12px; color: var(--muted); flex-shrink: 0; }
 /* 모든 쪽지 카드 본문은 한 줄만 표시(넘치면 ...). nowrap 이라 두 줄로 늘어나지 않음 */
@@ -1324,8 +1324,6 @@ a.mp-tel:active { opacity: .55; }
   margin: 0; font-size: 14px; color: var(--text); line-height: 1.5;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* 배지(수령하기/거절함) 카드: 우측 공간 확보 → 배지가 항상 보이고 ...이 배지 앞에서 끝남 */
-.note-card.has-flag .note-card-body { padding-right: 66px; }
 
 /* 쪽지 페이지: 목록이 짧아도 하단 빈 영역에서 스와이프가 먹히도록 페이지·본문이 높이를 채움 */
 .notes-page { min-height: 100%; }
@@ -1356,9 +1354,10 @@ a.mp-tel:active { opacity: .55; }
 .note-tag-couple { color: #cf5e88; background: rgba(207, 94, 136, .14); }
 .note-card.note-couple { background: linear-gradient(135deg, #fdeef6, #f5f0ff); box-shadow: 0 2px 12px rgba(207, 94, 136, .16); }
 .note-card.note-couple { position: relative; }
+/* 카드 우측에 고정 칸으로 배치(절대위치 아님) → 어떤 상황에도 잘리지 않고 항상 보임 */
 .note-claim-flag {
-  position: absolute; bottom: 12px; right: 12px; z-index: 2; font-size: 10.5px; font-weight: 700; color: #fff;
-  background: #cf5e88; border-radius: 999px; padding: 3px 9px; white-space: nowrap;
+  align-self: center; flex-shrink: 0; font-size: 10.5px; font-weight: 700; color: #fff;
+  background: #cf5e88; border-radius: 999px; padding: 4px 10px; white-space: nowrap;
 }
 .note-claim-flag.note-claim-flag-off { background: var(--muted); }
 .modal-card.modal-couple { background: linear-gradient(160deg, #fdeef6, #f5f0ff); }
