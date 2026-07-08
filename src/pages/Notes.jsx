@@ -15,9 +15,23 @@ function NoteFabIcon() {
   )
 }
 
-function formatDate(iso) {
+// 카드: 하루 안이면 상대 시간(방금/N분 전/N시간 전), 날짜가 지나가면 "N 월 N 일"
+function formatNoteTime(iso) {
   try {
-    return new Date(iso).toLocaleDateString('ko-KR', { year: '2-digit', month: 'long', day: 'numeric' })
+    const d = new Date(iso)
+    const diff = (Date.now() - d.getTime()) / 1000
+    if (diff < 60) return '방금'
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
+    return `${d.getMonth() + 1} 월 ${d.getDate()} 일`
+  } catch { return '' }
+}
+// 모달: "NN 년 N 월 N 일 HH24:MI"
+function formatNoteFull(iso) {
+  try {
+    const d = new Date(iso)
+    const p = (n) => String(n).padStart(2, '0')
+    return `${String(d.getFullYear()).slice(2)} 년 ${d.getMonth() + 1} 월 ${d.getDate()} 일 ${p(d.getHours())}:${p(d.getMinutes())}`
   } catch { return '' }
 }
 
@@ -221,12 +235,14 @@ export default function Notes() {
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
-                      <span className="note-card-date">{formatDate(n.created_at)}</span>
+                      <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
                     </div>
-                    <p className="note-card-body">{n.body}</p>
+                    <div className="note-card-bodyrow">
+                      <p className="note-card-body">{n.body}</p>
+                      {needClaim && <span className="note-claim-flag">수령하기</span>}
+                      {couple && n.rejected && <span className="note-claim-flag note-claim-flag-off">거절함</span>}
+                    </div>
                   </div>
-                  {needClaim && <span className="note-claim-flag">수령하기</span>}
-                  {couple && n.rejected && <span className="note-claim-flag note-claim-flag-off">거절함</span>}
                 </button>
               </li>
             )
@@ -254,7 +270,7 @@ export default function Notes() {
                     {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
-                  <span className="note-view-date">{formatDate(open.created_at)}</span>
+                  <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
                 </div>
               </div>
               <p className="note-view-body">{open.body}</p>

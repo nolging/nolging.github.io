@@ -12,6 +12,7 @@ import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 import CalendarIcon from '../components/CalendarIcon'
+import Modal from '../components/Modal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
@@ -110,6 +111,7 @@ export default function TaskDetail() {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewErr, setReviewErr] = useState('')
   const [savingReview, setSavingReview] = useState(false)
+  const [confirmSave, setConfirmSave] = useState(false)
   const [subDrag, setSubDrag] = useState({ x: 0, active: false })
   const bodyRef = useRef(null)
   const subSwipe = useRef(null) // { x0, y0, locked, w }
@@ -204,7 +206,7 @@ export default function TaskDetail() {
   }, [taskId])
   useEffect(() => { if (task?.status === 'done') loadReviews() }, [task?.status, loadReviews])
 
-  async function saveReview() {
+  function saveReview() {
     if (savingReview) return
     // 별점·코멘트 둘 다 필수. 하나라도 없으면 입력창 하단에 주의 문구 표시.
     const hasComment = !!reviewComment.trim()
@@ -213,7 +215,12 @@ export default function TaskDetail() {
         : !hasComment ? '코멘트를 입력해 주세요.' : ''
     if (msg) { setReviewErr(msg); return }
     setReviewErr('')
-    if (!confirm('리뷰는 작성 후 수정, 삭제할 수 없습니다. 이대로 작성할까요?')) return
+    // 네이티브 confirm 대신 인앱 모달: 키보드를 먼저 내려 레이아웃이 튀지 않게 함
+    reviewInputRef.current?.blur()
+    setConfirmSave(true)
+  }
+  async function doSubmitReview() {
+    setConfirmSave(false)
     setSavingReview(true); setError('')
     try {
       const res = await submitReview({ taskId, rating, comment: reviewComment.trim() })
@@ -620,6 +627,16 @@ export default function TaskDetail() {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+
+      <Modal open={confirmSave} onClose={() => setConfirmSave(false)} title="리뷰 작성">
+        <div className="confirm-modal">
+          <p className="confirm-text">리뷰는 작성 후 수정·삭제할 수 없어요.<br />이대로 작성할까요?</p>
+          <div className="confirm-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setConfirmSave(false)}>취소</button>
+            <button type="button" className="btn btn-primary" onClick={doSubmitReview}>작성</button>
+          </div>
+        </div>
+      </Modal>
 
       {bottomEl && createPortal(
         reviewComposeMode ? (
