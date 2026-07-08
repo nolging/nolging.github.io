@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#7363e8" />
 
     <!-- PWA: 홈 화면에 추가하면 주소창 없이 전체화면(standalone)으로 실행 -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -17,8 +17,11 @@
     <meta name="apple-mobile-web-app-title" content="Nolging" />
 
     <!-- 웹폰트: 페이퍼로지는 self-host (src/index.css @font-face, public/fonts) -->
+    <!-- 본문·헤딩에 많이 쓰는 굵기를 미리 받아 볼드가 늦게 적용되는 현상(FOUT) 완화 -->
     <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-4Regular.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-6SemiBold.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-7Bold.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Paperlogy-8ExtraBold.woff2" crossorigin />
 
     <title>놀깅</title>
     <meta name="description" content="심심하면 놀기 신청" />
