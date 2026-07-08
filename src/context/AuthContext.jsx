@@ -72,6 +72,40 @@ export function AuthProvider({ children }) {
     }
   }, [loadProfile])
 
+  // 재개 워치독: 백그라운드에 오래 있다가 다시 보일 때 세션이 살아있는지 짧게 확인하고,
+  // 응답이 없으면(연결 stale → 쿼리 멈춤) 페이지를 새로고침해 정상 로드로 회복시킨다.
+  useEffect(() => {
+    let hiddenAt = null
+    let busy = false
+    const markHidden = () => { if (hiddenAt == null) hiddenAt = Date.now() }
+    const checkResume = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      if (busy) return
+      const away = hiddenAt ? Date.now() - hiddenAt : 0
+      hiddenAt = null
+      if (away < 60000) return // 1분 미만 이탈은 무시
+      busy = true
+      try {
+        // 5초 내 서버 응답이 없으면 연결이 굳은 것으로 보고 새로고침
+        const ok = await Promise.race([
+          supabase.auth.getUser().then((r) => !r?.error).catch(() => false),
+          new Promise((res) => { setTimeout(() => res(false), 5000) }),
+        ])
+        if (!ok) { window.location.reload(); return }
+      } catch { window.location.reload(); return } finally { busy = false }
+    }
+    const onVis = () => { if (document.visibilityState === 'hidden') markHidden(); else checkResume() }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('blur', markHidden)
+    window.addEventListener('focus', checkResume)
+    window.addEventListener('pageshow', (e) => { if (e.persisted) { markHidden(); checkResume() } })
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('blur', markHidden)
+      window.removeEventListener('focus', checkResume)
+    }
+  }, [])
+
   const login = useCallback(async (nickname, password) => {
     const email = nicknameToEmail(nickname)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
