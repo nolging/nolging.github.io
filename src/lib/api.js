@@ -577,6 +577,18 @@ export async function giftItem(itemId, groupId, recipientId) {
   return Number(data) || 0
 }
 
+// 선물 수령(쪽지함). 내 인벤토리에 아이템 생성.
+export async function claimGift(noteId) {
+  const { data, error } = await supabase.rpc('claim_gift', { p_note_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /claim_gift/.test(error.message || '')) {
+      throw new Error('선물 수령 기능이 아직 DB에 설정되지 않았습니다. (claim_gift 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // ---- 내 프로필 (연락처/생년월일 포함) ------------------------
 
 export async function getMyProfile() {

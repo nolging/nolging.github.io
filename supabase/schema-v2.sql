@@ -929,8 +929,9 @@ create table if not exists public.notes (
 alter table public.notes add column if not exists sender_avatar    text;
 alter table public.notes add column if not exists recipient_avatar text;
 alter table public.notes add column if not exists kind             text not null default 'note';
--- 커플 링 선물(쪽지함 수령형): 대상 아이템 + 수령/거절 여부
+-- 커플 링/선물(쪽지함 수령형): 대상 아이템 + 수령/거절 여부
 alter table public.notes add column if not exists item_id          text;
+alter table public.notes add column if not exists item_name        text;   -- 선물 아이템명 스냅샷
 alter table public.notes add column if not exists claimed          boolean not null default false;
 alter table public.notes add column if not exists rejected         boolean not null default false;
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
@@ -1109,10 +1110,11 @@ create policy item_gifts_select on public.item_gifts
   using (sender_id = auth.uid() or recipient_id = auth.uid());
 
 -- ---- RPC: 아이템 선물 ----------------------------------------
--- 정가는 서버에서 확정(구매와 동일). 받는 사람 츄르는 늘지 않고, 선물 기록만 남김.
+-- 정가는 서버에서 확정(구매와 동일). 보낸 즉시 츄르 차감(환불/거절 없음)하고,
+-- 받는 사람 '쪽지함'으로 전송한다. 인벤토리에는 상대가 수령(claim_gift)해야 들어간다.
 create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text;
 begin
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
@@ -1131,23 +1133,43 @@ begin
 
   v_sender    := public.notif_member_name(p_group_id, auth.uid());
   v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
-  select avatar_url into v_sender_av from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_sender_av    from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_recipient_av from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
     values (auth.uid(), -it.price, it.name || ' 선물', 'gift');
   insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
     values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
-  -- 받는 사람 인벤토리에 추가(준 사람 정보 스냅샷)
-  insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id)
-    values (p_recipient_id, it.id, it.name, 'gift', auth.uid(), v_sender, v_sender_av, p_group_id);
+  -- 받는 사람 쪽지함으로 선물 전송(수령해야 인벤토리에 들어감). 즉시 인벤토리 추가하지 않음.
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false);
   -- 받는 사람에게 알림(→ Database Webhook → 푸시)
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name, p_group_id);
+    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name || ' · 쪽지함에서 수령하세요', p_group_id);
 
   return v_balance - it.price;
 end;
 $$;
 grant execute on function public.gift_item(text, uuid, uuid) to authenticated;
+
+-- 선물 수령: 쪽지(kind=gift)를 claimed 처리 + 내 인벤토리에 아이템 생성. 거절은 없음.
+create or replace function public.claim_gift(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes; v_name text;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'gift' then
+    raise exception '수령할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령했어요.'; end if;
+
+  update public.notes set claimed = true, is_read = true where id = n.id;
+
+  v_name := coalesce(n.item_name, (select name from public.store_items where id = n.item_id), '선물');
+  insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status)
+    values (auth.uid(), n.item_id, v_name, 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'active');
+end;
+$$;
+grant execute on function public.claim_gift(uuid) to authenticated;
 
 -- =============================================================
 --  소원권 사용 (use_wish)

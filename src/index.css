@@ -1348,6 +1348,12 @@ a.mp-tel:active { opacity: .55; }
 .couple-actions .btn { flex: 1; }
 .couple-actions .couple-reject { color: var(--muted); background: rgba(139, 135, 150, .12); }
 
+/* ---- 선물 쪽지 ---- */
+.note-tag-gift { color: #d98a4e; background: rgba(217, 138, 78, .14); }
+.note-card.note-gift { background: linear-gradient(135deg, #fdf1e6, #fdf7ee); box-shadow: 0 2px 12px rgba(217, 138, 78, .14); position: relative; }
+.modal-card.modal-gift { background: linear-gradient(160deg, #fdf1e6, #fdf7ee); }
+.modal-gift .note-view-body { background: #fff; }
+
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
 .picker-member {

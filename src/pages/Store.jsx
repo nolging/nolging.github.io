@@ -61,7 +61,7 @@ export default function Store() {
     try {
       await giftItem(selected.id, r.groupId, r.userId)
       await refreshCoin?.()
-      setNotice({ type: 'ok', text: `${r.name} 님에게 ${selected.name}을(를) 선물했어요! 🎁` })
+      setNotice({ type: 'ok', text: `${r.name} 님 쪽지함으로 ${selected.name}을(를) 보냈어요! 🎁 (상대가 수령하면 인벤토리에 들어가요)` })
     } catch (err) {
       setNotice({ type: 'err', text: err.message })
     } finally {

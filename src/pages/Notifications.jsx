@@ -52,7 +52,11 @@ export default function Notifications() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
+  // 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권
+  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'wish'])
+
   function targetOf(n) {
+    if (NOTE_TYPES.has(n.type)) return '/notes'
     if (n.task_id && n.group_id) {
       const base = `/groups/${n.group_id}/tasks/${n.task_id}`
       return n.comment_id ? `${base}?c=${n.comment_id}` : base
@@ -67,6 +71,7 @@ export default function Notifications() {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
+    if (to === '/notes') { navigate('/notes', { state: { tab: 'received', from: 'notifications' } }); return }
     if (to) navigate(to, { state: { from: 'notifications' } })
   }
 

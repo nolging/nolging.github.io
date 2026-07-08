@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift } from '../lib/api'
 
 function NoteFabIcon() {
   return (
@@ -73,6 +73,17 @@ export default function Notes() {
     finally { setBusy(false) }
   }
 
+  // 선물 수령: 내 인벤토리에 아이템이 들어옴(거절 없음)
+  async function acceptGift(n) {
+    setBusy(true); setError('')
+    try {
+      await claimGift(n.id)
+      await load()
+      setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
+  }
+
   const list = tab === 'received' ? received : sent
 
   // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
@@ -116,16 +127,18 @@ export default function Notes() {
             const p = peer(n)
             const wish = n.kind === 'wish'
             const couple = n.kind === 'couple_ring'
-            const needClaim = couple && tab === 'received' && !n.claimed && !n.rejected
+            const gift = n.kind === 'gift'
+            const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''}`} onClick={() => setOpen(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''}`} onClick={() => setOpen(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} />
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
                         {wish && <span className="note-tag">🌟 소원</span>}
                         {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
+                        {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatDate(n.created_at)}</span>
@@ -142,11 +155,12 @@ export default function Notes() {
       )}
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
           const couple = open.kind === 'couple_ring'
+          const gift = open.kind === 'gift'
           const mine = open.recipient_id === user?.id
           return (
             <div className="note-view">
@@ -156,6 +170,7 @@ export default function Notes() {
                   <span className="note-view-peer">
                     {wish && <span className="note-tag">🌟 소원</span>}
                     {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
+                    {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatDate(open.created_at)}</span>
@@ -177,7 +192,15 @@ export default function Notes() {
                     </button>
                   </div>
                 )
-              ) : !wish && !couple && mine ? (
+              ) : gift && mine ? (
+                open.claimed ? (
+                  <button type="button" className="btn btn-block" disabled>수령 완료 🎁</button>
+                ) : (
+                  <button type="button" className="btn btn-primary btn-block" onClick={() => acceptGift(open)} disabled={busy}>
+                    {busy ? '수령 중…' : '수령하기'}
+                  </button>
+                )
+              ) : !wish && !couple && !gift && mine ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
                   답장하기
                 </button>
