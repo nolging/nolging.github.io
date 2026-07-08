@@ -735,14 +735,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: inline-flex; align-items: center; align-self: center; gap: 3px; font-size: 42px;
   margin: 4px 0; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
+/* 150자를 스크롤 없이 담을 높이 + 우하단 카운터 자리(padding-bottom) */
+.review-input-wrap { position: relative; }
 .review-input {
-  width: 100%; min-height: 110px; resize: vertical;
-  border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5;
+  width: 100%; min-height: 220px; resize: none;
+  border-radius: 14px; padding: 12px 14px 30px; font-size: 14px; line-height: 1.5;
 }
-/* 리뷰 입력창 하단: 주의 문구(빨강, 배경 없음) + 글자 수 */
-.review-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: -4px; }
-.review-compose-foot .field-error { font-size: 12.5px; }
-.review-count { font-size: 12px; color: var(--muted); flex-shrink: 0; margin-left: auto; }
+/* 글자 수: 입력창 안쪽 우하단 */
+.review-count {
+  position: absolute; right: 14px; bottom: 10px; z-index: 1;
+  font-size: 12px; color: var(--muted); pointer-events: none; background: transparent;
+}
+.review-compose .field-error { font-size: 12.5px; margin-top: -4px; }
 /* 하단 저장 바 (상단 실선 제거) */
 .composer.review-save-bar { border-top: none; }
 .review-save-btn { width: 100%; min-height: 44px; font-size: 15px; }

@@ -455,13 +455,13 @@ export default function TaskDetail() {
       return (
         <div className="review-compose">
           <StarPicker value={rating} onChange={(v) => { setRating(v); if (reviewErr) setReviewErr('') }} />
-          <textarea className="review-input" rows={4} value={reviewComment} ref={reviewInputRef} onFocus={onReviewFocus}
-            maxLength={REVIEW_MAX} placeholder={ph}
-            onChange={(e) => { setReviewComment(e.target.value); if (reviewErr) setReviewErr('') }} />
-          <div className="review-compose-foot">
-            {reviewErr ? <span className="field-error">{reviewErr}</span> : <span />}
+          <div className="review-input-wrap">
+            <textarea className="review-input" value={reviewComment} ref={reviewInputRef} onFocus={onReviewFocus}
+              maxLength={REVIEW_MAX} placeholder={ph}
+              onChange={(e) => { setReviewComment(e.target.value); if (reviewErr) setReviewErr('') }} />
             <span className="review-count">{reviewComment.length}/{REVIEW_MAX}</span>
           </div>
+          {reviewErr && <span className="field-error">{reviewErr}</span>}
         </div>
       )
     }
