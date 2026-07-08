@@ -331,6 +331,7 @@ export default function GroupDetail() {
 
   return (
     <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
+      <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">
           <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={56} radius={20} />
@@ -365,6 +366,7 @@ export default function GroupDetail() {
           )
         })}
         <span className="tab-underline" style={underlineStyle} />
+      </div>
       </div>
 
       <div className="tab-pane" key={filter} data-dir={slideDir} data-anim={paneAnim ? 'y' : 'n'} ref={paneRef} style={paneStyle}>

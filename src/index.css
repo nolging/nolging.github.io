@@ -220,6 +220,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 그룹 상세: 카드가 적어도 페이지가 화면 높이를 채워야 하단 빈 공간에서도 스와이프가 먹힘 */
 .gd-page { min-height: 100%; }
 .gd-page .tab-pane { flex: 1 1 auto; }
+/* 그룹 정보 + 탭을 묶어 상단 고정. 그 아래 목록만 스크롤. */
+.gd-sticky-head {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-direction: column; gap: 18px;
+  background: var(--bg);
+}
+/* content 의 상단 패딩만큼 위로 배경을 확장해 상단바-헤더 사이 틈으로 카드가 비치지 않게
+   (스크롤 위로 넘어가는 영역은 content overflow 로 잘려 상단바를 덮지 않음) */
+.gd-sticky-head::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: 120px; background: var(--bg);
+}
 .tab-pane { animation: tab-in-next .22s ease; }
 .tab-pane[data-dir="prev"] { animation-name: tab-in-prev; }
 /* 스와이프로 전환한 경우엔 이미 손가락 추종 이동을 했으므로 진입 애니메이션 생략 */
