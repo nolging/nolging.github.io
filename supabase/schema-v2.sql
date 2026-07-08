@@ -19,6 +19,9 @@ alter table public.groups add column if not exists theme         text not null d
 alter table public.groups add column if not exists show_contact  boolean not null default false;
 alter table public.groups add column if not exists show_birthdate boolean not null default false;
 alter table public.groups add column if not exists show_ott       boolean not null default false;
+-- 그룹 대표 이모지 + 이모지 배경색
+alter table public.groups add column if not exists emoji         text;
+alter table public.groups add column if not exists emoji_bg      text;
 
 alter table public.groups drop constraint if exists groups_type_check;
 alter table public.groups add  constraint groups_type_check

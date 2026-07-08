@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { listMyGroups } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import GroupBadge from '../components/GroupBadge'
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -99,6 +100,7 @@ export default function Dashboard() {
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
                 className={`group-tile group-card ${isMember ? '' : 'not-joined'}`}>
+                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={40} />
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>

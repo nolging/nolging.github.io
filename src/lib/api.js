@@ -21,29 +21,35 @@ export async function getGroup(groupId) {
   return data
 }
 
-export async function createGroup({ name, description, ownerId, groupType, theme, showContact, showBirthdate, showOtt }) {
-  const { data, error } = await supabase
-    .from('groups')
-    .insert({
-      name,
-      description: description ?? '',
-      owner_id: ownerId,
-      group_type: groupType ?? 'nolging',
-      theme: theme ?? 'default',
-      show_contact: !!showContact,
-      show_birthdate: !!showBirthdate,
-      show_ott: !!showOtt,
-    })
-    .select()
-    .single()
-  if (error) throw error
-  return data
+export async function createGroup({ name, description, ownerId, groupType, theme, showContact, showBirthdate, showOtt, emoji, emojiBg }) {
+  const row = {
+    name,
+    description: description ?? '',
+    owner_id: ownerId,
+    group_type: groupType ?? 'nolging',
+    theme: theme ?? 'default',
+    show_contact: !!showContact,
+    show_birthdate: !!showBirthdate,
+    show_ott: !!showOtt,
+  }
+  const withEmoji = { ...row, emoji: emoji || null, emoji_bg: emojiBg || null }
+  // emoji/emoji_bg 컬럼 미배포 환경 폴백
+  let res = await supabase.from('groups').insert(withEmoji).select().single()
+  if (res.error && /emoji/i.test(res.error.message || '')) {
+    res = await supabase.from('groups').insert(row).select().single()
+  }
+  if (res.error) throw res.error
+  return res.data
 }
 
 export async function updateGroup(groupId, patch) {
-  const { data, error } = await supabase.from('groups').update(patch).eq('id', groupId).select().single()
-  if (error) throw error
-  return data
+  let res = await supabase.from('groups').update(patch).eq('id', groupId).select().single()
+  if (res.error && /emoji/i.test(res.error.message || '') && ('emoji' in patch || 'emoji_bg' in patch)) {
+    const { emoji, emoji_bg, ...rest } = patch // eslint-disable-line no-unused-vars
+    res = await supabase.from('groups').update(rest).eq('id', groupId).select().single()
+  }
+  if (res.error) throw res.error
+  return res.data
 }
 
 export async function deleteGroup(groupId) {

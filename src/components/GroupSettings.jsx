@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { updateGroup } from '../lib/api'
+import { DEFAULT_GROUP_BG } from '../lib/constants'
+import GroupEmojiField from './GroupEmojiField'
 import Switch from './Switch'
 
 export default function GroupSettings({ group, onSaved }) {
   const [form, setForm] = useState({
     name: group.name,
     description: group.description || '',
+    emoji: group.emoji || '',
+    emoji_bg: group.emoji_bg || DEFAULT_GROUP_BG,
     show_contact: group.show_contact,
     show_birthdate: group.show_birthdate,
     show_ott: group.show_ott,
@@ -21,6 +25,8 @@ export default function GroupSettings({ group, onSaved }) {
       const saved = await updateGroup(group.id, {
         name: form.name.trim(),
         description: form.description.trim(),
+        emoji: form.emoji || null,
+        emoji_bg: form.emoji_bg || null,
         show_contact: form.show_contact,
         show_birthdate: form.show_birthdate,
         show_ott: form.show_ott,
@@ -35,6 +41,9 @@ export default function GroupSettings({ group, onSaved }) {
         <input value={form.name} onChange={(e) => set({ name: e.target.value })} /></label>
       <label className="field"><span>설명</span>
         <input value={form.description} onChange={(e) => set({ description: e.target.value })} /></label>
+
+      <GroupEmojiField emoji={form.emoji} bg={form.emoji_bg} name={form.name}
+        onChange={({ emoji, bg }) => set({ emoji, emoji_bg: bg })} />
 
       <div className="switch-row">
         <span>연락처 공개 허용</span>

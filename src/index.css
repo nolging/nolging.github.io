@@ -356,6 +356,26 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members { margin-top: auto; align-self: flex-start; }
 .empty-hint { margin-top: 16px; text-align: center; }
 
+/* ---- 그룹 대표 이모지 뱃지 ---- */
+.group-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  line-height: 1; flex-shrink: 0; user-select: none;
+}
+.group-tile .group-badge { margin-bottom: 8px; }
+.gd-title-row { display: flex; align-items: center; gap: 12px; }
+.gd-title-row h1 { margin: 0; }
+
+/* 이모지 + 배경색 선택 폼 */
+.emoji-field { display: flex; align-items: center; gap: 12px; }
+.emoji-input { width: 72px; text-align: center; font-size: 24px; }
+.emoji-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.emoji-swatch {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); transition: transform .1s;
+}
+.emoji-swatch:hover { transform: scale(1.1); }
+.emoji-swatch.active { border-color: var(--text); }
+
 /* 그룹 만들기 마법사 하단 버튼 */
 .wizard-actions { display: flex; gap: 8px; }
 .wizard-actions .btn-primary { flex: 1; }

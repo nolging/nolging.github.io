@@ -9,6 +9,7 @@ import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import GroupBadge from '../components/GroupBadge'
 import BottomSheet from '../components/BottomSheet'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -301,9 +302,12 @@ export default function GroupDetail() {
   return (
     <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       <div className="gd-head">
-        <div className="gd-title">
-          <h1>{group.name}</h1>
-          {group.description && <p className="muted">{group.description}</p>}
+        <div className="gd-title gd-title-row">
+          <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={44} />
+          <div>
+            <h1>{group.name}</h1>
+            {group.description && <p className="muted">{group.description}</p>}
+          </div>
         </div>
         <div className="gd-actions">
           <button className="btn btn-ghost btn-sm icon-btn" aria-label="멤버" title="멤버"

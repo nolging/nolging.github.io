@@ -11,6 +11,13 @@ export function themeLabel(theme) {
   return GROUP_THEMES.find((t) => t.value === theme)?.label ?? '기본'
 }
 
+// 그룹 대표 이모지 배경색 팔레트 (파스텔)
+export const GROUP_EMOJI_BGS = [
+  '#FFD8A8', '#FFC9C9', '#FCC2D7', '#EEBEFA', '#D0BFFF',
+  '#BAC8FF', '#A5D8FF', '#96F2D7', '#B2F2BB', '#FFEC99',
+]
+export const DEFAULT_GROUP_BG = '#E9ECEF'
+
 // 위시 용어. 진행 상태: 위시(to do) → 약속(doing) → 추억(done)
 const TERMS = {
   noun: '위시',

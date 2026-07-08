@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createGroup, updateMyGroupMember } from '../lib/api'
-import { DEFAULT_THEME } from '../lib/constants'
+import { DEFAULT_THEME, DEFAULT_GROUP_BG } from '../lib/constants'
 import AvatarEditor from '../components/AvatarEditor'
+import GroupEmojiField from '../components/GroupEmojiField'
 import Switch from '../components/Switch'
 
 export default function CreateGroup() {
@@ -16,7 +17,7 @@ export default function CreateGroup() {
   const [error, setError] = useState('')
 
   // 1단계: 그룹 정보
-  const [ginfo, setGinfo] = useState({ name: '', description: '', showContact: false, showBirthdate: false, showOtt: false })
+  const [ginfo, setGinfo] = useState({ name: '', description: '', emoji: '', emojiBg: DEFAULT_GROUP_BG, showContact: false, showBirthdate: false, showOtt: false })
   const setG = (patch) => setGinfo((f) => ({ ...f, ...patch }))
   const [nameErr, setNameErr] = useState('')
 
@@ -47,6 +48,8 @@ export default function CreateGroup() {
         ownerId: profile.id,
         groupType: 'nolging',
         theme: DEFAULT_THEME,
+        emoji: ginfo.emoji,
+        emojiBg: ginfo.emojiBg,
         showContact: ginfo.showContact,
         showBirthdate: ginfo.showBirthdate,
         showOtt: ginfo.showOtt,
@@ -75,6 +78,9 @@ export default function CreateGroup() {
           </label>
           <label className="field"><span>설명 (선택)</span>
             <input value={ginfo.description} onChange={(e) => setG({ description: e.target.value })} placeholder="설명" /></label>
+
+          <GroupEmojiField emoji={ginfo.emoji} bg={ginfo.emojiBg} name={ginfo.name}
+            onChange={({ emoji, bg }) => setG({ emoji, emojiBg: bg })} />
 
           <div className="switch-row">
             <span>멤버 연락처 공개 허용</span>
