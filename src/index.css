@@ -1319,13 +1319,13 @@ a.mp-tel:active { opacity: .55; }
 .note-card-peer { font-weight: 700; font-size: 14px; color: var(--text); min-width: 0; }
 .note-card-rel { font-weight: 500; font-size: 12px; color: var(--muted); }
 .note-card-date { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+/* 모든 쪽지 카드 본문은 한 줄만 표시(넘치면 ...). nowrap 이라 두 줄로 늘어나지 않음 */
 .note-card-body {
   margin: 0; font-size: 14px; color: var(--text); line-height: 1.5;
-  word-break: break-word; overflow-wrap: anywhere;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* 배지(수령하기/거절함) 카드: 본문 1줄 말줄임 + 우측 공간 확보 → 배지가 항상 보이고 ...이 배지 앞에서 끝남 */
-.note-card.has-flag .note-card-body { -webkit-line-clamp: 1; padding-right: 66px; }
+/* 배지(수령하기/거절함) 카드: 우측 공간 확보 → 배지가 항상 보이고 ...이 배지 앞에서 끝남 */
+.note-card.has-flag .note-card-body { padding-right: 66px; }
 
 /* 쪽지 페이지: 목록이 짧아도 하단 빈 영역에서 스와이프가 먹히도록 페이지·본문이 높이를 채움 */
 .notes-page { min-height: 100%; }
