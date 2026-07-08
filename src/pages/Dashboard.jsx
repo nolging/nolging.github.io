@@ -100,7 +100,7 @@ export default function Dashboard() {
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
                 className={`group-tile group-card ${isMember ? '' : 'not-joined'}`}>
-                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} />
+                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {members.length > 0 && (
