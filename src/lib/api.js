@@ -577,6 +577,18 @@ export async function giftItem(itemId, groupId, recipientId) {
   return Number(data) || 0
 }
 
+// 쪽지 수령 여부 조회(알림 클릭 시 이동 목적지 결정용). 없으면 null.
+export async function getNoteClaimed(noteId) {
+  if (!noteId) return null
+  const { data, error } = await supabase
+    .from('notes').select('id, kind, claimed').eq('id', noteId).maybeSingle()
+  if (error) {
+    if (error.code === '42P01' || error.code === 'PGRST116') return null
+    throw error
+  }
+  return data ?? null
+}
+
 // 선물 수령(쪽지함). 내 인벤토리에 아이템 생성.
 export async function claimGift(noteId) {
   const { data, error } = await supabase.rpc('claim_gift', { p_note_id: noteId })

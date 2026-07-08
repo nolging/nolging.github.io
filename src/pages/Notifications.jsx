@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification,
+  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteClaimed,
 } from '../lib/api'
 
 function timeAgo(iso) {
@@ -71,7 +71,17 @@ export default function Notifications() {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
-    if (to === '/notes') { navigate('/notes', { state: { tab: 'received', from: 'notifications' } }); return }
+    if (to === '/notes') {
+      // 이미 수령한 선물/커플 링이면 쪽지함 대신 인벤토리로 이동
+      if ((n.type === 'gift' || n.type === 'couple_ring') && n.note_id) {
+        try {
+          const note = await getNoteClaimed(n.note_id)
+          if (note?.claimed) { navigate('/inventory', { state: { from: 'notifications' } }); return }
+        } catch { /* 조회 실패 시 쪽지함으로 폴백 */ }
+      }
+      navigate('/notes', { state: { tab: 'received', from: 'notifications' } })
+      return
+    }
     if (to) navigate(to, { state: { from: 'notifications' } })
   }
 

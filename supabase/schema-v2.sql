@@ -238,9 +238,12 @@ create table if not exists public.notifications (
   group_id   uuid references public.groups(id)                 on delete cascade,
   task_id    uuid references public.tasks(id)                  on delete cascade,
   comment_id uuid references public.task_comments(id)          on delete cascade,
+  note_id    uuid,   -- 선물/커플 링 알림이 가리키는 쪽지(수령 여부로 이동 목적지 결정)
   is_read    boolean not null default false,
   created_at timestamptz not null default now()
 );
+-- 기존 설치 대상: 쪽지 연결 컬럼
+alter table public.notifications add column if not exists note_id uuid;
 create index if not exists idx_notifications_user
   on public.notifications(user_id, is_read, created_at desc);
 alter table public.notifications enable row level security;
@@ -1114,7 +1117,7 @@ create policy item_gifts_select on public.item_gifts
 -- 받는 사람 '쪽지함'으로 전송한다. 인벤토리에는 상대가 수령(claim_gift)해야 들어간다.
 create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid;
 begin
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
@@ -1142,10 +1145,11 @@ begin
     values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
   -- 받는 사람 쪽지함으로 선물 전송(수령해야 인벤토리에 들어감). 즉시 인벤토리 추가하지 않음.
   insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false);
-  -- 받는 사람에게 알림(→ Database Webhook → 푸시)
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name || ' · 쪽지함에서 수령하세요', p_group_id);
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false)
+    returning id into v_note_id;
+  -- 받는 사람에게 알림(→ Database Webhook → 푸시). note_id 로 쪽지 연결(수령 후 인벤토리로 이동).
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
+    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name || ' · 쪽지함에서 수령하세요', p_group_id, v_note_id);
 
   return v_balance - it.price;
 end;
@@ -1225,7 +1229,7 @@ grant execute on function public.use_wish(uuid, text) to authenticated;
 drop function if exists public.use_couple_ring(uuid, uuid);
 create or replace function public.use_couple_ring(p_group_id uuid, p_recipient_id uuid, p_message text default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text; v_note_id uuid;
 begin
   select * into v_item from public.user_items
    where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active'
@@ -1253,12 +1257,13 @@ begin
   v_body := coalesce(nullif(btrim(p_message), ''), '커플 링을 함께 끼자고 보냈어요 💍');
 
   insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, claimed, rejected)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'couple_ring', 'couple-ring', false, false);
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'couple_ring', 'couple-ring', false, false)
+    returning id into v_note_id;
 
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
     values (p_recipient_id, auth.uid(), 'couple_ring',
             case when v_sender <> '' then v_sender || ' 님이 커플 링을 보냈어요' else '커플 링이 도착했어요' end,
-            '쪽지함에서 확인하세요', p_group_id);
+            '쪽지함에서 확인하세요', p_group_id, v_note_id);
 end;
 $$;
 grant execute on function public.use_couple_ring(uuid, uuid, text) to authenticated;
