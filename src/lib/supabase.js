@@ -34,7 +34,19 @@ function timeoutFetch(input, init = {}, attempt = 0) {
     .finally(() => clearTimeout(t))
 }
 
+// 인증 락: 기본값(navigator.locks)은 탭이 몇 시간 백그라운드/프리즈된 뒤 재개할 때
+// 락이 응답하지 않아 토큰 갱신·쿼리가 무한 대기(로딩 멈춤)하는 문제가 있다.
+// navigator.locks 대신 탭 내부 직렬화 락을 써서 데드락 없이 갱신을 순차 처리한다.
+// (단일 탭 PWA 라 탭 내 직렬화로 충분)
+let lockChain = Promise.resolve()
+function memoryLock(_name, _acquireTimeout, fn) {
+  const run = lockChain.then(fn, fn)
+  lockChain = run.then(() => undefined, () => undefined)
+  return run
+}
+
 export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key', {
+  auth: { lock: memoryLock },
   global: { fetch: timeoutFetch },
 })
 
