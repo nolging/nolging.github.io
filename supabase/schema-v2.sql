@@ -1031,10 +1031,14 @@ create table if not exists public.user_items (
   from_name    text,                                                            -- 선물한 사람 표시명(스냅샷)
   from_avatar  text,                                                            -- 선물한 사람 아바타(스냅샷)
   group_id     uuid references public.groups(id) on delete set null,            -- 선물 맥락 그룹
-  status       text not null default 'active' check (status in ('active', 'used')),
+  status       text not null default 'active' check (status in ('active', 'used', 'pending')),
   used_at      timestamptz,
   created_at   timestamptz not null default now()
 );
+-- 기존 설치 대상: 커플 링 '수락 대기(pending)' 상태 허용하도록 제약 갱신
+alter table public.user_items drop constraint if exists user_items_status_check;
+alter table public.user_items add  constraint user_items_status_check
+  check (status in ('active', 'used', 'pending'));
 create index if not exists idx_user_items_owner on public.user_items(user_id, status, created_at desc);
 alter table public.user_items enable row level security;
 
