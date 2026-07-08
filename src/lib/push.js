@@ -77,17 +77,51 @@ export async function enablePush(userId) {
     })
   }
   const json = sub.toJSON()
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      user_id: userId,
-      endpoint: sub.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-    },
-    { onConflict: 'endpoint' },
-  )
-  if (error) throw error
+  // 이 기기를 현재 로그인 사용자 소유로 (재)등록 — 다른 계정에 묶여 있었어도 이전.
+  const { error } = await supabase.rpc('attach_push_subscription', {
+    p_endpoint: sub.endpoint,
+    p_p256dh: json.keys.p256dh,
+    p_auth: json.keys.auth,
+  })
+  if (error) {
+    // attach RPC 미배포 시(구버전 DB) 예전 방식으로 폴백
+    if (error.code === 'PGRST202' || /attach_push_subscription/.test(error.message || '')) {
+      const { error: upErr } = await supabase.from('push_subscriptions').upsert(
+        { user_id: userId, endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
+        { onConflict: 'endpoint' },
+      )
+      if (upErr) throw upErr
+      return true
+    }
+    throw error
+  }
   return true
+}
+
+// 로그인/계정 전환 시 호출: 이미 이 브라우저에 푸시 구독이 있으면 현재 사용자 소유로 재바인딩.
+// 권한 요청/신규 구독은 하지 않는다(조용히 동기화). userId 인자는 로그 용도(실 소유자는 auth.uid()).
+export async function syncPushToCurrentUser() {
+  try {
+    if (!pushSupported() || Notification.permission !== 'granted') return
+    const sub = await currentSubscription()
+    if (!sub) return
+    const json = sub.toJSON()
+    await supabase.rpc('attach_push_subscription', {
+      p_endpoint: sub.endpoint,
+      p_p256dh: json.keys.p256dh,
+      p_auth: json.keys.auth,
+    })
+  } catch { /* 조용히 무시 — 알림 동기화 실패가 앱을 막지 않도록 */ }
+}
+
+// 로그아웃 시 호출: 이 기기의 서버 구독만 제거(브라우저 구독은 유지 → 재로그인 시 즉시 재바인딩).
+export async function detachPushFromServer() {
+  try {
+    if (!pushSupported()) return
+    const sub = await currentSubscription()
+    if (!sub) return
+    await supabase.rpc('detach_push_subscription', { p_endpoint: sub.endpoint })
+  } catch { /* 조용히 무시 */ }
 }
 
 // 푸시 끄기: 서버 구독 삭제 + 브라우저 구독 해제
@@ -96,6 +130,6 @@ export async function disablePush() {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
   if (!sub) return
-  await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+  await supabase.rpc('detach_push_subscription', { p_endpoint: sub.endpoint })
   await sub.unsubscribe()
 }

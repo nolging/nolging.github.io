@@ -405,6 +405,31 @@ drop policy if exists ps_delete on public.push_subscriptions;
 create policy ps_delete on public.push_subscriptions
   for delete to authenticated using (user_id = auth.uid());
 
+-- 기기(push endpoint)를 현재 로그인 사용자 소유로 (재)등록.
+--  - endpoint 는 브라우저가 생성한 추측 불가능한 비밀 문자열 → 소지 = 관리 권한.
+--  - 계정 전환 시 같은 기기의 구독을 이전 소유자에서 현재 사용자로 넘긴다.
+--    (RLS update/insert 는 user_id=auth.uid() 만 허용하므로 정의자 함수로 우회)
+create or replace function public.attach_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.'; end if;
+  delete from public.push_subscriptions where endpoint = p_endpoint;
+  insert into public.push_subscriptions(user_id, endpoint, p256dh, auth)
+    values (auth.uid(), p_endpoint, p_p256dh, p_auth);
+end;
+$$;
+grant execute on function public.attach_push_subscription(text, text, text) to authenticated;
+
+-- 기기 구독 제거(로그아웃/끄기). 이전 소유자 행이라도 endpoint 소지자면 정리 가능.
+create or replace function public.detach_push_subscription(p_endpoint text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.'; end if;
+  delete from public.push_subscriptions where endpoint = p_endpoint;
+end;
+$$;
+grant execute on function public.detach_push_subscription(text) to authenticated;
+
 -- ---- 알림 카테고리별 푸시 설정 (OFF 여도 알림 행은 생성, 푸시만 생략) ----
 create table if not exists public.notification_prefs (
   user_id    uuid primary key references public.profiles(id) on delete cascade,

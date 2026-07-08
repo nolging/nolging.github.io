@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase, nicknameToEmail } from '../lib/supabase'
+import { syncPushToCurrentUser, detachPushFromServer } from '../lib/push'
 
 const AuthContext = createContext(null)
 
@@ -48,6 +49,8 @@ export function AuthProvider({ children }) {
         if (!mounted) return
         setSession(data.session)
         await loadProfile(data.session?.user?.id)
+        // 이 기기의 기존 푸시 구독을 현재 로그인 사용자 소유로 재바인딩(계정 전환 대응)
+        if (data.session?.user?.id) syncPushToCurrentUser()
       } catch {
         if (mounted) { setSession(null); setProfile(null) }
       } finally {
@@ -59,6 +62,7 @@ export function AuthProvider({ children }) {
       if (!mounted) return
       setSession(newSession)
       await loadProfile(newSession?.user?.id)
+      if (newSession?.user?.id) syncPushToCurrentUser() // 로그인/전환 시 기기 재바인딩
       settle() // 인증 이벤트가 먼저 도착하면 그 시점에 로딩 해제
     })
     return () => {
@@ -90,6 +94,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(async () => {
+    // 로그아웃 전에 이 기기의 서버 푸시 구독을 제거 — 로그아웃 상태에서 이전 사용자 푸시가 오지 않도록
+    await detachPushFromServer()
     await supabase.auth.signOut()
     setProfile(null)
   }, [])
