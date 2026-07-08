@@ -129,9 +129,10 @@ export default function Notes() {
             const couple = n.kind === 'couple_ring'
             const gift = n.kind === 'gift'
             const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
+            const hasFlag = needClaim || (couple && n.rejected)
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''}`} onClick={() => setOpen(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => setOpen(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} />
                   <div className="note-card-main">
                     <div className="note-card-head">
