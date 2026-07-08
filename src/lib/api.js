@@ -580,6 +580,18 @@ export async function rejectCoupleRing(noteId) {
   return data
 }
 
+// 내가 커플 링을 이미 보유 중인지(상태 무관). 상점 구매 차단용.
+export async function ownsCoupleRing(userId) {
+  if (!userId) return false
+  const { data, error } = await supabase
+    .from('user_items').select('id').eq('user_id', userId).eq('item_id', 'couple-ring').limit(1)
+  if (error) {
+    if (error.code === '42P01') return false
+    throw error
+  }
+  return (data ?? []).length > 0
+}
+
 // 커플 링이 장착된(프리미엄) 그룹 id 목록.
 export async function listCoupleGroups(userId) {
   const { data, error } = await supabase

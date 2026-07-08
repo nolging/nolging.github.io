@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
 import StoreItemImage from '../components/StoreItemImage'
 import { formatCoin } from '../lib/constants'
-import { listStoreItems, purchaseItem, giftItem } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing } from '../lib/api'
 
 export default function Store() {
   const { refreshCoin } = useOutletContext()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,6 +17,7 @@ export default function Store() {
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)        // 구매/선물 처리 중
   const [pickOpen, setPickOpen] = useState(false) // 선물 받는 사람 선택
+  const [ownsCouple, setOwnsCouple] = useState(false) // 커플 링 보유 여부
   // 안내 메시지 { type: 'ok' | 'err' | 'info', text }
   const [notice, setNotice] = useState(null)
 
@@ -26,6 +29,11 @@ export default function Store() {
       .finally(() => { if (on) setLoading(false) })
     return () => { on = false }
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) return
+    ownsCoupleRing(user.id).then(setOwnsCouple).catch(() => {})
+  }, [user?.id])
 
   function open(item) {
     setNotice(null)
@@ -45,6 +53,7 @@ export default function Store() {
     try {
       await purchaseItem(selected.id)
       await refreshCoin?.()
+      if (selected.id === 'couple-ring') setOwnsCouple(true)
       setNotice({ type: 'ok', text: `${selected.name} 구매 완료! 🎉` })
     } catch (err) {
       setNotice({ type: 'err', text: err.message })
@@ -112,14 +121,19 @@ export default function Store() {
             )}
 
             <div className="store-detail-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={selected.giftOnly || busy || done}
-                onClick={handleBuy}
-              >
-                {busy ? '처리 중…' : '구매하기'}
-              </button>
+              {(() => {
+                const ownedCouple = selected.id === 'couple-ring' && ownsCouple
+                return (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={selected.giftOnly || busy || done || ownedCouple}
+                    onClick={handleBuy}
+                  >
+                    {ownedCouple ? '보유 중' : busy ? '처리 중…' : '구매하기'}
+                  </button>
+                )
+              })()}
               <button
                 type="button"
                 className="btn"

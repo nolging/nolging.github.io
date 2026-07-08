@@ -1104,6 +1104,10 @@ begin
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
   if it.gift_only then raise exception '선물만 가능한 아이템입니다.'; end if;
+  -- 커플 링은 1개만 보유 가능
+  if p_item_id = 'couple-ring' and exists (
+       select 1 from public.user_items where user_id = auth.uid() and item_id = 'couple-ring') then
+    raise exception '이미 커플 링을 보유하고 있어요.'; end if;
 
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();
@@ -1161,6 +1165,10 @@ begin
     raise exception '자기 자신에게는 선물할 수 없습니다.'; end if;
   if not public.is_group_member(p_group_id, p_recipient_id) then
     raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+  -- 커플 링은 상대가 이미 보유 중이면 선물 불가(1개만 보유 가능)
+  if p_item_id = 'couple-ring' and exists (
+       select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring') then
+    raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
 
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();

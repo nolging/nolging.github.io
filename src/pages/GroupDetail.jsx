@@ -64,6 +64,14 @@ const CalendarXIcon = () => (
     <line x1="9.5" y1="14" x2="14.5" y2="19" /><line x1="14.5" y1="14" x2="9.5" y2="19" />
   </svg>
 )
+// 되돌리기(추억→약속): 반시계 방향 되돌림 화살표
+const UndoIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 8h11a6 6 0 0 1 0 12H8" />
+    <polyline points="7 4 3 8 7 12" />
+  </svg>
+)
 
 export default function GroupDetail() {
   const { groupId } = useParams()
@@ -438,7 +446,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
       if (task.status !== 'done') {
         actions.push({ key: 'cancel', label: '약속 취소', icon: <CalendarXIcon />, onClick: onCancelAppointment })
       } else if (!hasReviews) {
-        actions.push({ key: 'revert', label: '되돌리기', icon: <CalendarXIcon />, onClick: onRevertAppointment })
+        actions.push({ key: 'revert', label: '약속으로 되돌리기', icon: <UndoIcon />, onClick: onRevertAppointment })
       }
       if (isCreator || isAdmin) actions.push({ key: 'del', label: '삭제', icon: <TrashIcon />, danger: true, onClick: onDelete })
     } else {

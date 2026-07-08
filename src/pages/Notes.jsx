@@ -182,7 +182,7 @@ export default function Notes() {
     : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게' }
 
   return (
-    <div className="page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+    <div className="page notes-page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="tabs" ref={tabsRef}>
@@ -195,7 +195,7 @@ export default function Notes() {
         <span className="tab-underline" style={underlineStyle} />
       </div>
 
-      <div ref={paneRef}>
+      <div className="notes-body" ref={paneRef}>
       {loading ? (
         <div className="spinner" />
       ) : list.length === 0 ? (
