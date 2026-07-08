@@ -577,11 +577,11 @@ export async function giftItem(itemId, groupId, recipientId) {
   return Number(data) || 0
 }
 
-// 쪽지 수령 여부 조회(알림 클릭 시 이동 목적지 결정용). 없으면 null.
-export async function getNoteClaimed(noteId) {
+// 쪽지 상태 조회(알림 클릭 시 이동 목적지 결정용). 없으면 null.
+export async function getNoteState(noteId) {
   if (!noteId) return null
   const { data, error } = await supabase
-    .from('notes').select('id, kind, claimed').eq('id', noteId).maybeSingle()
+    .from('notes').select('id, kind, claimed, rejected, sender_id, recipient_id').eq('id', noteId).maybeSingle()
   if (error) {
     if (error.code === '42P01' || error.code === 'PGRST116') return null
     throw error

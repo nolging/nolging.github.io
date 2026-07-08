@@ -1292,12 +1292,12 @@ begin
       values (auth.uid(), 'couple-ring', '커플 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
   end if;
 
-  -- 보낸 사람에게 수락 알림
+  -- 보낸 사람에게 수락 알림(클릭 시 인벤토리로 이동하도록 note_id 연결)
   v_actor := coalesce(public.notif_member_name(n.group_id, auth.uid()), '');
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
     values (n.sender_id, auth.uid(), 'couple_ring',
             case when v_actor <> '' then v_actor || ' 님과 커플 링을 나눠 꼈어요' else '커플 링을 함께 끼게 됐어요' end,
-            '이제 프리미엄 그룹이에요 💍', n.group_id);
+            '이제 프리미엄 그룹이에요 💍', n.group_id, n.id);
 end;
 $$;
 grant execute on function public.claim_couple_ring(uuid) to authenticated;
@@ -1319,12 +1319,12 @@ begin
   update public.user_items set status = 'active', group_id = null, used_at = null
    where user_id = n.sender_id and item_id = 'couple-ring' and status = 'pending' and group_id = n.group_id;
 
-  -- 보낸 사람에게 거절 알림
+  -- 보낸 사람에게 거절 알림(클릭 시 인벤토리로 이동하도록 note_id 연결)
   v_actor := coalesce(public.notif_member_name(n.group_id, auth.uid()), '');
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
     values (n.sender_id, auth.uid(), 'couple_ring',
             case when v_actor <> '' then v_actor || ' 님이 커플 링을 거절했어요' else '커플 링이 거절됐어요' end,
-            '커플 링은 다시 사용할 수 있어요', n.group_id);
+            '커플 링은 다시 사용할 수 있어요', n.group_id, n.id);
 end;
 $$;
 grant execute on function public.reject_couple_ring(uuid) to authenticated;

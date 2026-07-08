@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteClaimed,
+  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteState,
 } from '../lib/api'
 
 function timeAgo(iso) {
@@ -72,11 +72,18 @@ export default function Notifications() {
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
     if (to === '/notes') {
-      // 이미 수령한 선물/커플 링이면 쪽지함 대신 인벤토리로 이동
+      // 인벤토리로 보내야 하는 경우:
+      //  - 받는 사람이 이미 수령한 선물/커플 링 (내 인벤토리에 들어옴)
+      //  - 보낸 사람이 받는 커플 링 수락/거절 알림 (내 링이 장착되거나 다시 사용 가능해짐)
       if ((n.type === 'gift' || n.type === 'couple_ring') && n.note_id) {
         try {
-          const note = await getNoteClaimed(n.note_id)
-          if (note?.claimed) { navigate('/inventory', { state: { from: 'notifications' } }); return }
+          const note = await getNoteState(n.note_id)
+          if (note) {
+            const iAmRecipient = note.recipient_id === n.user_id
+            const iAmSender = note.sender_id === n.user_id
+            const toInventory = (iAmRecipient && note.claimed) || (iAmSender && (note.claimed || note.rejected))
+            if (toInventory) { navigate('/inventory', { state: { from: 'notifications' } }); return }
+          }
         } catch { /* 조회 실패 시 쪽지함으로 폴백 */ }
       }
       navigate('/notes', { state: { tab: 'received', from: 'notifications' } })
