@@ -349,7 +349,6 @@ export default function GroupDetail() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="gd-tabs-sticky">
       <div className="tabs" ref={tabsRef}>
         {TASK_STATUSES.map((f, i) => {
           const a = tabActiveness(i)
@@ -366,7 +365,6 @@ export default function GroupDetail() {
           )
         })}
         <span className="tab-underline" style={underlineStyle} />
-      </div>
       </div>
 
       <div className="tab-pane" key={filter} data-dir={slideDir} data-anim={paneAnim ? 'y' : 'n'} ref={paneRef} style={paneStyle}>
