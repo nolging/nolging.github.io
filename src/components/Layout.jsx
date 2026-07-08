@@ -64,7 +64,9 @@ const StoreIcon = () => tabSvg(<>
   <path d="M9 19v-5h6v5" />
 </>)
 const NoteIcon = () => tabSvg(<>
-  <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+  <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+  <path d="M14 3v6h6" />
+  <line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" />
 </>)
 
 export default function Layout() {
