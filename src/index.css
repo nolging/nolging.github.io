@@ -86,6 +86,50 @@ h3 { margin: 0; }
 .auth-sub { color: var(--muted); margin: 4px 0 20px; }
 .auth-foot { text-align: center; margin-top: 18px; color: var(--muted); font-size: 14px; }
 
+/* ---- 로그인 페이지 (시안 디자인) ---- */
+.login-page { min-height: 100dvh; background: #fdfcfe; box-sizing: border-box; }
+.login-inner {
+  max-width: 390px; margin: 0 auto; padding: 88px 24px 40px;
+  box-sizing: border-box;
+}
+.login-logo { font-size: 26px; font-weight: 800; letter-spacing: -1px; color: #191722; }
+.login-logo span { color: #7363e8; }
+.login-title { margin: 10px 0 0; font-size: 22px; font-weight: 700; line-height: 1.35; color: #191722; }
+.login-sub { margin: 6px 0 0; font-size: 14px; color: #8b8798; }
+
+.login-form { margin-top: 48px; }
+.login-fieldwrap { position: relative; }
+.login-cat { position: absolute; top: -40px; right: 22px; }
+.login-cat-eye { animation: cat-blink 4s infinite; }
+@keyframes cat-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+.login-fields { display: flex; flex-direction: column; gap: 10px; position: relative; }
+.login-input {
+  font-family: inherit; font-size: 15px; color: #191722; background: #fff;
+  border: 1.5px solid #e9e9ee; border-radius: 999px; padding: 15px 22px;
+  outline: none; width: 100%; box-sizing: border-box; min-height: 0;
+}
+.login-input:focus { border-color: #191722; outline: none; }
+.login-input::placeholder { color: #b6b3c2; }
+
+.login-error {
+  margin-top: 12px; padding: 11px 16px; border-radius: 14px;
+  background: #fdecec; color: #b91c1c; font-size: 13.5px; text-align: center;
+}
+
+.login-btn {
+  margin-top: 16px; width: 100%; height: 56px; border: none; border-radius: 999px;
+  background: #191722; color: #fff; font-family: inherit; font-size: 16px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .12s, transform .1s;
+}
+.login-btn:hover { background: #2c2938; }
+.login-btn:active { transform: scale(.985); }
+.login-btn:disabled { opacity: .6; cursor: default; }
+
+.login-foot { margin-top: 18px; text-align: center; font-size: 13.5px; color: #8b8798; }
+.login-foot a { color: #7363e8; font-weight: 600; }
+
 /* ---- 폼 ---- */
 .form { display: flex; flex-direction: column; gap: 14px; }
 .form-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
