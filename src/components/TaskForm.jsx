@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WISH_CATEGORIES, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import { WISH_CATEGORIES, categoryStyle, categoryEmoji, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import { searchMedia, getMediaDetail } from '../lib/api'
 import MediaInfo from './MediaInfo'
 
@@ -72,7 +72,8 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit }) {
         {WISH_CATEGORIES.map((c) => (
           <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
             style={category === c ? categoryStyle(c) : undefined}
-            onClick={() => pickCategory(c)}>{c}</button>
+            onClick={() => pickCategory(c)}>
+            <span className="cat-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>{c}</button>
         ))}
       </div>
 

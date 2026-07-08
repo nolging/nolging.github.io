@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief, listMyGroups } from '../lib/api'
 import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
+import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
 
@@ -260,7 +261,7 @@ export default function SchedulePage() {
         <span className="cal-appt-time">{timeOf(a)}</span>
         <span className="cal-appt-body">
           <span className="cal-appt-head">
-            {a.category && <span className="cat-chip" style={categoryStyle(a.category)}>{a.category}</span>}
+            <CategoryChip category={a.category} />
             <span className="task-name">{a.title}</span>
           </span>
           {a.repeat_rule && (

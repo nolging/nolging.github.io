@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, updateTask,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle, categoryEmoji, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 
@@ -153,7 +154,8 @@ export default function ScheduleAppointment() {
               {WISH_CATEGORIES.map((c) => (
                 <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
                   style={category === c ? categoryStyle(c) : undefined}
-                  onClick={() => setCategory(category === c ? '' : c)}>{c}</button>
+                  onClick={() => setCategory(category === c ? '' : c)}>
+                  <span className="cat-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>{c}</button>
               ))}
             </div>
           )}
@@ -161,7 +163,7 @@ export default function ScheduleAppointment() {
         </div>
       ) : (
         <div className="sched-headline">
-          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
+          <CategoryChip category={task.category} />
           <span className="task-name td-name">{task.title}</span>
         </div>
       )}

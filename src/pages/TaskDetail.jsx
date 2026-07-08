@@ -7,7 +7,8 @@ import {
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview,
 } from '../lib/api'
-import { taskTerms, repeatLabel, remindLabel, categoryStyle, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
 
@@ -486,7 +487,7 @@ export default function TaskDetail() {
     <div className="page task-detail">
       <div className="td-head">
         <div className="task-headline">
-          {task.category && <span className="cat-chip" style={categoryStyle(task.category)}>{task.category}</span>}
+          <CategoryChip category={task.category} />
           <span className="task-name td-name">{task.title}</span>
         </div>
         <div className="td-head-right">

@@ -6,10 +6,11 @@ import {
   completeTask, deleteTask, cancelAppointment,
 } from '../lib/api'
 import {
-  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, categoryEmoji, mediaCardLine,
+  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
+import CategoryChip from '../components/CategoryChip'
 import BottomSheet from '../components/BottomSheet'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -517,12 +518,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="task-head">
           <div className="task-headline">
-            {task.category && (
-              <span className="cat-chip" style={categoryStyle(task.category)}>
-                <span className="cat-chip-emoji" aria-hidden="true">{categoryEmoji(task.category)}</span>
-                {task.category}
-              </span>
-            )}
+            <CategoryChip category={task.category} />
             <span className="task-name">{task.title}</span>
           </div>
           <div className="task-head-right">
