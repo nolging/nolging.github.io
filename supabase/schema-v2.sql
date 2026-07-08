@@ -106,7 +106,8 @@ returns table (
 ) language plpgsql security definer stable set search_path = public as $$
 declare g public.groups;
 begin
-  if not public.is_group_member(p_group_id, auth.uid()) then
+  -- 그룹 멤버 또는 관리자(미가입 그룹 열람 허용)만 조회 가능
+  if not (public.is_group_member(p_group_id, auth.uid()) or public.is_admin(auth.uid())) then
     raise exception '그룹 멤버만 조회할 수 있습니다.';
   end if;
   select * into g from public.groups where id = p_group_id;
