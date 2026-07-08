@@ -112,12 +112,19 @@ export function mediaCardLine(category, mi) {
 
 // 카테고리별 파스텔 색 (배경/글자) — 칩으로 유형을 한눈에 구분
 export const CATEGORY_COLORS = {
-  OTT:  { bg: '#ECE6FB', fg: '#6C4BD6' }, // 라벤더
-  독서: { bg: '#FBE7D6', fg: '#B96A2E' }, // 살구
-  영화: { bg: '#DCEAFE', fg: '#2F6FCF' }, // 하늘
-  게임: { bg: '#DAF1E2', fg: '#2E9E63' }, // 민트
-  운동: { bg: '#FFE0E6', fg: '#D2506E' }, // 코랄핑크
-  기타: { bg: '#E9EBF1', fg: '#6B7280' }, // 뉴트럴
+  OTT:  { bg: '#eeebfe', fg: '#7363e8' }, // 보라
+  영화: { bg: '#e6eefd', fg: '#5578d0' }, // 블루
+  게임: { bg: '#fde8ee', fg: '#cf5e88' }, // 핑크
+  독서: { bg: '#fdeee6', fg: '#d98a4e' }, // 오렌지
+  운동: { bg: '#e8f4ec', fg: '#4a9d6a' }, // 그린
+  기타: { bg: '#eef0f2', fg: '#8b8798' }, // 그레이
+}
+// 카테고리별 대표 이모지 (카드 칩 표기용)
+export const CATEGORY_EMOJI = {
+  OTT: '📺', 영화: '🎬', 게임: '🎮', 독서: '📚', 운동: '🏃', 기타: '✨',
+}
+export function categoryEmoji(cat) {
+  return CATEGORY_EMOJI[cat] || CATEGORY_EMOJI['기타']
 }
 export function categoryStyle(cat) {
   const c = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
