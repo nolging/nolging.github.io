@@ -272,6 +272,16 @@ export default function GroupDetail() {
   const gActive = !!gesture && !gesture.settling // 드래그 중=트랜지션 off, 놓은 후=on
   const activeIdx = TASK_STATUSES.indexOf(filter)
 
+  // 탭 글씨 강조도(0~1): 스와이프 진행에 따라 현재 탭↔목표 탭 사이를 보간
+  // → 색이 손가락을 따라 부드럽게 진해지고, 굵기는 절반 지점에서 전환
+  const tabActiveness = (i) => {
+    const p = paneW ? Math.max(-1, Math.min(1, gx / paneW)) : 0
+    if (i === activeIdx) return 1 - Math.abs(p)
+    if (p < 0 && i === activeIdx + 1) return -p
+    if (p > 0 && i === activeIdx - 1) return p
+    return 0
+  }
+
   // 현재 pane: 손가락 따라 이동, 놓으면 트랜지션으로 정착
   const paneStyle = {
     transform: gx ? `translateX(${gx}px)` : undefined,
@@ -327,11 +337,20 @@ export default function GroupDetail() {
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="tabs" ref={tabsRef}>
-        {TASK_STATUSES.map((f) => (
-          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => changeTab(f)}>
-            {terms.status[f]}
-          </button>
-        ))}
+        {TASK_STATUSES.map((f, i) => {
+          const a = tabActiveness(i)
+          return (
+            <button key={f} className={`tab ${filter === f ? 'active' : ''}`}
+              style={{
+                color: `color-mix(in srgb, var(--muted), var(--text) ${Math.round(a * 100)}%)`,
+                fontWeight: a > 0.5 ? 700 : 600,
+                transition: gActive ? 'none' : 'color .2s ease',
+              }}
+              onClick={() => changeTab(f)}>
+              {terms.status[f]}
+            </button>
+          )
+        })}
         <span className="tab-underline" style={underlineStyle} />
       </div>
 
