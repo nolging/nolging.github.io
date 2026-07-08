@@ -626,11 +626,16 @@ export async function getMyCoinBalance() {
   return Number(data) || 0
 }
 
-// 내 츄르(coin) 적립/사용 내역 (RLS 로 본인 것만). 최신순.
+// 내 츄르(coin) 적립/사용 내역. 최신순.
+// 주의: coin_ledger RLS 는 관리자에게 전체 조회를 허용하므로(관리자 패널용),
+//       반드시 user_id 를 명시해 본인 것만 가져와야 한다(관리자 계정 오노출 방지).
 export async function getMyCoinHistory(limit = 200) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.id) return []
   const { data, error } = await supabase
     .from('coin_ledger')
     .select('id, delta, reason, ref_type, created_at')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) {
