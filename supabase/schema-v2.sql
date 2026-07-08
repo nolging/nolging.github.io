@@ -896,12 +896,14 @@ create table if not exists public.notes (
   sender_avatar    text,         -- 보낸 사람의 그룹 내 아바타(스냅샷)
   recipient_avatar text,         -- 받는 사람의 그룹 내 아바타(스냅샷)
   body          text not null,
+  kind          text not null default 'note',  -- note | wish (소원권 사용)
   is_read       boolean not null default false,
   created_at    timestamptz not null default now()
 );
 -- 기존 설치 대상 컬럼 추가
 alter table public.notes add column if not exists sender_avatar    text;
 alter table public.notes add column if not exists recipient_avatar text;
+alter table public.notes add column if not exists kind             text not null default 'note';
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -1121,7 +1123,7 @@ grant execute on function public.gift_item(text, uuid, uuid) to authenticated;
 -- =============================================================
 create or replace function public.use_wish(p_from_user_id uuid, p_wish text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_item public.user_items; v_name text;
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text;
 begin
   if p_wish is null or btrim(p_wish) = '' then
     raise exception '소원을 입력해 주세요.'; end if;
@@ -1138,10 +1140,19 @@ begin
 
   update public.user_items set status = 'used', used_at = now() where id = v_item.id;
 
-  v_name := coalesce(public.notif_member_name(v_item.group_id, auth.uid()), '');
+  -- 소원을 쪽지(kind=wish)로 남김: 빈 사람=보낸이, 소원권 준 사람=받는이
+  v_sender    := coalesce(public.notif_member_name(v_item.group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(v_item.group_id, p_from_user_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = v_item.group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = v_item.group_id and user_id = p_from_user_id;
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind)
+    values (v_item.group_id, auth.uid(), p_from_user_id, v_sender, v_recipient, v_sav, v_rav, btrim(p_wish), 'wish');
+
+  -- 알림(→ 푸시)
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
     values (p_from_user_id, auth.uid(), 'wish',
-            case when v_name <> '' then v_name || ' 님이 소원을 빌었어요' else '소원이 도착했어요' end,
+            case when v_sender <> '' then v_sender || ' 님이 소원을 빌었어요' else '소원이 도착했어요' end,
             btrim(p_wish), v_item.group_id);
 end;
 $$;

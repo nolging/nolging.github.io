@@ -91,13 +91,17 @@ export default function Notes() {
         <ul className="note-list">
           {list.map((n) => {
             const p = peer(n)
+            const wish = n.kind === 'wish'
             return (
               <li key={n.id}>
-                <button type="button" className="note-card" onClick={() => setOpen(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''}`} onClick={() => setOpen(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} />
                   <div className="note-card-main">
                     <div className="note-card-head">
-                      <span className="note-card-peer">{p.name} <span className="note-card-rel">{p.label}</span></span>
+                      <span className="note-card-peer">
+                        {wish && <span className="note-tag">🌟 소원</span>}
+                        {p.name} <span className="note-card-rel">{p.label}</span>
+                      </span>
                       <span className="note-card-date">{formatDate(n.created_at)}</span>
                     </div>
                     <p className="note-card-body">{n.body}</p>
@@ -109,20 +113,24 @@ export default function Notes() {
         </ul>
       )}
 
-      <Modal open={!!open} onClose={() => setOpen(null)}>
+      <Modal open={!!open} onClose={() => setOpen(null)} cardClassName={open?.kind === 'wish' ? 'modal-wish' : ''}>
         {open && (() => {
           const p = peer(open)
+          const wish = open.kind === 'wish'
           return (
             <div className="note-view">
               <div className="note-view-head">
                 <Avatar src={p.avatar} name={p.name} size={44} />
                 <div className="note-view-who">
-                  <span className="note-view-peer">{p.name} <span className="note-card-rel">{p.label}</span></span>
+                  <span className="note-view-peer">
+                    {wish && <span className="note-tag">🌟 소원</span>}
+                    {p.name} <span className="note-card-rel">{p.label}</span>
+                  </span>
                   <span className="note-view-date">{formatDate(open.created_at)}</span>
                 </div>
               </div>
               <p className="note-view-body">{open.body}</p>
-              {open.recipient_id === user?.id && (
+              {!wish && open.recipient_id === user?.id && (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
                   답장하기
                 </button>

@@ -1214,6 +1214,15 @@ a.mp-tel:active { opacity: .55; }
   background: var(--bg); border-radius: 12px; padding: 14px 16px;
 }
 
+/* ---- 소원 쪽지 (일반 쪽지와 색상 구분) ---- */
+.note-tag {
+  font-size: 11px; font-weight: 700; color: #6d51e0; background: rgba(109, 81, 224, .13);
+  border-radius: 999px; padding: 1px 8px; margin-right: 4px; white-space: nowrap;
+}
+.note-card.note-wish { background: linear-gradient(135deg, #f3eeff, #fbeffb); box-shadow: 0 2px 12px rgba(109, 81, 224, .16); }
+.modal-card.modal-wish { background: linear-gradient(160deg, #f5f0ff, #fbf0fa); }
+.modal-wish .note-view-body { background: #fff; }
+
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
 .picker-member {
