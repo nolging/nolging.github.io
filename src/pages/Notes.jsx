@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -86,6 +86,84 @@ export default function Notes() {
 
   const list = tab === 'received' ? received : sent
 
+  // ---- 탭(받은/보낸) 좌우 스와이프 + 흰색 알약 인디케이터 ----
+  const TABS = ['received', 'sent']
+  const activeIdx = TABS.indexOf(tab)
+  const tabsRef = useRef(null)
+  const paneRef = useRef(null)
+  const swipeRef = useRef(null)
+  const suppressClickRef = useRef(false)
+  const [tabGeo, setTabGeo] = useState([])
+  const [paneW, setPaneW] = useState(0)
+  const [gesture, setGesture] = useState(null) // { x, active }
+
+  // 탭 버튼 실제 위치/폭 측정(패딩 안쪽에 딱 맞는 알약을 위해)
+  useLayoutEffect(() => {
+    const el = tabsRef.current
+    if (!el) return
+    const measure = () => {
+      const btns = [...el.querySelectorAll('.tab')]
+      setTabGeo(btns.map((b) => ({ left: b.offsetLeft, width: b.offsetWidth })))
+      setPaneW(paneRef.current?.offsetWidth || 0)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [loading])
+
+  function onTouchStart(e) {
+    suppressClickRef.current = false
+    if (e.touches.length !== 1 || e.target.closest?.('.fab, .modal-root')) { swipeRef.current = null; return }
+    swipeRef.current = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, locked: null, w: paneRef.current?.offsetWidth || window.innerWidth }
+  }
+  function onTouchMove(e) {
+    const s = swipeRef.current
+    if (!s || e.touches.length !== 1) return
+    const dx = e.touches[0].clientX - s.x0, dy = e.touches[0].clientY - s.y0
+    if (s.locked === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      s.locked = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v'
+      if (s.locked === 'v') { swipeRef.current = null; return }
+    }
+    if (s.locked !== 'h') return
+    suppressClickRef.current = true // 스와이프 후 카드 열림 방지
+    let x = dx
+    if ((x > 0 && activeIdx === 0) || (x < 0 && activeIdx === TABS.length - 1)) x *= 0.35
+    setGesture({ x, active: true })
+  }
+  function onTouchEnd(e) {
+    const s = swipeRef.current; swipeRef.current = null
+    if (!s || s.locked !== 'h') { if (gesture) setGesture(null); return }
+    const dx = e.changedTouches[0].clientX - s.x0
+    if (Math.abs(dx) >= Math.min(70, s.w * 0.22)) {
+      const n = dx < 0 ? Math.min(TABS.length - 1, activeIdx + 1) : Math.max(0, activeIdx - 1)
+      if (n !== activeIdx) setTab(TABS[n])
+    }
+    setGesture({ x: 0, active: false })
+  }
+  function onCardClick(n) {
+    if (suppressClickRef.current) { suppressClickRef.current = false; return }
+    setOpen(n)
+  }
+
+  // 알약: 현재 탭 → 인접 탭으로 드래그 비율만큼 보간
+  const cur = tabGeo[activeIdx]
+  const gx = gesture?.x || 0
+  let uLeft = cur?.left ?? 0, uWidth = cur?.width ?? 0
+  if (cur && paneW) {
+    if (gx < 0 && activeIdx < TABS.length - 1) {
+      const nb = tabGeo[activeIdx + 1], t = Math.min(1, -gx / paneW)
+      uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
+    } else if (gx > 0 && activeIdx > 0) {
+      const nb = tabGeo[activeIdx - 1], t = Math.min(1, gx / paneW)
+      uLeft = cur.left + (nb.left - cur.left) * t; uWidth = cur.width + (nb.width - cur.width) * t
+    }
+  }
+  const underlineStyle = cur && cur.width
+    ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`, transition: gesture?.active ? 'none' : 'transform .2s ease, width .2s ease' }
+    : { opacity: 0 }
+
   // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
   function replyTo(n) {
     navigate('/notes/new', {
@@ -104,19 +182,20 @@ export default function Notes() {
     : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게' }
 
   return (
-    <div className="page">
+    <div className="page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="tabs">
+      <div className="tabs" ref={tabsRef}>
         <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
           받은 쪽지함
         </button>
         <button type="button" className={`tab ${tab === 'sent' ? 'active' : ''}`} onClick={() => setTab('sent')}>
           보낸 쪽지함
         </button>
-        <span className="tab-underline" style={{ width: '50%', transform: `translateX(${tab === 'received' ? '0' : '100%'})` }} />
+        <span className="tab-underline" style={underlineStyle} />
       </div>
 
+      <div ref={paneRef}>
       {loading ? (
         <div className="spinner" />
       ) : list.length === 0 ? (
@@ -132,7 +211,7 @@ export default function Notes() {
             const hasFlag = needClaim || (couple && n.rejected)
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => setOpen(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} />
                   <div className="note-card-main">
                     <div className="note-card-head">
@@ -154,6 +233,7 @@ export default function Notes() {
           })}
         </ul>
       )}
+      </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
         cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : ''}>

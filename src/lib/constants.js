@@ -173,12 +173,14 @@ export function remindLabel(min) {
 }
 
 // 약속 시각 표시 (시간 미설정이면 날짜만)
+// "N 월 N 일 *요일 HH24:MI" (예: "7 월 8 일 화요일 14:30"). timeSet=false 면 시간 생략.
 export function formatWhen(iso, timeSet = true) {
   try {
-    const opts = timeSet
-      ? { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }
-      : { month: 'long', day: 'numeric', weekday: 'short' }
-    return new Date(iso).toLocaleString('ko-KR', opts)
+    const d = new Date(iso)
+    const p = (n) => String(n).padStart(2, '0')
+    let s = `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${WEEKDAYS[d.getDay()]}요일`
+    if (timeSet) s += ` ${p(d.getHours())}:${p(d.getMinutes())}`
+    return s
   } catch { return '' }
 }
 

@@ -7,10 +7,13 @@ import {
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview,
 } from '../lib/api'
-import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MediaInfo from '../components/MediaInfo'
+import CalendarIcon from '../components/CalendarIcon'
+
+const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
 // 0.5 단위 별점 셀 (회색 별 위에 금색 별을 width% 만큼 덮어 반 개 표현)
 function starCells(value) {
@@ -70,15 +73,6 @@ function formatTime(iso) {
   } catch { return '' }
 }
 
-function formatWhen(iso, timeSet = true) {
-  try {
-    const opts = timeSet
-      ? { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }
-      : { month: 'long', day: 'numeric', weekday: 'short' }
-    return new Date(iso).toLocaleString('ko-KR', opts)
-  } catch { return '' }
-}
-
 export default function TaskDetail() {
   const { groupId, taskId } = useParams()
   const { profile, isAdmin } = useAuth()
@@ -114,6 +108,7 @@ export default function TaskDetail() {
   const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false })
   const [rating, setRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
+  const [reviewErr, setReviewErr] = useState('')
   const [savingReview, setSavingReview] = useState(false)
   const [subDrag, setSubDrag] = useState({ x: 0, active: false })
   const bodyRef = useRef(null)
@@ -210,7 +205,14 @@ export default function TaskDetail() {
   useEffect(() => { if (task?.status === 'done') loadReviews() }, [task?.status, loadReviews])
 
   async function saveReview() {
-    if (!rating || savingReview) return
+    if (savingReview) return
+    // 별점·코멘트 둘 다 필수. 하나라도 없으면 입력창 하단에 주의 문구 표시.
+    const hasComment = !!reviewComment.trim()
+    const msg = !rating && !hasComment ? '별점과 코멘트를 모두 입력해 주세요.'
+      : !rating ? '별점을 입력해 주세요.'
+        : !hasComment ? '코멘트를 입력해 주세요.' : ''
+    if (msg) { setReviewErr(msg); return }
+    setReviewErr('')
     if (!confirm('리뷰는 작성 후 수정, 삭제할 수 없습니다. 이대로 작성할까요?')) return
     setSavingReview(true); setError('')
     try {
@@ -447,9 +449,14 @@ export default function TaskDetail() {
           : '리뷰를 작성해야 다른 참여자의 리뷰를 볼 수 있어요'
       return (
         <div className="review-compose">
-          <StarPicker value={rating} onChange={setRating} />
+          <StarPicker value={rating} onChange={(v) => { setRating(v); if (reviewErr) setReviewErr('') }} />
           <textarea className="review-input" rows={4} value={reviewComment} ref={reviewInputRef} onFocus={onReviewFocus}
-            onChange={(e) => setReviewComment(e.target.value)} placeholder={ph} />
+            maxLength={REVIEW_MAX} placeholder={ph}
+            onChange={(e) => { setReviewComment(e.target.value); if (reviewErr) setReviewErr('') }} />
+          <div className="review-compose-foot">
+            {reviewErr ? <span className="field-error">{reviewErr}</span> : <span />}
+            <span className="review-count">{reviewComment.length}/{REVIEW_MAX}</span>
+          </div>
         </div>
       )
     }
@@ -554,7 +561,7 @@ export default function TaskDetail() {
       <div className="td-actions">
         {isScheduled ? (
           <div className="td-appt appt-when">
-            <span className="appt-cal" aria-hidden="true">🗓</span>
+            <CalendarIcon className="appt-cal" size={15} />
             <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
             {task.repeat_rule && (
               <span className="appt-repeat">
@@ -612,7 +619,7 @@ export default function TaskDetail() {
         reviewComposeMode ? (
           <div className="composer review-save-bar">
             <button type="button" className="btn btn-primary review-save-btn"
-              disabled={!rating || savingReview} onClick={saveReview}>
+              disabled={savingReview} onClick={saveReview}>
               {savingReview ? '저장 중…' : '저장'}
             </button>
           </div>

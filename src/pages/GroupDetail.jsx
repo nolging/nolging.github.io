@@ -11,6 +11,7 @@ import {
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
 import CategoryChip from '../components/CategoryChip'
+import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -560,7 +561,7 @@ function TaskItem({ task, meId, isOwner, terms, nameOf, avatarOf, participants, 
         {/* 약속 시간: 상세 정보(foot) 아래. 댓글 수도 이 라인에 맞춤 */}
         {task.scheduled_at && (
           <div className="task-appt">
-            <span className="task-appt-when">🗓 {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+            <span className="task-appt-when"><CalendarIcon size={13} /> {formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
             {task.repeat_rule && <span className="task-appt-rep">{repeatCycleText(task.repeat_rule, task.scheduled_at)}</span>}
             {task.remind_min !== null && task.remind_min !== undefined && (
               <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>

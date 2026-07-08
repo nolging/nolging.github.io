@@ -661,6 +661,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 약속 줄: 한 줄 유지. 날짜·댓글은 항상, 반복은 길면 말줄임 */
 .task-appt { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; font-size: 13px; font-weight: 600; }
 .task-appt-when { color: var(--text); flex-shrink: 0; }
+.task-appt-when svg { vertical-align: -2px; margin-right: 1px; }
 .task-appt-rep { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-appt-bell { display: inline-flex; align-items: center; color: var(--muted); flex-shrink: 0; }
 .task-appt-cc { margin-left: auto; flex-shrink: 0; font-weight: 400; }
@@ -738,6 +739,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   width: 100%; min-height: 110px; resize: vertical;
   border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5;
 }
+/* 리뷰 입력창 하단: 주의 문구(빨강, 배경 없음) + 글자 수 */
+.review-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: -4px; }
+.review-compose-foot .field-error { font-size: 12.5px; }
+.review-count { font-size: 12px; color: var(--muted); flex-shrink: 0; margin-left: auto; }
 /* 하단 저장 바 (상단 실선 제거) */
 .composer.review-save-bar { border-top: none; }
 .review-save-btn { width: 100%; min-height: 44px; font-size: 15px; }
