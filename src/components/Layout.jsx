@@ -59,16 +59,15 @@ const CalendarIcon = () => tabSvg(<>
 const MyIcon = () => tabSvg(<>
   <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
 </>)
+// 상점: 쇼핑백 (시안)
 const StoreIcon = () => tabSvg(<>
-  <path d="M4 4h16l-1 5H5z" /><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
-  <path d="M9 19v-5h6v5" />
+  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+  <line x1="3" y1="6" x2="21" y2="6" />
+  <path d="M16 10a4 4 0 0 1-8 0" />
 </>)
-// 접은 쪽지: 정사각형(X 90° 교차) + 45°로 눕혀 X 하단과 맞물리는 큰 직사각형 + 오른쪽 변 위 작은 직사각형
+// 쪽지: 말풍선 (시안)
 const NoteIcon = () => tabSvg(<>
-  <path d="M6 15 V4 Q6 3 7 3 H17 Q18 3 18 4 V15" />
-  <path d="M6.5 3.5 18 15M17.5 3.5 6 15" />
-  <path d="M12 9 L6 15 L9 18 L15 12 Z" />
-  <path d="M15 12 L18.5 15.5 L15.5 18.5 L12 15 Z" />
+  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 </>)
 
 export default function Layout() {
