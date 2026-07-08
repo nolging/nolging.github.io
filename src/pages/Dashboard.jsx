@@ -118,20 +118,10 @@ export default function Dashboard() {
               <Link key={g.id} to={`/groups/${g.id}`}
                 className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''}`}>
                 {premium && <span className="tile-premium-tag">💍 커플</span>}
-                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={premium ? 44 : 34} radius={12} />
-                {premium ? (
-                  <div className="tile-body">
-                    <h3 className="tile-name">{g.name}</h3>
-                    {g.description && <p className="tile-desc muted">{g.description}</p>}
-                    {memberRow}
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="tile-name">{g.name}</h3>
-                    {g.description && <p className="tile-desc muted">{g.description}</p>}
-                    {memberRow}
-                  </>
-                )}
+                <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
+                <h3 className="tile-name">{g.name}</h3>
+                {g.description && <p className="tile-desc muted">{g.description}</p>}
+                {memberRow}
               </Link>
             )
           })}

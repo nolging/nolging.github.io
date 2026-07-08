@@ -395,19 +395,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
 .empty-hint { margin-top: 16px; text-align: center; }
 
-/* 커플링이 적용된 프리미엄 그룹: 한 줄 전체(카드 2개 폭) + 가로 레이아웃 */
+/* 커플 링이 적용된 프리미엄 그룹: 한 줄 전체(카드 2개 폭), 높이·요소 배치는 일반 카드와 동일 */
 .group-card.group-tile.premium {
-  grid-column: 1 / -1; aspect-ratio: auto; position: relative;
-  flex-direction: row; align-items: center; gap: 16px; padding: 16px 18px;
+  grid-column: 1 / -1; aspect-ratio: 2 / 1; position: relative;
   background: linear-gradient(120deg, #f5f0ff 0%, #fdeef6 100%);
   box-shadow: 0 6px 20px rgba(115, 99, 232, .16);
 }
-.group-card.group-tile.premium .group-badge { margin-bottom: 0; }
-.group-card.group-tile.premium .tile-body {
-  min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px;
-}
-.group-card.group-tile.premium .tile-name { margin: 0; font-size: 16.5px; }
-.group-card.group-tile.premium .tile-members { margin-top: 8px; }
 .tile-premium-tag {
   position: absolute; top: 12px; right: 14px; font-size: 10.5px; font-weight: 700;
   color: #7363e8; background: rgba(255, 255, 255, .7); border-radius: 999px; padding: 3px 8px;
