@@ -402,7 +402,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
 /* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 흰 테두리 + 가운데 하트(여백) */
-.tile-members-couple { position: relative; display: inline-flex; align-items: center; gap: 22px; }
+.task-parts.tile-members-couple { position: relative; display: inline-flex; align-items: center; gap: 10px; }
 .tile-members-couple .avatar { margin-left: 0; box-shadow: 0 0 0 2px #fff; }
 .tile-couple-heart {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
