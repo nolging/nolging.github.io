@@ -39,7 +39,16 @@ function FilterIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  )
+}
+
+function InviteIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 7L2 7" />
     </svg>
   )
 }
@@ -106,6 +115,8 @@ export default function Layout() {
   const [refreshHandler, setRefreshHandler] = useState(null)
   // 페이지가 상단바 필터 버튼 동작/뱃지를 등록할 수 있게 (예: 일정 페이지)
   const [headerFilter, setHeaderFilter] = useState(null)
+  // 페이지가 상단바 초대 버튼을 등록할 수 있게 (그룹 상세)
+  const [headerInvite, setHeaderInvite] = useState(null)
 
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
@@ -351,7 +362,11 @@ export default function Layout() {
             {headerFilter?.active && <span className="filter-dot" />}
           </button>
         )}
-        <Link to={`/groups/${id}/settings`} className={`btn btn-ghost btn-sm icon-btn ${headerFilter ? '' : 'push-right'}`} aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
+        {headerInvite && (
+          <button type="button" className={`btn btn-ghost btn-sm icon-btn ${headerFilter ? '' : 'push-right'}`}
+            aria-label="초대" title="초대" onClick={() => headerInvite?.onClick?.()}><InviteIcon /></button>
+        )}
+        <Link to={`/groups/${id}/settings`} className={`btn btn-ghost btn-sm icon-btn ${(headerFilter || headerInvite) ? '' : 'push-right'}`} aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
       </header>
     )
   } else if (profileEditMatch) {
@@ -462,7 +477,7 @@ export default function Layout() {
       )}
       <main className={`content ${dragging ? 'ptr-drag' : ''}`} ref={contentRef}
         style={(pull || refreshing) ? { transform: `translateY(${refreshing ? 46 : pull}px)` } : undefined}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, refreshCoin }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin }} />
       </main>
       {showBottomNav && (
         <nav className="bottomnav">

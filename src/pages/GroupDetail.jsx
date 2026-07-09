@@ -23,25 +23,6 @@ const BellIcon = () => (
   </svg>
 )
 
-const MembersIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-)
-const InviteIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 7L2 7" />
-  </svg>
-)
-const FilterIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
-  </svg>
-)
 // 스와이프 액션 아이콘
 const EditIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -77,7 +58,7 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
-  const { setHeaderFilter } = useOutletContext()
+  const { setHeaderFilter, setHeaderInvite } = useOutletContext()
 
   const [searchParams] = useSearchParams()
   const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
@@ -102,6 +83,12 @@ export default function GroupDetail() {
     setHeaderFilter?.({ onClick: () => setFilterOpen(true), active: catActive })
     return () => setHeaderFilter?.(null)
   }, [setHeaderFilter, catActive])
+
+  // 초대 버튼을 상단바(필터와 톱니 사이)로 노출
+  useEffect(() => {
+    setHeaderInvite?.({ onClick: () => setInviteOpen(true) })
+    return () => setHeaderInvite?.(null)
+  }, [setHeaderInvite])
 
   function toggleCat(c) {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -340,12 +327,15 @@ export default function GroupDetail() {
             {group.description && <p className="muted">{group.description}</p>}
           </div>
         </div>
-        <div className="gd-actions">
-          <button className="btn btn-ghost btn-sm icon-btn" aria-label="멤버" title="멤버"
-            onClick={() => navigate(`/groups/${groupId}/members`)}><MembersIcon /></button>
-          <button className="btn btn-ghost btn-sm icon-btn" aria-label="초대" title="초대"
-            onClick={() => setInviteOpen(true)}><InviteIcon /></button>
-        </div>
+        {members.length > 0 && (
+          <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
+            aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
+            {members.slice(0, 3).map((m) => (
+              <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
+            ))}
+            {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
+          </button>
+        )}
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}

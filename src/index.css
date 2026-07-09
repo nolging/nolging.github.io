@@ -1051,6 +1051,14 @@ a.mp-tel:active { opacity: .55; }
 .gd-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .gd-title { min-width: 0; }
 .gd-actions { display: flex; gap: 4px; flex-shrink: 0; }
+/* 그룹 헤더의 멤버 아바타 스택(누르면 멤버 목록으로) */
+.gd-members {
+  margin-top: 0; align-self: center; flex-shrink: 0;
+  background: none; border: 0; padding: 2px; cursor: pointer;
+}
+.gd-members .avatar { width: 30px; height: 30px; font-size: 12px; }
+.gd-members .task-parts-more { min-width: 30px; height: 30px; border-radius: 15px; font-size: 12px; }
+.gd-members:active { transform: scale(.96); }
 
 /* ---- FAB (태스크 작성, 화면 고정) ---- */
 .fab {
