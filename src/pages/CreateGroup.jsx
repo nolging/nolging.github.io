@@ -83,6 +83,11 @@ export default function CreateGroup() {
   const setP = (patch) => setProf((f) => ({ ...f, ...patch }))
   const [nickErr, setNickErr] = useState('')
 
+  // 진입/단계 전환 시 스크롤 최상단으로 (이전 페이지·이전 단계의 스크롤 위치가 남지 않게)
+  useEffect(() => {
+    document.querySelector('.content')?.scrollTo({ top: 0 })
+  }, [step])
+
   // 상단바 < 버튼: 2단계면 1단계로 (이전 버튼 대체), 1단계면 기본(내 그룹)
   useEffect(() => {
     setBackHandler(() => (step === 2 ? () => setStep(1) : null))
