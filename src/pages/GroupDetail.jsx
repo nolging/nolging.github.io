@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext, Link } from 
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
-  completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewedTaskIds, isCoupleGroup,
+  completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -69,7 +69,7 @@ export default function GroupDetail() {
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
-  const [reviewedIds, setReviewedIds] = useState(new Set()) // 리뷰가 있는 추억 id (되돌리기 숨김용)
+  const [reviewCounts, setReviewCounts] = useState({}) // 추억별 리뷰 개수 { task_id: cnt }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -217,7 +217,7 @@ export default function GroupDetail() {
       setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
-      listReviewedTaskIds(groupId).then(setReviewedIds).catch(() => {})
+      listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
@@ -233,7 +233,7 @@ export default function GroupDetail() {
       setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
-      listReviewedTaskIds(groupId).then(setReviewedIds).catch(() => {})
+      listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) }
   }, [groupId])
@@ -274,7 +274,8 @@ export default function GroupDetail() {
       <ul className="task-list">
         {list.map((t) => (
           <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
-            participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0} hasReviews={reviewedIds.has(t.id)}
+            participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
+            reviewCount={reviewCounts[t.id] || 0} hasReviews={(reviewCounts[t.id] || 0) > 0}
             onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
             onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
@@ -437,7 +438,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, participants, commentCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
+function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner || isAdmin
   const stop = (e) => e.stopPropagation()
@@ -456,8 +457,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
   const mediaLine = mediaCardLine(task.category, task.media_info)
   // 약속/추억(scheduled) 카드는 댓글 수를 약속 정보(🗓) 라인에, 그 외(open)는 foot 에
   const ccOnAppt = !!task.scheduled_at
-  const showProgress = task.status === 'accepted' && !mine
-  const showFoot = mediaLine || (task.assignee_id && !showParts) || showProgress || !ccOnAppt
+  const showFoot = mediaLine || (task.assignee_id && !showParts) || !ccOnAppt
 
   // 스와이프 시 오른쪽에 뜨는 원형 액션들 (기존 ⋮ 메뉴 대체)
   const actions = []
@@ -591,7 +591,6 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
               </span>
             )}
             <div className="task-foot-right">
-              {showProgress && <span className="muted sm">진행 중</span>}
               {!ccOnAppt && <span className="task-cc">댓글 {commentCount}</span>}
             </div>
           </div>
@@ -606,6 +605,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
               <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
             )}
             <span className="task-cc task-appt-cc">댓글 {commentCount}</span>
+            {task.status === 'done' && <span className="task-cc task-appt-cc">리뷰 {reviewCount}</span>}
           </div>
         )}
       </div>

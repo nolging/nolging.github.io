@@ -250,6 +250,18 @@ export async function listReviewedTaskIds(groupId) {
   return new Set((data ?? []).filter((r) => (r.cnt ?? 0) > 0).map((r) => r.task_id))
 }
 
+// 추억별 리뷰 개수 맵 { task_id: cnt }
+export async function listReviewCounts(groupId) {
+  const { data, error } = await supabase.rpc('group_review_counts', { p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || error.code === '42P01') return {}
+    throw error
+  }
+  const map = {}
+  for (const r of data ?? []) map[r.task_id] = r.cnt ?? 0
+  return map
+}
+
 export async function reopenTask(taskId) {
   const { data, error } = await supabase
     .from('tasks')
