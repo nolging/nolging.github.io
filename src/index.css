@@ -1499,26 +1499,26 @@ a.mp-tel:active { opacity: .55; }
 
 /* ---- 도트 LED 전광판 마퀴 ---- */
 .led-board {
-  position: relative; overflow: hidden; height: 40px; border-radius: 12px;
-  background: radial-gradient(rgba(255, 255, 255, .06) 30%, transparent 32%) 0 0 / 4px 4px, #16131c;
+  position: relative; overflow: hidden; height: 46px; border-radius: 12px;
+  background: radial-gradient(rgba(255, 255, 255, .05) 30%, transparent 33%) 0 0 / 3px 3px, #16131c;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 4px 14px rgba(0, 0, 0, .22);
   display: flex; align-items: center;
 }
 .led-track { display: inline-flex; white-space: nowrap; width: max-content; animation: led-scroll 16s linear infinite; }
 .led-seg {
-  padding: 0 2.2rem; font-size: 19px; font-weight: 800; letter-spacing: 1px; line-height: 40px;
-  color: #ffb84d; text-shadow: 0 0 5px rgba(255, 150, 20, .85);
+  padding: 0 2.2rem; font-size: 24px; font-weight: 800; letter-spacing: .3px; line-height: 46px;
+  color: #ffb84d; text-shadow: 0 0 1.5px rgba(255, 150, 20, .5);
 }
-/* 점 격자로 글자를 쪼개는 오버레이(보드색 채움 + 점 구멍) */
+/* 점 격자로 글자를 쪼개는 오버레이(보드색 채움 + 점 구멍). 촘촘·큰 구멍으로 선명하게 */
 .led-board::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle, transparent 32%, #16131c 38%) 0 0 / 4px 4px;
+  background: radial-gradient(circle, transparent 40%, #16131c 47%) 0 0 / 3px 3px;
 }
-.led-red .led-seg   { color: #ff5a5a; text-shadow: 0 0 5px rgba(255, 60, 60, .85); }
-.led-green .led-seg { color: #54e08a; text-shadow: 0 0 5px rgba(50, 220, 120, .8); }
-.led-blue .led-seg  { color: #5aa8ff; text-shadow: 0 0 5px rgba(70, 150, 255, .85); }
-.led-pink .led-seg  { color: #ff77c8; text-shadow: 0 0 5px rgba(255, 90, 190, .85); }
-.led-cyan .led-seg  { color: #4fe6e6; text-shadow: 0 0 5px rgba(60, 220, 220, .8); }
+.led-red .led-seg   { color: #ff5a5a; text-shadow: 0 0 1.5px rgba(255, 60, 60, .5); }
+.led-green .led-seg { color: #54e08a; text-shadow: 0 0 1.5px rgba(50, 220, 120, .5); }
+.led-blue .led-seg  { color: #5aa8ff; text-shadow: 0 0 1.5px rgba(70, 150, 255, .5); }
+.led-pink .led-seg  { color: #ff77c8; text-shadow: 0 0 1.5px rgba(255, 90, 190, .5); }
+.led-cyan .led-seg  { color: #4fe6e6; text-shadow: 0 0 1.5px rgba(60, 220, 220, .5); }
 @keyframes led-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .dash-led { margin-bottom: 14px; }
 /* 색상 선택 스와치 */
