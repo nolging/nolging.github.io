@@ -687,6 +687,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-appt-rep { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-appt-bell { display: inline-flex; align-items: center; color: var(--muted); flex-shrink: 0; }
 .task-appt-cc { margin-left: auto; flex-shrink: 0; font-weight: 400; }
+.task-appt-counts { margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; }
+.task-appt-counts .task-cc { font-weight: 400; }
 .task-foot { display: flex; align-items: center; gap: 8px; }
 .task-foot .task-person { font-size: 12px; color: var(--muted); }
 .task-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
