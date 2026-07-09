@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
-  getTaskReviews, submitReview, deleteReview, revertToAppointment,
+  getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
@@ -106,7 +106,11 @@ export default function TaskDetail() {
   const [subTab, setSubTab] = useState(location.state?.openReview ? 'reviews' : 'comments')
   const [subDir, setSubDir] = useState('next')
   const [reviews, setReviews] = useState([])
-  const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false })
+  const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false, revealed: false })
+  const [hasTelescope, setHasTelescope] = useState(false)
+  const [writingReview, setWritingReview] = useState(false) // 참여자·미작성: 작성폼(true) vs 열람한 리뷰 목록(false)
+  const [teleConfirm, setTeleConfirm] = useState(null) // 'peek' | 'view' | null
+  const [usingTele, setUsingTele] = useState(false)
   const [rating, setRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
   const [reviewErr, setReviewErr] = useState('')
@@ -199,12 +203,28 @@ export default function TaskDetail() {
     try {
       const r = await getTaskReviews(taskId)
       setReviews(r.reviews || [])
-      setReviewMeta({ is_participant: !!r.is_participant, has_reviewed: !!r.has_reviewed })
+      const meta = { is_participant: !!r.is_participant, has_reviewed: !!r.has_reviewed, revealed: !!r.revealed }
+      setReviewMeta(meta)
+      setWritingReview(meta.is_participant && !meta.has_reviewed && !meta.revealed)
     } catch {
-      setReviews([]); setReviewMeta({ is_participant: false, has_reviewed: false })
+      setReviews([]); setReviewMeta({ is_participant: false, has_reviewed: false, revealed: false })
     }
   }, [taskId])
   useEffect(() => { if (task?.status === 'done') loadReviews() }, [task?.status, loadReviews])
+  // 천체 망원경 보유 여부(추억일 때)
+  useEffect(() => {
+    if (task?.status === 'done' && profile?.id) ownsTelescope(profile.id).then(setHasTelescope).catch(() => {})
+  }, [task?.status, profile?.id])
+
+  async function doUseTelescope() {
+    setTeleConfirm(null); setUsingTele(true); setError('')
+    try {
+      await useTelescope(taskId)
+      await loadReviews()          // 이제 코멘트 공개됨
+      setWritingReview(false)      // 열람한 리뷰 목록 표시
+      ownsTelescope(profile.id).then(setHasTelescope).catch(() => {})
+    } catch (err) { setError(err.message) } finally { setUsingTele(false) }
+  }
 
   function saveReview() {
     if (savingReview) return
@@ -450,10 +470,18 @@ export default function TaskDetail() {
     ? Math.min(1, Math.max(0, subActiveIdx + (-subDrag.x) / subPaneW))
     : subActiveIdx
 
-  // 리뷰 탭 본문: 참여자·미작성=작성폼 / 그 외=리뷰목록(비참여자는 코멘트 블러)
-  const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed
+  // 리뷰 탭 본문: 참여자·미작성·작성모드=작성폼 / 그 외=리뷰목록(가려진 코멘트 블러)
+  const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed && writingReview
+  const othersReviewCount = reviews.filter((rv) => rv.author_id !== profile?.id).length
+  const hasOthersReviews = othersReviewCount > 0
+  // 저장 옆 망원경(참여자·미작성, 미열람, 보유): 남 리뷰 먼저 보기
+  const teleInCompose = hasTelescope && hasOthersReviews && !reviewMeta.revealed
+  // 열람 후 다시 작성폼으로 갈 수 있는 상태(참여자·미작성·열람했지만 작성 전)
+  const peekReadyToWrite = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed && !writingReview
+  // 비참여자: 아이템으로만 열람 가능(우측 하단 망원경 버튼)
+  const teleForNonParticipant = isDone && subTab === 'reviews' && !reviewMeta.is_participant && !reviewMeta.revealed && hasTelescope && hasOthersReviews
   function renderReviews() {
-    if (reviewMeta.is_participant && !reviewMeta.has_reviewed) {
+    if (reviewComposeMode) {
       const ph = participants.length <= 1
         ? '리뷰를 작성해 주세요'
         : participants.length === 2
@@ -638,6 +666,20 @@ export default function TaskDetail() {
         </div>
       </Modal>
 
+      <Modal open={!!teleConfirm} onClose={() => setTeleConfirm(null)} title="천체 망원경">
+        <div className="confirm-modal">
+          <p className="confirm-text">
+            {teleConfirm === 'peek'
+              ? '천체 망원경을 사용해서 작성된 리뷰를 먼저 볼까요?'
+              : '천체 망원경을 사용해서 작성된 리뷰를 볼까요?'}
+          </p>
+          <div className="confirm-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setTeleConfirm(null)}>취소</button>
+            <button type="button" className="btn btn-primary" disabled={usingTele} onClick={doUseTelescope}>확인</button>
+          </div>
+        </div>
+      </Modal>
+
       {bottomEl && createPortal(
         reviewComposeMode ? (
           <div className="composer review-save-bar">
@@ -645,6 +687,21 @@ export default function TaskDetail() {
               disabled={savingReview} onClick={saveReview}>
               {savingReview ? '저장 중…' : '저장'}
             </button>
+            {teleInCompose && (
+              <button type="button" className="tele-btn" aria-label="천체 망원경으로 먼저 보기" title="천체 망원경"
+                onClick={() => setTeleConfirm('peek')}>🔭</button>
+            )}
+          </div>
+        ) : peekReadyToWrite ? (
+          <div className="composer review-save-bar">
+            <button type="button" className="btn btn-primary review-save-btn" onClick={() => setWritingReview(true)}>
+              리뷰 작성
+            </button>
+          </div>
+        ) : teleForNonParticipant ? (
+          <div className="composer tele-bar">
+            <button type="button" className="tele-btn" aria-label="천체 망원경으로 리뷰 보기" title="천체 망원경"
+              onClick={() => setTeleConfirm('view')}>🔭</button>
           </div>
         ) : (isDone && subTab === 'reviews') ? null : (
           <form className="composer" onSubmit={submit}>

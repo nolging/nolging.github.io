@@ -770,8 +770,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .confirm-actions { display: flex; gap: 10px; }
 .confirm-actions .btn { flex: 1; }
 /* 하단 저장 바 (상단 실선 제거) */
-.composer.review-save-bar { border-top: none; }
-.review-save-btn { width: 100%; min-height: 44px; font-size: 15px; }
+.composer.review-save-bar { border-top: none; flex-direction: row; align-items: center; }
+.review-save-btn { flex: 1; width: auto; min-height: 44px; font-size: 15px; }
 
 /* ---- 리뷰 목록 ---- */
 .review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
@@ -1536,6 +1536,18 @@ a.mp-tel:active { opacity: .55; }
 .led-stop-confirm p { margin: 0 0 8px; font-size: 13px; color: var(--text); }
 .led-stop-actions { display: flex; gap: 8px; justify-content: center; }
 .led-stop-yes { background: var(--danger); color: #fff; }
+
+/* 천체 망원경: 사용법 안내 + 리뷰 열람 버튼 */
+.tele-guide-label { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0; }
+.tele-guide-text { font-size: 15px; color: var(--text); line-height: 1.6; margin: 0; }
+.tele-btn {
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--canvas); color: var(--text); font-size: 20px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.tele-btn:disabled { opacity: .5; }
+.composer.tele-bar { flex-direction: row; justify-content: flex-end; }
 
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }

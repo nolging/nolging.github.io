@@ -778,7 +778,7 @@ grant execute on function public.submit_review(uuid, numeric, text) to authentic
 -- 코멘트는 (참여자 && 본인 작성) 또는 본인 리뷰일 때만 실제 값, 그 외엔 null.
 create or replace function public.task_reviews_view(p_task_id uuid)
 returns jsonb language plpgsql security definer stable set search_path = public as $$
-declare v_gid uuid; v_part boolean; v_reviewed boolean; v_reveal boolean; v_reviews jsonb;
+declare v_gid uuid; v_part boolean; v_reviewed boolean; v_reveal boolean; v_revealed boolean; v_reviews jsonb;
 begin
   select group_id into v_gid from public.tasks where id = p_task_id;
   if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
@@ -788,7 +788,10 @@ begin
   v_part     := public.is_task_participant(p_task_id, auth.uid());
   v_reviewed := exists (select 1 from public.task_reviews r
                         where r.task_id = p_task_id and r.author_id = auth.uid());
-  v_reveal   := v_part and v_reviewed;
+  -- 천체 망원경으로 열람 처리한 경우(review_reveals)에도 공개
+  v_revealed := exists (select 1 from public.review_reveals rr
+                        where rr.user_id = auth.uid() and rr.task_id = p_task_id);
+  v_reveal   := (v_part and v_reviewed) or v_revealed;
 
   select coalesce(jsonb_agg(obj order by ord), '[]'::jsonb) into v_reviews
   from (
@@ -813,6 +816,7 @@ begin
   return jsonb_build_object(
     'is_participant', v_part,
     'has_reviewed', v_reviewed,
+    'revealed', v_revealed,
     'reviews', v_reviews
   );
 end;
@@ -1663,3 +1667,48 @@ language sql security definer stable set search_path = public as $$
   limit 1;
 $$;
 grant execute on function public.my_led_banner() to authenticated;
+
+-- =============================================================
+--  천체 망원경: 블러 처리된(남이 작성한) 추억 리뷰를 열람. 아이템 1개 소모.
+--  review_reveals 에 기록되면 task_reviews_view 에서 코멘트가 공개된다.
+-- =============================================================
+create table if not exists public.review_reveals (
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  task_id    uuid not null references public.tasks(id)    on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, task_id)
+);
+alter table public.review_reveals enable row level security;
+drop policy if exists rr_select on public.review_reveals;
+create policy rr_select on public.review_reveals
+  for select to authenticated using (user_id = auth.uid());
+
+create or replace function public.use_telescope(p_task_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_gid uuid;
+begin
+  select group_id into v_gid from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+
+  -- 이미 볼 수 있으면 소모 방지
+  if exists (select 1 from public.review_reveals where user_id = auth.uid() and task_id = p_task_id) then
+    raise exception '이미 리뷰를 볼 수 있어요.'; end if;
+  if public.is_task_participant(p_task_id, auth.uid())
+     and exists (select 1 from public.task_reviews where task_id = p_task_id and author_id = auth.uid()) then
+    raise exception '이미 리뷰를 볼 수 있어요.'; end if;
+  -- 남이 작성한 리뷰가 있어야 사용 가능
+  if not exists (select 1 from public.task_reviews where task_id = p_task_id and author_id <> auth.uid()) then
+    raise exception '아직 볼 수 있는 리뷰가 없어요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'telescope' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 천체 망원경이 없습니다.'; end if;
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  insert into public.review_reveals(user_id, task_id) values (auth.uid(), p_task_id)
+    on conflict do nothing;
+end;
+$$;
+grant execute on function public.use_telescope(uuid) to authenticated;

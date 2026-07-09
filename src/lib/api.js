@@ -392,7 +392,27 @@ export async function getTaskReviews(taskId) {
     }
     throw error
   }
-  return data || { is_participant: false, has_reviewed: false, reviews: [] }
+  return data || { is_participant: false, has_reviewed: false, revealed: false, reviews: [] }
+}
+
+// 천체 망원경 사용: 해당 추억의 남 리뷰 열람 처리. 아이템 1개 소모.
+export async function useTelescope(taskId) {
+  const { error } = await supabase.rpc('use_telescope', { p_task_id: taskId })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_telescope/.test(error.message || '')) {
+      throw new Error('천체 망원경 기능이 아직 DB에 설정되지 않았습니다. (use_telescope 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 천체 망원경 보유(미사용) 여부
+export async function ownsTelescope(userId) {
+  const { data, error } = await supabase
+    .from('user_items').select('id')
+    .eq('user_id', userId).eq('item_id', 'telescope').eq('status', 'active').limit(1)
+  if (error) return false
+  return (data?.length || 0) > 0
 }
 
 export async function submitReview({ taskId, rating, comment }) {

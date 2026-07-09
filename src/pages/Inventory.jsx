@@ -28,6 +28,7 @@ export default function Inventory() {
   const [ledboardOpen, setLedboardOpen] = useState(false)
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
+  const [telescopeOpen, setTelescopeOpen] = useState(false)
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -83,6 +84,7 @@ export default function Inventory() {
     else if (g.id === 'link') setLinkOpen(true)
     else if (g.id === 'video') setVideoOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
+    else if (g.id === 'telescope') setTelescopeOpen(true)
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -137,6 +139,14 @@ export default function Inventory() {
       <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} onDone={reload} />
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
+
+      <Modal open={telescopeOpen} onClose={() => setTelescopeOpen(false)} title="천체 망원경">
+        <div className="couple-modal">
+          <p className="tele-guide-label">사용 방법</p>
+          <p className="tele-guide-text">흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.</p>
+          <button type="button" className="btn btn-primary btn-block" onClick={() => setTelescopeOpen(false)}>확인</button>
+        </div>
+      </Modal>
     </div>
   )
 }
