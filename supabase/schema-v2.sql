@@ -1447,7 +1447,7 @@ grant execute on function public.use_couple_ring(uuid, uuid, text) to authentica
 -- 커플 링 수령(나눠 끼기): 보낸 사람 링을 장착 처리 + 내 인벤토리에도 장착 링 생성
 create or replace function public.claim_couple_ring(p_note_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare n public.notes; v_actor text;
+declare n public.notes; v_actor text; v_leftover public.user_items; v_price integer;
 begin
   select * into n from public.notes where id = p_note_id;
   if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'couple_ring' then
@@ -1467,6 +1467,17 @@ begin
     insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
       values (auth.uid(), 'couple-ring', '커플 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
   end if;
+
+  -- 받은 사람이 직접 구매해 미사용(active) 상태로 보유 중이던 커플 링은 환불(인벤토리 제거 + 츄르 적립)
+  for v_leftover in
+    select * from public.user_items
+     where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active' and source = 'purchase'
+  loop
+    select price into v_price from public.store_items where id = 'couple-ring';
+    insert into public.coin_ledger(user_id, delta, reason, ref_type)
+      values (auth.uid(), coalesce(v_price, 5000), '커플 링 환불', 'refund');
+    delete from public.user_items where id = v_leftover.id;
+  end loop;
 
   -- 보낸 사람에게 수락 알림(클릭 시 인벤토리로 이동하도록 note_id 연결)
   v_actor := coalesce(public.notif_member_name(n.group_id, auth.uid()), '');
