@@ -4,11 +4,12 @@ import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 
 const MAX_WISH = 300
 const MAX_CASSETTE_MSG = 150
+const MAX_LINK_MSG = 150
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ export default function Inventory() {
   const [wishOpen, setWishOpen] = useState(false)
   const [coupleOpen, setCoupleOpen] = useState(false)
   const [cassetteOpen, setCassetteOpen] = useState(false)
+  const [linkOpen, setLinkOpen] = useState(false)
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -62,6 +64,7 @@ export default function Inventory() {
     if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
     else if (g.id === 'cassette') setCassetteOpen(true)
+    else if (g.id === 'link') setLinkOpen(true)
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -107,7 +110,77 @@ export default function Inventory() {
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
       <CoupleModal open={coupleOpen} onClose={() => setCoupleOpen(false)} myId={user?.id} excludeGroupIds={coupleGroupIds} onDone={reload} />
       <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
+      <LinkModal open={linkOpen} onClose={() => setLinkOpen(false)} onDone={reload} />
     </div>
+  )
+}
+
+// ---- 링크: 클릭 가능한 링크 + 메시지 보내기 ----
+function normalizeUrl(u) {
+  const s = (u || '').trim()
+  if (!s) return ''
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`
+}
+function LinkModal({ open, onClose, onDone }) {
+  const [message, setMessage] = useState('')
+  const [url, setUrl] = useState('')
+  const [recipient, setRecipient] = useState(null)
+  const [pickOpen, setPickOpen] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
+  }, [open])
+
+  async function send() {
+    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
+    const link = normalizeUrl(url)
+    if (!link || !/\./.test(link)) { setError('올바른 링크를 입력해 주세요.'); return }
+    setSending(true); setError('')
+    try {
+      await useLink({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: link })
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setSending(false) }
+  }
+
+  return (
+    <>
+      <Modal open={open && !pickOpen} onClose={onClose} title="링크">
+        <div className="couple-modal">
+          {error && <div className="alert alert-error">{error}</div>}
+          <p className="couple-hint">쪽지에 클릭 가능한 링크를 붙여 보내요.</p>
+
+          {recipient ? (
+            <div className="couple-to">
+              <span className="couple-to-label">To.</span>
+              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
+              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
+          )}
+
+          <label className="field">
+            <span>링크</span>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" inputMode="url" autoCapitalize="none" autoCorrect="off" />
+          </label>
+
+          <div className="couple-msg">
+            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
+              value={message} maxLength={MAX_LINK_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
+            <span className="couple-msg-count">{message.length}/{MAX_LINK_MSG}</span>
+          </div>
+
+          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
+            {sending ? '보내는 중…' : '보내기'}
+          </button>
+        </div>
+      </Modal>
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
+        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
+    </>
   )
 }
 

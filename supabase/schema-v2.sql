@@ -1052,7 +1052,8 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
   ('friend-ring', '우정 링',     3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 3),
   ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 4),
   ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
-  ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6)
+  ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6),
+  ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 7)
 on conflict (id) do nothing;
 
 -- =============================================================
@@ -1297,6 +1298,43 @@ begin
 end;
 $$;
 grant execute on function public.use_cassette(uuid, uuid, text, text) to authenticated;
+
+-- =============================================================
+--  링크: 쪽지에 클릭 가능한 링크(URL) 붙여 보내기. 링크 1개 소모.
+-- =============================================================
+create or replace function public.use_link(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+begin
+  if p_url is null or btrim(p_url) = '' then raise exception '링크를 입력해 주세요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'link' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 링크가 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), '링크를 보냈어요 🔗');
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, media_url)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'link', 'link', btrim(p_url));
+
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_recipient_id, auth.uid(), 'link',
+            case when v_sender <> '' then v_sender || ' 님이 링크를 보냈어요' else '링크가 도착했어요' end,
+            '쪽지함에서 확인하세요 🔗', p_group_id);
+end;
+$$;
+grant execute on function public.use_link(uuid, uuid, text, text) to authenticated;
 
 -- =============================================================
 --  커플 링 나눠 끼기 (use_couple_ring / claim_couple_ring / reject_couple_ring)

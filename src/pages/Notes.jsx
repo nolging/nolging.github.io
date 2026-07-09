@@ -223,6 +223,7 @@ export default function Notes() {
             const couple = n.kind === 'couple_ring'
             const gift = n.kind === 'gift'
             const cassette = n.kind === 'cassette'
+            const link = n.kind === 'link'
             const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             return (
@@ -236,6 +237,7 @@ export default function Notes() {
                         {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
+                        {link && <span className="note-tag note-tag-link">🔗 링크</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
@@ -255,13 +257,14 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
           const couple = open.kind === 'couple_ring'
           const gift = open.kind === 'gift'
           const cassette = open.kind === 'cassette'
+          const link = open.kind === 'link'
           const mine = open.recipient_id === user?.id
           return (
             <div className="note-view">
@@ -273,6 +276,7 @@ export default function Notes() {
                     {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                     {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                     {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
+                    {link && <span className="note-tag note-tag-link">🔗 링크</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
@@ -280,6 +284,12 @@ export default function Notes() {
               </div>
               <p className="note-view-body">{open.body}</p>
               {cassette && open.media_url && <MusicPlayer url={open.media_url} />}
+              {link && open.media_url && (
+                <a className="note-linkcard" href={open.media_url} target="_blank" rel="noreferrer noopener">
+                  <span className="note-linkcard-ic">🔗</span>
+                  <span className="note-linkcard-url">{open.media_url}</span>
+                </a>
+              )}
               {couple && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 💍</button>

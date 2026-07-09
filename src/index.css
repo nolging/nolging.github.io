@@ -1416,6 +1416,19 @@ a.mp-tel:active { opacity: .55; }
 .music-sc iframe { border: none; border-radius: 12px; display: block; }
 .music-fallback { display: inline-block; font-weight: 600; color: var(--primary); }
 
+/* ---- 링크 쪽지 ---- */
+.note-tag-link { color: #5578d0; background: rgba(85, 120, 208, .14); }
+.modal-card.modal-link { background: linear-gradient(160deg, #eef2fb, #f5f8fd); }
+.modal-link .note-view-body { background: #fff; }
+.note-linkcard {
+  display: flex; align-items: center; gap: 10px; text-decoration: none;
+  background: #fff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 10px rgba(25, 23, 34, .06);
+  color: #5578d0; font-weight: 600; font-size: 14px; word-break: break-all;
+}
+.note-linkcard:hover { text-decoration: none; filter: brightness(.98); }
+.note-linkcard-ic { flex-shrink: 0; }
+.note-linkcard-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
 .picker-member {

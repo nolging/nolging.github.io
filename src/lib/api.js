@@ -556,6 +556,20 @@ export async function useCassette({ groupId, recipientId, message, url }) {
   return data
 }
 
+// 링크: 클릭 가능한 링크와 메시지를 상대 쪽지함으로. 링크 1개 소모.
+export async function useLink({ groupId, recipientId, message, url }) {
+  const { data, error } = await supabase.rpc('use_link', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_link/.test(error.message || '')) {
+      throw new Error('링크 기능이 아직 DB에 설정되지 않았습니다. (use_link 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // 커플 링 나눠 끼기: 상대 쪽지함에 메시지와 함께 발송(수락 대기). 수락 전엔 그룹 미적용.
 export async function useCoupleRing({ groupId, recipientId, message }) {
   const { data, error } = await supabase.rpc('use_couple_ring', {
