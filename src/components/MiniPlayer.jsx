@@ -129,10 +129,6 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
           <button type="button" className="mini-play" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}>
             {playing ? <PauseIcon /> : <PlayIcon />}
           </button>
-          <div className="mini-meta">
-            <span className="mini-label">{track.label}</span>
-            <span className="mini-sub">{playing ? '재생 중…' : '일시정지됨'}</span>
-          </div>
           <button type="button" className="mini-close" onClick={close} aria-label="닫기" title="닫기">✕</button>
         </div>
       )}
