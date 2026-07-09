@@ -1468,10 +1468,10 @@ begin
       values (auth.uid(), 'couple-ring', '커플 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
   end if;
 
-  -- 받은 사람이 직접 구매해 미사용(active) 상태로 보유 중이던 커플 링은 환불(인벤토리 제거 + 츄르 적립)
+  -- 받은 사람이 미사용(active)으로 보유하던 커플 링(구매/선물 모두)은 환불(인벤토리 제거 + 츄르 적립)
   for v_leftover in
     select * from public.user_items
-     where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active' and source = 'purchase'
+     where user_id = auth.uid() and item_id = 'couple-ring' and status = 'active'
   loop
     select price into v_price from public.store_items where id = 'couple-ring';
     insert into public.coin_ledger(user_id, delta, reason, ref_type)

@@ -131,7 +131,7 @@ export default function Dashboard() {
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {memberRow}
-                {premium && <PeekCat className="tile-couple-cat" width={72} />}
+                {premium && <PeekCat className="tile-couple-cat" width={96} />}
               </Link>
             )
           })}
