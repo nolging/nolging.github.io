@@ -958,6 +958,103 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .switch input:checked + .slider { background: #34c759; }
 .switch input:checked + .slider::before { transform: translateX(18px); }
 
+/* ===== 그룹 만들기 (시안) ===== */
+.cg-page { gap: 0; }
+.cg-form { display: flex; flex-direction: column; }
+.cg-mt-12 { margin-top: 12px; }
+.cg-mt-16 { margin-top: 16px; }
+.cg-mt-20 { margin-top: 20px; }
+.cg-mt-22 { margin-top: 22px; }
+.cg-mt-24 { margin-top: 24px; }
+
+/* 진행 단계 */
+.cg-stepper { display: flex; align-items: center; padding: 4px 0 16px; }
+.cg-step-num { width: 24px; height: 24px; border-radius: 50%; background: #f0eef9; color: #b7b3cf;
+  font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cg-step-num.active { background: #7363e8; color: #fff; }
+.cg-step-num.done { background: #c6bef4; color: #fff; }
+.cg-step-label { margin-left: 8px; font-size: 13px; font-weight: 600; color: #b0b0b8; }
+.cg-step-label.active { font-weight: 700; color: #191722; }
+.cg-step-line { flex: 1; height: 2px; background: #e9e9ee; margin: 0 12px; border-radius: 2px; }
+.cg-step-line.done { background: #7363e8; }
+
+/* 대표 이모지 카드 */
+.cg-emoji-card { background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.05); padding: 20px 16px 18px; }
+.cg-emoji-top { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cg-emoji-input { width: 86px; height: 86px; border-radius: 26px; border: none; outline: none; text-align: center;
+  font-size: 42px; line-height: 1; padding: 0; caret-color: #7363e8; color: #191722; box-sizing: border-box;
+  box-shadow: 0 6px 18px rgba(25,23,34,.09), inset 0 0 0 1.5px rgba(25,23,34,.07); }
+.cg-emoji-input::placeholder { color: #b7b3cf; }
+.cg-emoji-input:focus { box-shadow: 0 6px 18px rgba(25,23,34,.12), inset 0 0 0 2px #7363e8; }
+.cg-emoji-guide { font-size: 12px; color: #8b8798; text-align: center; line-height: 1.55; }
+.cg-emoji-guide span { color: #b0b0b8; }
+.cg-emoji-div { height: 1px; background: #f1eff5; margin: 16px 0 14px; }
+.cg-bg-label { font-size: 12px; font-weight: 700; color: #8b8798; text-align: center; margin-bottom: 12px; }
+.cg-swatches { display: flex; flex-wrap: wrap; gap: 11px; justify-content: center; }
+.cg-swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; box-sizing: border-box;
+  border: none; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.07); }
+.cg-swatch.none { background: #fff;
+  background-image: linear-gradient(to top right, transparent calc(50% - 1px), #c9455f calc(50% - 1px), #c9455f calc(50% + 1px), transparent calc(50% + 1px));
+  box-shadow: inset 0 0 0 1.2px rgba(0,0,0,.18); }
+.cg-swatch.active { box-shadow: 0 0 0 2px #fdfcfe, 0 0 0 4px #47444f; }
+
+/* 필드(라벨 + 입력) */
+.cg-label { font-size: 13px; font-weight: 700; color: #191722; margin-bottom: 8px; }
+.cg-req { color: #7363e8; font-weight: 800; }
+.cg-opt { font-size: 11px; font-weight: 600; color: #b0b0b8; margin-left: 2px; }
+.cg-input-wrap { position: relative; }
+.cg-input { width: 100%; box-sizing: border-box; font-size: 15px; color: #191722; background: #f4f3f7;
+  border: 1.5px solid transparent; border-radius: 14px; padding: 14px 16px; outline: none; }
+.cg-input:focus { border-color: #7363e8; background: #fff; }
+.cg-input.has-count { padding-right: 54px; }
+.cg-textarea { font-size: 14.5px; line-height: 1.5; padding: 13px 16px 26px; resize: none; }
+.cg-count { position: absolute; right: 14px; bottom: 10px; font-size: 11.5px; color: #b0b0b8; pointer-events: none; }
+.cg-count-mid { top: 50%; bottom: auto; transform: translateY(-50%); }
+
+/* 공개 설정 섹션 */
+.cg-section-title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #191722; }
+.cg-section-sub { margin-top: 4px; font-size: 12px; color: #8b8798; line-height: 1.5; }
+.cg-list { background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.05); padding: 2px 16px; }
+.cg-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f1eff5; }
+.cg-row:last-child { border-bottom: none; }
+.cg-row-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.cg-row-main { flex: 1; min-width: 0; }
+.cg-row-title { font-size: 14.5px; font-weight: 700; color: #191722; }
+.cg-row-sub { margin-top: 2px; font-size: 11.5px; color: #8b8798; }
+.cg-row-sub.locked { color: #c08a9a; }
+
+/* 시안 토글 */
+.cg-toggle { width: 48px; height: 28px; border-radius: 999px; background: #dcdce2; padding: 3px; box-sizing: border-box;
+  cursor: pointer; flex-shrink: 0; display: flex; justify-content: flex-start; align-items: center; transition: background .2s; }
+.cg-toggle.on { background: #7363e8; justify-content: flex-end; }
+.cg-toggle.locked { background: #ecebf0; cursor: not-allowed; opacity: .75; }
+.cg-knob { width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(25,23,34,.25); }
+.cg-toggle.locked .cg-knob { background: #f7f7fa; box-shadow: 0 1px 2px rgba(25,23,34,.12); }
+
+/* 이어짐 안내 칩 · 프로필 사진 */
+.cg-continuity { display: flex; align-items: center; gap: 10px; background: #f6f5fa; border-radius: 16px;
+  padding: 10px 12px; font-size: 12.5px; color: #6f6a80; line-height: 1.4; }
+.cg-continuity b { color: #191722; }
+.cg-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; }
+.cg-avatar-cap { font-size: 12px; color: #8b8798; }
+.cg-avatar-cap span { color: #b0b0b8; }
+
+/* 하단 버튼 */
+.cg-footer { margin-top: 20px; padding-bottom: 26px; }
+.cg-footer-row { display: flex; gap: 10px; }
+.cg-btn-primary { width: 100%; box-sizing: border-box; height: 54px; border: none; border-radius: 999px;
+  background: #191722; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 7px; }
+.cg-btn-primary:hover { background: #2c2938; }
+.cg-btn-primary:active { transform: scale(.985); }
+.cg-btn-primary:disabled { opacity: .6; cursor: default; }
+.cg-btn-flex { flex: 1; width: auto; }
+.cg-btn-back { flex: 0 0 auto; width: 96px; box-sizing: border-box; height: 54px; border: none; border-radius: 999px;
+  background: #f3f3f5; color: #191722; font-size: 15px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; }
+.cg-btn-back:hover { background: #e9e9ee; }
+.cg-footer-hint { margin-top: 12px; text-align: center; font-size: 11.5px; color: #b0b0b8; }
+
 /* 참여 멤버 (박스 없이 행) */
 .member-pick { list-style: none; margin: 0 0 20px; padding: 0; }
 .member-pick-item {
