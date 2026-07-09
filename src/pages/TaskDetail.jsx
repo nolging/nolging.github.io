@@ -482,11 +482,16 @@ export default function TaskDetail() {
   const teleForNonParticipant = isDone && subTab === 'reviews' && !reviewMeta.is_participant && !reviewMeta.revealed && hasTelescope && hasOthersReviews
   function renderReviews() {
     if (reviewComposeMode) {
-      const ph = participants.length <= 1
-        ? '리뷰를 작성해 주세요'
-        : participants.length === 2
-          ? '리뷰를 작성해야 상대방의 리뷰를 볼 수 있어요'
-          : '리뷰를 작성해야 다른 참여자의 리뷰를 볼 수 있어요'
+      // 천체 망원경으로 이미 열람한 경우엔 "상대가 기다린다"는 안내로 전환
+      const ph = reviewMeta.revealed
+        ? (participants.length > 2
+          ? '다른 참여자들이 리뷰를 기다리고 있어요'
+          : '상대방이 리뷰를 기다리고 있어요')
+        : participants.length <= 1
+          ? '리뷰를 작성해 주세요'
+          : participants.length === 2
+            ? '리뷰를 작성해야 상대방의 리뷰를 볼 수 있어요'
+            : '리뷰를 작성해야 다른 참여자의 리뷰를 볼 수 있어요'
       return (
         <div className="review-compose">
           <StarPicker value={rating} onChange={(v) => { setRating(v); if (reviewErr) setReviewErr('') }} />
@@ -689,6 +694,12 @@ export default function TaskDetail() {
             {teleInCompose && (
               <button type="button" className="tele-btn" aria-label="천체 망원경으로 먼저 보기" title="천체 망원경"
                 onClick={() => setTeleConfirm('peek')}>🔭</button>
+            )}
+            {reviewMeta.revealed && (
+              <button type="button" className="tele-btn tele-btn-star" aria-label="작성된 리뷰 다시 보기" title="리뷰 다시 보기"
+                onClick={() => setWritingReview(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.8 6.2 20.8l1.1-6.4L2.6 9.8l6.5-.9z" /></svg>
+              </button>
             )}
           </div>
         ) : peekReadyToWrite ? (

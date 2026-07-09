@@ -1571,6 +1571,7 @@ a.mp-tel:active { opacity: .55; }
   box-shadow: inset 0 0 0 1px var(--border);
 }
 .tele-btn:disabled { opacity: .5; }
+.tele-btn-star { color: #efa30a; }
 .composer.tele-bar { flex-direction: row; justify-content: flex-end; }
 
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
