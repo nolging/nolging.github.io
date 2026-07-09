@@ -401,8 +401,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members { margin-top: 8px; align-self: flex-start; }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
-/* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 가운데 하트 */
-.tile-members-couple { position: relative; display: inline-flex; align-items: center; gap: 10px; }
+/* 겹친 아바타: 흰 링 + 아주 옅은 테두리로 흰 테두리가 또렷하게 보이게 */
+.tile-members.multi .avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 2.5px rgba(20, 22, 40, .06); }
+.tile-members.multi .task-parts-more { box-shadow: 0 0 0 2px var(--surface), 0 0 0 2.5px rgba(20, 22, 40, .06); }
+/* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 가운데 하트(살짝 여백) */
+.tile-members-couple { position: relative; display: inline-flex; align-items: center; gap: 16px; }
 .tile-members-couple .avatar { margin-left: 0; box-shadow: none; }
 .tile-couple-heart {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -1067,7 +1070,7 @@ a.mp-tel:active { opacity: .55; }
 .gd-members .task-parts-more { min-width: 30px; height: 30px; border-radius: 15px; font-size: 12px; }
 .gd-members:active { transform: scale(.96); }
 /* 커플 그룹: 아바타 2개를 겹치지 않게 두고 가운데 작은 하트 */
-.gd-members-couple { position: relative; display: inline-flex; align-items: center; gap: 12px; }
+.gd-members-couple { position: relative; display: inline-flex; align-items: center; gap: 16px; }
 .gd-members-couple .avatar { width: 30px; height: 30px; font-size: 12px; }
 .gd-couple-heart {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
