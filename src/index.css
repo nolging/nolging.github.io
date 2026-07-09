@@ -422,6 +422,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   position: absolute; top: 12px; right: 14px; font-size: 10.5px; font-weight: 700;
   color: #7363e8; background: rgba(255, 255, 255, .7); border-radius: 999px; padding: 3px 8px;
 }
+/* 우정 링이 적용된 그룹: 민트 계열 카드(크기·위치는 일반과 동일) */
+.group-card.group-tile.friend {
+  background: linear-gradient(135deg, #e5f8f1 0%, #eafaf3 100%);
+  box-shadow: 0 5px 16px rgba(31, 158, 139, .14);
+}
 
 /* 새 그룹 만들기 (대시 카드) */
 .group-new {
@@ -1411,6 +1416,11 @@ a.mp-tel:active { opacity: .55; }
 .note-tag-couple { color: #cf5e88; background: rgba(207, 94, 136, .14); }
 .note-card.note-couple { background: linear-gradient(135deg, #fdeef6, #f5f0ff); box-shadow: 0 2px 12px rgba(207, 94, 136, .16); }
 .note-card.note-couple { position: relative; }
+/* 우정 링(민트) */
+.note-tag-friend { color: #1f9e8b; background: rgba(31, 158, 139, .14); }
+.note-card.note-friend { position: relative; background: linear-gradient(135deg, #e7f8f2, #eefaf5); box-shadow: 0 2px 12px rgba(31, 158, 139, .14); }
+.modal-card.modal-friend { background: linear-gradient(160deg, #e7f8f2, #f2fbf7); }
+.modal-friend .note-view-body { background: #fff; }
 /* 본문 줄의 우측 고정 배지(플로우 안 → 어떤 상황에도 잘리지 않고 항상 보임) */
 .note-claim-flag {
   flex-shrink: 0; font-size: 10.5px; font-weight: 700; color: #fff;

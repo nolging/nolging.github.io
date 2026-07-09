@@ -4,7 +4,7 @@ import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink, useVideo, getMyLedBanner } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -22,6 +22,8 @@ export default function Inventory() {
   const [error, setError] = useState('')
   const [wishOpen, setWishOpen] = useState(false)
   const [coupleOpen, setCoupleOpen] = useState(false)
+  const [friendOpen, setFriendOpen] = useState(false)
+  const [friendGroupIds, setFriendGroupIds] = useState([]) // 이미 우정 링 적용된 그룹(내가 속한)
   const [cassetteOpen, setCassetteOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
@@ -33,12 +35,15 @@ export default function Inventory() {
 
   async function reload() {
     if (!user?.id) return
-    const [storeItems, inv, banner] = await Promise.all([listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null)])
+    const [storeItems, inv, banner, friendIds] = await Promise.all([
+      listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
+    ])
     const m = {}
     for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name }
     setMeta(m)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
+    setFriendGroupIds(friendIds)
   }
 
   useEffect(() => {
@@ -80,6 +85,7 @@ export default function Inventory() {
     setNotice('')
     if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
+    else if (g.id === 'friend-ring') setFriendOpen(true)
     else if (g.id === 'cassette') setCassetteOpen(true)
     else if (g.id === 'link') setLinkOpen(true)
     else if (g.id === 'video') setVideoOpen(true)
@@ -101,7 +107,7 @@ export default function Inventory() {
         <div className="store-grid">
           {displayGroups.map((g) => {
             const hasActive = g.rows.some((r) => r.status === 'active')
-            const equipped = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'used')
+            const equipped = (g.id === 'couple-ring' || g.id === 'friend-ring') && g.rows.some((r) => r.status === 'used')
             const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
             const ledLive = g.id === 'ledboard' && !!ledBanner // 게재 중
             return (
@@ -134,6 +140,7 @@ export default function Inventory() {
 
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
       <CoupleModal open={coupleOpen} onClose={() => setCoupleOpen(false)} myId={user?.id} excludeGroupIds={coupleGroupIds} onDone={reload} />
+      <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload} />
       <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
       <LinkModal open={linkOpen} onClose={() => setLinkOpen(false)} onDone={reload} />
       <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} onDone={reload} />
@@ -509,6 +516,65 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
 
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '보내는 중…' : '나눠 끼기'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 우정 링 나눠 끼기 모달 (2명 이상 그룹, 즉시 적용) ----
+function FriendModal({ open, onClose, myId, excludeGroupIds, onDone }) {
+  const [groups, setGroups] = useState([])
+  const [groupId, setGroupId] = useState('')
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open || groups.length) return
+    listMyGroups().then(setGroups).catch((e) => setError(e.message))
+  }, [open, groups.length])
+  useEffect(() => { if (open) { setGroupId(''); setMessage(''); setError('') } }, [open])
+
+  // 멤버 2명 이상 + 내가 멤버 + 아직 우정 링 미적용 그룹
+  const eligible = useMemo(() => groups.filter((g) => {
+    const ms = g.group_members || []
+    return ms.length >= 2 && ms.some((m) => m.user_id === myId) && !excludeGroupIds.includes(g.id)
+  }), [groups, myId, excludeGroupIds])
+  const group = eligible.find((g) => g.id === groupId)
+
+  async function share() {
+    if (!group) { setError('그룹을 선택해 주세요.'); return }
+    setSending(true); setError('')
+    try {
+      await useFriendRing({ groupId: group.id, message: message.trim() })
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setSending(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="우정 링 나눠 끼기">
+      <div className="couple-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        <p className="couple-hint">멤버 2명 이상 그룹에 사용하면 바로 적용돼요. 모든 멤버에게 우정 링 쪽지가 전송돼요.</p>
+
+        <label className="field">
+          <span>그룹</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{eligible.length ? '그룹 선택' : '사용할 수 있는 그룹이 없어요'}</option>
+            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </label>
+
+        <div className="couple-msg">
+          <textarea className="wish-input" placeholder="함께 보낼 메시지를 적어 보세요 (선택)"
+            value={message} maxLength={MAX_COUPLE_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
+          <span className="couple-msg-count">{message.length}/{MAX_COUPLE_MSG}</span>
+        </div>
+
+        <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
+          {sending ? '적용 중…' : '나눠 끼기'}
         </button>
       </div>
     </Modal>

@@ -1712,3 +1712,86 @@ begin
 end;
 $$;
 grant execute on function public.use_telescope(uuid) to authenticated;
+
+-- =============================================================
+--  우정 링 (VIP) : 2명 이상 그룹에 즉시 적용(수락 불필요, 거절 불가).
+--  - 사용 즉시 사용자의 링이 그룹에 장착(used, group_id)되고 그룹이 우정 그룹이 됨.
+--  - 나를 제외한 모든 멤버에게 쪽지(kind=friend_ring)+알림 발송. 수령하면 각자 장착 링 생성.
+--  - 한 사람이 여러 그룹에 낄 수 있어 구매/보유 제한 없음.
+-- =============================================================
+create or replace function public.is_friend_group(p_group_id uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.user_items
+                 where group_id = p_group_id and item_id = 'friend-ring' and status = 'used');
+$$;
+grant execute on function public.is_friend_group(uuid) to authenticated;
+
+-- 내가 속한 우정 그룹(적용된 우정 링 존재) id 목록 (멤버 전원이 즉시 인식)
+create or replace function public.my_friend_group_ids()
+returns setof uuid language sql security definer stable set search_path = public as $$
+  select distinct gm.group_id
+  from public.group_members gm
+  where gm.user_id = auth.uid()
+    and exists (select 1 from public.user_items ui
+                where ui.group_id = gm.group_id and ui.item_id = 'friend-ring' and ui.status = 'used');
+$$;
+grant execute on function public.my_friend_group_ids() to authenticated;
+
+create or replace function public.use_friend_ring(p_group_id uuid, p_message text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_cnt int; v_sender text; v_sav text; v_body text;
+        m record; v_rname text; v_rav text; v_note_id uuid;
+begin
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'friend-ring' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 우정 링이 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  select count(*) into v_cnt from public.group_members where group_id = p_group_id;
+  if v_cnt < 2 then raise exception '멤버가 2명 이상인 그룹에서만 사용할 수 있어요.'; end if;
+  if public.is_friend_group(p_group_id) then raise exception '이미 우정 링이 적용된 그룹이에요.'; end if;
+
+  -- 즉시 그룹에 적용(장착). 수락 불필요.
+  update public.user_items set status = 'used', group_id = p_group_id, used_at = now() where id = v_item.id;
+
+  v_sender := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  v_body := coalesce(nullif(btrim(p_message), ''), '우정 링을 함께 끼자고 보냈어요 🤝');
+
+  for m in select user_id from public.group_members where group_id = p_group_id and user_id <> auth.uid()
+  loop
+    v_rname := coalesce(public.notif_member_name(p_group_id, m.user_id), '');
+    select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = m.user_id;
+    insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, claimed, rejected)
+      values (p_group_id, auth.uid(), m.user_id, v_sender, v_rname, v_sav, v_rav, v_body, 'friend_ring', 'friend-ring', false, false)
+      returning id into v_note_id;
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
+      values (m.user_id, auth.uid(), 'friend_ring',
+              case when v_sender <> '' then v_sender || ' 님이 우정 링을 보냈어요' else '우정 링이 도착했어요' end,
+              '쪽지함에서 확인하세요 🤝', p_group_id, v_note_id);
+  end loop;
+end;
+$$;
+grant execute on function public.use_friend_ring(uuid, text) to authenticated;
+
+-- 우정 링 수령: 쪽지 claimed 처리 + 내 인벤토리에 장착(used) 우정 링 생성. 거절 없음.
+create or replace function public.claim_friend_ring(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'friend_ring' then
+    raise exception '수령할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령했어요.'; end if;
+
+  update public.notes set claimed = true, is_read = true where id = n.id;
+
+  if not exists (select 1 from public.user_items
+                 where user_id = auth.uid() and item_id = 'friend-ring' and status = 'used' and group_id = n.group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.claim_friend_ring(uuid) to authenticated;

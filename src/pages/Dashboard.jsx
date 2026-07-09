@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { listMyGroups, unreadNotificationCount, listCoupleGroups, getMyLedBanner } from '../lib/api'
+import { listMyGroups, unreadNotificationCount, listCoupleGroups, listFriendGroups, getMyLedBanner } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
@@ -30,6 +30,7 @@ export default function Dashboard() {
   const { profile } = useAuth()
   const [groups, setGroups] = useState([])
   const [premiumIds, setPremiumIds] = useState([])
+  const [friendIds, setFriendIds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
@@ -51,9 +52,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (!profile?.id) return
     listCoupleGroups(profile.id).then(setPremiumIds).catch(() => {})
+    listFriendGroups().then(setFriendIds).catch(() => {})
   }, [profile?.id])
 
   const premiumSet = new Set(premiumIds)
+  const friendSet = new Set(friendIds)
   const query = q.trim().toLowerCase()
   const matched = query
     ? groups.filter((g) =>
@@ -121,6 +124,7 @@ export default function Dashboard() {
             // 관리자는 미가입 그룹도 보임 → 내가 멤버가 아니면 카드 반투명 처리
             const isMember = members.some((m) => m.user_id === profile?.id)
             const premium = premiumSet.has(g.id)
+            const friend = !premium && friendSet.has(g.id)
             const memberRow = members.length > 0 && (
               premium ? (
                 <span className="task-parts tile-members tile-members-couple">
@@ -140,7 +144,7 @@ export default function Dashboard() {
             )
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
-                className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''}`}>
+                className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''} ${friend ? 'friend' : ''}`}>
                 <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}

@@ -5,7 +5,7 @@ import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing } from '../lib/api'
 
 function NoteFabIcon() {
   return (
@@ -99,6 +99,17 @@ export default function Notes() {
       await rejectCoupleRing(n.id)
       await load()
       setOpen((o) => (o && o.id === n.id ? { ...o, rejected: true, is_read: true } : o))
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
+  }
+
+  // 우정 링 수령: 내 인벤토리에 장착 우정 링이 들어옴(거절 없음)
+  async function acceptFriend(n) {
+    setBusy(true); setError('')
+    try {
+      await claimFriendRing(n.id)
+      await load()
+      setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
   }
@@ -236,21 +247,23 @@ export default function Notes() {
             const p = peer(n)
             const wish = n.kind === 'wish'
             const couple = n.kind === 'couple_ring'
+            const friend = n.kind === 'friend_ring'
             const gift = n.kind === 'gift'
             const cassette = n.kind === 'cassette'
             const link = n.kind === 'link'
             const video = n.kind === 'video'
-            const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
+            const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} />
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
                         {wish && <span className="note-tag">🌟 소원</span>}
                         {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
+                        {friend && <span className="note-tag note-tag-friend">🤝 우정 링</span>}
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                         {link && <span className="note-tag note-tag-link">🔗 링크</span>}
@@ -274,11 +287,12 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : open?.kind === 'video' ? 'modal-video' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : open?.kind === 'video' ? 'modal-video' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
           const couple = open.kind === 'couple_ring'
+          const friend = open.kind === 'friend_ring'
           const gift = open.kind === 'gift'
           const cassette = open.kind === 'cassette'
           const link = open.kind === 'link'
@@ -324,6 +338,14 @@ export default function Notes() {
                     </button>
                   </div>
                 )
+              ) : friend && mine ? (
+                open.claimed ? (
+                  <button type="button" className="btn btn-block" disabled>수령 완료 🤝</button>
+                ) : (
+                  <button type="button" className="btn btn-primary btn-block" onClick={() => acceptFriend(open)} disabled={busy}>
+                    {busy ? '수령 중…' : '수령하기'}
+                  </button>
+                )
               ) : gift && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 🎁</button>
@@ -332,7 +354,7 @@ export default function Notes() {
                     {busy ? '수령 중…' : '수령하기'}
                   </button>
                 )
-              ) : !wish && !couple && !gift && mine ? (
+              ) : !wish && !couple && !friend && !gift && mine ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
                   답장하기
                 </button>

@@ -541,7 +541,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending))')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used)')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
@@ -706,6 +706,35 @@ export async function isCoupleGroup(groupId) {
   const { data, error } = await supabase.rpc('is_couple_group', { p_group_id: groupId })
   if (error) return false
   return !!data
+}
+
+// 우정 링 사용: 2명 이상 그룹에 즉시 적용 + 전원에게 쪽지/알림.
+export async function useFriendRing({ groupId, message }) {
+  const { error } = await supabase.rpc('use_friend_ring', { p_group_id: groupId, p_message: message ?? null })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_friend_ring/.test(error.message || '')) {
+      throw new Error('우정 링 기능이 아직 DB에 설정되지 않았습니다. (use_friend_ring 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 우정 링 수령: 내 인벤토리에 장착 우정 링 생성. (거절 없음)
+export async function claimFriendRing(noteId) {
+  const { error } = await supabase.rpc('claim_friend_ring', { p_note_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /claim_friend_ring/.test(error.message || '')) {
+      throw new Error('우정 링 기능이 아직 DB에 설정되지 않았습니다. (claim_friend_ring 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 내가 속한 우정 그룹 id 목록(멤버 전원 즉시 인식). RPC 미배포/실패 시 빈 배열.
+export async function listFriendGroups() {
+  const { data, error } = await supabase.rpc('my_friend_group_ids')
+  if (error) return []
+  return (data ?? []).map((r) => (typeof r === 'string' ? r : r.my_friend_group_ids)).filter(Boolean)
 }
 
 // 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.

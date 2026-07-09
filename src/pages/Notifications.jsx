@@ -26,6 +26,7 @@ const ICONS = {
   gift: '🎁',
   wish: '🌟',
   couple_ring: '💍',
+  friend_ring: '🤝',
   cassette: '🎵',
   link: '🔗',
   video: '📹',
@@ -56,7 +57,7 @@ export default function Notifications() {
   }, [setRefreshHandler, refresh])
 
   // 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권
-  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'wish', 'cassette', 'link', 'video'])
+  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video'])
 
   function targetOf(n) {
     if (NOTE_TYPES.has(n.type)) return '/notes'
@@ -80,13 +81,13 @@ export default function Notifications() {
       //  - 커플 링 거절(보낸 사람) → 인벤토리(다시 사용 가능)
       //  - 선물 수령(받는 사람) → 인벤토리(아이템 들어옴)
       //  - 그 외(수령 전) → 받은 쪽지함
-      if ((n.type === 'gift' || n.type === 'couple_ring') && n.note_id) {
+      if ((n.type === 'gift' || n.type === 'couple_ring' || n.type === 'friend_ring') && n.note_id) {
         try {
           const note = await getNoteState(n.note_id)
           if (note) {
             const iAmRecipient = note.recipient_id === n.user_id
             const iAmSender = note.sender_id === n.user_id
-            if (n.type === 'couple_ring' && note.claimed && n.group_id) {
+            if ((n.type === 'couple_ring' || n.type === 'friend_ring') && note.claimed && n.group_id) {
               navigate(`/groups/${n.group_id}`, { state: { from: 'notifications' } }); return
             }
             const toInventory = (iAmRecipient && note.claimed) || (iAmSender && note.rejected)
