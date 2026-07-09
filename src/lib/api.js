@@ -647,6 +647,13 @@ export async function listCoupleGroups(userId) {
   return [...new Set((data ?? []).map((r) => r.group_id))]
 }
 
+// 이 그룹이 커플 그룹(적용된 커플 링 존재)인지. RPC 미배포/실패 시 false.
+export async function isCoupleGroup(groupId) {
+  const { data, error } = await supabase.rpc('is_couple_group', { p_group_id: groupId })
+  if (error) return false
+  return !!data
+}
+
 // 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.
 export async function giftItem(itemId, groupId, recipientId, qty = 1) {
   const { data, error } = await supabase.rpc('gift_item', {

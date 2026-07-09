@@ -1059,6 +1059,15 @@ a.mp-tel:active { opacity: .55; }
 .gd-members .avatar { width: 30px; height: 30px; font-size: 12px; }
 .gd-members .task-parts-more { min-width: 30px; height: 30px; border-radius: 15px; font-size: 12px; }
 .gd-members:active { transform: scale(.96); }
+/* 커플 그룹: 아바타 2개를 겹치지 않게 두고 가운데 작은 하트 */
+.gd-members-couple { position: relative; display: inline-flex; align-items: center; gap: 12px; }
+.gd-members-couple .avatar { width: 30px; height: 30px; font-size: 12px; }
+.gd-couple-heart {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 16px; height: 16px; border-radius: 50%; background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; line-height: 1; color: #ec5a8d; box-shadow: 0 1px 4px rgba(25, 23, 34, .18);
+}
 
 /* ---- FAB (태스크 작성, 화면 고정) ---- */
 .fab {

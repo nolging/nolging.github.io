@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext, Link } from 
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
-  completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewedTaskIds,
+  completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewedTaskIds, isCoupleGroup,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -65,6 +65,7 @@ export default function GroupDetail() {
 
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
+  const [isCouple, setIsCouple] = useState(false) // 커플 그룹(적용된 커플 링)
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
@@ -84,11 +85,12 @@ export default function GroupDetail() {
     return () => setHeaderFilter?.(null)
   }, [setHeaderFilter, catActive])
 
-  // 초대 버튼을 상단바(필터와 톱니 사이)로 노출
+  // 초대 버튼을 상단바(필터와 톱니 사이)로 노출. 커플 그룹은 초대 불가 → 숨김.
   useEffect(() => {
+    if (isCouple) { setHeaderInvite?.(null); return }
     setHeaderInvite?.({ onClick: () => setInviteOpen(true) })
     return () => setHeaderInvite?.(null)
-  }, [setHeaderInvite])
+  }, [setHeaderInvite, isCouple])
 
   function toggleCat(c) {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -216,6 +218,7 @@ export default function GroupDetail() {
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
       listReviewedTaskIds(groupId).then(setReviewedIds).catch(() => {})
+      isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -328,13 +331,23 @@ export default function GroupDetail() {
           </div>
         </div>
         {members.length > 0 && (
-          <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
-            aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
-            {members.slice(0, 3).map((m) => (
-              <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
-            ))}
-            {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
-          </button>
+          isCouple ? (
+            <button type="button" className="gd-members gd-members-couple"
+              aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
+              {members.slice(0, 2).map((m) => (
+                <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} />
+              ))}
+              <span className="gd-couple-heart" aria-hidden="true">♥</span>
+            </button>
+          ) : (
+            <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
+              aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
+              {members.slice(0, 3).map((m) => (
+                <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
+              ))}
+              {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
+            </button>
+          )
         )}
       </div>
 

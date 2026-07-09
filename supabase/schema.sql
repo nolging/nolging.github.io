@@ -105,6 +105,10 @@ begin
   if g.id is null then
     raise exception '유효하지 않은 초대 코드입니다.';
   end if;
+  -- 커플 그룹(적용된 커플 링 존재)에는 신규 입장 차단. is_couple_group 은 schema-v2.sql 참고.
+  if not public.is_group_member(g.id, auth.uid()) and public.is_couple_group(g.id) then
+    raise exception '커플 그룹에는 입장할 수 없어요.';
+  end if;
   insert into public.group_members(group_id, user_id, role)
     values (g.id, auth.uid(), 'member')
     on conflict (group_id, user_id) do nothing;

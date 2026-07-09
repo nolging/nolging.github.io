@@ -1504,3 +1504,40 @@ begin
 end;
 $$;
 grant execute on function public.reject_couple_ring(uuid) to authenticated;
+
+-- =============================================================
+--  커플 그룹 여부: 해당 그룹에 '적용된(used)' 커플 링이 존재하는가
+--  (헤더 표현/초대 숨김/입장 차단에 공용으로 사용)
+-- =============================================================
+create or replace function public.is_couple_group(p_group_id uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.user_items
+    where group_id = p_group_id and item_id = 'couple-ring' and status = 'used'
+  );
+$$;
+grant execute on function public.is_couple_group(uuid) to authenticated;
+
+-- =============================================================
+--  초대 코드로 그룹 입장 (커플 그룹은 신규 입장 차단)
+--  schema.sql 의 join_group 를 대체(커플 그룹 차단 규칙 추가).
+-- =============================================================
+create or replace function public.join_group(p_code text)
+returns public.groups language plpgsql security definer set search_path = public as $$
+declare g public.groups;
+begin
+  select * into g from public.groups where upper(invite_code) = upper(trim(p_code));
+  if g.id is null then
+    raise exception '유효하지 않은 초대 코드입니다.';
+  end if;
+  -- 이미 멤버면 그대로 통과(멱등). 새 입장은 커플 그룹이면 차단.
+  if not public.is_group_member(g.id, auth.uid()) and public.is_couple_group(g.id) then
+    raise exception '커플 그룹에는 입장할 수 없어요.';
+  end if;
+  insert into public.group_members(group_id, user_id, role)
+    values (g.id, auth.uid(), 'member')
+    on conflict (group_id, user_id) do nothing;
+  return g;
+end;
+$$;
+grant execute on function public.join_group(text) to authenticated;
