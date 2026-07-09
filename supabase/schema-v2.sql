@@ -1318,9 +1318,11 @@ grant execute on function public.use_cassette(uuid, uuid, text, text) to authent
 -- =============================================================
 --  링크: 쪽지에 클릭 가능한 링크(URL) 붙여 보내기. 링크 1개 소모.
 -- =============================================================
-create or replace function public.use_link(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text)
+--  p_label: 받는 사람에게 버튼으로 보여줄 텍스트(URL 은 숨김). item_name 에 저장.
+drop function if exists public.use_link(uuid, uuid, text, text);
+create or replace function public.use_link(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text, p_label text default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text; v_label text;
 begin
   if p_url is null or btrim(p_url) = '' then raise exception '링크를 입력해 주세요.'; end if;
 
@@ -1339,10 +1341,11 @@ begin
   v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
   select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
   select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
-  v_body := coalesce(nullif(btrim(p_message), ''), '링크를 보냈어요 🔗');
+  v_body  := coalesce(nullif(btrim(p_message), ''), '링크를 보냈어요 🔗');
+  v_label := coalesce(nullif(btrim(p_label), ''), '링크 열기');
 
-  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, media_url)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'link', 'link', btrim(p_url));
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, media_url)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'link', 'link', v_label, btrim(p_url));
 
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
     values (p_recipient_id, auth.uid(), 'link',
@@ -1350,7 +1353,7 @@ begin
             '쪽지함에서 확인하세요 🔗', p_group_id);
 end;
 $$;
-grant execute on function public.use_link(uuid, uuid, text, text) to authenticated;
+grant execute on function public.use_link(uuid, uuid, text, text, text) to authenticated;
 
 -- =============================================================
 --  비디오 테이프: 쪽지와 함께 영상 링크(유튜브) 보내기. 비디오 1개 소모.

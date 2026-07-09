@@ -557,9 +557,9 @@ export async function useCassette({ groupId, recipientId, message, url }) {
 }
 
 // 링크: 클릭 가능한 링크와 메시지를 상대 쪽지함으로. 링크 1개 소모.
-export async function useLink({ groupId, recipientId, message, url }) {
+export async function useLink({ groupId, recipientId, message, url, label }) {
   const { data, error } = await supabase.rpc('use_link', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url, p_label: label ?? '',
   })
   if (error) {
     if (error.code === 'PGRST202' || /use_link/.test(error.message || '')) {

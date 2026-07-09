@@ -291,9 +291,8 @@ export default function Notes() {
               {cassette && open.media_url && <MusicPlayer url={open.media_url} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
               {link && open.media_url && (
-                <a className="note-linkcard" href={open.media_url} target="_blank" rel="noreferrer noopener">
-                  <span className="note-linkcard-ic">🔗</span>
-                  <span className="note-linkcard-url">{open.media_url}</span>
+                <a className="note-linkbtn" href={open.media_url} target="_blank" rel="noreferrer noopener">
+                  {open.item_name || '링크 열기'}
                 </a>
               )}
               {couple && mine ? (

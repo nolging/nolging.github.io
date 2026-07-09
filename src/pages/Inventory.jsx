@@ -197,22 +197,24 @@ function normalizeUrl(u) {
 function LinkModal({ open, onClose, onDone }) {
   const [message, setMessage] = useState('')
   const [url, setUrl] = useState('')
+  const [label, setLabel] = useState('')
   const [recipient, setRecipient] = useState(null)
   const [pickOpen, setPickOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
+    if (open) { setMessage(''); setUrl(''); setLabel(''); setRecipient(null); setError(''); setSending(false) }
   }, [open])
 
   async function send() {
     if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
+    if (!label.trim()) { setError('버튼에 표시할 텍스트를 입력해 주세요.'); return }
     const link = normalizeUrl(url)
     if (!link || !/\./.test(link)) { setError('올바른 링크를 입력해 주세요.'); return }
     setSending(true); setError('')
     try {
-      await useLink({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: link })
+      await useLink({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: link, label: label.trim() })
       await onDone()
       onClose()
     } catch (e) { setError(e.message); setSending(false) }
@@ -223,7 +225,7 @@ function LinkModal({ open, onClose, onDone }) {
       <Modal open={open && !pickOpen} onClose={onClose} title="링크">
         <div className="couple-modal">
           {error && <div className="alert alert-error">{error}</div>}
-          <p className="couple-hint">쪽지에 클릭 가능한 링크를 붙여 보내요.</p>
+          <p className="couple-hint">버튼에 표시할 텍스트와 연결할 링크를 입력하면, 받는 사람에게는 링크가 걸린 버튼만 보여요.</p>
 
           {recipient ? (
             <div className="couple-to">
@@ -234,6 +236,11 @@ function LinkModal({ open, onClose, onDone }) {
           ) : (
             <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
           )}
+
+          <label className="field">
+            <span>버튼 텍스트</span>
+            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예: 여기를 눌러 보세요" maxLength={40} />
+          </label>
 
           <label className="field">
             <span>링크</span>
