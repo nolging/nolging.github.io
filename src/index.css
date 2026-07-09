@@ -401,6 +401,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members { margin-top: 8px; align-self: flex-start; }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
+/* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 가운데 하트 */
+.tile-members-couple { position: relative; display: inline-flex; align-items: center; gap: 10px; }
+.tile-members-couple .avatar { margin-left: 0; box-shadow: none; }
+.tile-couple-heart {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-size: 11px; line-height: 1; color: #ec5a8d;
+}
 .empty-hint { margin-top: 16px; text-align: center; }
 
 /* 커플 링이 적용된 프리미엄 그룹: 한 줄 전체(카드 2개 폭), 높이·요소 배치는 일반 카드와 동일 */
@@ -1064,9 +1071,7 @@ a.mp-tel:active { opacity: .55; }
 .gd-members-couple .avatar { width: 30px; height: 30px; font-size: 12px; }
 .gd-couple-heart {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 16px; height: 16px; border-radius: 50%; background: var(--surface);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; line-height: 1; color: #ec5a8d; box-shadow: 0 1px 4px rgba(25, 23, 34, .18);
+  font-size: 12px; line-height: 1; color: #ec5a8d;
 }
 
 /* ---- FAB (태스크 작성, 화면 고정) ---- */
