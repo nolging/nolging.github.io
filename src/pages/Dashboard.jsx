@@ -4,6 +4,7 @@ import { listMyGroups, unreadNotificationCount, listCoupleGroups } from '../lib/
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
+import PeekCat from '../components/PeekCat'
 
 function BellIcon() {
   return (
@@ -126,11 +127,11 @@ export default function Dashboard() {
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
                 className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''}`}>
-                {premium && <span className="tile-premium-tag">💍 커플</span>}
                 <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {memberRow}
+                {premium && <PeekCat className="tile-couple-cat" width={72} />}
               </Link>
             )
           })}
