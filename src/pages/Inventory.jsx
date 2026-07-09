@@ -4,16 +4,15 @@ import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink, useVideo, useLedboard, editLedBanner, stopLedBanner, getMyLedBanner } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink, useVideo, getMyLedBanner } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
-import LedBanner, { LED_COLORS } from '../components/LedBanner'
+import { LedboardModal, LedEditModal } from '../components/LedModals'
 
 const MAX_WISH = 300
 const MAX_CASSETTE_MSG = 150
 const MAX_LINK_MSG = 150
 const MAX_VIDEO_MSG = 150
-const MAX_LED_TEXT = 60
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -500,102 +499,6 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
 
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '보내는 중…' : '나눠 끼기'}
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-// ---- 전광판 색상 선택 ----
-function LedColorPicker({ color, onChange }) {
-  return (
-    <div className="led-swatches">
-      {LED_COLORS.map((c) => (
-        <button key={c} type="button" className={`led-swatch led-sw-${c} ${color === c ? 'on' : ''}`}
-          aria-label={c} onClick={() => onChange(c)} />
-      ))}
-    </div>
-  )
-}
-
-// ---- 전광판 게재(문구+색상) ----
-function LedboardModal({ open, onClose, onDone }) {
-  const [text, setText] = useState('')
-  const [color, setColor] = useState('amber')
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-  useEffect(() => { if (open) { setText(''); setColor('amber'); setError(''); setSending(false) } }, [open])
-
-  async function go() {
-    if (!text.trim()) { setError('문구를 입력해 주세요.'); return }
-    setSending(true); setError('')
-    try { await useLedboard({ text: text.trim(), color }); await onDone(); onClose() }
-    catch (e) { setError(e.message); setSending(false) }
-  }
-  return (
-    <Modal open={open} onClose={onClose} title="전광판">
-      <div className="couple-modal">
-        {error && <div className="alert alert-error">{error}</div>}
-        <p className="couple-hint">문구·색상을 정하면 24시간 동안 우리 커플에게만 전광판이 보여요.</p>
-        <LedBanner text={text || '미리보기'} color={color} />
-        <div className="couple-msg">
-          <textarea className="wish-input" placeholder="전광판에 띄울 문구"
-            value={text} maxLength={MAX_LED_TEXT} onChange={(e) => setText(e.target.value)} rows={2} />
-          <span className="couple-msg-count">{text.length}/{MAX_LED_TEXT}</span>
-        </div>
-        <div className="led-picker">
-          <span className="led-picker-label">색상</span>
-          <LedColorPicker color={color} onChange={setColor} />
-        </div>
-        <button type="button" className="btn btn-primary btn-block" onClick={go} disabled={sending}>
-          {sending ? '게재 중…' : '게재하기'}
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-// ---- 전광판 수정 / 게재 중단 ----
-function LedEditModal({ open, onClose, banner, onDone }) {
-  const [text, setText] = useState('')
-  const [color, setColor] = useState('amber')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  useEffect(() => {
-    if (open && banner) { setText(banner.text || ''); setColor(banner.color || 'amber'); setError(''); setBusy(false) }
-  }, [open, banner])
-
-  async function save() {
-    if (!text.trim()) { setError('문구를 입력해 주세요.'); return }
-    setBusy(true); setError('')
-    try { await editLedBanner({ text: text.trim(), color }); await onDone(); onClose() }
-    catch (e) { setError(e.message); setBusy(false) }
-  }
-  async function stop() {
-    setBusy(true); setError('')
-    try { await stopLedBanner(); await onDone(); onClose() }
-    catch (e) { setError(e.message); setBusy(false) }
-  }
-  return (
-    <Modal open={open} onClose={onClose} title="전광판 수정">
-      <div className="couple-modal">
-        {error && <div className="alert alert-error">{error}</div>}
-        <p className="couple-hint">게재 중인 전광판의 문구·색상을 바꾸거나 지금 바로 내릴 수 있어요.</p>
-        <LedBanner text={text || '미리보기'} color={color} />
-        <div className="couple-msg">
-          <textarea className="wish-input" placeholder="전광판에 띄울 문구"
-            value={text} maxLength={MAX_LED_TEXT} onChange={(e) => setText(e.target.value)} rows={2} />
-          <span className="couple-msg-count">{text.length}/{MAX_LED_TEXT}</span>
-        </div>
-        <div className="led-picker">
-          <span className="led-picker-label">색상</span>
-          <LedColorPicker color={color} onChange={setColor} />
-        </div>
-        <button type="button" className="btn btn-primary btn-block" onClick={save} disabled={busy}>
-          {busy ? '처리 중…' : '수정하기'}
-        </button>
-        <button type="button" className="btn btn-ghost btn-block led-stop" onClick={stop} disabled={busy}>
-          게재 중단
         </button>
       </div>
     </Modal>

@@ -1520,16 +1520,22 @@ a.mp-tel:active { opacity: .55; }
 .led-pink .led-seg  { color: #ff77c8; text-shadow: 0 0 1.5px rgba(255, 90, 190, .5); }
 .led-cyan .led-seg  { color: #4fe6e6; text-shadow: 0 0 1.5px rgba(60, 220, 220, .5); }
 @keyframes led-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.dash-led { margin-bottom: 14px; }
+.dash-led { margin-bottom: -6px; }
+.dash-led-click { cursor: pointer; }
+.dash-led-click:active { transform: scale(.995); }
 /* 색상 선택 스와치 */
 .led-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
 .led-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
 .led-swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface) inset; }
 .led-sw-amber { background: #ffb84d; } .led-sw-red { background: #ff5a5a; } .led-sw-green { background: #54e08a; }
 .led-sw-blue { background: #5aa8ff; } .led-sw-pink { background: #ff77c8; } .led-sw-cyan { background: #4fe6e6; }
-.led-picker { display: flex; flex-direction: column; gap: 8px; }
-.led-picker-label { font-size: 13px; font-weight: 600; color: var(--text); }
-.led-stop { color: var(--danger); margin-top: 2px; }
+.led-stop-wrap { text-align: center; margin-top: 2px; }
+.led-stop-link { background: none; border: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 1px solid #dcdce2; padding: 0 0 1px; }
+.led-stop-link:hover { color: var(--danger); border-bottom-color: var(--danger); }
+.led-stop-confirm { margin-top: 4px; text-align: center; }
+.led-stop-confirm p { margin: 0 0 8px; font-size: 13px; color: var(--text); }
+.led-stop-actions { display: flex; gap: 8px; justify-content: center; }
+.led-stop-yes { background: var(--danger); color: #fff; }
 
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }

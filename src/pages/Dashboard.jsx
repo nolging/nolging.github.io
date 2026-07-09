@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
 import PeekCat from '../components/PeekCat'
 import LedBanner from '../components/LedBanner'
+import { LedEditModal } from '../components/LedModals'
 
 function BellIcon() {
   return (
@@ -34,7 +35,9 @@ export default function Dashboard() {
   const [q, setQ] = useState('')
   const [unread, setUnread] = useState(0)
   const [banner, setBanner] = useState(null) // 활성 전광판
+  const [ledEditOpen, setLedEditOpen] = useState(false)
   const inputRef = useRef(null)
+  const reloadBanner = () => getMyLedBanner().then(setBanner).catch(() => {})
 
   async function load() {
     setLoading(true)
@@ -44,7 +47,7 @@ export default function Dashboard() {
   }
   useEffect(() => { load() }, [])
   useEffect(() => { unreadNotificationCount().then(setUnread).catch(() => {}) }, [])
-  useEffect(() => { getMyLedBanner().then(setBanner).catch(() => {}) }, [])
+  useEffect(() => { reloadBanner() }, [])
   useEffect(() => {
     if (!profile?.id) return
     listCoupleGroups(profile.id).then(setPremiumIds).catch(() => {})
@@ -100,7 +103,13 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {banner && <LedBanner text={banner.text} color={banner.color} className="dash-led" />}
+      {banner && (
+        <div className={`dash-led ${banner.is_owner ? 'dash-led-click' : ''}`}
+          role={banner.is_owner ? 'button' : undefined}
+          onClick={banner.is_owner ? () => setLedEditOpen(true) : undefined}>
+          <LedBanner text={banner.text} color={banner.color} />
+        </div>
+      )}
 
       {loading ? (
         <div className="spinner" />
@@ -158,6 +167,8 @@ export default function Dashboard() {
       {!loading && query && filtered.length === 0 && (
         <p className="muted sm empty-hint">"{q.trim()}"에 해당하는 그룹이 없어요.</p>
       )}
+
+      <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={banner} onDone={reloadBanner} />
     </div>
   )
 }
