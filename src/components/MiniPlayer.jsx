@@ -32,8 +32,9 @@ function loadSC() {
   return scApiPromise
 }
 
-const PlayIcon = () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>)
-const PauseIcon = () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>)
+const PlayIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>)
+const PauseIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>)
+const CloseIcon = () => (<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>)
 
 // 전역(앱 상단에 항상 마운트) 미니 플레이어. 페이지 이동/모달 닫기와 무관하게 재생 유지.
 export default forwardRef(function MiniPlayer({ onState }, ref) {
@@ -129,7 +130,7 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
           <button type="button" className="mini-play" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}>
             {playing ? <PauseIcon /> : <PlayIcon />}
           </button>
-          <button type="button" className="mini-close" onClick={close} aria-label="닫기" title="닫기">✕</button>
+          <button type="button" className="mini-close" onClick={close} aria-label="닫기" title="닫기"><CloseIcon /></button>
         </div>
       )}
     </>

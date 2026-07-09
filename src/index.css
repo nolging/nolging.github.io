@@ -1456,18 +1456,18 @@ a.mp-tel:active { opacity: .55; }
 .mini-hosts { position: absolute; width: 1px; height: 1px; left: -9999px; top: 0; overflow: hidden; opacity: 0; pointer-events: none; }
 .mini-player {
   position: absolute; z-index: 25; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
-  width: 36px; height: 36px;
+  width: 45px; height: 45px;
 }
-.app-shell.has-nav .mini-player { bottom: calc(90px + env(safe-area-inset-bottom)); }
+.app-shell.has-nav .mini-player { bottom: calc(96px + env(safe-area-inset-bottom)); }
 .mini-play {
-  width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+  width: 45px; height: 45px; border-radius: 50%; border: none; cursor: pointer;
   background: #9aa0ac; color: #fff; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 6px 16px rgba(25, 23, 34, .24);
 }
 .mini-close {
-  position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; padding: 0;
+  position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; padding: 0;
   border-radius: 50%; border: 1.5px solid #fff; background: #6b6f7a; color: #fff;
-  font-size: 9px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 0;
 }
 /* 미니 플레이어가 목록 맨 아래 항목을 가리지 않게 여백 */
 .app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-body { padding-bottom: 60px; }
