@@ -59,9 +59,9 @@ const POLICY_ROWS = [
   { key: 'ott', icon: '📺', iconBg: '#eeebfe', title: '구독 OTT 공개 허용', sub: '멤버들의 구독 서비스를 공개할 수 있어요', field: 'showOtt' },
 ]
 const MEMBER_ROWS = [
-  { key: 'contact', icon: '📞', iconBg: '#e6eefd', title: '그룹 내 연락처 공개', sub: '내 연락처를 이 그룹 멤버에게 공개해요', lockedSub: '🔒 그룹에서 연락처 공개를 꺼놨어요', groupField: 'showContact', field: 'show_contact' },
-  { key: 'birth', icon: '🎂', iconBg: '#fde8ee', title: '그룹 내 생년월일 공개', sub: '내 생일을 이 그룹 멤버에게 공개해요', lockedSub: '🔒 그룹에서 생년월일 공개를 꺼놨어요', groupField: 'showBirthdate', field: 'show_birthdate' },
-  { key: 'ott', icon: '📺', iconBg: '#eeebfe', title: '그룹 내 구독 OTT 공개', sub: '내 구독 OTT를 이 그룹 멤버에게 공개해요', lockedSub: '🔒 그룹에서 구독 OTT 공개를 꺼놨어요', groupField: 'showOtt', field: 'show_ott' },
+  { key: 'contact', icon: '📞', iconBg: '#e6eefd', title: '그룹 내 연락처 공개', sub: '내 연락처를 이 그룹 멤버에게 공개해요', lockedSub: '그룹에서 연락처 공개를 비허용했어요', groupField: 'showContact', field: 'show_contact' },
+  { key: 'birth', icon: '🎂', iconBg: '#fde8ee', title: '그룹 내 생년월일 공개', sub: '내 생일을 이 그룹 멤버에게 공개해요', lockedSub: '그룹에서 생년월일 공개를 비허용했어요', groupField: 'showBirthdate', field: 'show_birthdate' },
+  { key: 'ott', icon: '📺', iconBg: '#eeebfe', title: '그룹 내 구독 OTT 공개', sub: '내 구독 OTT를 이 그룹 멤버에게 공개해요', lockedSub: '그룹에서 구독 OTT 공개를 비허용했어요', groupField: 'showOtt', field: 'show_ott' },
 ]
 
 export default function CreateGroup() {
@@ -163,7 +163,7 @@ export default function CreateGroup() {
           <div className="cg-field cg-mt-20">
             <div className="cg-label">그룹 이름 <span className="cg-req">*</span></div>
             <div className="cg-input-wrap">
-              <input className="cg-input has-count" autoFocus value={ginfo.name} maxLength={9}
+              <input className="cg-input has-count" value={ginfo.name} maxLength={9}
                 onChange={(e) => { setG({ name: e.target.value }); if (nameErr) setNameErr('') }}
                 placeholder="예) 넷플릭스 앤 칠" />
               <span className="cg-count cg-count-mid">{ginfo.name.length}/9</span>
@@ -175,10 +175,10 @@ export default function CreateGroup() {
           <div className="cg-field cg-mt-16">
             <div className="cg-label">코멘트 <span className="cg-opt">선택</span></div>
             <div className="cg-input-wrap">
-              <textarea className="cg-input cg-textarea" rows={2} value={ginfo.description} maxLength={14}
+              <input className="cg-input has-count" value={ginfo.description} maxLength={14}
                 onChange={(e) => setG({ description: e.target.value })}
                 placeholder="그룹을 소개하는 한마디를 남겨 보세요" />
-              <span className="cg-count">{ginfo.description.length}/14</span>
+              <span className="cg-count cg-count-mid">{ginfo.description.length}/14</span>
             </div>
           </div>
 
@@ -215,11 +215,11 @@ export default function CreateGroup() {
     <div className="page cg-page">
       {stepper}
       <div className="cg-form">
-        <div className="cg-continuity">이 그룹에서 사용할 <b>내 정보</b>를 설정해요</div>
+        <div className="cg-continuity"><span>이 그룹에서 사용할 <b>내 정보</b>를 설정해요</span></div>
 
         <div className="cg-avatar-wrap">
           <AvatarEditor value={prof.avatar_url} name={prof.display_nickname || profile?.nickname}
-            userId={profile?.id} onChange={(v) => setP({ avatar_url: v })} onError={setError} />
+            userId={profile?.id} onChange={(v) => setP({ avatar_url: v })} onError={setError} emptyIcon />
           <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>
         </div>
 
@@ -247,7 +247,7 @@ export default function CreateGroup() {
                 <span className="cg-row-icon" style={{ background: row.iconBg }}>{row.icon}</span>
                 <div className="cg-row-main">
                   <div className="cg-row-title">{row.title}</div>
-                  <div className={`cg-row-sub ${allowed ? '' : 'locked'}`}>{allowed ? row.sub : row.lockedSub}</div>
+                  <div className="cg-row-sub">{allowed ? row.sub : row.lockedSub}</div>
                 </div>
                 {allowed
                   ? <CgToggle on={prof[row.field]} onClick={() => setP({ [row.field]: !prof[row.field] })} />

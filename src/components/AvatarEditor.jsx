@@ -5,7 +5,7 @@ import Avatar from './Avatar'
 
 // 원형·가운데 프로필 사진 + 클릭 시 변경/제거 메뉴 (설정/가입/생성 공용)
 // 선택 즉시 스토리지에 업로드하고 public URL 을 onChange 로 전달한다.
-export default function AvatarEditor({ value, onChange, name, userId, onError }) {
+export default function AvatarEditor({ value, onChange, name, userId, onError, emptyIcon = false }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const fileRef = useRef(null)
@@ -36,7 +36,16 @@ export default function AvatarEditor({ value, onChange, name, userId, onError })
     <div className="avatar-editor">
       <button type="button" className="avatar-btn" disabled={busy}
         onClick={() => setMenuOpen((v) => !v)} aria-label="프로필 사진 변경">
-        <Avatar src={value} name={name} size={104} />
+        {emptyIcon && !value ? (
+          <span className="avatar avatar-empty" style={{ width: 104, height: 104 }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+            </svg>
+          </span>
+        ) : (
+          <Avatar src={value} name={name} size={104} />
+        )}
         <span className="avatar-cam" aria-hidden="true">
           {busy ? (
             <span className="avatar-cam-spin" />
