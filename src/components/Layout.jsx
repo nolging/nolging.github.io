@@ -128,16 +128,37 @@ export default function Layout() {
     const el = contentRef.current
     if (!el) return
     const THRESH = 64, MAX = 90, DAMP = 0.5
+    // 실제로 스크롤되는 컨테이너 찾기(그룹 상세는 .content 가 아니라 내부 .tab-pane 이 스크롤)
+    function scrollerAt(target) {
+      let node = target
+      while (node && node !== el) {
+        if (node.nodeType === 1) {
+          const st = getComputedStyle(node)
+          if (/(auto|scroll)/.test(st.overflowY) && node.scrollHeight > node.clientHeight + 1) return node
+        }
+        node = node.parentElement
+      }
+      return el
+    }
     function onStart(e) {
-      if (!refreshHandler || refreshing) { ptr.current.active = false; return }
-      if (el.scrollTop <= 0) ptr.current = { startY: e.touches[0].clientY, dist: 0, active: true }
-      else ptr.current.active = false
+      if (!refreshHandler || refreshing || e.touches.length !== 1) { ptr.current.active = false; return }
+      const sc = scrollerAt(e.target)
+      if (sc && sc.scrollTop <= 0) {
+        ptr.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, dist: 0, active: true, sc, locked: null }
+      } else ptr.current.active = false
     }
     function onMove(e) {
       const g = ptr.current
       if (!g.active || g.startY == null) return
-      if (el.scrollTop > 0) { g.active = false; setPull(0); setDragging(false); return }
+      const dx = e.touches[0].clientX - g.startX
       const dy = e.touches[0].clientY - g.startY
+      if (g.locked === null) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return
+        // 가로 우세면 탭 스와이프에 양보
+        g.locked = Math.abs(dy) >= Math.abs(dx) ? 'v' : 'h'
+        if (g.locked === 'h') { g.active = false; return }
+      }
+      if ((g.sc || el).scrollTop > 0) { g.active = false; setPull(0); setDragging(false); return }
       if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); setDragging(true); e.preventDefault() }
       else { g.dist = 0; setPull(0); setDragging(false) }
     }

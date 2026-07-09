@@ -58,7 +58,7 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
-  const { setHeaderFilter, setHeaderInvite } = useOutletContext()
+  const { setHeaderFilter, setHeaderInvite, setRefreshHandler } = useOutletContext()
 
   const [searchParams] = useSearchParams()
   const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
@@ -223,6 +223,24 @@ export default function GroupDetail() {
   }, [groupId])
 
   useEffect(() => { load() }, [load])
+
+  // 당겨서 새로고침: 전체 스피너 없이 데이터만 다시 불러옴
+  const refresh = useCallback(async () => {
+    try {
+      const [g, m, t, cc] = await Promise.all([
+        getGroup(groupId), listMemberCards(groupId), listTasks(groupId), listCommentCounts(groupId),
+      ])
+      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
+      const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
+      setPartsByTask(await listParticipantsByTasks(scheduledIds))
+      listReviewedTaskIds(groupId).then(setReviewedIds).catch(() => {})
+      isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
+    } catch (err) { setError(err.message) }
+  }, [groupId])
+  useEffect(() => {
+    setRefreshHandler(() => refresh)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, refresh])
 
   async function runAction(fn) {
     setError('')

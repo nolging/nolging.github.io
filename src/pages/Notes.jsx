@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
@@ -41,6 +41,7 @@ export default function Notes() {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { setRefreshHandler } = useOutletContext()
   const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
   const [received, setReceived] = useState([])
   const [sent, setSent] = useState([])
@@ -66,6 +67,19 @@ export default function Notes() {
     })()
     return () => { on = false }
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 당겨서 새로고침: 전체 스피너 없이 목록만 갱신
+  const refresh = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
+      setReceived(r); setSent(s)
+    } catch (err) { setError(err.message) }
+  }, [user?.id])
+  useEffect(() => {
+    setRefreshHandler(() => refresh)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, refresh])
 
   // 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착되고 그룹이 프리미엄이 됨
   async function accept(n) {
