@@ -1565,8 +1565,19 @@ a.mp-tel:active { opacity: .55; }
   .bottomnav a svg { width: 21px; height: 21px; }
   .bottomnav a:hover { text-decoration: none; color: var(--muted); }
   .bottomnav a.active { color: var(--primary); font-weight: 700; }
+  /* 플로팅(아일랜드) 탭 뒤로 지나가는 콘텐츠를 자연스럽게 뿌옇게(블러+페이드) */
+  .app-shell.has-nav::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; z-index: 15;
+    height: calc(128px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, .5);
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    -webkit-mask: linear-gradient(to top, #000 45%, transparent);
+    mask: linear-gradient(to top, #000 45%, transparent);
+    pointer-events: none;
+  }
   /* 키보드가 올라오면 하단 탭 숨김 (키보드 위로 따라 올라오지 않게) */
   .app-shell.kb-open .bottomnav { display: none; }
+  .app-shell.kb-open.has-nav::after { display: none; }
   .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
   .page-head .row-gap { flex-wrap: wrap; }
   .field-row { flex-direction: column; }
