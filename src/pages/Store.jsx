@@ -125,7 +125,7 @@ export default function Store() {
       <Modal open={!!selected} onClose={close}>
         {selected && (
           <div className="store-detail">
-            <span className="store-owned">{invCounts[selected.id] || 0} 개 보유</span>
+            {selected.id !== 'couple-ring' && <span className="store-owned">{invCounts[selected.id] || 0} 개 보유</span>}
             <StoreItemImage id={selected.id} emoji={selected.emoji} className="store-detail-img" />
             <h3 className="store-detail-name">{selected.name}</h3>
             <p className="store-detail-desc">{selected.desc}</p>
