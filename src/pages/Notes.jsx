@@ -41,7 +41,7 @@ export default function Notes() {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { setRefreshHandler } = useOutletContext()
+  const { setRefreshHandler, player } = useOutletContext()
   const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
   const [received, setReceived] = useState([])
   const [sent, setSent] = useState([])
@@ -302,7 +302,7 @@ export default function Notes() {
                 </div>
               </div>
               <p className="note-view-body">{open.body}</p>
-              {cassette && open.media_url && <MusicPlayer url={open.media_url} />}
+              {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
               {link && open.media_url && (
                 <a className="note-linkbtn" href={open.media_url} target="_blank" rel="noreferrer noopener">

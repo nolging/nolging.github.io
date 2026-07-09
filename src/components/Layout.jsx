@@ -5,6 +5,7 @@ import { taskTerms } from '../lib/constants'
 import { unreadNotificationCount, getMyCoinBalance } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
+import MiniPlayer from './MiniPlayer'
 
 function GearIcon() {
   return (
@@ -117,6 +118,14 @@ export default function Layout() {
   const [headerFilter, setHeaderFilter] = useState(null)
   // 페이지가 상단바 초대 버튼을 등록할 수 있게 (그룹 상세)
   const [headerInvite, setHeaderInvite] = useState(null)
+  // 전역 음악 플레이어(페이지 이동/모달 닫아도 재생 유지)
+  const playerRef = useRef(null)
+  const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false })
+  const player = {
+    playTrack: (t) => playerRef.current?.play(t),
+    current: nowPlaying.current,
+    playing: nowPlaying.playing,
+  }
 
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
@@ -498,7 +507,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''}`} ref={shellRef}>
       {topbar}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
@@ -508,8 +517,9 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin, player }} />
       </main>
+      <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       {showBottomNav && (
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
