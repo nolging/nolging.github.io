@@ -72,37 +72,31 @@ export function AuthProvider({ children }) {
     }
   }, [loadProfile])
 
-  // 재개 워치독: 백그라운드에 오래 있다가 다시 보일 때 세션이 살아있는지 짧게 확인하고,
-  // 응답이 없으면(연결 stale → 쿼리 멈춤) 페이지를 새로고침해 정상 로드로 회복시킨다.
+  // 재개 워치독(하트비트): 이벤트에 의존하지 않고 '시간 점프'로 절전/백그라운드 재개를 감지한다.
+  // 기기가 자면 타이머도 멈추므로, 다시 깨어났을 때 마지막 기록과의 간격이 크면
+  // (연결/토큰 락이 굳어 무한 로딩이 되는 상태) 페이지를 새로고침해 새 로드로 회복한다.
+  // iOS PWA 처럼 visibilitychange 가 안 터지는 환경도 커버된다.
   useEffect(() => {
-    let hiddenAt = null
-    let busy = false
-    const markHidden = () => { if (hiddenAt == null) hiddenAt = Date.now() }
-    const checkResume = async () => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
-      if (busy) return
-      const away = hiddenAt ? Date.now() - hiddenAt : 0
-      hiddenAt = null
-      if (away < 60000) return // 1분 미만 이탈은 무시
-      busy = true
-      try {
-        // 5초 내 서버 응답이 없으면 연결이 굳은 것으로 보고 새로고침
-        const ok = await Promise.race([
-          supabase.auth.getUser().then((r) => !r?.error).catch(() => false),
-          new Promise((res) => { setTimeout(() => res(false), 5000) }),
-        ])
-        if (!ok) { window.location.reload(); return }
-      } catch { window.location.reload(); return } finally { busy = false }
+    const GAP = 120000 // 2분 이상 비활성 후 재개면 새로고침
+    let last = Date.now()
+    let done = false
+    const check = () => {
+      if (done) return
+      const now = Date.now()
+      const gap = now - last
+      last = now
+      if (gap > GAP) { done = true; window.location.reload() }
     }
-    const onVis = () => { if (document.visibilityState === 'hidden') markHidden(); else checkResume() }
+    const iv = setInterval(check, 5000)
+    const onVis = () => { if (document.visibilityState === 'visible') check() }
     document.addEventListener('visibilitychange', onVis)
-    window.addEventListener('blur', markHidden)
-    window.addEventListener('focus', checkResume)
-    window.addEventListener('pageshow', (e) => { if (e.persisted) { markHidden(); checkResume() } })
+    window.addEventListener('focus', check)
+    window.addEventListener('pageshow', check)
     return () => {
+      clearInterval(iv)
       document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('blur', markHidden)
-      window.removeEventListener('focus', checkResume)
+      window.removeEventListener('focus', check)
+      window.removeEventListener('pageshow', check)
     }
   }, [])
 
