@@ -123,6 +123,7 @@ export default function Layout() {
   const [pull, setPull] = useState(0)          // 당긴 거리(px)
   const [dragging, setDragging] = useState(false) // 손가락으로 당기는 중(전환 애니메이션 off)
   const [refreshing, setRefreshing] = useState(false)
+  const [ptrTop, setPtrTop] = useState(58)     // 스피너 위치: 실제 스크롤 영역 상단(헤더/탭 아래)
   const ptr = useRef({ startY: null, dist: 0, active: false })
   useEffect(() => {
     const el = contentRef.current
@@ -132,19 +133,25 @@ export default function Layout() {
     function scrollerAt(target) {
       let node = target
       while (node && node !== el) {
-        if (node.nodeType === 1) {
-          const st = getComputedStyle(node)
-          if (/(auto|scroll)/.test(st.overflowY) && node.scrollHeight > node.clientHeight + 1) return node
-        }
+        if (node.nodeType === 1 && /(auto|scroll)/.test(getComputedStyle(node).overflowY)) return node
         node = node.parentElement
       }
       return el
+    }
+    // 당김/복귀 애니메이션은 상단 헤더·탭을 뺀 "스크롤 컨테이너(카드 영역)"에만 적용
+    function setPullT(sc, dist, animate) {
+      if (!sc) return
+      sc.style.transition = animate ? 'transform .24s cubic-bezier(.2, .8, .2, 1)' : 'none'
+      sc.style.transform = dist ? `translateY(${dist}px)` : ''
     }
     function onStart(e) {
       if (!refreshHandler || refreshing || e.touches.length !== 1) { ptr.current.active = false; return }
       const sc = scrollerAt(e.target)
       if (sc && sc.scrollTop <= 0) {
         ptr.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, dist: 0, active: true, sc, locked: null }
+        // 스피너를 실제 스크롤 영역(헤더/탭 아래) 상단에 맞춤
+        const shell = shellRef.current
+        setPtrTop(shell ? Math.max(58, sc.getBoundingClientRect().top - shell.getBoundingClientRect().top) : 58)
       } else ptr.current.active = false
     }
     function onMove(e) {
@@ -158,21 +165,25 @@ export default function Layout() {
         g.locked = Math.abs(dy) >= Math.abs(dx) ? 'v' : 'h'
         if (g.locked === 'h') { g.active = false; return }
       }
-      if ((g.sc || el).scrollTop > 0) { g.active = false; setPull(0); setDragging(false); return }
-      if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); setDragging(true); e.preventDefault() }
-      else { g.dist = 0; setPull(0); setDragging(false) }
+      if ((g.sc || el).scrollTop > 0) { g.active = false; setPull(0); setDragging(false); setPullT(g.sc, 0, true); return }
+      if (dy > 0) { g.dist = Math.min(MAX, dy * DAMP); setPull(g.dist); setDragging(true); setPullT(g.sc, g.dist, false); e.preventDefault() }
+      else { g.dist = 0; setPull(0); setDragging(false); setPullT(g.sc, 0, false) }
     }
     async function onEnd() {
       const g = ptr.current
       if (!g.active) return
       g.active = false
       setDragging(false)
+      const sc = g.sc
       if (g.dist >= THRESH && refreshHandler && !refreshing) {
         setRefreshing(true); setPull(0)
+        setPullT(sc, 46, true) // 새로고침 동안 카드 영역을 46px 내린 채 스피너 표시
         try { await refreshHandler() } catch { /* noop */ }
+        setPullT(sc, 0, true)
         setRefreshing(false)
       } else {
         setPull(0)
+        setPullT(sc, 0, true) // 스냅백
       }
     }
     el.addEventListener('touchstart', onStart, { passive: true })
@@ -491,13 +502,12 @@ export default function Layout() {
       {topbar}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
-          style={{ transform: `translateY(${(refreshing ? 46 : pull) * 0.5 - 13}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
+          style={{ top: ptrTop, transform: `translateY(${(refreshing ? 46 : pull) * 0.5 - 13}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
           <span className={`ptr-spin ${refreshing ? 'on' : ''}`}
             style={refreshing ? undefined : { transform: `rotate(${pull * 4}deg)` }} />
         </div>
       )}
-      <main className={`content ${dragging ? 'ptr-drag' : ''}`} ref={contentRef}
-        style={(pull || refreshing) ? { transform: `translateY(${refreshing ? 46 : pull}px)` } : undefined}>
+      <main className="content" ref={contentRef}>
         <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin }} />
       </main>
       {showBottomNav && (

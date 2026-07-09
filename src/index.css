@@ -1376,8 +1376,13 @@ a.mp-tel:active { opacity: .55; }
 }
 
 /* 쪽지 페이지: 목록이 짧아도 하단 빈 영역에서 스와이프가 먹히도록 페이지·본문이 높이를 채움 */
-.notes-page { min-height: 100%; }
-.notes-body { flex: 1 1 auto; }
+/* 쪽지: 탭은 상단 고정, 아래 목록(.notes-body)만 스크롤/당김 */
+.notes-page { height: 100%; }
+.notes-body {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  margin: 0 calc(-1 * var(--pad-x)); padding: 0 var(--pad-x);
+}
 
 /* ---- 쪽지 보기(모달) ---- */
 .note-view { display: flex; flex-direction: column; gap: 14px; }
