@@ -1505,6 +1505,8 @@ a.mp-tel:active { opacity: .55; }
   display: flex; align-items: center;
 }
 .led-track { display: inline-flex; white-space: nowrap; width: max-content; animation: led-scroll 16s linear infinite; }
+.led-half { display: inline-flex; flex: none; }
+.led-measure { position: absolute; visibility: hidden; pointer-events: none; left: 0; top: 0; }
 .led-seg {
   padding: 0 2.2rem; font-size: 24px; font-weight: 800; letter-spacing: .3px; line-height: 46px;
   color: #ffb84d; text-shadow: 0 0 1.5px rgba(255, 150, 20, .5);
