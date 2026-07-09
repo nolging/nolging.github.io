@@ -110,6 +110,7 @@ export default function TaskDetail() {
   const [hasTelescope, setHasTelescope] = useState(false)
   const [writingReview, setWritingReview] = useState(false) // 참여자·미작성: 작성폼(true) vs 열람한 리뷰 목록(false)
   const [teleConfirm, setTeleConfirm] = useState(null) // 'peek' | 'view' | null
+  const [noTeleModal, setNoTeleModal] = useState(false) // 망원경 미보유 안내
   const [usingTele, setUsingTele] = useState(false)
   const [rating, setRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
@@ -474,12 +475,16 @@ export default function TaskDetail() {
   const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed && writingReview
   const othersReviewCount = reviews.filter((rv) => rv.author_id !== profile?.id).length
   const hasOthersReviews = othersReviewCount > 0
-  // 저장 옆 망원경(참여자·미작성, 미열람, 보유): 남 리뷰 먼저 보기
-  const teleInCompose = hasTelescope && hasOthersReviews && !reviewMeta.revealed
-  // 열람 후 다시 작성폼으로 갈 수 있는 상태(참여자·미작성·열람했지만 작성 전)
-  const peekReadyToWrite = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed && !writingReview
-  // 비참여자: 아이템으로만 열람 가능(우측 하단 망원경 버튼)
-  const teleForNonParticipant = isDone && subTab === 'reviews' && !reviewMeta.is_participant && !reviewMeta.revealed && hasTelescope && hasOthersReviews
+  // 리뷰 작성 권한(참여자·미작성) / 엿보기 가능(미열람 + 남 리뷰 존재)
+  const canWrite = reviewMeta.is_participant && !reviewMeta.has_reviewed
+  const peekAvailable = !reviewMeta.revealed && hasOthersReviews
+  // 리뷰 목록 하단 버튼바(작성/엿보기): 작성폼이 아닐 때
+  const reviewListBar = isDone && subTab === 'reviews' && !reviewComposeMode && (canWrite || peekAvailable)
+  // 리뷰 엿보기: 망원경 보유 시 기존 확인 로직, 미보유 시 안내 모달
+  function onPeekClick() {
+    if (!hasTelescope) { setNoTeleModal(true); return }
+    setTeleConfirm(canWrite ? 'peek' : 'view')
+  }
   function renderReviews() {
     if (reviewComposeMode) {
       // 천체 망원경으로 이미 열람한 경우엔 "상대가 기다린다"는 안내로 전환
@@ -494,6 +499,8 @@ export default function TaskDetail() {
             : '리뷰를 작성해야 다른 참여자의 리뷰를 볼 수 있어요'
       return (
         <div className="review-compose">
+          <button type="button" className="review-compose-close" aria-label="닫기" title="닫기"
+            onClick={() => setWritingReview(false)}>✕</button>
           <StarPicker value={rating} onChange={(v) => { setRating(v); if (reviewErr) setReviewErr('') }} />
           <div className="review-input-wrap">
             <textarea className="review-input" value={reviewComment} ref={reviewInputRef} onFocus={onReviewFocus}
@@ -684,6 +691,15 @@ export default function TaskDetail() {
         </div>
       </Modal>
 
+      <Modal open={noTeleModal} onClose={() => setNoTeleModal(false)} title="천체 망원경">
+        <div className="confirm-modal no-tele-modal">
+          <p className="confirm-text">보유하고 있는 천체 망원경이 없어요.</p>
+          <button type="button" className="btn btn-primary btn-block" onClick={() => setNoTeleModal(false)}>닫기</button>
+          <button type="button" className="tele-store-link"
+            onClick={() => { setNoTeleModal(false); navigate('/store') }}>상점으로 이동 ›</button>
+        </div>
+      </Modal>
+
       {bottomEl && createPortal(
         reviewComposeMode ? (
           <div className="composer review-save-bar">
@@ -691,27 +707,20 @@ export default function TaskDetail() {
               disabled={savingReview} onClick={saveReview}>
               {savingReview ? '저장 중…' : '저장'}
             </button>
-            {teleInCompose && (
-              <button type="button" className="tele-btn" aria-label="천체 망원경으로 먼저 보기" title="천체 망원경"
-                onClick={() => setTeleConfirm('peek')}>🔭</button>
-            )}
-            {reviewMeta.revealed && (
-              <button type="button" className="tele-btn tele-btn-star" aria-label="작성된 리뷰 다시 보기" title="리뷰 다시 보기"
-                onClick={() => setWritingReview(false)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.8 6.2 20.8l1.1-6.4L2.6 9.8l6.5-.9z" /></svg>
+          </div>
+        ) : reviewListBar ? (
+          <div className="composer review-save-bar">
+            {canWrite && (
+              <button type="button" className="btn btn-primary review-save-btn" onClick={() => setWritingReview(true)}>
+                리뷰 작성
               </button>
             )}
-          </div>
-        ) : peekReadyToWrite ? (
-          <div className="composer review-save-bar">
-            <button type="button" className="btn btn-primary review-save-btn" onClick={() => setWritingReview(true)}>
-              리뷰 작성
-            </button>
-          </div>
-        ) : teleForNonParticipant ? (
-          <div className="composer tele-bar">
-            <button type="button" className="tele-btn" aria-label="천체 망원경으로 리뷰 보기" title="천체 망원경"
-              onClick={() => setTeleConfirm('view')}>🔭</button>
+            {peekAvailable && (
+              <button type="button" className={`btn review-save-btn ${canWrite ? 'btn-outline-tele' : 'btn-primary'}`}
+                onClick={onPeekClick}>
+                리뷰 엿보기
+              </button>
+            )}
           </div>
         ) : (isDone && subTab === 'reviews') ? null : (
           <form className="composer" onSubmit={submit}>

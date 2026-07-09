@@ -759,8 +759,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .sub-pane.swipeable[data-dir="prev"] { animation-name: tab-in-prev; }
 
 /* ---- 리뷰 작성 ---- */
-.review-compose { display: flex; flex-direction: column; gap: 12px; }
+.review-compose { position: relative; display: flex; flex-direction: column; gap: 12px; }
 .review-compose-label { font-weight: 600; font-size: 13px; color: var(--muted); }
+/* 작성폼 우측 상단 X (목록으로 나가기) */
+.review-compose-close {
+  position: absolute; top: -4px; right: -2px; z-index: 2;
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: transparent; color: var(--muted); font-size: 17px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.review-compose-close:hover { background: var(--canvas); }
 /* 0.5 단위 별점: 회색 별 위에 금색 별을 width% 만큼 겹쳐 표현 */
 .star-cell { position: relative; display: inline-block; line-height: 1; }
 .star-bg { color: #d9d9e0; }
@@ -787,8 +795,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .confirm-actions { display: flex; gap: 10px; }
 .confirm-actions .btn { flex: 1; }
 /* 하단 저장 바 (상단 실선 제거) */
-.composer.review-save-bar { border-top: none; flex-direction: row; align-items: center; }
+.composer.review-save-bar { border-top: none; flex-direction: row; align-items: center; gap: 10px; }
 .review-save-btn { flex: 1; width: auto; min-height: 44px; font-size: 15px; }
+/* 엿보기(보조) 버튼: 테두리형 */
+.btn-outline-tele { background: var(--surface); border-color: var(--border); color: var(--text); }
+/* 망원경 미보유 안내 모달: 닫기 버튼 + 상점 이동 텍스트 링크 */
+.no-tele-modal { gap: 14px; }
+.no-tele-modal .btn-block { margin-top: 0; }
+.tele-store-link {
+  align-self: center; background: none; border: none; cursor: pointer;
+  color: var(--primary, #7c5cff); font-size: 14px; font-weight: 600; padding: 2px 4px;
+}
 
 /* ---- 리뷰 목록 ---- */
 .review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
