@@ -584,6 +584,40 @@ export async function useVideo({ groupId, recipientId, message, url }) {
   return data
 }
 
+// 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.
+export async function useLedboard({ text, color }) {
+  const { error } = await supabase.rpc('use_ledboard', { p_text: text, p_color: color })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_ledboard/.test(error.message || '')) {
+      throw new Error('전광판 기능이 아직 DB에 설정되지 않았습니다. (use_ledboard 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 전광판 문구/색상 수정
+export async function editLedBanner({ text, color }) {
+  const { error } = await supabase.rpc('edit_led_banner', { p_text: text, p_color: color })
+  if (error) throw error
+}
+
+// 전광판 게재 중단
+export async function stopLedBanner() {
+  const { error } = await supabase.rpc('stop_led_banner')
+  if (error) throw error
+}
+
+// 내(커플)에게 보이는 활성 전광판 1건. 없으면 null.
+export async function getMyLedBanner() {
+  const { data, error } = await supabase.rpc('my_led_banner')
+  if (error) {
+    if (error.code === 'PGRST202' || error.code === '42P01') return null
+    throw error
+  }
+  const row = Array.isArray(data) ? data[0] : data
+  return row || null
+}
+
 // 커플 링 나눠 끼기: 상대 쪽지함에 메시지와 함께 발송(수락 대기). 수락 전엔 그룹 미적용.
 export async function useCoupleRing({ groupId, recipientId, message }) {
   const { data, error } = await supabase.rpc('use_couple_ring', {

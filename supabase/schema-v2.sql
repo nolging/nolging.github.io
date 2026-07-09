@@ -1054,7 +1054,8 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
   ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
   ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6),
   ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 7),
-  ('video',       '비디오 테이프', 10, '📹', '쪽지와 함께 영상을 선물해 보세요',                                     false, 8)
+  ('video',       '비디오 테이프', 10, '📹', '쪽지와 함께 영상을 선물해 보세요',                                     false, 8),
+  ('ledboard',    '전광판',      50, '📟', E'커플만 쓸 수 있는 프리미엄 전광판\n*24시간 동안 노출',                 false, 9)
 on conflict (id) do nothing;
 
 -- =============================================================
@@ -1116,6 +1117,10 @@ begin
     if exists (select 1 from public.user_items where user_id = auth.uid() and item_id = 'couple-ring') then
       raise exception '이미 커플 링을 보유하고 있어요.'; end if;
   end if;
+  -- 전광판은 커플 링을 장착한 커플만 구매 가능
+  if p_item_id = 'ledboard' and not exists (
+       select 1 from public.user_items where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used') then
+    raise exception '커플 링을 장착한 커플만 구매할 수 있어요.'; end if;
 
   v_total := it.price * v_qty;
   select coalesce(sum(delta), 0)::integer into v_balance
@@ -1184,6 +1189,10 @@ begin
     if exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring') then
       raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
   end if;
+  -- 전광판은 커플(커플 링 장착)에게만 선물 가능
+  if p_item_id = 'ledboard' and not exists (
+       select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring' and status = 'used') then
+    raise exception '받는 사람이 커플이 아니에요. 전광판은 커플만 사용할 수 있어요.'; end if;
 
   v_total := it.price * v_qty;
   select coalesce(sum(delta), 0)::integer into v_balance
@@ -1552,3 +1561,105 @@ begin
 end;
 $$;
 grant execute on function public.join_group(text) to authenticated;
+
+-- =============================================================
+--  전광판 (LED 배너) — 커플 전용 프리미엄. 24시간 동안 커플에게만 노출.
+--  전광판 1개 소모 → led_banners 행 생성(그룹=장착한 커플 그룹).
+-- =============================================================
+create table if not exists public.led_banners (
+  id         uuid primary key default gen_random_uuid(),
+  group_id   uuid not null references public.groups(id)   on delete cascade,
+  owner_id   uuid not null references public.profiles(id) on delete cascade,
+  text       text not null,
+  color      text not null default 'amber',
+  active     boolean not null default true,
+  started_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_led_banners_group_active on public.led_banners(group_id) where active;
+alter table public.led_banners enable row level security;
+
+-- 커플 그룹 멤버(둘)만 조회. 쓰기는 정의자 함수만.
+drop policy if exists led_banners_select on public.led_banners;
+create policy led_banners_select on public.led_banners
+  for select to authenticated
+  using (public.is_group_member(group_id, auth.uid()) or public.is_admin(auth.uid()));
+
+-- 색상 검증 헬퍼
+create or replace function public.led_color_ok(p_color text)
+returns text language sql immutable as $$
+  select case when lower(coalesce(nullif(btrim(p_color), ''), 'amber'))
+                   in ('amber','red','green','blue','pink','cyan')
+              then lower(btrim(p_color)) else 'amber' end;
+$$;
+
+-- 전광판 사용: 아이템 1개 소모 + 24시간 배너 게재
+create or replace function public.use_ledboard(p_text text, p_color text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_group uuid; v_color text;
+begin
+  if p_text is null or btrim(p_text) = '' then raise exception '문구를 입력해 주세요.'; end if;
+  if char_length(btrim(p_text)) > 60 then raise exception '문구는 60자까지 입력할 수 있어요.'; end if;
+  v_color := public.led_color_ok(p_color);
+
+  -- 장착한 커플 링 그룹(= 커플 그룹)
+  select group_id into v_group from public.user_items
+   where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id is not null
+   order by used_at desc nulls last limit 1;
+  if v_group is null then raise exception '커플 링을 장착한 커플만 사용할 수 있어요.'; end if;
+
+  if exists (select 1 from public.led_banners where group_id = v_group and active and expires_at > now()) then
+    raise exception '이미 게재 중인 전광판이 있어요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'ledboard' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 전광판이 없습니다.'; end if;
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  insert into public.led_banners(group_id, owner_id, text, color, active, started_at, expires_at)
+    values (v_group, auth.uid(), btrim(p_text), v_color, true, now(), now() + interval '24 hours');
+end;
+$$;
+grant execute on function public.use_ledboard(text, text) to authenticated;
+
+-- 전광판 문구/색상 수정 (게재한 본인만)
+create or replace function public.edit_led_banner(p_text text, p_color text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_id uuid; v_color text;
+begin
+  if p_text is null or btrim(p_text) = '' then raise exception '문구를 입력해 주세요.'; end if;
+  if char_length(btrim(p_text)) > 60 then raise exception '문구는 60자까지 입력할 수 있어요.'; end if;
+  v_color := public.led_color_ok(p_color);
+  select id into v_id from public.led_banners
+   where owner_id = auth.uid() and active and expires_at > now()
+   order by started_at desc limit 1;
+  if v_id is null then raise exception '수정할 전광판이 없어요.'; end if;
+  update public.led_banners set text = btrim(p_text), color = v_color where id = v_id;
+end;
+$$;
+grant execute on function public.edit_led_banner(text, text) to authenticated;
+
+-- 전광판 게재 중단 (게재한 본인만) — 24시간 전이라도 즉시 내림
+create or replace function public.stop_led_banner()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update public.led_banners set active = false
+   where owner_id = auth.uid() and active and expires_at > now();
+end;
+$$;
+grant execute on function public.stop_led_banner() to authenticated;
+
+-- 내(커플)에게 보이는 활성 전광판 1건 (양쪽 멤버 모두 조회 가능). is_owner=게재자 여부
+create or replace function public.my_led_banner()
+returns table (id uuid, group_id uuid, owner_id uuid, "text" text, color text, expires_at timestamptz, is_owner boolean)
+language sql security definer stable set search_path = public as $$
+  select b.id, b.group_id, b.owner_id, b.text, b.color, b.expires_at, (b.owner_id = auth.uid())
+  from public.led_banners b
+  where b.active and b.expires_at > now()
+    and public.is_group_member(b.group_id, auth.uid())
+  order by b.started_at desc
+  limit 1;
+$$;
+grant execute on function public.my_led_banner() to authenticated;

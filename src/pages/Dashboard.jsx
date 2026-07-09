@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { listMyGroups, unreadNotificationCount, listCoupleGroups } from '../lib/api'
+import { listMyGroups, unreadNotificationCount, listCoupleGroups, getMyLedBanner } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
 import PeekCat from '../components/PeekCat'
+import LedBanner from '../components/LedBanner'
 
 function BellIcon() {
   return (
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
   const [unread, setUnread] = useState(0)
+  const [banner, setBanner] = useState(null) // 활성 전광판
   const inputRef = useRef(null)
 
   async function load() {
@@ -42,6 +44,7 @@ export default function Dashboard() {
   }
   useEffect(() => { load() }, [])
   useEffect(() => { unreadNotificationCount().then(setUnread).catch(() => {}) }, [])
+  useEffect(() => { getMyLedBanner().then(setBanner).catch(() => {}) }, [])
   useEffect(() => {
     if (!profile?.id) return
     listCoupleGroups(profile.id).then(setPremiumIds).catch(() => {})
@@ -96,6 +99,8 @@ export default function Dashboard() {
           </svg>
         </Link>
       </div>
+
+      {banner && <LedBanner text={banner.text} color={banner.color} className="dash-led" />}
 
       {loading ? (
         <div className="spinner" />

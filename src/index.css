@@ -1497,6 +1497,40 @@ a.mp-tel:active { opacity: .55; }
 }
 .video-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
+/* ---- 도트 LED 전광판 마퀴 ---- */
+.led-board {
+  position: relative; overflow: hidden; height: 40px; border-radius: 12px;
+  background: radial-gradient(rgba(255, 255, 255, .06) 30%, transparent 32%) 0 0 / 4px 4px, #16131c;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 4px 14px rgba(0, 0, 0, .22);
+  display: flex; align-items: center;
+}
+.led-track { display: inline-flex; white-space: nowrap; width: max-content; animation: led-scroll 16s linear infinite; }
+.led-seg {
+  padding: 0 2.2rem; font-size: 19px; font-weight: 800; letter-spacing: 1px; line-height: 40px;
+  color: #ffb84d; text-shadow: 0 0 5px rgba(255, 150, 20, .85);
+}
+/* 점 격자로 글자를 쪼개는 오버레이(보드색 채움 + 점 구멍) */
+.led-board::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle, transparent 32%, #16131c 38%) 0 0 / 4px 4px;
+}
+.led-red .led-seg   { color: #ff5a5a; text-shadow: 0 0 5px rgba(255, 60, 60, .85); }
+.led-green .led-seg { color: #54e08a; text-shadow: 0 0 5px rgba(50, 220, 120, .8); }
+.led-blue .led-seg  { color: #5aa8ff; text-shadow: 0 0 5px rgba(70, 150, 255, .85); }
+.led-pink .led-seg  { color: #ff77c8; text-shadow: 0 0 5px rgba(255, 90, 190, .85); }
+.led-cyan .led-seg  { color: #4fe6e6; text-shadow: 0 0 5px rgba(60, 220, 220, .8); }
+@keyframes led-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.dash-led { margin-bottom: 14px; }
+/* 색상 선택 스와치 */
+.led-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.led-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.led-swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface) inset; }
+.led-sw-amber { background: #ffb84d; } .led-sw-red { background: #ff5a5a; } .led-sw-green { background: #54e08a; }
+.led-sw-blue { background: #5aa8ff; } .led-sw-pink { background: #ff77c8; } .led-sw-cyan { background: #4fe6e6; }
+.led-picker { display: flex; flex-direction: column; gap: 8px; }
+.led-picker-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.led-stop { color: var(--danger); margin-top: 2px; }
+
 /* ---- 수신인 선택: 멤버 목록(아바타) ---- */
 .picker-members { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
 .picker-member {

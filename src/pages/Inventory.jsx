@@ -4,14 +4,16 @@ import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink, useVideo } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useCassette, useLink, useVideo, useLedboard, editLedBanner, stopLedBanner, getMyLedBanner } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
+import LedBanner, { LED_COLORS } from '../components/LedBanner'
 
 const MAX_WISH = 300
 const MAX_CASSETTE_MSG = 150
 const MAX_LINK_MSG = 150
 const MAX_VIDEO_MSG = 150
+const MAX_LED_TEXT = 60
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -24,15 +26,19 @@ export default function Inventory() {
   const [cassetteOpen, setCassetteOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
+  const [ledboardOpen, setLedboardOpen] = useState(false)
+  const [ledEditOpen, setLedEditOpen] = useState(false)
+  const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
     if (!user?.id) return
-    const [storeItems, inv] = await Promise.all([listStoreItems(), listInventory(user.id)])
+    const [storeItems, inv, banner] = await Promise.all([listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null)])
     const m = {}
     for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name }
     setMeta(m)
     setItems(inv)
+    setLedBanner(banner && banner.is_owner ? banner : null)
   }
 
   useEffect(() => {
@@ -55,6 +61,14 @@ export default function Inventory() {
     return [...map.values()]
   }, [items, meta])
 
+  // 전광판 게재 중이면(아이템은 소모됨) "사용 중" 카드가 보이도록 합성 항목 추가
+  const displayGroups = useMemo(() => {
+    if (ledBanner && !groups.some((g) => g.id === 'ledboard')) {
+      return [...groups, { id: 'ledboard', name: meta.ledboard?.name || '전광판', emoji: meta.ledboard?.emoji || '📟', count: 0, rows: [] }]
+    }
+    return groups
+  }, [groups, ledBanner, meta])
+
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])
   // 이미 커플 링을 보냈거나(수락 대기) 장착한 그룹(중복 방지)
   const coupleGroupIds = useMemo(
@@ -69,6 +83,7 @@ export default function Inventory() {
     else if (g.id === 'cassette') setCassetteOpen(true)
     else if (g.id === 'link') setLinkOpen(true)
     else if (g.id === 'video') setVideoOpen(true)
+    else if (g.id === 'ledboard') setLedboardOpen(true)
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -79,20 +94,25 @@ export default function Inventory() {
 
       {loading ? (
         <div className="spinner" />
-      ) : groups.length === 0 ? (
+      ) : displayGroups.length === 0 ? (
         <div className="empty">보유한 아이템이 없어요.<br />상점에서 구매하거나 선물받아 보세요.</div>
       ) : (
         <div className="store-grid">
-          {groups.map((g) => {
+          {displayGroups.map((g) => {
             const hasActive = g.rows.some((r) => r.status === 'active')
             const equipped = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'used')
             const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
+            const ledLive = g.id === 'ledboard' && !!ledBanner // 게재 중
             return (
               <div key={g.id} className="store-card inv-card">
                 {g.count > 1 && <span className="inv-count">{g.count}</span>}
                 <StoreItemImage id={g.id} emoji={g.emoji} className="store-card-img" />
                 <span className="store-card-name">{g.name}</span>
-                {hasActive ? (
+                {ledLive ? (
+                  <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => setLedEditOpen(true)}>
+                    사용 중
+                  </button>
+                ) : hasActive ? (
                   <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => useItem(g)}>
                     사용하기
                   </button>
@@ -116,6 +136,8 @@ export default function Inventory() {
       <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
       <LinkModal open={linkOpen} onClose={() => setLinkOpen(false)} onDone={reload} />
       <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} onDone={reload} />
+      <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
+      <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
     </div>
   )
 }
@@ -478,6 +500,102 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
 
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '보내는 중…' : '나눠 끼기'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 전광판 색상 선택 ----
+function LedColorPicker({ color, onChange }) {
+  return (
+    <div className="led-swatches">
+      {LED_COLORS.map((c) => (
+        <button key={c} type="button" className={`led-swatch led-sw-${c} ${color === c ? 'on' : ''}`}
+          aria-label={c} onClick={() => onChange(c)} />
+      ))}
+    </div>
+  )
+}
+
+// ---- 전광판 게재(문구+색상) ----
+function LedboardModal({ open, onClose, onDone }) {
+  const [text, setText] = useState('')
+  const [color, setColor] = useState('amber')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => { if (open) { setText(''); setColor('amber'); setError(''); setSending(false) } }, [open])
+
+  async function go() {
+    if (!text.trim()) { setError('문구를 입력해 주세요.'); return }
+    setSending(true); setError('')
+    try { await useLedboard({ text: text.trim(), color }); await onDone(); onClose() }
+    catch (e) { setError(e.message); setSending(false) }
+  }
+  return (
+    <Modal open={open} onClose={onClose} title="전광판">
+      <div className="couple-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        <p className="couple-hint">문구·색상을 정하면 24시간 동안 우리 커플에게만 전광판이 보여요.</p>
+        <LedBanner text={text || '미리보기'} color={color} />
+        <div className="couple-msg">
+          <textarea className="wish-input" placeholder="전광판에 띄울 문구"
+            value={text} maxLength={MAX_LED_TEXT} onChange={(e) => setText(e.target.value)} rows={2} />
+          <span className="couple-msg-count">{text.length}/{MAX_LED_TEXT}</span>
+        </div>
+        <div className="led-picker">
+          <span className="led-picker-label">색상</span>
+          <LedColorPicker color={color} onChange={setColor} />
+        </div>
+        <button type="button" className="btn btn-primary btn-block" onClick={go} disabled={sending}>
+          {sending ? '게재 중…' : '게재하기'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 전광판 수정 / 게재 중단 ----
+function LedEditModal({ open, onClose, banner, onDone }) {
+  const [text, setText] = useState('')
+  const [color, setColor] = useState('amber')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (open && banner) { setText(banner.text || ''); setColor(banner.color || 'amber'); setError(''); setBusy(false) }
+  }, [open, banner])
+
+  async function save() {
+    if (!text.trim()) { setError('문구를 입력해 주세요.'); return }
+    setBusy(true); setError('')
+    try { await editLedBanner({ text: text.trim(), color }); await onDone(); onClose() }
+    catch (e) { setError(e.message); setBusy(false) }
+  }
+  async function stop() {
+    setBusy(true); setError('')
+    try { await stopLedBanner(); await onDone(); onClose() }
+    catch (e) { setError(e.message); setBusy(false) }
+  }
+  return (
+    <Modal open={open} onClose={onClose} title="전광판 수정">
+      <div className="couple-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        <p className="couple-hint">게재 중인 전광판의 문구·색상을 바꾸거나 지금 바로 내릴 수 있어요.</p>
+        <LedBanner text={text || '미리보기'} color={color} />
+        <div className="couple-msg">
+          <textarea className="wish-input" placeholder="전광판에 띄울 문구"
+            value={text} maxLength={MAX_LED_TEXT} onChange={(e) => setText(e.target.value)} rows={2} />
+          <span className="couple-msg-count">{text.length}/{MAX_LED_TEXT}</span>
+        </div>
+        <div className="led-picker">
+          <span className="led-picker-label">색상</span>
+          <LedColorPicker color={color} onChange={setColor} />
+        </div>
+        <button type="button" className="btn btn-primary btn-block" onClick={save} disabled={busy}>
+          {busy ? '처리 중…' : '수정하기'}
+        </button>
+        <button type="button" className="btn btn-ghost btn-block led-stop" onClick={stop} disabled={busy}>
+          게재 중단
         </button>
       </div>
     </Modal>
