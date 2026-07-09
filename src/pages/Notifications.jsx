@@ -28,6 +28,7 @@ const ICONS = {
   couple_ring: '💍',
   cassette: '🎵',
   link: '🔗',
+  video: '📹',
 }
 
 export default function Notifications() {
@@ -55,7 +56,7 @@ export default function Notifications() {
   }, [setRefreshHandler, refresh])
 
   // 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권
-  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'wish', 'cassette', 'link'])
+  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'wish', 'cassette', 'link', 'video'])
 
   function targetOf(n) {
     if (NOTE_TYPES.has(n.type)) return '/notes'

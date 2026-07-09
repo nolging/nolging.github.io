@@ -1053,7 +1053,8 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
   ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 4),
   ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
   ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6),
-  ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 7)
+  ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 7),
+  ('video',       '비디오 테이프', 10, '📹', '쪽지와 함께 영상을 선물해 보세요',                                     false, 8)
 on conflict (id) do nothing;
 
 -- =============================================================
@@ -1100,32 +1101,39 @@ insert into public.user_items (user_id, item_id, item_name, source, from_user_id
 --  상점 구매 (츄르 차감)
 --  정가/선물전용은 store_items 에서 읽어 검증. 성공 시 coin_ledger 에 -가격 기록.
 -- =============================================================
-create or replace function public.purchase_item(p_item_id text)
+drop function if exists public.purchase_item(text);
+create or replace function public.purchase_item(p_item_id text, p_qty integer default 1)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer;
+declare it public.store_items; v_balance integer; v_qty integer; v_total integer; i integer;
 begin
+  v_qty := greatest(1, coalesce(p_qty, 1));
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
   if it.gift_only then raise exception '선물만 가능한 아이템입니다.'; end if;
   -- 커플 링은 1개만 보유 가능
-  if p_item_id = 'couple-ring' and exists (
-       select 1 from public.user_items where user_id = auth.uid() and item_id = 'couple-ring') then
-    raise exception '이미 커플 링을 보유하고 있어요.'; end if;
+  if p_item_id = 'couple-ring' then
+    if v_qty > 1 then raise exception '커플 링은 한 개만 구매할 수 있어요.'; end if;
+    if exists (select 1 from public.user_items where user_id = auth.uid() and item_id = 'couple-ring') then
+      raise exception '이미 커플 링을 보유하고 있어요.'; end if;
+  end if;
 
+  v_total := it.price * v_qty;
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();
-  if v_balance < it.price then raise exception '츄르가 부족해요.'; end if;
+  if v_balance < v_total then raise exception '츄르가 부족해요.'; end if;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
-    values (auth.uid(), -it.price, it.name || ' 구매', 'purchase');
-  -- 인벤토리에 추가
-  insert into public.user_items(user_id, item_id, item_name, source)
-    values (auth.uid(), it.id, it.name, 'purchase');
+    values (auth.uid(), -v_total, it.name || ' 구매' || case when v_qty > 1 then ' ×' || v_qty else '' end, 'purchase');
+  -- 인벤토리에 수량만큼 추가
+  for i in 1..v_qty loop
+    insert into public.user_items(user_id, item_id, item_name, source)
+      values (auth.uid(), it.id, it.name, 'purchase');
+  end loop;
 
-  return v_balance - it.price;
+  return v_balance - v_total;
 end;
 $$;
-grant execute on function public.purchase_item(text) to authenticated;
+grant execute on function public.purchase_item(text, integer) to authenticated;
 
 -- =============================================================
 --  상점 선물 (item_gifts)
@@ -1155,10 +1163,12 @@ create policy item_gifts_select on public.item_gifts
 -- ---- RPC: 아이템 선물 ----------------------------------------
 -- 정가는 서버에서 확정(구매와 동일). 보낸 즉시 츄르 차감(환불/거절 없음)하고,
 -- 받는 사람 '쪽지함'으로 전송한다. 인벤토리에는 상대가 수령(claim_gift)해야 들어간다.
-create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid)
+drop function if exists public.gift_item(text, uuid, uuid);
+create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid, p_qty integer default 1)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid; v_qty integer; v_total integer; i integer;
 begin
+  v_qty := greatest(1, coalesce(p_qty, 1));
   select * into it from public.store_items where id = p_item_id and is_active;
   if it.id is null then raise exception '존재하지 않는 아이템입니다.'; end if;
 
@@ -1168,14 +1178,17 @@ begin
     raise exception '자기 자신에게는 선물할 수 없습니다.'; end if;
   if not public.is_group_member(p_group_id, p_recipient_id) then
     raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
-  -- 커플 링은 상대가 이미 보유 중이면 선물 불가(1개만 보유 가능)
-  if p_item_id = 'couple-ring' and exists (
-       select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring') then
-    raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
+  -- 커플 링은 한 개만 선물 가능하며, 상대가 이미 보유 중이면 선물 불가(1개만 보유 가능)
+  if p_item_id = 'couple-ring' then
+    if v_qty > 1 then raise exception '커플 링은 한 개만 선물할 수 있어요.'; end if;
+    if exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring') then
+      raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
+  end if;
 
+  v_total := it.price * v_qty;
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = auth.uid();
-  if v_balance < it.price then
+  if v_balance < v_total then
     raise exception '츄르가 부족해요.'; end if;
 
   v_sender    := public.notif_member_name(p_group_id, auth.uid());
@@ -1184,21 +1197,24 @@ begin
   select avatar_url into v_recipient_av from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
-    values (auth.uid(), -it.price, it.name || ' 선물', 'gift');
-  insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
-    values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
-  -- 받는 사람 쪽지함으로 선물 전송(수령해야 인벤토리에 들어감). 즉시 인벤토리 추가하지 않음.
-  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false)
-    returning id into v_note_id;
-  -- 받는 사람에게 알림(→ Database Webhook → 푸시). note_id 로 쪽지 연결(수령 후 인벤토리로 이동).
+    values (auth.uid(), -v_total, it.name || ' 선물' || case when v_qty > 1 then ' ×' || v_qty else '' end, 'gift');
+  -- 수량만큼 선물 기록 + 쪽지 전송(각각 수령해야 인벤토리에 들어감). 알림은 한 번만.
+  for i in 1..v_qty loop
+    insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
+      values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
+    insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected)
+      values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false)
+      returning id into v_note_id;
+  end loop;
+  -- 받는 사람에게 알림(→ Database Webhook → 푸시). 마지막 쪽지에 연결.
   insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
-    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요', it.name || ' · 쪽지함에서 수령하세요', p_group_id, v_note_id);
+    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요',
+            it.name || case when v_qty > 1 then ' ' || v_qty || '개' else '' end || ' · 쪽지함에서 수령하세요', p_group_id, v_note_id);
 
-  return v_balance - it.price;
+  return v_balance - v_total;
 end;
 $$;
-grant execute on function public.gift_item(text, uuid, uuid) to authenticated;
+grant execute on function public.gift_item(text, uuid, uuid, integer) to authenticated;
 
 -- 선물 수령: 쪽지(kind=gift)를 claimed 처리 + 내 인벤토리에 아이템 생성. 거절은 없음.
 create or replace function public.claim_gift(p_note_id uuid)
@@ -1335,6 +1351,44 @@ begin
 end;
 $$;
 grant execute on function public.use_link(uuid, uuid, text, text) to authenticated;
+
+-- =============================================================
+--  비디오 테이프: 쪽지와 함께 영상 링크(유튜브) 보내기. 비디오 1개 소모.
+--  비디오 1개 소모 → 상대 쪽지함에 kind=video + media_url 쪽지 생성
+-- =============================================================
+create or replace function public.use_video(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+begin
+  if p_url is null or btrim(p_url) = '' then raise exception '영상 링크를 입력해 주세요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'video' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 비디오 테이프가 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), '영상을 보냈어요 📹');
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, media_url)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'video', 'video', btrim(p_url));
+
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_recipient_id, auth.uid(), 'video',
+            case when v_sender <> '' then v_sender || ' 님이 영상을 보냈어요' else '영상이 도착했어요' end,
+            '쪽지함에서 확인하세요 📹', p_group_id);
+end;
+$$;
+grant execute on function public.use_video(uuid, uuid, text, text) to authenticated;
 
 -- =============================================================
 --  커플 링 나눠 끼기 (use_couple_ring / claim_couple_ring / reject_couple_ring)

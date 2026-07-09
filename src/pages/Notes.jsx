@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
+import VideoPlayer from '../components/VideoPlayer'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift } from '../lib/api'
 
 function NoteFabIcon() {
@@ -224,6 +225,7 @@ export default function Notes() {
             const gift = n.kind === 'gift'
             const cassette = n.kind === 'cassette'
             const link = n.kind === 'link'
+            const video = n.kind === 'video'
             const needClaim = (couple || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             return (
@@ -238,6 +240,7 @@ export default function Notes() {
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                         {link && <span className="note-tag note-tag-link">🔗 링크</span>}
+                        {video && <span className="note-tag note-tag-video">📹 영상</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
@@ -257,7 +260,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : open?.kind === 'video' ? 'modal-video' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -265,6 +268,7 @@ export default function Notes() {
           const gift = open.kind === 'gift'
           const cassette = open.kind === 'cassette'
           const link = open.kind === 'link'
+          const video = open.kind === 'video'
           const mine = open.recipient_id === user?.id
           return (
             <div className="note-view">
@@ -277,6 +281,7 @@ export default function Notes() {
                     {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                     {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                     {link && <span className="note-tag note-tag-link">🔗 링크</span>}
+                    {video && <span className="note-tag note-tag-video">📹 영상</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
@@ -284,6 +289,7 @@ export default function Notes() {
               </div>
               <p className="note-view-body">{open.body}</p>
               {cassette && open.media_url && <MusicPlayer url={open.media_url} />}
+              {video && open.media_url && <VideoPlayer url={open.media_url} />}
               {link && open.media_url && (
                 <a className="note-linkcard" href={open.media_url} target="_blank" rel="noreferrer noopener">
                   <span className="note-linkcard-ic">🔗</span>

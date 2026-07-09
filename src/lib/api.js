@@ -504,8 +504,8 @@ export async function listStoreItems() {
 }
 
 // 아이템 구매(츄르 차감). 정가/검증은 서버(purchase_item)에서. 반환=새 잔액.
-export async function purchaseItem(itemId) {
-  const { data, error } = await supabase.rpc('purchase_item', { p_item_id: itemId })
+export async function purchaseItem(itemId, qty = 1) {
+  const { data, error } = await supabase.rpc('purchase_item', { p_item_id: itemId, p_qty: qty })
   if (error) {
     if (error.code === 'PGRST202' || /purchase_item/.test(error.message || '')) {
       throw new Error('상점 구매 기능이 아직 DB에 설정되지 않았습니다. (purchase_item 함수를 먼저 적용해 주세요)')
@@ -564,6 +564,20 @@ export async function useLink({ groupId, recipientId, message, url }) {
   if (error) {
     if (error.code === 'PGRST202' || /use_link/.test(error.message || '')) {
       throw new Error('링크 기능이 아직 DB에 설정되지 않았습니다. (use_link 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
+// 비디오 테이프: 영상 링크와 메시지를 상대 쪽지함으로. 비디오 1개 소모.
+export async function useVideo({ groupId, recipientId, message, url }) {
+  const { data, error } = await supabase.rpc('use_video', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_video/.test(error.message || '')) {
+      throw new Error('비디오 테이프 기능이 아직 DB에 설정되지 않았습니다. (use_video 함수를 먼저 적용해 주세요)')
     }
     throw error
   }
@@ -634,9 +648,9 @@ export async function listCoupleGroups(userId) {
 }
 
 // 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.
-export async function giftItem(itemId, groupId, recipientId) {
+export async function giftItem(itemId, groupId, recipientId, qty = 1) {
   const { data, error } = await supabase.rpc('gift_item', {
-    p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId,
+    p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId, p_qty: qty,
   })
   if (error) {
     if (error.code === 'PGRST202' || /gift_item/.test(error.message || '')) {
