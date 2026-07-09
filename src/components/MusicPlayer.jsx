@@ -55,7 +55,6 @@ function YouTubeAudio({ id }) {
 
   return (
     <div className="music-player">
-      <div className="music-thumb" style={{ backgroundImage: `url(https://i.ytimg.com/vi/${id}/hqdefault.jpg)` }} />
       <button type="button" className={`music-play ${playing ? 'on' : ''}`} onClick={toggle} disabled={!ready}
         aria-label={playing ? '일시정지' : '재생'}>
         {playing ? (
@@ -65,7 +64,7 @@ function YouTubeAudio({ id }) {
         )}
       </button>
       <div className="music-meta">
-        <span className="music-label">🎵 유튜브 음악</span>
+        <span className="music-label">유튜브 음악</span>
         <span className="music-sub">{ready ? (playing ? '재생 중…' : '탭해서 듣기') : '불러오는 중…'}</span>
       </div>
       {/* 영상은 숨기고 소리만: DOM 에는 있어야 재생됨 → 화면 밖 배치 */}
