@@ -85,12 +85,12 @@ export default function GroupDetail() {
     return () => setHeaderFilter?.(null)
   }, [setHeaderFilter, catActive])
 
-  // 초대 버튼을 상단바(필터와 톱니 사이)로 노출. 커플 그룹은 초대 불가 → 숨김.
+  // 초대 버튼을 상단바(필터와 톱니 사이)로 노출. 로딩 중/커플 그룹은 등록하지 않음(깜빡임 방지).
   useEffect(() => {
-    if (isCouple) { setHeaderInvite?.(null); return }
+    if (loading || isCouple) { setHeaderInvite?.(null); return }
     setHeaderInvite?.({ onClick: () => setInviteOpen(true) })
     return () => setHeaderInvite?.(null)
-  }, [setHeaderInvite, isCouple])
+  }, [setHeaderInvite, isCouple, loading])
 
   function toggleCat(c) {
     setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -211,14 +211,15 @@ export default function GroupDetail() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, m, t, cc] = await Promise.all([
+      // 커플 여부까지 함께 확정해 첫 렌더부터 헤더/상단바가 올바르게 나오도록(깜빡임 방지)
+      const [g, m, t, cc, couple] = await Promise.all([
         getGroup(groupId), listMemberCards(groupId), listTasks(groupId), listCommentCounts(groupId),
+        isCoupleGroup(groupId).catch(() => false),
       ])
-      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
+      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc); setIsCouple(couple)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
-      isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -236,7 +237,7 @@ export default function GroupDetail() {
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) }
-  }, [groupId])
+  }, [groupId]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     setRefreshHandler(() => refresh)
     return () => setRefreshHandler(() => null)

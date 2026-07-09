@@ -476,6 +476,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .emoji-swatch:hover { transform: scale(1.1); }
 .emoji-swatch.active { border-color: var(--text); }
+/* 배경 없음(투명) 스와치: 흰 바탕 + 대각선 빗금 */
+.emoji-swatch-none {
+  background: #fff;
+  background-image: linear-gradient(135deg, transparent 44%, #e0525a 44%, #e0525a 56%, transparent 56%);
+}
+/* 이모지 미설정 시 폼 미리보기 자리(점선 박스) */
+.emoji-empty {
+  background: transparent; border: 1.5px dashed var(--border);
+}
+.field-optional { font-size: 12px; font-weight: 500; color: var(--muted); }
 
 /* 그룹 만들기 마법사 하단 버튼 */
 .wizard-actions { display: flex; gap: 8px; }

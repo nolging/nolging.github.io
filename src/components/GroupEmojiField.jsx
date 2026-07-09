@@ -15,21 +15,32 @@ function lastGrapheme(str) {
 }
 
 // 그룹 대표 이모지 + 배경색 선택 폼. value={emoji,bg}, onChange({emoji,bg})
+// 이모지는 비워둘 수 있고(선택), 배경은 '없음(투명)'도 고를 수 있음.
 export default function GroupEmojiField({ emoji, bg, name, onChange }) {
+  const has = !!(emoji && emoji.trim())
   return (
     <div className="field">
-      <span>그룹 이모지</span>
+      <span>그룹 이모지 <span className="field-optional">(선택)</span></span>
       <div className="emoji-field">
-        <GroupBadge emoji={emoji} bg={bg} name={name} size={56} />
+        {has
+          ? <GroupBadge emoji={emoji} bg={bg} name={name} size={56} />
+          : <span className="group-badge emoji-empty" style={{ width: 56, height: 56, borderRadius: 20 }} aria-hidden="true" />}
         <input
           className="emoji-input"
           value={emoji || ''}
           onChange={(e) => onChange({ emoji: lastGrapheme(e.target.value), bg })}
-          placeholder="🐱"
+          placeholder="이모지 (선택)"
           aria-label="그룹 이모지 (하나)"
         />
       </div>
       <div className="emoji-swatches">
+        <button
+          type="button"
+          className={`emoji-swatch emoji-swatch-none ${bg === 'transparent' ? 'active' : ''}`}
+          onClick={() => onChange({ emoji, bg: 'transparent' })}
+          aria-label="배경 없음"
+          title="배경 없음"
+        />
         {GROUP_EMOJI_BGS.map((c) => (
           <button
             type="button"
