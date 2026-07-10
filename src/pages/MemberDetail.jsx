@@ -45,6 +45,7 @@ export default function MemberDetail() {
   const [group, setGroup] = useState(null)
   const [premium, setPremium] = useState(false) // 커플/우정 링 → 콕 찌르기 가능
   const [iAmOwner, setIAmOwner] = useState(false)
+  const [meCard, setMeCard] = useState(null) // 내 그룹내 닉네임·아바타 (쪽지 From)
   const [poking, setPoking] = useState(false)
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
@@ -59,8 +60,10 @@ export default function MemberDetail() {
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
       ])
+      const self = cards.find((m) => m.is_self)
       setMember(cards.find((m) => m.user_id === userId) || null)
-      setIAmOwner((cards.find((m) => m.is_self) || {}).role === 'owner')
+      setIAmOwner((self || {}).role === 'owner')
+      setMeCard(self || null)
       setGroup(g)
       setPremium(couple || friend)
     } catch (err) { setError(err.message) } finally { setLoading(false) }
@@ -81,6 +84,7 @@ export default function MemberDetail() {
       state: {
         reply: {
           recipient: { groupId, groupName: group?.name || '', userId, name: member.display_nickname, avatar: member.avatar_url },
+          me: { name: meCard?.display_nickname || '', avatar: meCard?.avatar_url || null },
         },
       },
     })

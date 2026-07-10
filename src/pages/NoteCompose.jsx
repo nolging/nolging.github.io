@@ -62,7 +62,7 @@ export default function NoteCompose() {
         <div className="note-field note-body-field">
           <textarea
             className="note-body-input"
-            placeholder="쪽지 내용을 적어 보세요 (최대 150자)"
+            placeholder="내용을 채워 주세요"
             value={body}
             maxLength={MAX}
             onChange={(e) => setBody(e.target.value)}
