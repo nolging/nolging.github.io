@@ -24,6 +24,7 @@ export default function GroupSettingsPage() {
     avatar_url: member.avatar_url || '',
     show_contact: !!member.show_contact,
     show_birthdate: !!member.show_birthdate,
+    show_ott: !!member.show_ott,
   }
   const backToGroup = () => navigate(`/groups/${groupId}`)
 
@@ -47,20 +48,14 @@ export default function GroupSettingsPage() {
   if (error && !group) return <div className="page"><div className="alert alert-error">{error}</div></div>
 
   return (
-    <div className="page">
-      {error && <div className="alert alert-error">{error}</div>}
-
-      {me && <MySettings group={group} me={me} onSaved={backToGroup} />}
-
-      {isOwner ? (
-        <button type="button" className="btn btn-block" onClick={() => navigate(`/groups/${groupId}/settings/group`)}>
-          그룹 설정
-        </button>
-      ) : (
-        <button type="button" className="btn btn-danger btn-block" onClick={handleLeave}>
-          그룹에서 나가기
-        </button>
+    <>
+      {error && <div className="page"><div className="alert alert-error">{error}</div></div>}
+      {me && (
+        <MySettings group={group} me={me} onSaved={backToGroup}
+          secondary={isOwner
+            ? { label: '그룹 설정', onClick: () => navigate(`/groups/${groupId}/settings/group`) }
+            : { label: '그룹에서 나가기', danger: true, onClick: handleLeave }} />
       )}
-    </div>
+    </>
   )
 }

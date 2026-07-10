@@ -275,7 +275,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">그룹 설정</span>
+        <span className="topbar-heading">그룹 정보 수정</span>
       </header>
     )
   } else if (settingsMatch) {
@@ -284,7 +284,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">설정</span>
+        <span className="topbar-heading">내 정보 수정</span>
       </header>
     )
   } else if (memberDetailMatch) {
@@ -293,6 +293,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${gid}/members`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">멤버 정보</span>
       </header>
     )
   } else if (membersMatch) {

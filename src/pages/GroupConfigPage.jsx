@@ -42,10 +42,9 @@ export default function GroupConfigPage() {
   if (!group || group.owner_id !== profile?.id) return <div className="page"><div className="spinner" /></div>
 
   return (
-    <div className="page">
-      {error && <div className="alert alert-error">{error}</div>}
-      <GroupSettings group={group} onSaved={backToSettings} />
-      <button type="button" className="btn btn-danger btn-block" onClick={handleDelete}>그룹 삭제</button>
-    </div>
+    <>
+      {error && <div className="page"><div className="alert alert-error">{error}</div></div>}
+      <GroupSettings group={group} onSaved={backToSettings} onDelete={handleDelete} />
+    </>
   )
 }

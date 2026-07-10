@@ -1187,17 +1187,75 @@ a.mp-tel { display: inline-flex; align-items: center; gap: 5px; text-decoration:
 a.mp-tel::before { content: "\260E"; font-size: 14px; }
 a.mp-tel:active { opacity: .55; }
 .mp-empty { text-align: center; padding: 20px; }
-/* 콕 찌르기 (프리미엄 그룹) */
-.mp-poke {
-  margin-top: 4px; width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: none; border-radius: 16px; cursor: pointer;
-  background: var(--primary-soft); color: var(--primary); font-size: 15px; font-weight: 700;
-  transition: filter .12s, transform .1s;
-}
-.mp-poke:hover { filter: brightness(.97); }
-.mp-poke:active { transform: scale(.985); }
-.mp-poke:disabled { opacity: .6; cursor: default; }
-.mp-poke-emoji { font-size: 18px; }
+
+/* ===== 그룹/멤버 관리 (시안) ===== */
+/* 그룹 정보/내 정보 수정 폼 공용 추가 */
+.cg-footer-center { margin-top: 14px; text-align: center; }
+.cg-danger-link { background: none; border: none; cursor: pointer; font-size: 12.5px; font-weight: 600; color: #c9455f; padding: 4px 8px; }
+.cg-danger-link:hover { text-decoration: underline; }
+.cg-btn-outline { width: 100%; box-sizing: border-box; height: 52px; border: 1.5px solid var(--border); border-radius: 999px; background: #fff; color: #191722; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cg-btn-outline:hover { background: #f6f5fa; }
+.cg-mt-10 { margin-top: 10px; }
+
+/* 멤버 아바타 (파스텔 이니셜 또는 사진) */
+.mem-av { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+.mem-av-txt { font-weight: 800; letter-spacing: -.3px; }
+
+/* 10c 멤버 목록 */
+.mlist-page { gap: 0; }
+.mlist-search { display: flex; align-items: center; gap: 9px; background: #f4f3f7; border: 1.5px solid transparent; border-radius: 999px; padding: 12px 14px; box-sizing: border-box; }
+.mlist-search:focus-within { border-color: #7363e8; background: #fff; }
+.mlist-search input { flex: 1; border: none; background: transparent; outline: none; font-size: 14.5px; color: #191722; padding: 0; min-width: 0; }
+.mlist-invite { width: 100%; box-sizing: border-box; margin-top: 12px; height: 48px; border: none; border-radius: 999px; background: #eeebfe; color: #7363e8; font-size: 14.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.mlist-invite:hover { background: #e6e1fc; }
+.mlist { margin-top: 16px; }
+.mlist-row { width: 100%; display: flex; align-items: center; gap: 13px; padding: 11px 4px; cursor: pointer; border-radius: 14px; background: none; border: none; text-align: left; color: inherit; box-sizing: border-box; }
+button.mlist-row:hover { background: #f6f5fa; }
+.mlist-div { height: 1px; background: #f1eff5; margin: 0 4px; }
+.mlist-main { flex: 1; min-width: 0; }
+.mlist-name { display: flex; align-items: center; gap: 6px; }
+.mlist-nick { font-size: 15px; font-weight: 700; color: #191722; }
+.mlist-me { font-size: 10px; font-weight: 700; color: #191722; border-radius: 999px; padding: 2px 7px; background: #f3f3f5; }
+.mlist-owner { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 999px; flex-shrink: 0; background: #eeebfe; }
+.mlist-meta { margin-top: 3px; display: flex; align-items: center; gap: 7px; font-size: 12px; color: #8b8798; min-width: 0; }
+.mlist-meta .hidden-v { color: #c2c0cc; }
+.mlist-meta > span:not(.mlist-dot) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlist-dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: #d5d3dd; flex-shrink: 0; }
+.mlist-chev { flex-shrink: 0; }
+
+/* 10d/10e 멤버 상세 */
+.md-page { gap: 0; }
+.md-profile { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px 0 4px; }
+.md-profile .mem-av { box-shadow: 0 8px 22px rgba(25,23,34,.08); }
+.md-name { font-size: 22px; font-weight: 800; letter-spacing: -.5px; color: #191722; display: flex; align-items: center; gap: 8px; }
+.md-me { font-size: 12px; font-weight: 700; color: #7363e8; background: #eeebfe; border-radius: 999px; padding: 3px 10px; }
+.md-actions { display: flex; gap: 10px; width: 100%; margin-top: 2px; }
+.md-btn { flex: 1; height: 46px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.md-btn-primary { background: #191722; color: #fff; }
+.md-btn-primary:hover { background: #2c2938; }
+.md-btn-ghost { background: #f3f3f5; color: #47444f; }
+.md-btn-ghost:hover { background: #e9e9ee; }
+.md-btn:disabled { opacity: .6; cursor: default; }
+.md-info { margin-top: 20px; }
+.md-info-label { font-size: 13px; font-weight: 800; color: #8b8798; letter-spacing: -.2px; margin-bottom: 10px; }
+.md-card { background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.05); padding: 2px 16px; }
+.md-row { display: flex; align-items: center; gap: 13px; padding: 16px 0; border-bottom: 1px solid #f1eff5; }
+.md-row:last-child { border-bottom: none; }
+.md-row.md-row-top { align-items: flex-start; }
+.md-row-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.md-row-icon.off { background: #f2f1f5; filter: grayscale(.4); opacity: .7; }
+.md-row-main { flex: 1; min-width: 0; }
+.md-row-k { font-size: 11.5px; font-weight: 700; color: #8b8798; }
+.md-row-k.off { color: #b0b0b8; }
+.md-row-v { margin-top: 3px; font-size: 15.5px; font-weight: 700; color: #191722; letter-spacing: -.2px; word-break: break-all; }
+.md-row-v.hidden { font-size: 14.5px; font-weight: 600; color: #c2c0cc; }
+.md-row-ott { margin-top: 8px; }
+.md-call { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #f3f3f5; flex-shrink: 0; }
+.md-call:hover { background: #eeebfe; }
+.md-empty-hint { margin-top: 16px; background: #f6f5fa; border-radius: 16px; padding: 14px 16px; font-size: 12.5px; color: #6f6a80; line-height: 1.5; }
+.md-footer { margin-top: 24px; padding-bottom: 8px; }
+.md-kick { width: 100%; box-sizing: border-box; height: 52px; border: 1.5px solid #f0d0d8; border-radius: 999px; background: #fff; color: #c9455f; font-size: 14.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.md-kick:hover { background: #fdf3f5; }
 
 /* ---- 그룹 상세 헤더 (그룹명 + 멤버/초대 버튼) ---- */
 .gd-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

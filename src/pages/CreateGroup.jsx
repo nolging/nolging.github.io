@@ -3,24 +3,9 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createGroup, updateMyGroupMember } from '../lib/api'
 import { DEFAULT_THEME } from '../lib/constants'
+import { CG_BGS, DEFAULT_CG_BG, lastGrapheme } from '../lib/cgForm'
 import AvatarEditor from '../components/AvatarEditor'
-
-// 시안 팔레트: 배경 없음(투명) + 파스텔 6색
-const CG_BGS = ['transparent', '#eeebfe', '#e8f4ec', '#fdeee6', '#e6eefd', '#fde8ee', '#fbf1d3']
-const DEFAULT_CG_BG = '#eeebfe'
-
-// 입력에서 마지막 이모지(그래핌) 하나만 취함 → 새로 입력하면 자연스럽게 교체
-function lastGrapheme(str) {
-  const s = (str || '').trim()
-  if (!s) return ''
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    let out = ''
-    for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)) out = segment
-    return out
-  }
-  const arr = Array.from(s)
-  return arr[arr.length - 1] || ''
-}
+import CgToggle from '../components/CgToggle'
 
 function Chevron() {
   return (
@@ -40,16 +25,6 @@ function FriendsIcon() {
       <circle cx="7" cy="7" r="2.4" /><circle cx="12" cy="5.4" r="2.4" /><circle cx="17" cy="7" r="2.4" />
       <path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" />
     </svg>
-  )
-}
-
-// 시안 스타일 토글(보라). locked 면 잠금(회색·조작 불가)
-function CgToggle({ on, locked, onClick }) {
-  if (locked) return <span className="cg-toggle locked" aria-hidden="true"><span className="cg-knob" /></span>
-  return (
-    <span className={`cg-toggle ${on ? 'on' : ''}`} role="switch" aria-checked={on} onClick={onClick}>
-      <span className="cg-knob" />
-    </span>
   )
 }
 

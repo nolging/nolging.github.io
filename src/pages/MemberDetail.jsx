@@ -1,14 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
-import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember } from '../lib/api'
-import CrownIcon from '../components/CrownIcon'
+import { useParams, useNavigate } from 'react-router-dom'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup } from '../lib/api'
+import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
 
-function joinLabel(iso) {
-  try {
-    return `${new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} 가입`
-  } catch { return '' }
-}
 function telHref(s) {
   const cleaned = String(s).replace(/[^\d+]/g, '')
   const digits = cleaned.replace(/\D/g, '')
@@ -16,14 +11,40 @@ function telHref(s) {
 }
 function birthLabel(s) {
   if (!s) return ''
-  const [y, mo, d] = s.split('-')
+  const [y, mo, d] = String(s).split('-')
   return `${y}년 ${Number(mo)}월 ${Number(d)}일`
+}
+
+function PaperPlane() {
+  return (
+    <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+  )
+}
+function PokeHand() {
+  return (
+    <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 14a8 8 0 0 1-8 8" /><path d="M18 11v-1a2 2 0 0 0-2-2 2 2 0 0 0-2 2" />
+      <path d="M14 10V9a2 2 0 0 0-2-2 2 2 0 0 0-2 2v1" /><path d="M10 9.5V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v10" />
+      <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+    </svg>
+  )
+}
+function LockIcon() {
+  return (
+    <svg width="16" viewBox="0 0 24 24" fill="none" stroke="#c9c6d6" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+  )
 }
 
 export default function MemberDetail() {
   const { groupId, userId } = useParams()
+  const navigate = useNavigate()
   const [member, setMember] = useState(null)
-  const [premium, setPremium] = useState(false) // 프리미엄 그룹(커플/우정 링) → 콕 찌르기 가능
+  const [group, setGroup] = useState(null)
+  const [premium, setPremium] = useState(false) // 커플/우정 링 → 콕 찌르기 가능
+  const [iAmOwner, setIAmOwner] = useState(false)
   const [poking, setPoking] = useState(false)
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
@@ -32,12 +53,15 @@ export default function MemberDetail() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, couple, friend] = await Promise.all([
+      const [cards, g, couple, friend] = await Promise.all([
         listMemberCards(groupId),
+        getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
       ])
       setMember(cards.find((m) => m.user_id === userId) || null)
+      setIAmOwner((cards.find((m) => m.is_self) || {}).role === 'owner')
+      setGroup(g)
       setPremium(couple || friend)
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, userId])
@@ -48,64 +72,109 @@ export default function MemberDetail() {
     setPoking(true); setError('')
     try {
       await pokeMember(groupId, userId)
-      setToast('콕 찔렀어요!')
-      setTimeout(() => setToast(''), 1600)
+      setToast('콕 찔렀어요!'); setTimeout(() => setToast(''), 1600)
     } catch (err) { setError(err.message) } finally { setPoking(false) }
   }
 
+  function sendNote() {
+    navigate('/notes/new', {
+      state: {
+        reply: {
+          recipient: { groupId, groupName: group?.name || '', userId, name: member.display_nickname, avatar: member.avatar_url },
+        },
+      },
+    })
+  }
+
+  async function kick() {
+    if (!confirm(`${member.display_nickname} 님을 그룹에서 내보낼까요?`)) return
+    try { await leaveGroup(groupId, userId); navigate(`/groups/${groupId}/members`) }
+    catch (err) { setError(err.message) }
+  }
+
   if (loading) return <div className="page"><div className="spinner" /></div>
-  if (error) return <div className="page"><div className="alert alert-error">{error}</div></div>
+  if (error && !member) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!member) return <div className="page"><div className="empty"><p className="muted">멤버를 찾을 수 없어요.</p></div></div>
 
-  const initial = (member.display_nickname || '?').trim()[0]?.toUpperCase() || '?'
   const ott = Array.isArray(member.subscribed_ott) ? member.subscribed_ott : []
-  const hasInfo = member.contact || member.birthdate || ott.length
+  const hasContact = !!member.contact
+  const hasBirth = !!member.birthdate
+  const hasOtt = ott.length > 0
+  const nothingShared = !hasContact && !hasBirth && !hasOtt
+  const tel = hasContact ? telHref(member.contact) : ''
 
   return (
-    <div className="page member-detail">
-      <div className="mp-join">{joinLabel(member.joined_at)}</div>
-
-      <div className={`mp-photo ${member.avatar_url ? 'has-img' : ''}`}
-        style={member.avatar_url ? { backgroundImage: `url(${member.avatar_url})` } : undefined}>
-        {!member.avatar_url && <span className="mp-initial">{initial}</span>}
-        {member.role === 'owner' && (
-          <span className="mp-owner" title="소유자"><CrownIcon size={16} /></span>
+    <div className="page md-page">
+      {/* 프로필 */}
+      <div className="md-profile">
+        <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} />
+        <div className="md-name">{member.display_nickname}{member.is_self && <span className="md-me">나</span>}</div>
+        {!member.is_self && (
+          <div className="md-actions">
+            <button type="button" className="md-btn md-btn-primary" onClick={sendNote}><PaperPlane /> 쪽지 보내기</button>
+            {premium && (
+              <button type="button" className="md-btn md-btn-ghost" disabled={poking} onClick={poke}><PokeHand /> 콕 찌르기</button>
+            )}
+          </div>
         )}
-        <div className="mp-scrim" />
-        <div className="mp-name">
-          {member.display_nickname}
-          {member.is_self && <span className="mp-me">나</span>}
+      </div>
+
+      {/* 공개된 정보 */}
+      <div className="md-info">
+        <div className="md-info-label">공개된 정보</div>
+        <div className="md-card">
+          {/* 연락처 */}
+          <div className="md-row">
+            <span className={`md-row-icon ${hasContact ? '' : 'off'}`} style={hasContact ? { background: '#e6eefd' } : undefined}>📞</span>
+            <div className="md-row-main">
+              <div className={`md-row-k ${hasContact ? '' : 'off'}`}>연락처</div>
+              {hasContact
+                ? <div className="md-row-v">{member.contact}</div>
+                : <div className="md-row-v hidden">비공개</div>}
+            </div>
+            {hasContact
+              ? (tel && <a className="md-call" href={tel} aria-label="전화" title="전화">
+                  <svg width="16" viewBox="0 0 24 24" fill="none" stroke="#191722" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                </a>)
+              : <LockIcon />}
+          </div>
+          {/* 생년월일 */}
+          <div className="md-row">
+            <span className={`md-row-icon ${hasBirth ? '' : 'off'}`} style={hasBirth ? { background: '#fde8ee' } : undefined}>🎂</span>
+            <div className="md-row-main">
+              <div className={`md-row-k ${hasBirth ? '' : 'off'}`}>생년월일</div>
+              {hasBirth
+                ? <div className="md-row-v">{birthLabel(member.birthdate)}</div>
+                : <div className="md-row-v hidden">비공개</div>}
+            </div>
+            {!hasBirth && <LockIcon />}
+          </div>
+          {/* 구독 OTT */}
+          <div className={`md-row ${hasOtt ? 'md-row-top' : ''}`}>
+            <span className={`md-row-icon ${hasOtt ? '' : 'off'}`} style={hasOtt ? { background: '#eeebfe' } : undefined}>📺</span>
+            <div className="md-row-main">
+              <div className={`md-row-k ${hasOtt ? '' : 'off'}`}>구독 OTT</div>
+              {hasOtt
+                ? <div className="md-row-ott"><OttBadges list={ott} /></div>
+                : <div className="md-row-v hidden">비공개</div>}
+            </div>
+            {!hasOtt && <LockIcon />}
+          </div>
         </div>
-      </div>
 
-      <div className="mp-info">
-        {hasInfo ? (
-          <>
-            {member.contact && (
-              <div className="mp-row">
-                <span className="mp-k">연락처</span>
-                {telHref(member.contact)
-                  ? <a className="mp-v mp-tel" href={telHref(member.contact)}>{member.contact}</a>
-                  : <span className="mp-v">{member.contact}</span>}
-              </div>
-            )}
-            {member.birthdate && (
-              <div className="mp-row"><span className="mp-k">생년월일</span><span className="mp-v">{birthLabel(member.birthdate)}</span></div>
-            )}
-            {ott.length > 0 && (
-              <div className="mp-row"><span className="mp-k">구독 OTT</span><span className="mp-v"><OttBadges list={ott} /></span></div>
-            )}
-          </>
-        ) : (
-          <p className="muted sm mp-empty">공개된 정보가 없어요.</p>
+        {nothingShared && (
+          <div className="md-empty-hint">아직 공개한 정보가 없어요. 멤버가 공개한 정보만 볼 수 있어요.</div>
         )}
       </div>
 
-      {premium && !member.is_self && (
-        <button type="button" className="mp-poke" disabled={poking} onClick={poke}>
-          <span className="mp-poke-emoji" aria-hidden="true">👉</span>
-          콕 찌르기
-        </button>
+      {/* 내보내기 (소유자 전용, 본인 제외) */}
+      {iAmOwner && !member.is_self && (
+        <div className="md-footer">
+          <button type="button" className="md-kick" onClick={kick}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" /></svg>
+            그룹에서 내보내기
+          </button>
+        </div>
       )}
 
       {toast && <div className="toast">{toast}</div>}
