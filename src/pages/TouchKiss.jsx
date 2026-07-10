@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
-const PULSE_MS = 430        // 닿아 있는 동안 진동+이펙트 반복 간격
+const PULSE_MS = 520        // 닿아 있는 동안 진동+이펙트 반복 간격
 // "하트 뿅뿅" 테마 하트 색 — 맞닿을 때 뿅뿅 솟는 하트
 const HEART_COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
 const RISERS = [
@@ -100,7 +100,7 @@ export default function TouchKiss() {
   const spawnBurst = useCallback((x, y) => {
     const id = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`
     setBursts((b) => [...b, { id, x, y }])
-    setTimeout(() => setBursts((b) => b.filter((v) => v.id !== id)), 1500)
+    setTimeout(() => setBursts((b) => b.filter((v) => v.id !== id)), 2200)
   }, [])
   const endContact = useCallback(() => {
     collidingRef.current = false
