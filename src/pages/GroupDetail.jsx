@@ -590,10 +590,9 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
           </div>
         </div>
 
-        {task.description && <p className="task-desc">{task.description}</p>}
-
         {showFoot && (
           <div className="task-foot">
+            {task.description && <span className="task-cmt">{task.description}</span>}
             {mediaLine && <span className="task-media-line">{mediaLine}</span>}
             {task.assignee_id && !showParts && (
               <span className="task-person">
@@ -615,6 +614,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
             {task.remind_min !== null && task.remind_min !== undefined && (
               <span className="task-appt-bell" aria-label="알림 설정됨" title="알림 설정됨"><BellIcon /></span>
             )}
+            {task.description && <span className="task-cmt">{task.description}</span>}
             <span className="task-appt-counts">
               <span className="task-cc">댓글 {commentCount}</span>
               {task.status === 'done' && <span className="task-cc">리뷰 {reviewCount}</span>}
