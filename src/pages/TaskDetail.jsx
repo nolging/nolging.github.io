@@ -574,7 +574,7 @@ export default function TaskDetail() {
                 <>
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
-                    <button type="button" onClick={goEditAppointment}>편집</button>
+                    <button type="button" onClick={goEditAppointment}>수정</button>
                     {!isDone && <button type="button" onClick={doCancelAppointment}>약속 취소</button>}
                     {isDone && reviews.length === 0 && <button type="button" onClick={doRevertAppointment}>약속으로 되돌리기</button>}
                     {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
@@ -594,7 +594,7 @@ export default function TaskDetail() {
                 <>
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
-                    {(isCreator || isAdmin) && <button type="button" onClick={goEditWish}>편집</button>}
+                    {(isCreator || isAdmin) && <button type="button" onClick={goEditWish}>수정</button>}
                     {(isCreator || isOwner || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
                   </div>
                 </>

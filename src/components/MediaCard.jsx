@@ -11,15 +11,12 @@ const LOGO_OVERRIDE = [
 ]
 const badgeSrc = (name, logo) => LOGO_OVERRIDE.find((o) => o.test.test(name))?.src ?? logo
 
-function ProviderPill({ p }) {
+function OttBadge({ p }) {
   const name = typeof p === 'string' ? p : p.name
   const src = badgeSrc(name, typeof p === 'object' ? p.logo : null)
-  return (
-    <span className="mc-provider">
-      {src && <img src={src} alt="" />}
-      {name}
-    </span>
-  )
+  return src
+    ? <img className="mc-ott-badge" src={src} alt={name} title={name} />
+    : <span className="mc-ott-badge mc-ott-text" title={name}>{name}</span>
 }
 
 // 위시 작품 정보 카드 (시안). category 에 따라 항목이 달라짐. onClear 있으면 우상단 X.
@@ -62,11 +59,11 @@ export default function MediaCard({ category, info, onClear }) {
         : <span className="mc-poster mc-poster-empty" aria-hidden="true">{posterEmoji}</span>}
       <div className="mc-main">
         <div className="mc-title">{info.title}</div>
-        {providers && <span className="mc-providers">{providers.map((p, i) => <ProviderPill key={i} p={p} />)}</span>}
+        {providers && <span className="mc-ott">{providers.map((p, i) => <OttBadge key={i} p={p} />)}</span>}
         {rows.length > 0 && (
           <div className="mc-rows">
             {rows.map(([k, v], i) => (
-              <span key={i}><span className="mc-k">{k}</span> {v}</span>
+              <span className="mc-row" key={i}><span className="mc-k">{k}</span><span className="mc-v">{v}</span></span>
             ))}
           </div>
         )}

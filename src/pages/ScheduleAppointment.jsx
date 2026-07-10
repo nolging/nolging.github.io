@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, cancelAppointment,
+  getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask,
   updateTask, updateTaskMedia,
 } from '../lib/api'
 import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
@@ -189,13 +189,6 @@ export default function ScheduleAppointment() {
     } catch (err) { setError(err.message); setSaving(false) }
   }
 
-  async function removeAppt() {
-    if (!confirm('이 약속을 삭제할까요? 위시는 유지돼요.')) return
-    setError('')
-    try { await cancelAppointment(taskId); navigate(`/groups/${groupId}/tasks/${taskId}`) }
-    catch (err) { setError(err.message) }
-  }
-
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!task) return null
@@ -359,11 +352,6 @@ export default function ScheduleAppointment() {
               <><svg width="17" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="7" cy="7" r="2.4" /><circle cx="12" cy="5.4" r="2.4" /><circle cx="17" cy="7" r="2.4" /><path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" /></svg> 놀기 신청</>
             )}
           </button>
-          {isReschedule && (
-            <div className="cg-footer-center">
-              <button type="button" className="cg-danger-link" onClick={removeAppt}>약속 삭제하기</button>
-            </div>
-          )}
         </div>
 
         <WorkSearchSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
