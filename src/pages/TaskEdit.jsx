@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { updateTask } from '../lib/api'
+import { updateTask, deleteTask } from '../lib/api'
 import { taskTerms } from '../lib/constants'
 import TaskForm from '../components/TaskForm'
 
@@ -20,16 +20,20 @@ export default function TaskEdit() {
   if (!task) return null
 
   return (
-    <div className="page">
-      <TaskForm
-        groupType={groupType}
-        initial={task}
-        submitLabel="완료"
-        onSubmit={async (values) => {
-          await updateTask(taskId, values)
-          navigate(`/groups/${groupId}`)
-        }}
-      />
-    </div>
+    <TaskForm
+      groupType={groupType}
+      initial={task}
+      submitLabel="저장"
+      deleteLabel={`${terms.noun} 삭제하기`}
+      onSubmit={async (values) => {
+        await updateTask(taskId, values)
+        navigate(`/groups/${groupId}`)
+      }}
+      onDelete={async () => {
+        if (!confirm(`이 ${terms.noun}을(를) 삭제할까요?`)) return
+        await deleteTask(taskId)
+        navigate(`/groups/${groupId}`)
+      }}
+    />
   )
 }

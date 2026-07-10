@@ -32,7 +32,7 @@ export function taskTerms() {
 export const TASK_STATUSES = ['open', 'accepted', 'done']
 
 // 위시 카테고리
-export const WISH_CATEGORIES = ['OTT', '독서', '영화', '게임', '운동', '기타']
+export const WISH_CATEGORIES = ['OTT', '영화', '게임', '독서', '운동', '기타']
 
 // 화폐: 시스템 네이밍은 coin, UI 표기는 "츄르". 표기는 항상 이 헬퍼로 통일.
 export const COIN_UNIT = '츄르'
@@ -129,6 +129,16 @@ export function categoryEmoji(cat) {
 export function categoryStyle(cat) {
   const c = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
   return { background: c.bg, color: c.fg, borderColor: c.bg }
+}
+// 유형별 "작품" 명칭: OTT/영화=작품, 독서=도서, 게임=게임
+export function workNoun(cat) {
+  return cat === '독서' ? '도서' : cat === '게임' ? '게임' : '작품'
+}
+// 유형별 검색 안내(자동 채워지는 항목)
+export function workSearchHint(cat) {
+  if (cat === '독서') return '검색해서 고르면 표지·저자·장르·페이지가 자동으로 채워져요'
+  if (cat === '게임') return '검색해서 고르면 커버·플랫폼·장르·출시일이 자동으로 채워져요'
+  return '검색해서 고르면 포스터·제공처·장르·러닝타임이 자동으로 채워져요'
 }
 
 // 약속 반복 옵션 (아이폰 미리 알림 참고). value=저장 키, label=표시

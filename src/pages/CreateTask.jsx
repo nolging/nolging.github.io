@@ -12,15 +12,13 @@ export default function CreateTask() {
   const terms = taskTerms(groupType)
 
   return (
-    <div className="page">
-      <TaskForm
-        groupType={groupType}
-        submitLabel={`${terms.noun} 추가`}
-        onSubmit={async (values) => {
-          await createTask({ groupId, ...values, createdBy: profile.id })
-          navigate(`/groups/${groupId}`)
-        }}
-      />
-    </div>
+    <TaskForm
+      groupType={groupType}
+      submitLabel={`${terms.noun} 등록`}
+      onSubmit={async (values) => {
+        await createTask({ groupId, ...values, createdBy: profile.id })
+        navigate(`/groups/${groupId}`)
+      }}
+    />
   )
 }

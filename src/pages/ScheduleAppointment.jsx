@@ -2,21 +2,12 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, updateTask, updateTaskMedia,
-  searchMedia, getMediaDetail,
+  getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, cancelAppointment,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, categoryStyle, categoryEmoji, MEDIA_LOOKUP_CATS } from '../lib/constants'
-import CategoryChip from '../components/CategoryChip'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS } from '../lib/constants'
 import Avatar from '../components/Avatar'
-import MediaInfo from '../components/MediaInfo'
-
-// 유형별 버튼 이모지 / 안내 문구 (TaskForm 과 동일)
-const MEDIA_UI = {
-  OTT: { emoji: '🎬', hint: '쿠팡플레이는 OTT 정보에 포함되지 않아요.' },
-  '영화': { emoji: '🎬', hint: '현재 극장 상영 중인 영화만 검색돼요.' },
-  '독서': { emoji: '📚', hint: '국내 도서를 제목으로 검색해요.' },
-  '게임': { emoji: '🎮', hint: '영문 제목이 더 정확히 검색돼요.' },
-}
+import MediaCard from '../components/MediaCard'
+import CgToggle from '../components/CgToggle'
 
 const pad = (n) => String(n).padStart(2, '0')
 const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -24,18 +15,49 @@ const timeStr = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 function defaultDate() { return dateStr(new Date()) }
 function defaultTime() { const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return timeStr(d) }
 
-function Switch({ checked, onChange }) {
+const WD = ['일', '월', '화', '수', '목', '금', '토']
+function fmtDate(s) {
+  if (!s) return ''
+  const [y, m, d] = s.split('-').map(Number)
+  const wd = new Date(y, m - 1, d).getDay()
+  return `${y}년 ${m}월 ${d}일 (${WD[wd]})`
+}
+function fmtTime(s) {
+  if (!s) return ''
+  const [h, mi] = s.split(':').map(Number)
+  const ap = h < 12 ? '오전' : '오후'
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${ap} ${h12}:${pad(mi)}`
+}
+
+function Chevron() {
+  return <svg width="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+}
+
+// 포맷된 값(보라 텍스트) 위에 투명 네이티브 입력을 겹쳐, 탭하면 피커가 열리게
+function PickField({ type, value, onChange, format }) {
   return (
-    <label className="switch" onClick={(e) => e.stopPropagation()}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span className="slider" />
+    <label className="sc-pick">
+      <span className="sc-pick-text">{format(value)}<Chevron /></span>
+      <input type={type} className="sc-pick-input" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} />
     </label>
+  )
+}
+
+function SelectPill({ value, onChange, options }) {
+  return (
+    <span className="sc-select">
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <Chevron />
+    </span>
   )
 }
 
 export default function ScheduleAppointment() {
   const { groupId, taskId } = useParams()
-  const { profile, isAdmin } = useAuth()
+  const { profile } = useAuth()
   const navigate = useNavigate()
 
   const [group, setGroup] = useState(null)
@@ -57,22 +79,12 @@ export default function ScheduleAppointment() {
   const [until, setUntil] = useState(defaultDate())
   const [remind, setRemind] = useState('')
   const [participants, setParticipants] = useState(() => new Set())
-  const [title, setTitle] = useState('')       // 작성자 태스크 정보 수정용
-  const [category, setCategory] = useState('')
-  // 상세 정보(media_info) 편집 — 유형만 맞으면 작성자가 아니어도 검색/수정 가능
-  const [mediaInfo, setMediaInfo] = useState(null)
-  const [mediaQuery, setMediaQuery] = useState('')
-  const [results, setResults] = useState(null)
-  const [lookupBusy, setLookupBusy] = useState(false)
-  const [lookupErr, setLookupErr] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const [g, t, m] = await Promise.all([getGroup(groupId), getTask(taskId), listMemberCards(groupId)])
       setGroup(g); setTask(t); setMembers(m)
-      setTitle(t.title || ''); setCategory(t.category || '')
-      setMediaInfo(t.media_info || null); setMediaQuery(t.title || '')
 
       if (t.scheduled_at) {
         const d = new Date(t.scheduled_at)
@@ -100,28 +112,6 @@ export default function ScheduleAppointment() {
   useEffect(() => { load() }, [load])
 
   const isReschedule = task && task.status !== 'open'
-  const isCreator = task?.created_by === profile.id
-  // 제목/유형 수정은 작성자(또는 관리자)만. 상세 정보는 아래에서 별도로 누구나 수정 가능.
-  const canEditTask = isReschedule && (isCreator || isAdmin)
-  const isNolging = true
-  const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
-
-  async function doSearch() {
-    if (!mediaQuery.trim()) return
-    setLookupBusy(true); setLookupErr(''); setResults(null)
-    try { setResults(await searchMedia(mediaQuery.trim(), category)) }
-    catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
-  }
-  async function pickResult(item) {
-    setLookupBusy(true); setLookupErr('')
-    try { setMediaInfo(await getMediaDetail(item.id, item.media, category)); setResults(null) }
-    catch (err) { setLookupErr(err.message) } finally { setLookupBusy(false) }
-  }
-  function resultSub(it) {
-    if (category === '독서') return it.author || ''
-    if (category === '게임') return it.year || ''
-    return [it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')
-  }
   const mandatory = useMemo(() => new Set([task?.created_by, profile.id].filter(Boolean)), [task, profile.id])
   const needChoose = members.length >= 3
 
@@ -144,21 +134,8 @@ export default function ScheduleAppointment() {
   async function submit(e) {
     e.preventDefault()
     if (saving) return
-    if (canEditTask && !title.trim()) { setError('제목을 입력해 주세요.'); return }
     setSaving(true); setError('')
     try {
-      // 작성자(또는 관리자)면 제목/유형/상세 정보를 함께 저장.
-      // 그 외 멤버는 상세 정보(media_info)만 저장.
-      if (canEditTask) {
-        await updateTask(taskId, {
-          title: title.trim(),
-          description: isNolging ? '' : (task.description ?? ''),
-          category: isNolging ? (category || null) : null,
-          media_info: mediaCat ? mediaInfo : null,
-        })
-      } else if (mediaCat) {
-        await updateTaskMedia(taskId, mediaInfo)
-      }
       let scheduledAt = null, timeSet = false
       if (dateOn) {
         if (!date) { setError('날짜를 설정해 주세요.'); setSaving(false); return }
@@ -166,7 +143,6 @@ export default function ScheduleAppointment() {
         timeSet = timeOn
       }
       const rule = buildRepeat()
-      // 3명 이상: 선택한 참여자 / 그 외(1~2명): 그룹 전원(2명이면 둘 다 참여)
       const ids = needChoose ? [...participants] : members.map((m) => m.user_id)
       const payload = {
         taskId, scheduledAt, timeSet, repeat: rule,
@@ -180,108 +156,71 @@ export default function ScheduleAppointment() {
     } catch (err) { setError(err.message); setSaving(false) }
   }
 
+  async function removeAppt() {
+    if (!confirm('이 약속을 삭제할까요? 위시는 유지돼요.')) return
+    setError('')
+    try { await cancelAppointment(taskId); navigate(`/groups/${groupId}/tasks/${taskId}`) }
+    catch (err) { setError(err.message) }
+  }
+
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!task) return null
 
+  const cat = task.category
+  const col = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
+  const showMedia = MEDIA_LOOKUP_CATS.includes(cat) && task.media_info
+
   return (
-    <div className="page">
-      {canEditTask ? (
-        <div className="sched-taskedit">
-          {isNolging && (
-            <div className="chip-row">
-              {WISH_CATEGORIES.map((c) => (
-                <button type="button" key={c} className={`chip ${category === c ? 'active' : ''}`}
-                  style={category === c ? categoryStyle(c) : undefined}
-                  onClick={() => setCategory(category === c ? '' : c)}>
-                  <span className="cat-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>{c}</button>
-              ))}
+    <div className="page cg-page">
+      <form onSubmit={submit} className="cg-form">
+        {/* 위시 요약 */}
+        <div className="sc-wish">
+          {cat && (
+            <span className="sc-wish-chip" style={{ background: col.bg, color: col.fg }}>
+              <span aria-hidden="true">{categoryEmoji(cat)}</span>{cat}
+            </span>
+          )}
+          <span className="sc-wish-title">{task.title}</span>
+        </div>
+        {showMedia && <div className="cg-mt-12"><MediaCard category={cat} info={task.media_info} /></div>}
+
+        {/* 일정 */}
+        <div className="cg-section-title cg-mt-24">일정</div>
+        <div className="cg-list cg-mt-12">
+          <div className="cg-row">
+            <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
+            <div className="cg-row-main">
+              <div className="cg-row-title">날짜</div>
+              {dateOn && <PickField type="date" value={date} onChange={setDate} format={fmtDate} />}
             </div>
-          )}
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" />
-        </div>
-      ) : (
-        <div className="sched-headline">
-          <CategoryChip category={task.category} />
-          <span className="task-name td-name">{task.title}</span>
-        </div>
-      )}
-
-      {mediaCat && (
-        <div className="media-lookup">
-          {mediaInfo ? (
-            <MediaInfo category={category} info={mediaInfo} onClear={() => setMediaInfo(null)} />
-          ) : (
-            <>
-              <div className="media-search-row">
-                <input value={mediaQuery} onChange={(e) => setMediaQuery(e.target.value)} placeholder="제목으로 검색" />
-                <button type="button" className="btn" disabled={!mediaQuery.trim() || lookupBusy} onClick={doSearch}>
-                  {lookupBusy ? '불러오는 중…' : `${MEDIA_UI[category]?.emoji ?? '🔎'} 정보 가져오기`}
-                </button>
-              </div>
-              <p className="muted sm" style={{ margin: '2px 2px 0' }}>{MEDIA_UI[category]?.hint}</p>
-            </>
-          )}
-          {lookupErr && <p className="field-error">{lookupErr}</p>}
-
-          {results && (
-            <div className="media-results">
-              {results.length === 0 ? (
-                <p className="muted sm" style={{ padding: '4px 2px' }}>검색 결과가 없어요. 제목을 확인해 주세요.</p>
-              ) : results.map((it) => (
-                <button type="button" key={`${it.media}-${it.id}`} className="media-result" onClick={() => pickResult(it)}>
-                  {it.poster
-                    ? <img src={it.poster} alt="" className="media-poster" />
-                    : <span className="media-poster media-poster-empty" aria-hidden="true">{MEDIA_UI[category]?.emoji ?? '🎬'}</span>}
-                  <span className="media-result-info">
-                    <span className="media-result-title">{it.title}</span>
-                    <span className="muted sm">{resultSub(it)}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <form onSubmit={submit}>
-        <div className="sched-rows">
-          <div className="sched-row">
-            <span className="sched-row-label">날짜</span>
-            <span className="sched-spacer" />
-            {dateOn && <input type="date" className="sched-val" value={date} onChange={(e) => setDate(e.target.value)} />}
-            <Switch checked={dateOn} onChange={setDateOn} />
+            <CgToggle on={dateOn} onClick={() => setDateOn((v) => !v)} />
           </div>
 
           {dateOn && (
-            <div className="sched-row">
-              <span className="sched-row-label">시간</span>
-              <span className="sched-spacer" />
-              {timeOn && <input type="time" className="sched-val" value={time} onChange={(e) => setTime(e.target.value)} />}
-              <Switch checked={timeOn} onChange={setTimeOn} />
+            <div className="cg-row">
+              <span className="cg-row-icon" style={{ background: '#eeebfe' }}>🕗</span>
+              <div className="cg-row-main">
+                <div className="cg-row-title">시간</div>
+                {timeOn && <PickField type="time" value={time} onChange={setTime} format={fmtTime} />}
+              </div>
+              <CgToggle on={timeOn} onClick={() => setTimeOn((v) => !v)} />
             </div>
           )}
 
           {dateOn && (
-            <div className="sched-row">
-              <span className="sched-row-label">반복</span>
-              <span className="sched-spacer" />
-              <select className="sched-val" value={repeat} onChange={(e) => setRepeat(e.target.value)}>
-                {REPEAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+            <div className="cg-row">
+              <span className="cg-row-icon" style={{ background: '#e8f4ec' }}>🔁</span>
+              <div className="cg-row-main"><div className="cg-row-title">반복</div></div>
+              <SelectPill value={repeat} onChange={setRepeat} options={REPEAT_OPTIONS} />
             </div>
           )}
 
           {dateOn && repeat === 'custom' && (
-            <div className="sched-custom">
-              <div className="sched-row sub">
-                <span className="sched-row-label">빈도</span>
-                <span className="sched-spacer" />
-                <input type="number" min="1" className="sched-val sched-num" value={cInterval}
-                  onChange={(e) => setCInterval(e.target.value)} />
-                <select className="sched-val" value={cFreq} onChange={(e) => setCFreq(e.target.value)}>
-                  {CUSTOM_FREQ.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+            <div className="sc-custom">
+              <div className="sc-custom-freq">
+                <input type="number" min="1" className="sc-num" value={cInterval} onChange={(e) => setCInterval(e.target.value)} />
+                <SelectPill value={cFreq} onChange={setCFreq} options={CUSTOM_FREQ} />
               </div>
               {cFreq === 'weekly' && (
                 <div className="weekday-row">
@@ -295,29 +234,29 @@ export default function ScheduleAppointment() {
           )}
 
           {dateOn && repeat !== 'none' && (
-            <div className="sched-row">
-              <span className="sched-row-label">반복 종료</span>
-              <span className="sched-spacer" />
-              {untilOn && <input type="date" className="sched-val" value={until} onChange={(e) => setUntil(e.target.value)} />}
-              <Switch checked={untilOn} onChange={setUntilOn} />
+            <div className="cg-row">
+              <span className="cg-row-icon" style={{ background: '#fde8ee' }}>🗓️</span>
+              <div className="cg-row-main">
+                <div className="cg-row-title">반복 종료</div>
+                {untilOn && <PickField type="date" value={until} onChange={setUntil} format={fmtDate} />}
+              </div>
+              <CgToggle on={untilOn} onClick={() => setUntilOn((v) => !v)} />
             </div>
           )}
 
           {dateOn && (
-            <div className="sched-row">
-              <span className="sched-row-label">알림</span>
-              <span className="sched-spacer" />
-              <select className="sched-val" value={remind} onChange={(e) => setRemind(e.target.value)}>
-                {REMIND_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+            <div className="cg-row">
+              <span className="cg-row-icon" style={{ background: '#fdeee6' }}>🔔</span>
+              <div className="cg-row-main"><div className="cg-row-title">알림</div></div>
+              <SelectPill value={remind} onChange={setRemind} options={REMIND_OPTIONS} />
             </div>
           )}
         </div>
 
         {needChoose && (
           <>
-            <div className="sched-sec-title">참여 멤버</div>
-            <ul className="member-pick">
+            <div className="cg-section-title cg-mt-24">참여 멤버</div>
+            <ul className="member-pick cg-mt-12">
               {members.map((m) => {
                 const checked = participants.has(m.user_id)
                 const fixed = mandatory.has(m.user_id)
@@ -335,10 +274,19 @@ export default function ScheduleAppointment() {
           </>
         )}
 
-        {error && <div className="alert alert-error">{error}</div>}
-        <button className="btn btn-primary btn-block" disabled={saving}>
-          {saving ? '저장 중…' : isReschedule ? '약속 수정' : '놀기 신청'}
-        </button>
+        {error && <div className="alert alert-error cg-mt-16">{error}</div>}
+        <div className="cg-footer">
+          <button type="submit" className="cg-btn-primary" disabled={saving}>
+            {saving ? '저장 중…' : isReschedule ? '저장' : (
+              <><svg width="17" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="7" cy="7" r="2.4" /><circle cx="12" cy="5.4" r="2.4" /><circle cx="17" cy="7" r="2.4" /><path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" /></svg> 놀기 신청</>
+            )}
+          </button>
+          {isReschedule && (
+            <div className="cg-footer-center">
+              <button type="button" className="cg-danger-link" onClick={removeAppt}>약속 삭제하기</button>
+            </div>
+          )}
+        </div>
       </form>
     </div>
   )
