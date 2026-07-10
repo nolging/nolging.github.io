@@ -33,6 +33,7 @@ export default function TouchKiss() {
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
   const [peerCount, setPeerCount] = useState(1)
   const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
+  const [excited, setExcited] = useState(false) // 닿는 중(고양이 눈 빠르게 깜빡)
   const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
   const meRef = useRef(me); meRef.current = me
 
@@ -116,10 +117,12 @@ export default function TouchKiss() {
   }, [])
   const endContact = useCallback(() => {
     collidingRef.current = false
+    setExcited(false)
     if (pulseRef.current) { clearInterval(pulseRef.current); pulseRef.current = 0 }
   }, [])
   const startContact = useCallback((mx, my) => {
     collidingRef.current = true
+    setExcited(true)
     buzz(200)
     spawnBurst(mx, my)
     // 계속 맞대고 있으면 진동+그라데이션+하트를 반복
@@ -151,19 +154,19 @@ export default function TouchKiss() {
   return (
     <div className="page tk-page">
       <div className="tk-greet">
-        <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
-        <PeekCat className="tk-cat" width={72} />
+        <div className="tk-members">
+          {members.slice(0, 4).map((m) => (
+            <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
+          ))}
+        </div>
+        <div className="tk-greet-right">
+          <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
+          <PeekCat className={`tk-cat ${excited ? 'tk-cat-excited' : ''}`} sparkle="heart" width={72} />
+        </div>
       </div>
 
       <div className="tk-area" ref={areaRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        {members.length > 0 && (
-          <div className="tk-members">
-            {members.slice(0, 4).map((m) => (
-              <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
-            ))}
-          </div>
-        )}
         {!me && !anyPeerDown && (
           <div className="tk-empty">
             <div className="tk-empty-t">우리 심심한데 뽀뽀나 할까</div>
