@@ -2191,16 +2191,17 @@ button.mlist-row:hover { background: #f6f5fa; }
   gap: 10px; pointer-events: none; }
 .tk-empty-lips { font-size: 52px; opacity: .5; animation: tk-pulse 1.4s ease-in-out infinite; }
 .tk-empty-t { font-size: 13px; font-weight: 600; color: #c98aa2; }
-/* 입술은 손끝 위치(원래대로). 내 입술은 혼자 있어도 손가락 따라 반투명으로 보임 */
-.tk-lips { position: absolute; transform: translate(-50%, -50%); font-size: clamp(36px, 13vw, 62px);
+/* 입술은 손끝 바로 아래에 표시(손가락에 가리지 않게). 버스트도 같은 만큼 내려 맞닿음과 정렬.
+   내 입술은 혼자 있어도 손가락 따라 반투명으로 보임 */
+.tk-lips { position: absolute; margin-top: 42px; transform: translate(-50%, -50%); font-size: clamp(36px, 13vw, 62px);
   line-height: 1; pointer-events: none; z-index: 4; filter: drop-shadow(0 3px 6px rgba(180,40,90,.28)); }
-.tk-lips.me { opacity: .5; }
+.tk-lips.tk-me { opacity: .5; }
 .tk-lips.pulse { animation: tk-pulse .7s ease-in-out infinite; }
 @keyframes tk-pulse {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.12); }
 }
-.tk-burst { position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; }
+.tk-burst { position: absolute; margin-top: 42px; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; }
 /* 맞닿을 때: 핑크 그라데이션이 넓게 퍼짐 */
 .tk-spread { position: absolute; left: 50%; top: 50%; width: 240px; height: 240px; border-radius: 50%;
   transform: translate(-50%, -50%) scale(.25);

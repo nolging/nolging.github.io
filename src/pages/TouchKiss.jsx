@@ -154,7 +154,7 @@ export default function TouchKiss() {
         {Object.entries(peers).map(([id, p]) => (
           <span key={id} className="tk-lips peer pulse" style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} aria-hidden="true">💋</span>
         ))}
-        {me && <span className="tk-lips me pulse" style={{ left: `${me.x * 100}%`, top: `${me.y * 100}%` }} aria-hidden="true">💋</span>}
+        {me && <span className="tk-lips tk-me pulse" style={{ left: `${me.x * 100}%`, top: `${me.y * 100}%` }} aria-hidden="true">💋</span>}
         {bursts.map((b) => (
           <span key={b.id} className="tk-burst" style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%` }} aria-hidden="true">
             <span className="tk-spread" />
