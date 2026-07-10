@@ -1305,7 +1305,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .sheet-backdrop { position: absolute; inset: 0; background: rgba(20, 22, 40, 0); transition: background .28s ease; }
 .sheet-root.shown .sheet-backdrop { background: rgba(20, 22, 40, .38); }
 .sheet {
-  position: absolute; left: 0; right: 0; bottom: 0;
+  position: absolute; left: 0; right: 0; bottom: var(--kb-inset, 0px);
   background: var(--surface); border-radius: 18px 18px 0 0;
   padding: 10px 22px calc(40px + env(safe-area-inset-bottom));
   box-shadow: 0 -8px 30px rgba(20, 22, 40, .18);

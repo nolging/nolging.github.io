@@ -255,6 +255,9 @@ export default function Layout() {
       // 기준 전체 높이는 innerHeight/clientHeight 중 큰 값(키보드에 따라 한쪽이 줄 수 있음).
       const full = Math.max(window.innerHeight, document.documentElement.clientHeight)
       el.classList.toggle('kb-open', full - vv.height > 120)
+      // body 로 포탈된 바텀시트(.sheet)가 키보드 뒤로 가려지지 않게 하단 인셋 노출
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      document.documentElement.style.setProperty('--kb-inset', `${kb}px`)
     }
     vv.addEventListener('resize', apply)
     vv.addEventListener('scroll', apply)
@@ -264,6 +267,7 @@ export default function Layout() {
       vv.removeEventListener('scroll', apply)
       const el = shellRef.current
       if (el) { el.style.height = ''; el.style.top = '' }
+      document.documentElement.style.removeProperty('--kb-inset')
     }
   }, [])
 
