@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -97,7 +97,10 @@ export default function Inventory() {
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'telescope') setTelescopeOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
-    else if (g.id.startsWith('theme-')) setThemeItem({ id: g.id, name: g.name })
+    else if (g.id.startsWith('theme-')) {
+      const appliedRow = g.rows.find((r) => r.status === 'used')
+      setThemeItem({ id: g.id, name: g.name, appliedGroupId: appliedRow?.group_id || null })
+    }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -117,12 +120,20 @@ export default function Inventory() {
             const equipped = (g.id === 'couple-ring' || g.id === 'friend-ring') && g.rows.some((r) => r.status === 'used')
             const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
             const ledLive = g.id === 'ledboard' && !!ledBanner // 게재 중
+            const isTheme = g.id.startsWith('theme-')
+            const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
             return (
               <div key={g.id} className="store-card inv-card">
                 {g.count > 1 && <span className="inv-count">{g.count}</span>}
                 <StoreItemImage id={g.id} emoji={g.emoji} className="store-card-img" />
                 <span className="store-card-name">{g.name}</span>
-                {ledLive ? (
+                {isTheme ? (
+                  <button type="button"
+                    className={`btn btn-sm inv-use-btn ${themeApplied ? 'inv-applied-btn' : 'btn-primary'}`}
+                    onClick={() => useItem(g)}>
+                    {themeApplied ? '적용 중' : '적용하기'}
+                  </button>
+                ) : ledLive ? (
                   <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => setLedEditOpen(true)}>
                     사용 중
                   </button>
@@ -170,7 +181,7 @@ export default function Inventory() {
   )
 }
 
-// ---- 그룹 꾸미기 테마 적용 (프리미엄 그룹 선택) ----
+// ---- 그룹 꾸미기 테마 적용/변경/해제 (프리미엄 그룹) ----
 function ThemeModal({ open, onClose, myId, item, onDone }) {
   const [groups, setGroups] = useState([])
   const [premiumIds, setPremiumIds] = useState(new Set())
@@ -178,26 +189,39 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const applied = !!item?.appliedGroupId
+
   useEffect(() => {
     if (!open) return
-    setGroupId(''); setError('')
+    setGroupId(item?.appliedGroupId || ''); setError('')
     Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
       .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
       .catch((e) => setError(e.message))
-  }, [open, myId])
+  }, [open, myId, item])
 
   const themeId = item ? item.id.replace(/^theme-/, '') : ''
   const eligible = useMemo(
     () => groups.filter((g) => premiumIds.has(g.id) && (g.group_members || []).some((m) => m.user_id === myId)),
     [groups, premiumIds, myId],
   )
-  const group = eligible.find((g) => g.id === groupId)
+  const appliedGroup = groups.find((g) => g.id === item?.appliedGroupId)
+  const target = eligible.find((g) => g.id === groupId)
+  const changed = groupId && groupId !== item?.appliedGroupId
 
   async function apply() {
-    if (!group) { setError('그룹을 선택해 주세요.'); return }
+    if (!target) { setError('그룹을 선택해 주세요.'); return }
     setBusy(true); setError('')
     try {
-      await applyGroupTheme(group.id, themeId)
+      await applyGroupTheme(target.id, themeId)
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  async function unapply() {
+    setBusy(true); setError('')
+    try {
+      await unapplyGroupTheme(themeId)
       await onDone()
       onClose()
     } catch (e) { setError(e.message); setBusy(false) }
@@ -209,17 +233,30 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
         {error && <div className="alert alert-error">{error}</div>}
         <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그룹 카드와 상세 화면이 꾸며져요.</p>
 
+        {applied && (
+          <div className="couple-to">
+            <span className="couple-to-label">적용 중</span>
+            <span className="couple-to-value">{appliedGroup?.name || '알 수 없는 그룹'}</span>
+          </div>
+        )}
+
         <label className="field">
-          <span>적용할 그룹</span>
+          <span>{applied ? '적용할 그룹 변경' : '적용할 그룹'}</span>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{eligible.length ? '그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
-            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}{g.deco_theme ? ' (테마 적용됨)' : ''}</option>)}
+            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}{g.id === item?.appliedGroupId ? ' (현재)' : ''}</option>)}
           </select>
         </label>
 
-        <button type="button" className="btn btn-primary btn-block" onClick={apply} disabled={!group || busy}>
-          {busy ? '적용 중…' : '적용하기'}
+        <button type="button" className="btn btn-primary btn-block" onClick={apply}
+          disabled={busy || !target || (applied && !changed)}>
+          {busy ? '적용 중…' : applied ? '이 그룹으로 변경' : '적용하기'}
         </button>
+        {applied && (
+          <button type="button" className="btn btn-danger btn-block" onClick={unapply} disabled={busy}>
+            적용 해제
+          </button>
+        )}
       </div>
     </Modal>
   )

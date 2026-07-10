@@ -562,7 +562,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used)')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
@@ -631,6 +631,17 @@ export async function applyGroupTheme(groupId, theme) {
   if (error) {
     if (error.code === 'PGRST202' || /apply_group_theme/.test(error.message || '')) {
       throw new Error('그룹 테마 기능이 아직 DB에 설정되지 않았습니다. (apply_group_theme 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 그룹 테마 적용 해제: 아이템을 다시 미적용으로 되돌리고 그룹 테마 제거.
+export async function unapplyGroupTheme(theme) {
+  const { error } = await supabase.rpc('unapply_group_theme', { p_theme: theme })
+  if (error) {
+    if (error.code === 'PGRST202' || /unapply_group_theme/.test(error.message || '')) {
+      throw new Error('그룹 테마 기능이 아직 DB에 설정되지 않았습니다. (unapply_group_theme 함수를 먼저 적용해 주세요)')
     }
     throw error
   }

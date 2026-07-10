@@ -1552,7 +1552,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 .group-tile { position: relative; }   /* 하트 오버레이 담기(이미 overflow:hidden) */
 .gd-themed { position: relative; }
 .gd-themed > .theme-hearts { z-index: 0; }
-.gd-themed > *:not(.theme-hearts) { position: relative; z-index: 1; }
+/* 콘텐츠만 하트 위로 (FAB·고스트 등 fixed 요소는 건드리지 않음) */
+.gd-themed > .gd-sticky-head, .gd-themed > .tab-pane { position: relative; z-index: 1; }
 .theme-hearts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
 .theme-heart {
   position: absolute; bottom: -16px; opacity: 0; line-height: 1;
@@ -1578,6 +1579,9 @@ button.mlist-row:hover { background: #f6f5fa; }
   background: rgba(115, 99, 232, .12); border-radius: 999px; padding: 5px 12px;
 }
 .inv-equipped.inv-pending { color: #cf5e88; background: rgba(207, 94, 136, .12); }
+/* 테마 "적용 중" 버튼(장착 배지처럼 보이되 탭 가능) */
+.inv-applied-btn { color: #7363e8; background: rgba(115, 99, 232, .12); border: none; font-weight: 700; }
+.inv-applied-btn:hover { background: rgba(115, 99, 232, .2); }
 
 /* ---- 커플 링 나눠 끼기 모달 ---- */
 .couple-modal { display: flex; flex-direction: column; gap: 14px; }

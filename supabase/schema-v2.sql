@@ -1881,25 +1881,50 @@ grant execute on function public.scratch_nyangpito() to authenticated;
 
 -- =============================================================
 --  그룹 꾸미기 테마 — 프리미엄 그룹(커플/우정)에만 적용.
---  groups.deco_theme 에 테마 id 저장(null=없음). 예: 'heart'(하트 뿅뿅)
---  테마 아이템 id = 'theme-' || deco_theme (예: theme-heart)
+--  테마 아이템은 소모되지 않고 "장착(적용)" 개념: user_items.status='used' +
+--  group_id = 적용한 그룹. 적용 해제하면 status='active', group_id=null 로 복귀.
+--  groups.deco_theme 에 테마 id 저장(null=없음). 테마 아이템 id = 'theme-'||deco_theme.
 -- =============================================================
 alter table public.groups add column if not exists deco_theme text;
 
+-- 적용/그룹 변경(소모하지 않음). 이미 다른 그룹에 적용돼 있으면 옮김.
 create or replace function public.apply_group_theme(p_group_id uuid, p_theme text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_item public.user_items;
+declare v_item public.user_items; v_old uuid;
 begin
   if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then
     raise exception '프리미엄 그룹에만 테마를 적용할 수 있어요.'; end if;
   if not public.is_group_member(p_group_id, auth.uid()) then
     raise exception '그룹 멤버만 적용할 수 있어요.'; end if;
+  -- 내 테마 아이템 하나 선택(미적용=active 우선, 없으면 적용중=used 를 옮김)
   select * into v_item from public.user_items
-    where user_id = auth.uid() and item_id = 'theme-' || p_theme and status = 'active'
-    order by created_at asc limit 1 for update;
-  if v_item.id is null then raise exception '사용할 수 있는 테마가 없어요.'; end if;
-  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+    where user_id = auth.uid() and item_id = 'theme-' || p_theme and status in ('active', 'used')
+    order by (status = 'active') desc, created_at asc limit 1 for update;
+  if v_item.id is null then raise exception '보유한 테마가 없어요.'; end if;
+  v_old := v_item.group_id;
+  -- 이전 그룹에서 이 테마 해제(다른 그룹으로 옮기는 경우)
+  if v_item.status = 'used' and v_old is not null and v_old <> p_group_id then
+    update public.groups set deco_theme = null where id = v_old and deco_theme = p_theme;
+  end if;
+  update public.user_items set status = 'used', group_id = p_group_id, used_at = now() where id = v_item.id;
   update public.groups set deco_theme = p_theme where id = p_group_id;
 end;
 $$;
 grant execute on function public.apply_group_theme(uuid, text) to authenticated;
+
+-- 적용 해제: 아이템을 다시 미적용(active)으로 되돌리고 그룹 테마 제거.
+create or replace function public.unapply_group_theme(p_theme text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items;
+begin
+  select * into v_item from public.user_items
+    where user_id = auth.uid() and item_id = 'theme-' || p_theme and status = 'used'
+    order by used_at desc nulls last limit 1 for update;
+  if v_item.id is null then raise exception '적용 중인 테마가 없어요.'; end if;
+  update public.user_items set status = 'active', group_id = null where id = v_item.id;
+  if v_item.group_id is not null then
+    update public.groups set deco_theme = null where id = v_item.group_id and deco_theme = p_theme;
+  end if;
+end;
+$$;
+grant execute on function public.unapply_group_theme(text) to authenticated;
