@@ -8,6 +8,8 @@ import PeekCat from '../components/PeekCat'
 import ThemeHearts from '../components/ThemeHearts'
 import LedBanner from '../components/LedBanner'
 import { LedEditModal } from '../components/LedModals'
+import InviteCodeSheet from '../components/InviteCodeSheet'
+import { useNavigate } from 'react-router-dom'
 
 function BellIcon() {
   return (
@@ -29,6 +31,8 @@ function dayGreeting() {
 
 export default function Dashboard() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [groups, setGroups] = useState([])
   const [premiumIds, setPremiumIds] = useState([])
   const [friendIds, setFriendIds] = useState([])
@@ -99,12 +103,13 @@ export default function Dashboard() {
               aria-label="검색어 지우기">×</button>
           )}
         </div>
-        <Link to="/join" className="ds-join" aria-label="초대 코드로 가입하기" title="초대 코드로 가입하기">
+        <button type="button" className="ds-join" onClick={() => setInviteOpen(true)}
+          aria-label="초대 코드로 가입하기" title="초대 코드로 가입하기">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" />
           </svg>
-        </Link>
+        </button>
       </div>
 
       {banner && (
@@ -175,6 +180,8 @@ export default function Dashboard() {
       )}
 
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={banner} onDone={reloadBanner} />
+      <InviteCodeSheet open={inviteOpen} onClose={() => setInviteOpen(false)}
+        onSuccess={(preview, code) => { setInviteOpen(false); navigate('/join', { state: { preview, code } }) }} />
     </div>
   )
 }

@@ -53,8 +53,16 @@ export default function GroupMembers() {
 
   function copyCode() {
     if (!group?.invite_code) return
-    navigator.clipboard?.writeText(group.invite_code)
-    setCopied(true); setTimeout(() => setCopied(false), 1500)
+    try { navigator.clipboard?.writeText(group.invite_code) } catch { /* noop */ }
+    setCopied(true); setTimeout(() => setCopied(false), 1600)
+  }
+  async function shareCode() {
+    if (!group?.invite_code) return
+    const text = `${group.name} 그룹 초대 코드: ${group.invite_code}`
+    try {
+      if (navigator.share) { await navigator.share({ title: '그룹 초대', text }); return }
+    } catch { return /* 사용자가 취소 */ }
+    copyCode()
   }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
@@ -114,11 +122,35 @@ export default function GroupMembers() {
       </div>
 
       <BottomSheet open={inviteOpen} onClose={() => setInviteOpen(false)}>
-        <h3 className="sheet-title">함께할 멤버를 초대해 보세요.</h3>
-        <div className="invite-box">
-          <code className="mono">{group?.invite_code}</code>
-          <button className="btn btn-sm" onClick={copyCode}>{copied ? '복사됨!' : '복사'}</button>
+        <div className="iv-head">
+          <span className="iv-ico" aria-hidden="true">
+            <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+          </span>
+          <div className="iv-htext">
+            <div className="iv-tt">멤버 초대</div>
+            <div className="iv-sub">함께할 멤버를 초대해 보세요</div>
+          </div>
+          <button type="button" className="iv-x" onClick={() => setInviteOpen(false)} aria-label="닫기" title="닫기">
+            <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
         </div>
+
+        <div className="iv-codecard">
+          <div className="iv-codelabel">초대 코드</div>
+          <div className="iv-codeval">{group?.invite_code}</div>
+          <button type="button" className={`iv-copy ${copied ? 'copied' : ''}`} onClick={copyCode}>
+            {copied ? (
+              <><svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>복사됨</>
+            ) : (
+              <><svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>코드 복사</>
+            )}
+          </button>
+        </div>
+
+        <button type="button" className="iv-share" onClick={shareCode}>
+          <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" /><line x1="15.4" y1="6.5" x2="8.6" y2="10.5" /></svg>
+          공유하기
+        </button>
       </BottomSheet>
     </div>
   )

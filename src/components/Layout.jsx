@@ -370,13 +370,11 @@ export default function Layout() {
       </header>
     )
   } else if (joinMatch) {
-    // 초대장 찾기(그룹 가입) 페이지: 좌측 뒤로 — 핸들러 있으면(2단계→1단계) 그걸, 아니면 내 그룹으로
+    // 그룹 가입 STEP 2 페이지: 좌측 뒤로(내 그룹으로). 코드 입력은 바텀시트 모달로 분리됨
     topbar = (
       <header className="topbar">
-        {backHandler
-          ? <button type="button" onClick={backHandler} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-          : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
-        <span className="topbar-heading">초대장 찾기</span>
+        <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">그룹 가입</span>
       </header>
     )
   } else if (notifSettingsMatch) {

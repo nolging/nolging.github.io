@@ -156,6 +156,8 @@ returns table (
   description text,
   group_type text,
   theme text,
+  emoji text,
+  emoji_bg text,
   owner_nickname text,
   show_contact boolean,
   show_birthdate boolean,
@@ -163,6 +165,7 @@ returns table (
   already_member boolean
 ) language sql security definer stable set search_path = public as $$
   select g.id, g.name, g.description, g.group_type, g.theme,
+         g.emoji, g.emoji_bg,
          p.nickname as owner_nickname,
          g.show_contact, g.show_birthdate, g.show_ott,
          public.is_group_member(g.id, auth.uid()) as already_member
