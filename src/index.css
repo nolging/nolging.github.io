@@ -2224,4 +2224,10 @@ button.mlist-row:hover { background: #f6f5fa; }
   80% { opacity: .9; }
   100% { transform: translate(calc(-50% + var(--dx, 0px) * 1.2), -50%) translateY(-128px) scale(.95) rotate(9deg); opacity: 0; }
 }
-.tk-novibe { align-self: center; flex-shrink: 0; margin-top: -4px; font-size: 11.5px; color: #b98aa0; text-align: center; }
+/* 접속 중 멤버 아바타 (분홍 영역 위 좌측, 겹침) */
+.tk-members { position: absolute; top: 12px; left: 12px; display: flex; z-index: 5; pointer-events: none; }
+.tk-members .avatar { border: 2px solid #fff; box-sizing: content-box; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
+.tk-members .avatar + .avatar { margin-left: -11px; }
+/* 진동 미지원 안내 (분홍 영역 안쪽 하단) */
+.tk-novibe { position: absolute; left: 14px; right: 14px; bottom: 12px; margin: 0; text-align: center;
+  font-size: 11.5px; font-weight: 500; color: #c98aa2; pointer-events: none; z-index: 5; }

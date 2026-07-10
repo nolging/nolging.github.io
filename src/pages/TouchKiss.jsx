@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { getMyGroupMember } from '../lib/api'
 import PeekCat from '../components/PeekCat'
+import Avatar from '../components/Avatar'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
 const PULSE_MS = 520        // 닿아 있는 동안 진동+이펙트 반복 간격
@@ -30,6 +32,7 @@ export default function TouchKiss() {
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
   const [peerCount, setPeerCount] = useState(1)
+  const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
   const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
   const meRef = useRef(me); meRef.current = me
 
@@ -50,7 +53,9 @@ export default function TouchKiss() {
     })
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState()
-      setPeerCount(Math.max(1, Object.keys(st).length))
+      const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
+      setPeerCount(Math.max(1, list.length))
+      setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
       setPeers((prev) => {
         const next = {}
         for (const k of Object.keys(prev)) if (st[k]) next[k] = prev[k]
@@ -58,7 +63,13 @@ export default function TouchKiss() {
       })
     })
     ch.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') { try { await ch.track({ uid, name: profile?.nickname || '' }) } catch { /* noop */ } }
+      if (status !== 'SUBSCRIBED') return
+      let meta = { uid, name: profile?.nickname || '', avatar: null }
+      try {
+        const m = await getMyGroupMember(groupId, uid)
+        if (m) meta = { uid, name: m.display_nickname || profile?.nickname || '', avatar: m.avatar_url || null }
+      } catch { /* noop */ }
+      try { await ch.track(meta) } catch { /* noop */ }
     })
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid, profile?.nickname])
@@ -143,10 +154,16 @@ export default function TouchKiss() {
         <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
         <PeekCat className="tk-cat" width={72} />
       </div>
-      {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 화면 효과로 표시돼요</div>}
 
       <div className="tk-area" ref={areaRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        {members.length > 0 && (
+          <div className="tk-members">
+            {members.slice(0, 4).map((m) => (
+              <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
+            ))}
+          </div>
+        )}
         {!me && !anyPeerDown && (
           <div className="tk-empty">
             <div className="tk-empty-t">우리 심심한데 뽀뽀나 할까</div>
@@ -165,6 +182,7 @@ export default function TouchKiss() {
             ))}
           </span>
         ))}
+        {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 화면 효과로 표시돼요</div>}
       </div>
     </div>
   )
