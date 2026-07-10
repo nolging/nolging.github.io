@@ -1622,10 +1622,13 @@ button.mlist-row:hover { background: #f6f5fa; }
 .ws-title { font-size: 18px; font-weight: 800; letter-spacing: -.4px; color: #191722; }
 .ws-cat { display: inline-flex; align-items: center; gap: 4px; background: #eeebfe; color: #7363e8;
   border-radius: 999px; padding: 3px 9px 3px 7px; font-size: 11px; font-weight: 700; }
+.ws-warn { display: flex; align-items: center; gap: 5px; margin: 9px 0 0; flex-shrink: 0;
+  font-size: 12.5px; font-weight: 500; color: #8b8798; letter-spacing: -.2px; }
+.ws-warn svg { flex-shrink: 0; color: #b0aebb; }
 .ws-search { display: flex; align-items: center; gap: 9px; background: #fff; border: 1.5px solid #47444f;
-  border-radius: 999px; padding: 12px 14px; box-sizing: border-box; margin-top: 14px; flex-shrink: 0; }
-/* 전역 input min-height:46px(0,2,1) 를 이기도록 특이도 상향 */
-.ws .ws-search input { flex: 1; border: none; background: transparent; outline: none; font-size: 14.5px; color: #191722; padding: 0; min-width: 0; min-height: 0; }
+  border-radius: 999px; padding: 12px 14px; box-sizing: border-box; margin-top: 12px; flex-shrink: 0; }
+/* 전역 input min-height:46px(0,2,1) 를 이기도록 특이도 상향. 좌측 1px 로 첫 글자 잘림 방지 */
+.ws .ws-search input { flex: 1; border: none; background: transparent; outline: none; font-size: 14.5px; color: #191722; padding: 0 0 0 1px; min-width: 0; min-height: 0; }
 .ws-fetch { width: 100%; box-sizing: border-box; margin-top: 10px; height: 48px; flex-shrink: 0; border: none; border-radius: 999px;
   background: #47444f; color: #fff; font-size: 14.5px; font-weight: 700; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px; }

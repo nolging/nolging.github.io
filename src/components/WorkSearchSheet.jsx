@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
 import BottomSheet from './BottomSheet'
 import { searchMedia, getMediaDetail } from '../lib/api'
-import { workNoun, categoryEmoji } from '../lib/constants'
+import { workNoun, categoryEmoji, categoryStyle } from '../lib/constants'
 
 function resultSub(it, category) {
   if (category === '독서') return it.author || ''
   if (category === '게임') return it.year || ''
   return [it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')
+}
+
+// 유형별 검색 주의 문구
+const SEARCH_WARN = {
+  OTT: '제공처에 쿠팡플레이는 누락될 수 있어요',
+  영화: '현재 상영 중인 영화만 검색돼요',
+  게임: '영문으로 검색해야 정확해요',
+  독서: '한글 제목으로 검색해 주세요',
 }
 
 // 작품/도서/게임 검색 바텀시트 (시안 11c). 선택 후 상세를 가져와 onPick(info).
@@ -46,8 +54,15 @@ export default function WorkSearchSheet({ open, onClose, category, initialQuery 
       <div className="ws">
         <div className="ws-head">
           <div className="ws-title">{noun} 검색</div>
-          <span className="ws-cat"><span aria-hidden="true">{categoryEmoji(category)}</span>{category}</span>
+          <span className="ws-cat" style={categoryStyle(category)}><span aria-hidden="true">{categoryEmoji(category)}</span>{category}</span>
         </div>
+
+        {SEARCH_WARN[category] && (
+          <p className="ws-warn">
+            <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="13" /><line x1="12" y1="16.5" x2="12" y2="16.6" /></svg>
+            {SEARCH_WARN[category]}
+          </p>
+        )}
 
         <div className="ws-search">
           <svg width="17" viewBox="0 0 24 24" fill="none" stroke="#47444f" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>

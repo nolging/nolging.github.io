@@ -321,11 +321,14 @@ export default function Layout() {
       </header>
     )
   } else if (taskEditMatch) {
-    // 태스크 수정 페이지: 좌측 뒤로(수정 진입했던 상세로), 제목은 유형별 명칭 + 수정
+    // 태스크 수정 페이지: 좌측 뒤로 — 그룹 카드(스와이프)에서 왔으면 그룹 상세(해당 탭), 그 외엔 태스크 상세로
     const { groupId: id, taskId: tid } = taskEditMatch.params
+    const editBackTo = location.state?.from === 'group'
+      ? `/groups/${id}?tab=${location.state?.tab || 'open'}`
+      : `/groups/${id}/tasks/${tid}`
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}/tasks/${tid}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={editBackTo} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 수정</span>
       </header>
     )

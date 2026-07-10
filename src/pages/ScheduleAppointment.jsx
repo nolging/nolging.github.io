@@ -241,7 +241,7 @@ export default function ScheduleAppointment() {
         {/* 작품 정보 — 미디어 유형이면 참여자 누구나 편집 */}
         {mediaCat && (
           <div className="cg-section cg-mt-24">
-            <div className="cg-label">{noun} 정보</div>
+            <div className="cg-label">{noun} 정보 <span className="cg-opt">선택</span></div>
             {!mediaInfo && <div className="cg-section-sub" style={{ marginTop: 4 }}>{workSearchHint(category)}</div>}
             <div className="cg-mt-12">
               {mediaInfo ? (
