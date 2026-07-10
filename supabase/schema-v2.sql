@@ -223,6 +223,25 @@ drop policy if exists gd_delete on public.group_drawings;
 create policy gd_delete on public.group_drawings for delete
   using (public.is_group_member(group_id, auth.uid()));
 
+-- ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ---------------------
+-- 실시간 조각 이동은 Broadcast, 아래 테이블은 현재 퍼즐/조각 위치 저장(재진입 이어하기).
+-- positions: { "r-c": { x, y, placed } } (x,y=놀이영역 너비 기준 정규화)
+create table if not exists public.group_puzzles (
+  group_id   uuid primary key references public.groups(id) on delete cascade,
+  image      text not null,
+  cols       int not null,
+  rows       int not null,
+  seed       int not null,
+  positions  jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.group_puzzles enable row level security;
+drop policy if exists gp_all on public.group_puzzles;
+create policy gp_all on public.group_puzzles for all
+  using (public.is_group_member(group_id, auth.uid()))
+  with check (public.is_group_member(group_id, auth.uid()));
+
 -- ---- 커플 공간: 기념일 -----------------------------------------
 alter table public.groups add column if not exists anniversary date;
 -- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.

@@ -151,6 +151,10 @@ export default function GroupMembers() {
             <span className="cs-act-ico" style={{ background: '#fde8ef' }}>💋</span>
             <span className="cs-act-t">우심뽀까</span>
           </button>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`)}>
+            <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
+            <span className="cs-act-t">퍼즐</span>
+          </button>
         </div>
       </div>
     )

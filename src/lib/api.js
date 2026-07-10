@@ -57,6 +57,29 @@ export async function deleteGroup(groupId) {
   if (error) throw error
 }
 
+// ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ----------------------
+export async function getGroupPuzzle(groupId) {
+  const { data, error } = await supabase.from('group_puzzles').select('*').eq('group_id', groupId).maybeSingle()
+  if (error) { if (error.code === '42P01') return null; throw error }
+  return data
+}
+export async function saveGroupPuzzle(groupId, p) {
+  const row = { group_id: groupId, image: p.image, cols: p.cols, rows: p.rows, seed: p.seed, positions: p.positions || {} }
+  const { error } = await supabase.from('group_puzzles').upsert(row)
+  if (error) {
+    if (error.code === '42P01') throw new Error('퍼즐 기능이 아직 DB에 설정되지 않았습니다. (group_puzzles 테이블을 먼저 적용해 주세요)')
+    throw error
+  }
+}
+export async function updatePuzzlePositions(groupId, positions) {
+  const { error } = await supabase.from('group_puzzles').update({ positions }).eq('group_id', groupId)
+  if (error && error.code !== '42P01') throw error
+}
+export async function deleteGroupPuzzle(groupId) {
+  const { error } = await supabase.from('group_puzzles').delete().eq('group_id', groupId)
+  if (error && error.code !== '42P01') throw error
+}
+
 // 커플 공간: 기념일 설정 (그룹 멤버 누구나). null 이면 해제.
 export async function setGroupAnniversary(groupId, date) {
   const { error } = await supabase.rpc('set_group_anniversary', { p_group_id: groupId, p_date: date || null })

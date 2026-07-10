@@ -18,6 +18,17 @@ export async function uploadAvatar(blob, userId) {
   return data.publicUrl
 }
 
+// 퍼즐 이미지 업로드 (avatars 버킷 재사용, 본인 폴더). public URL 반환.
+export async function uploadPuzzleImage(blob, userId) {
+  const path = `${userId}/puzzle-${Date.now()}.jpg`
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    contentType: 'image/jpeg', cacheControl: '3600', upsert: true,
+  })
+  if (error) throw new Error(`이미지 업로드 실패: ${error.message}`)
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
 // avatar_url 이 우리 스토리지 URL 이면 해당 객체 경로를 추출 (아니면 null — 레거시 data URI 등)
 export function storagePathFromUrl(url) {
   if (typeof url !== 'string') return null
