@@ -200,6 +200,29 @@ end;
 $$;
 grant execute on function public.regenerate_invite_code(uuid) to authenticated;
 
+-- ---- 함께 그리기 (프리미엄 그룹 공용 캔버스) ------------------
+-- 실시간 스트로크는 Supabase Realtime Broadcast 로 주고받고, 아래 테이블은
+-- "마지막 그림"을 저장해 재진입 시 이어 그릴 수 있게 하는 영속 저장소.
+-- stroke: { c:색상, w:굵기(0..1), p:[[x,y],...] 정규화(0..1) }
+create table if not exists public.group_drawings (
+  id         uuid primary key default gen_random_uuid(),
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  author     uuid not null references public.profiles(id) on delete cascade,
+  stroke     jsonb not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_group_drawings_group on public.group_drawings(group_id, created_at);
+alter table public.group_drawings enable row level security;
+drop policy if exists gd_select on public.group_drawings;
+create policy gd_select on public.group_drawings for select
+  using (public.is_group_member(group_id, auth.uid()));
+drop policy if exists gd_insert on public.group_drawings;
+create policy gd_insert on public.group_drawings for insert
+  with check (public.is_group_member(group_id, auth.uid()) and author = auth.uid());
+drop policy if exists gd_delete on public.group_drawings;
+create policy gd_delete on public.group_drawings for delete
+  using (public.is_group_member(group_id, auth.uid()));
+
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;

@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import CreateGroup from './pages/CreateGroup'
 import GroupDetail from './pages/GroupDetail'
 import GroupMembers from './pages/GroupMembers'
+import DrawBoard from './pages/DrawBoard'
 import MemberDetail from './pages/MemberDetail'
 import CreateTask from './pages/CreateTask'
 import TaskEdit from './pages/TaskEdit'
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/groups/new" element={<CreateGroup />} />
         <Route path="/groups/:groupId" element={<GroupDetail />} />
         <Route path="/groups/:groupId/members" element={<GroupMembers />} />
+        <Route path="/groups/:groupId/draw" element={<DrawBoard />} />
         <Route path="/groups/:groupId/members/:userId" element={<MemberDetail />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />
         <Route path="/groups/:groupId/tasks/:taskId/edit" element={<TaskEdit />} />

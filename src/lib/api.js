@@ -57,6 +57,29 @@ export async function deleteGroup(groupId) {
   if (error) throw error
 }
 
+// ---- 함께 그리기 (프리미엄 그룹 공용 캔버스) --------------------
+// 저장된 스트로크 로드 (재진입 시 이어 그리기). 테이블 미배포면 빈 배열.
+export async function listDrawingStrokes(groupId) {
+  const { data, error } = await supabase
+    .from('group_drawings').select('id, author, stroke')
+    .eq('group_id', groupId).order('created_at', { ascending: true })
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return data ?? []
+}
+// 완성된 스트로크 1개 저장. id 는 클라이언트 생성(브로드캐스트와 공유).
+export async function addDrawingStroke(groupId, id, authorId, stroke) {
+  const { error } = await supabase.from('group_drawings').insert({ id, group_id: groupId, author: authorId, stroke })
+  if (error && error.code !== '42P01') throw error
+}
+export async function deleteDrawingStroke(id) {
+  const { error } = await supabase.from('group_drawings').delete().eq('id', id)
+  if (error && error.code !== '42P01') throw error
+}
+export async function clearGroupDrawing(groupId) {
+  const { error } = await supabase.from('group_drawings').delete().eq('group_id', groupId)
+  if (error && error.code !== '42P01') throw error
+}
+
 // 초대 코드 새로 발급 (그룹 소유자 전용). 새 코드 문자열 반환.
 export async function regenerateInviteCode(groupId) {
   const { data, error } = await supabase.rpc('regenerate_invite_code', { p_group_id: groupId })

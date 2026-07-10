@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
-  regenerateInviteCode,
+  regenerateInviteCode, isFriendGroup,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -68,6 +68,7 @@ export default function GroupDetail() {
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
   const [isCouple, setIsCouple] = useState(false) // 커플 그룹(적용된 커플 링)
+  const [isFriend, setIsFriend] = useState(false) // 우정 그룹(적용된 우정 링)
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
@@ -215,11 +216,12 @@ export default function GroupDetail() {
     setLoading(true); setError('')
     try {
       // 커플 여부까지 함께 확정해 첫 렌더부터 헤더/상단바가 올바르게 나오도록(깜빡임 방지)
-      const [g, m, t, cc, couple] = await Promise.all([
+      const [g, m, t, cc, couple, friend] = await Promise.all([
         getGroup(groupId), listMemberCards(groupId), listTasks(groupId), listCommentCounts(groupId),
         isCoupleGroup(groupId).catch(() => false),
+        isFriendGroup(groupId).catch(() => false),
       ])
-      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc); setIsCouple(couple)
+      setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc); setIsCouple(couple); setIsFriend(friend)
       const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(scheduledIds))
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
@@ -379,25 +381,33 @@ export default function GroupDetail() {
             {group.description && <p className="muted">{group.description}</p>}
           </div>
         </div>
-        {members.length > 0 && (
-          isCouple ? (
-            <button type="button" className="gd-members gd-members-couple"
-              aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
-              {members.slice(0, 2).map((m) => (
-                <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} />
-              ))}
-              <span className="gd-couple-heart" aria-hidden="true">♥</span>
+        <div className="gd-head-actions">
+          {(isCouple || isFriend) && (
+            <button type="button" className="gd-draw-btn" aria-label="함께 그리기" title="함께 그리기"
+              onClick={() => navigate(`/groups/${groupId}/draw`)}>
+              <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
             </button>
-          ) : (
-            <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
-              aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
-              {members.slice(0, 3).map((m) => (
-                <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
-              ))}
-              {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
-            </button>
-          )
-        )}
+          )}
+          {members.length > 0 && (
+            isCouple ? (
+              <button type="button" className="gd-members gd-members-couple"
+                aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
+                {members.slice(0, 2).map((m) => (
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} />
+                ))}
+                <span className="gd-couple-heart" aria-hidden="true">♥</span>
+              </button>
+            ) : (
+              <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
+                aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
+                {members.slice(0, 3).map((m) => (
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
+                ))}
+                {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
