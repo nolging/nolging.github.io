@@ -294,12 +294,12 @@ export default function Layout() {
       </header>
     )
   } else if (drawMatch) {
-    // 함께 그리기: 좌측 뒤로(그룹으로), 제목 "함께 그리기"
+    // 그림판: 좌측 뒤로(그룹으로), 제목 "그림판"
     const id = drawMatch.params.groupId
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">함께 그리기</span>
+        <span className="topbar-heading">그림판</span>
       </header>
     )
   } else if (touchMatch) {

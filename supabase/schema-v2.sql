@@ -223,6 +223,20 @@ drop policy if exists gd_delete on public.group_drawings;
 create policy gd_delete on public.group_drawings for delete
   using (public.is_group_member(group_id, auth.uid()));
 
+-- ---- 커플 공간: 기념일 -----------------------------------------
+alter table public.groups add column if not exists anniversary date;
+-- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.
+create or replace function public.set_group_anniversary(p_group_id uuid, p_date date)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception 'not authorized';
+  end if;
+  update public.groups set anniversary = p_date where id = p_group_id;
+end;
+$$;
+grant execute on function public.set_group_anniversary(uuid, date) to authenticated;
+
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;

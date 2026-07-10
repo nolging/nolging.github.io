@@ -1,8 +1,23 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, regenerateInviteCode } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, regenerateInviteCode, setGroupAnniversary } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
+
+// 기념일부터 오늘까지 "며칠째" (기념일이 1일차)
+function daysSince(dateStr) {
+  if (!dateStr) return null
+  const [y, mo, d] = String(dateStr).split('-').map(Number)
+  if (!y || !mo || !d) return null
+  const start = new Date(y, mo - 1, d)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.floor((today - start) / 86400000) + 1
+}
+function annivLabel(s) {
+  const [y, mo, d] = String(s).split('-')
+  return `${y}.${Number(mo)}.${Number(d)}`
+}
 
 function OwnerBadge() {
   return (
@@ -36,6 +51,7 @@ export default function GroupMembers() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [regenBusy, setRegenBusy] = useState(false)
+  const [anniv, setAnniv] = useState('')       // 기념일 (YYYY-MM-DD)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -47,10 +63,17 @@ export default function GroupMembers() {
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
       ])
-      setMembers(cards); setGroup(g); setCouple(c)
+      setMembers(cards); setGroup(g); setCouple(c); setAnniv(g?.anniversary || '')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
+
+  async function saveAnniv(e) {
+    const v = e.target.value
+    setAnniv(v); setError('')
+    try { await setGroupAnniversary(groupId, v || null) }
+    catch (err) { setError(err.message) }
+  }
 
   function copyCode() {
     if (!group?.invite_code) return
@@ -76,6 +99,62 @@ export default function GroupMembers() {
   }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
+
+  // ---- 커플 그룹: 커플 공간 ----
+  if (couple) {
+    const meC = members.find((m) => m.is_self) || members[0]
+    const partner = members.find((m) => !m.is_self) || members[1] || null
+    const days = daysSince(anniv)
+    const today = new Date()
+    const maxDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const person = (m, sub) => (
+      <button type="button" className="cs-person"
+        onClick={() => m && navigate(`/groups/${groupId}/members/${m.user_id}`)} disabled={!m}>
+        <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={96} />
+        <span className="cs-person-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
+      </button>
+    )
+    return (
+      <div className="page cs-page">
+        {error && <div className="alert alert-error">{error}</div>}
+
+        <div className="cs-pair">
+          {person(meC, 'me')}
+          <span className="cs-heart" aria-hidden="true">♥</span>
+          {person(partner, 'partner')}
+        </div>
+
+        <div className="cs-anniv">
+          {days != null ? (
+            <>
+              <div className="cs-anniv-label">우리 함께한 지</div>
+              <div className="cs-anniv-days">{days.toLocaleString('ko-KR')}<span>일</span></div>
+              <div className="cs-anniv-date">{annivLabel(anniv)}부터</div>
+            </>
+          ) : (
+            <div className="cs-anniv-empty">기념일을 설정하면 며칠째인지 세어 드려요</div>
+          )}
+          <label className="cs-anniv-edit">
+            <span className="cs-anniv-edit-l">기념일</span>
+            <input type="date" value={anniv || ''} max={maxDate} onChange={saveAnniv} />
+          </label>
+        </div>
+
+        <div className="cs-actions">
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`)}>
+            <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
+              <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
+            </span>
+            <span className="cs-act-t">그림판</span>
+          </button>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/touch`)}>
+            <span className="cs-act-ico" style={{ background: '#fde8ef' }}>💋</span>
+            <span className="cs-act-t">우심뽀까</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const q = query.trim().toLowerCase()
   const shown = q ? members.filter((m) => (m.display_nickname || '').toLowerCase().includes(q)) : members

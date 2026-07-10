@@ -383,7 +383,7 @@ export default function GroupDetail() {
         </div>
         <div className="gd-head-actions">
           {(isCouple || isFriend) && (
-            <button type="button" className="gd-draw-btn" aria-label="함께 그리기" title="함께 그리기"
+            <button type="button" className="gd-draw-btn" aria-label="그림판" title="그림판"
               onClick={() => navigate(`/groups/${groupId}/draw`)}>
               <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
             </button>

@@ -57,6 +57,17 @@ export async function deleteGroup(groupId) {
   if (error) throw error
 }
 
+// 커플 공간: 기념일 설정 (그룹 멤버 누구나). null 이면 해제.
+export async function setGroupAnniversary(groupId, date) {
+  const { error } = await supabase.rpc('set_group_anniversary', { p_group_id: groupId, p_date: date || null })
+  if (error) {
+    if (error.code === 'PGRST202' || /set_group_anniversary/.test(error.message || '')) {
+      throw new Error('기념일 기능이 아직 DB에 설정되지 않았습니다. (set_group_anniversary 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
 // ---- 함께 그리기 (프리미엄 그룹 공용 캔버스) --------------------
 // 저장된 스트로크 로드 (재진입 시 이어 그리기). 테이블 미배포면 빈 배열.
 export async function listDrawingStrokes(groupId) {
