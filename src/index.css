@@ -2039,8 +2039,13 @@ button.mlist-row:hover { background: #f6f5fa; }
 .iv-box.filled { background: #fff; border-color: #191722; }
 .iv-box.active { background: #fff; border-color: #7363e8; }
 .iv-box.err { background: #fdecec; border-color: #e5484d; color: #e5484d; }
-.iv-code-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: none;
-  background: transparent; cursor: text; font-family: inherit; }
+/* 6칸 위에 겹치는 실제 입력: iOS 붙여넣기 콜아웃이 뜨도록 opacity:0 대신
+   글자·커서·배경만 투명 처리(입력 자체는 '보이는' 편집 필드여야 콜아웃이 뜸).
+   font-size 16px 로 포커스 시 확대 방지. */
+.iv-code-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: none;
+  background: transparent; color: transparent; caret-color: transparent; font-size: 16px; cursor: text;
+  font-family: inherit; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.iv-code-input::selection { background: transparent; }
 .iv-boxes.shake { animation: iv-shake .4s cubic-bezier(.36, .07, .19, .97); }
 @keyframes iv-shake {
   10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); }
