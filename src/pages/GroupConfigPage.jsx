@@ -14,7 +14,7 @@ export default function GroupConfigPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const backToSettings = () => navigate(`/groups/${groupId}/settings`)
+  const backToGroup = () => navigate(`/groups/${groupId}`)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -44,7 +44,7 @@ export default function GroupConfigPage() {
   return (
     <>
       {error && <div className="page"><div className="alert alert-error">{error}</div></div>}
-      <GroupSettings group={group} onSaved={backToSettings} onDelete={handleDelete} />
+      <GroupSettings group={group} onSaved={backToGroup} onDelete={handleDelete} />
     </>
   )
 }

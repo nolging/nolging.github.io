@@ -53,7 +53,7 @@ export default function GroupSettingsPage() {
       {me && (
         <MySettings group={group} me={me} onSaved={backToGroup}
           secondary={isOwner
-            ? { label: '그룹 설정', onClick: () => navigate(`/groups/${groupId}/settings/group`) }
+            ? null
             : { label: '그룹에서 나가기', danger: true, onClick: handleLeave }} />
       )}
     </>

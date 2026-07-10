@@ -270,11 +270,11 @@ export default function Layout() {
 
   let topbar
   if (groupConfigMatch) {
-    // 그룹 설정 페이지: 좌측 뒤로(설정으로), 제목 "그룹 설정"
+    // 그룹 정보 수정 페이지: 좌측 뒤로(그룹 상세로 — 톱니바퀴로 진입), 제목 "그룹 정보 수정"
     const id = groupConfigMatch.params.groupId
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}/settings`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">그룹 정보 수정</span>
       </header>
     )
@@ -417,7 +417,7 @@ export default function Layout() {
           <button type="button" className={`btn btn-ghost btn-sm icon-btn ${headerFilter ? '' : 'push-right'}`}
             aria-label="초대" title="초대" onClick={() => headerInvite?.onClick?.()}><InviteIcon /></button>
         )}
-        <Link to={`/groups/${id}/settings`} className={`btn btn-ghost btn-sm icon-btn ${(headerFilter || headerInvite) ? '' : 'push-right'}`} aria-label="그룹 설정" title="그룹 설정"><GearIcon /></Link>
+        <Link to={`/groups/${id}/settings/group`} className={`btn btn-ghost btn-sm icon-btn ${(headerFilter || headerInvite) ? '' : 'push-right'}`} aria-label="그룹 정보 수정" title="그룹 정보 수정"><GearIcon /></Link>
       </header>
     )
   } else if (profileEditMatch) {
