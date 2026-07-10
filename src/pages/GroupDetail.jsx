@@ -10,6 +10,7 @@ import {
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
+import ThemeHearts from '../components/ThemeHearts'
 import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
@@ -340,7 +341,9 @@ export default function GroupDetail() {
     : { opacity: 0 }
 
   return (
-    <div className="page gd-page" onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
+    <div className={`page gd-page ${group.deco_theme === 'heart' ? 'gd-themed' : ''}`}
+      onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
+      {group.deco_theme === 'heart' && <ThemeHearts rise={220} />}
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">

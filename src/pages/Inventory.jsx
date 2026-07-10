@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, scratchNyangpito } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -35,6 +35,7 @@ export default function Inventory() {
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
   const [telescopeOpen, setTelescopeOpen] = useState(false)
   const [scratchOpen, setScratchOpen] = useState(false)
+  const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -96,6 +97,7 @@ export default function Inventory() {
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'telescope') setTelescopeOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
+    else if (g.id.startsWith('theme-')) setThemeItem({ id: g.id, name: g.name })
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -161,7 +163,65 @@ export default function Inventory() {
       </Modal>
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
+
+      <ThemeModal open={!!themeItem} onClose={() => setThemeItem(null)} myId={user?.id}
+        item={themeItem} onDone={reload} />
     </div>
+  )
+}
+
+// ---- 그룹 꾸미기 테마 적용 (프리미엄 그룹 선택) ----
+function ThemeModal({ open, onClose, myId, item, onDone }) {
+  const [groups, setGroups] = useState([])
+  const [premiumIds, setPremiumIds] = useState(new Set())
+  const [groupId, setGroupId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setGroupId(''); setError('')
+    Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
+      .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
+      .catch((e) => setError(e.message))
+  }, [open, myId])
+
+  const themeId = item ? item.id.replace(/^theme-/, '') : ''
+  const eligible = useMemo(
+    () => groups.filter((g) => premiumIds.has(g.id) && (g.group_members || []).some((m) => m.user_id === myId)),
+    [groups, premiumIds, myId],
+  )
+  const group = eligible.find((g) => g.id === groupId)
+
+  async function apply() {
+    if (!group) { setError('그룹을 선택해 주세요.'); return }
+    setBusy(true); setError('')
+    try {
+      await applyGroupTheme(group.id, themeId)
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={item?.name || '그룹 테마'}>
+      <div className="couple-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그룹 카드와 상세 화면이 꾸며져요.</p>
+
+        <label className="field">
+          <span>적용할 그룹</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{eligible.length ? '그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
+            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}{g.deco_theme ? ' (테마 적용됨)' : ''}</option>)}
+          </select>
+        </label>
+
+        <button type="button" className="btn btn-primary btn-block" onClick={apply} disabled={!group || busy}>
+          {busy ? '적용 중…' : '적용하기'}
+        </button>
+      </div>
+    </Modal>
   )
 }
 

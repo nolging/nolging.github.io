@@ -1073,6 +1073,12 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
   ('nyangpito', '냥피또', 5, '🐱', E'동전으로 긁으면 츄르가 쏟아질지도?\n*긁어서 즉시 당첨 확인', false, 10)
 on conflict (id) do nothing;
 
+-- 그룹 테마(꾸미기): 프리미엄 그룹 전용. 적용하면 그룹 카드·상세에 테마 효과.
+insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
+  ('theme-heart', '하트 뿅뿅', 30, '💕', E'프리미엄 그룹에 적용하는 꾸미기 테마\n*그룹 카드·상세에 하트가 뿅뿅', false, 11)
+on conflict (id) do nothing;
+update public.store_items set premium = true, tier = null where id = 'theme-heart';
+
 -- =============================================================
 --  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템
 --  구매(purchase) 또는 선물(gift)로 획득. 선물은 준 사람 정보를 스냅샷.
@@ -1872,3 +1878,28 @@ begin
 end;
 $$;
 grant execute on function public.scratch_nyangpito() to authenticated;
+
+-- =============================================================
+--  그룹 꾸미기 테마 — 프리미엄 그룹(커플/우정)에만 적용.
+--  groups.deco_theme 에 테마 id 저장(null=없음). 예: 'heart'(하트 뿅뿅)
+--  테마 아이템 id = 'theme-' || deco_theme (예: theme-heart)
+-- =============================================================
+alter table public.groups add column if not exists deco_theme text;
+
+create or replace function public.apply_group_theme(p_group_id uuid, p_theme text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items;
+begin
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then
+    raise exception '프리미엄 그룹에만 테마를 적용할 수 있어요.'; end if;
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 적용할 수 있어요.'; end if;
+  select * into v_item from public.user_items
+    where user_id = auth.uid() and item_id = 'theme-' || p_theme and status = 'active'
+    order by created_at asc limit 1 for update;
+  if v_item.id is null then raise exception '사용할 수 있는 테마가 없어요.'; end if;
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+  update public.groups set deco_theme = p_theme where id = p_group_id;
+end;
+$$;
+grant execute on function public.apply_group_theme(uuid, text) to authenticated;

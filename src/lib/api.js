@@ -625,6 +625,17 @@ export async function useVideo({ groupId, recipientId, message, url }) {
   return data
 }
 
+// 그룹 꾸미기 테마 적용: 프리미엄 그룹에 테마 아이템 1개 소모 + groups.deco_theme 설정.
+export async function applyGroupTheme(groupId, theme) {
+  const { error } = await supabase.rpc('apply_group_theme', { p_group_id: groupId, p_theme: theme })
+  if (error) {
+    if (error.code === 'PGRST202' || /apply_group_theme/.test(error.message || '')) {
+      throw new Error('그룹 테마 기능이 아직 DB에 설정되지 않았습니다. (apply_group_theme 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
 // 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).
 export async function scratchNyangpito() {
   const { data, error } = await supabase.rpc('scratch_nyangpito')

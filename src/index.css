@@ -1547,6 +1547,25 @@ button.mlist-row:hover { background: #f6f5fa; }
 .scratch-label { font-size: 14px; font-weight: 700; color: var(--muted); }
 .scratch-amt { font-size: 30px; font-weight: 900; color: var(--primary); letter-spacing: -.5px; }
 .scratch-result.lose .scratch-amt { color: #b6b3c4; }
+
+/* 그룹 꾸미기 테마 — 하트 뿅뿅 */
+.group-tile { position: relative; }   /* 하트 오버레이 담기(이미 overflow:hidden) */
+.gd-themed { position: relative; }
+.gd-themed > .theme-hearts { z-index: 0; }
+.gd-themed > *:not(.theme-hearts) { position: relative; z-index: 1; }
+.theme-hearts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.theme-heart {
+  position: absolute; bottom: -16px; opacity: 0; line-height: 1;
+  animation-name: heart-pop; animation-timing-function: ease-in; animation-iteration-count: infinite;
+  will-change: transform, opacity; filter: drop-shadow(0 1px 1px rgba(0,0,0,.06));
+}
+@keyframes heart-pop {
+  0%   { transform: translateY(0) scale(.5); opacity: 0; }
+  14%  { opacity: .95; }
+  75%  { opacity: .8; }
+  100% { transform: translateY(calc(var(--rise, 130px) * -1)) scale(.9) rotate(10deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .theme-heart { animation: none; opacity: 0; } }
 .inv-card { position: relative; }
 .inv-count {
   position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px;

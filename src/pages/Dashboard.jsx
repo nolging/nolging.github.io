@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
 import PeekCat from '../components/PeekCat'
+import ThemeHearts from '../components/ThemeHearts'
 import LedBanner from '../components/LedBanner'
 import { LedEditModal } from '../components/LedModals'
 
@@ -150,6 +151,7 @@ export default function Dashboard() {
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {memberRow}
                 {premium && <PeekCat className="tile-couple-cat" width={96} />}
+                {g.deco_theme === 'heart' && <ThemeHearts rise={110} />}
               </Link>
             )
           })}
