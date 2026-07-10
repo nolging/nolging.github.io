@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import PeekCat from '../components/PeekCat'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
 const PULSE_MS = 520        // 닿아 있는 동안 진동+이펙트 반복 간격
@@ -138,9 +139,9 @@ export default function TouchKiss() {
 
   return (
     <div className="page tk-page">
-      <div className="tk-hint">
-        <span className="draw-dot" aria-hidden="true" style={{ background: '#e5679a', boxShadow: '0 0 0 3px #fde8ef' }} />
-        {peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}
+      <div className="tk-greet">
+        <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
+        <PeekCat className="tk-cat" width={72} />
       </div>
       {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 화면 효과로 표시돼요</div>}
 
