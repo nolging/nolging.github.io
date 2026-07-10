@@ -1556,17 +1556,22 @@ button.mlist-row:hover { background: #f6f5fa; }
 .gd-themed > .gd-sticky-head, .gd-themed > .tab-pane { position: relative; z-index: 1; }
 .theme-hearts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
 .theme-heart {
-  position: absolute; bottom: -16px; opacity: 0; line-height: 1;
-  animation-name: heart-pop; animation-timing-function: ease-in; animation-iteration-count: infinite;
-  will-change: transform, opacity; filter: drop-shadow(0 1px 1px rgba(0,0,0,.06));
+  position: absolute; top: 108%; opacity: 0; line-height: 1;
+  animation-name: heart-rise; animation-timing-function: linear; animation-iteration-count: infinite;
+  will-change: top, opacity, transform; filter: drop-shadow(0 1px 1px rgba(0,0,0,.07));
 }
-@keyframes heart-pop {
-  0%   { transform: translateY(0) scale(.5); opacity: 0; }
-  14%  { opacity: .95; }
-  75%  { opacity: .8; }
-  100% { transform: translateY(calc(var(--rise, 130px) * -1)) scale(.9) rotate(10deg); opacity: 0; }
+/* 바닥에서 화면 상단(-12%)까지 쭉 올라가며, 거의 끝까지 또렷하게 유지 */
+@keyframes heart-rise {
+  0%   { top: 108%; opacity: 0; transform: scale(.6) rotate(-5deg); }
+  10%  { opacity: .95; }
+  50%  { transform: scale(1) rotate(5deg); }
+  86%  { opacity: .9; }
+  100% { top: -12%; opacity: 0; transform: scale(.88) rotate(9deg); }
 }
 @media (prefers-reduced-motion: reduce) { .theme-heart { animation: none; opacity: 0; } }
+
+/* 하트 뿅뿅 테마: 그룹 상세 배경을 은은한 분홍 그라데이션으로 */
+.content.gd-bg-heart { background: linear-gradient(180deg, #fff6f9 0%, #ffecf3 50%, #ffe2ec 100%); }
 .inv-card { position: relative; }
 .inv-count {
   position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px;

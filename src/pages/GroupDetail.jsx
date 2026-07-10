@@ -244,6 +244,13 @@ export default function GroupDetail() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
+  // 하트 뿅뿅 테마: 상세 콘텐츠 배경을 분홍빛으로 (페이지 벗어나면 원복)
+  useEffect(() => {
+    const themed = group?.deco_theme === 'heart'
+    document.querySelector('.content')?.classList.toggle('gd-bg-heart', themed)
+    return () => document.querySelector('.content')?.classList.remove('gd-bg-heart')
+  }, [group?.deco_theme])
+
   async function runAction(fn) {
     setError('')
     try { await fn(); await load() } catch (err) { setError(err.message) }
