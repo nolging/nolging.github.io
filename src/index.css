@@ -2174,3 +2174,37 @@ button.mlist-row:hover { background: #f6f5fa; }
 .draw-act:hover { background: #ecebf0; }
 .draw-act:active { transform: scale(.94); }
 .draw-act.danger { color: #e5484d; }
+
+/* ============ 입술 터치 (프리미엄 그룹 실시간 진동) ============ */
+.gd-kiss-btn { background: #fde8ef; }
+.gd-kiss-btn:hover { background: #fbdbe7; }
+.gd-kiss-btn span { font-size: 19px; line-height: 1; }
+
+.tk-page { height: 100%; display: flex; flex-direction: column; gap: 12px; }
+.tk-hint { align-self: center; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+  background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: #6f6a80;
+  box-shadow: 0 2px 10px rgba(25,23,34,.05); }
+.tk-area { flex: 1; min-height: 0; position: relative; overflow: hidden; border-radius: 22px; touch-action: none;
+  background: linear-gradient(160deg, #fff5f8 0%, #ffe9f1 58%, #ffe0ec 100%);
+  box-shadow: 0 4px 16px rgba(25,23,34,.06); user-select: none; -webkit-user-select: none; }
+.tk-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; pointer-events: none; }
+.tk-empty-lips { font-size: 52px; opacity: .5; animation: tk-pulse 1.4s ease-in-out infinite; }
+.tk-empty-t { font-size: 13px; font-weight: 600; color: #c98aa2; }
+.tk-lips { position: absolute; transform: translate(-50%, -50%); font-size: clamp(36px, 13vw, 62px); line-height: 1;
+  pointer-events: none; z-index: 2; filter: drop-shadow(0 3px 6px rgba(180,40,90,.28)); }
+.tk-lips.pulse { animation: tk-pulse .7s ease-in-out infinite; }
+@keyframes tk-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.12); }
+}
+.tk-burst { position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; }
+.tk-ring { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; border-radius: 50%;
+  border: 3px solid #e5679a; opacity: .85; transform: translate(-50%, -50%) scale(.2); animation: tk-ring .6s ease-out forwards; }
+@keyframes tk-ring { to { transform: translate(-50%, -50%) scale(1.25); opacity: 0; } }
+.tk-heart { position: absolute; left: 50%; top: 50%; font-size: 22px;
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(0); animation: tk-heart .9s ease-out forwards; }
+@keyframes tk-heart {
+  0% { transform: translate(-50%, -50%) rotate(var(--a)) translateY(-8px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--a)) translateY(-78px) scale(.4); opacity: 0; }
+}

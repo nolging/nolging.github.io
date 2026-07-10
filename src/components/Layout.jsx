@@ -89,6 +89,7 @@ export default function Layout() {
   const membersMatch = useMatch('/groups/:groupId/members')
   const memberDetailMatch = useMatch('/groups/:groupId/members/:userId')
   const drawMatch = useMatch('/groups/:groupId/draw')
+  const touchMatch = useMatch('/groups/:groupId/touch')
   const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
   const taskEditMatch = useMatch('/groups/:groupId/tasks/:taskId/edit')
   const taskScheduleMatch = useMatch('/groups/:groupId/tasks/:taskId/schedule')
@@ -234,7 +235,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -299,6 +300,15 @@ export default function Layout() {
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">함께 그리기</span>
+      </header>
+    )
+  } else if (touchMatch) {
+    // 입술 터치: 좌측 뒤로(그룹으로), 제목 "입술 터치"
+    const id = touchMatch.params.groupId
+    topbar = (
+      <header className="topbar">
+        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">입술 터치</span>
       </header>
     )
   } else if (memberDetailMatch) {
