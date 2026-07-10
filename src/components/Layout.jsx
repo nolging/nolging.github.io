@@ -447,7 +447,7 @@ export default function Layout() {
     // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유)
     topbar = (
       <header className="topbar">
-        <span className="topbar-heading">일정</span>
+        <span className="topbar-heading topbar-title-lg">일정</span>
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
           aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
           <FilterIcon />
@@ -459,7 +459,7 @@ export default function Layout() {
     // 상점: 좌측 "깜냥이 상점" 제목, 우측 보유 츄르 알약(표시용)
     topbar = (
       <header className="topbar">
-        <span className="topbar-heading">깜냥이 상점</span>
+        <span className="topbar-heading topbar-title-lg">깜냥이 상점</span>
         <span className="coin-pill push-right" aria-label="보유 츄르">
           <span className="coin-pill-paw" aria-hidden="true">🐾</span>
           <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
@@ -486,7 +486,7 @@ export default function Layout() {
     // 쪽지: 좌측 "쪽지" 제목
     topbar = (
       <header className="topbar">
-        <span className="topbar-heading">쪽지</span>
+        <span className="topbar-heading topbar-title-lg">쪽지</span>
       </header>
     )
   } else {
