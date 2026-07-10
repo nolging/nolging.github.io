@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
-const HIT_PX = 46           // 입술 중심 거리 이하이면 "닿음"
-const PULSE_MS = 420        // 닿아 있는 동안 반복 진동 간격
+const PULSE_MS = 380        // 닿아 있는 동안 반복 진동 간격
 
 export default function TouchKiss() {
   const { groupId } = useParams()
@@ -24,6 +23,8 @@ export default function TouchKiss() {
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
   const [peerCount, setPeerCount] = useState(1)
+  const [contact, setContact] = useState(false) // 닿아 있는 중(비주얼 확인용)
+  const [noVibe, setNoVibe] = useState(false)  // 이 기기 진동 미지원
   const meRef = useRef(me); meRef.current = me
   const peersRef = useRef(peers); peersRef.current = peers
 
@@ -104,28 +105,38 @@ export default function TouchKiss() {
   }
 
   // ---- 충돌 판정 + 진동/이펙트 ----
+  function buzz(ms) {
+    try {
+      const ok = navigator.vibrate?.(ms)
+      if (ok === false || typeof navigator.vibrate !== 'function') setNoVibe(true)
+    } catch { setNoVibe(true) }
+  }
   const endContact = useCallback(() => {
     collidingRef.current = false
+    setContact(false)
     if (pulseRef.current) { clearInterval(pulseRef.current); pulseRef.current = 0 }
   }, [])
   const startContact = useCallback((mx, my) => {
     collidingRef.current = true
-    try { navigator.vibrate?.([40, 30, 90]) } catch { /* noop */ }
+    setContact(true)
+    buzz(200)
     playPop()
     const id = crypto.randomUUID?.() || String(Math.random())
     setBursts((b) => [...b, { id, x: mx, y: my }])
     setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 900)
-    if (!pulseRef.current) pulseRef.current = setInterval(() => { try { navigator.vibrate?.(28) } catch { /* noop */ } }, PULSE_MS)
+    if (!pulseRef.current) pulseRef.current = setInterval(() => buzz(80), PULSE_MS)
   }, [])
 
   useEffect(() => {
     const area = areaRef.current
     if (!me || !area) { endContact(); return }
     const r = area.getBoundingClientRect()
+    // 입술이 시각적으로 겹치면 닿은 것으로: 화면 짧은 변의 16%(최소 58px)
+    const HIT = Math.max(58, Math.min(r.width, r.height) * 0.16)
     let hit = null
     for (const p of Object.values(peers)) {
       const dx = (me.x - p.x) * r.width, dy = (me.y - p.y) * r.height
-      if (Math.hypot(dx, dy) <= HIT_PX) { hit = { x: (me.x + p.x) / 2, y: (me.y + p.y) / 2 }; break }
+      if (Math.hypot(dx, dy) <= HIT) { hit = { x: (me.x + p.x) / 2, y: (me.y + p.y) / 2 }; break }
     }
     if (hit && !collidingRef.current) startContact(hit.x, hit.y)
     else if (!hit && collidingRef.current) endContact()
@@ -141,8 +152,9 @@ export default function TouchKiss() {
         <span className="draw-dot" aria-hidden="true" style={{ background: '#e5679a', boxShadow: '0 0 0 3px #fde8ef' }} />
         {peerCount > 1 ? '같은 곳을 만지면 입술이 닿아요' : '상대가 들어오면 함께 만질 수 있어요'}
       </div>
+      {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 소리·효과로 알려드려요</div>}
 
-      <div className="tk-area" ref={areaRef}
+      <div className={`tk-area ${contact ? 'contact' : ''}`} ref={areaRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {!me && !anyPeerDown && (
           <div className="tk-empty">
