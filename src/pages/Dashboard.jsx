@@ -21,6 +21,16 @@ function BellIcon() {
   )
 }
 
+// 기념일부터 오늘까지 며칠째 (기념일이 1일차)
+function daysSince(dateStr) {
+  if (!dateStr) return null
+  const [y, mo, d] = String(dateStr).split('-').map(Number)
+  if (!y || !mo || !d) return null
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.floor((today - new Date(y, mo - 1, d)) / 86400000) + 1
+}
+
 function dayGreeting() {
   const d = new Date()
   const wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
@@ -152,6 +162,9 @@ export default function Dashboard() {
               <Link key={g.id} to={`/groups/${g.id}`}
                 className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''} ${friend ? 'friend' : ''}`}>
                 <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
+                {premium && daysSince(g.anniversary) != null && (
+                  <span className="tile-anniv">{daysSince(g.anniversary).toLocaleString('ko-KR')}일</span>
+                )}
                 <h3 className="tile-name">{g.name}</h3>
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {memberRow}
