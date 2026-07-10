@@ -81,8 +81,8 @@ export default function InviteCodeSheet({ open, onClose, onSuccess }) {
           </div>
           <input ref={inputRef} className="iv-code-input" value={code} onChange={onChange}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirm() } }}
-            inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck="false"
-            maxLength={6} aria-label="초대 코드 입력" />
+            inputMode="text" autoCapitalize="characters" autoComplete="off" autoCorrect="off"
+            spellCheck="false" aria-label="초대 코드 입력" />
         </div>
 
         {error ? (
