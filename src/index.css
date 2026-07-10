@@ -1570,8 +1570,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 @media (prefers-reduced-motion: reduce) { .theme-heart { animation: none; opacity: 0; } }
 
-/* 하트 뿅뿅 테마: 그룹 상세 배경을 은은한 분홍 그라데이션으로 */
-.content.gd-bg-heart { background: linear-gradient(180deg, #fff6f9 0%, #ffecf3 50%, #ffe2ec 100%); }
+/* 하트 뿅뿅 테마: 상단바~콘텐츠를 하나의 은은한 분홍 그라데이션으로(자연스럽게 이어짐) */
+.app-shell.gd-bg-heart { background: linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%); }
+.app-shell.gd-bg-heart .topbar,
+.app-shell.gd-bg-heart .content { background: transparent; }
 .inv-card { position: relative; }
 .inv-count {
   position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px;

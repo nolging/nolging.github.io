@@ -14,14 +14,15 @@ const HEARTS = [
 
 const COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
 
-export default function ThemeHearts() {
+// durScale: 애니메이션 길이 배수(클수록 천천히). 큰 영역(상세)에서 속도가 빨라 보이지 않게.
+export default function ThemeHearts({ durScale = 1 }) {
   return (
     <div className="theme-hearts" aria-hidden="true">
       {HEARTS.map((h, i) => (
         <span key={i} className="theme-heart"
           style={{
             left: `${h.l}%`, color: COLORS[i % COLORS.length], fontSize: h.s,
-            animationDelay: `${h.d}s`, animationDuration: `${h.dur}s`,
+            animationDelay: `${h.d * durScale}s`, animationDuration: `${h.dur * durScale}s`,
           }}>♥</span>
       ))}
     </div>

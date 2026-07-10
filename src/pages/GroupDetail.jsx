@@ -244,11 +244,11 @@ export default function GroupDetail() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
-  // 하트 뿅뿅 테마: 상세 콘텐츠 배경을 분홍빛으로 (페이지 벗어나면 원복)
+  // 하트 뿅뿅 테마: 상단바~콘텐츠 배경을 은은한 분홍빛으로 (페이지 벗어나면 원복)
   useEffect(() => {
     const themed = group?.deco_theme === 'heart'
-    document.querySelector('.content')?.classList.toggle('gd-bg-heart', themed)
-    return () => document.querySelector('.content')?.classList.remove('gd-bg-heart')
+    document.querySelector('.app-shell')?.classList.toggle('gd-bg-heart', themed)
+    return () => document.querySelector('.app-shell')?.classList.remove('gd-bg-heart')
   }, [group?.deco_theme])
 
   async function runAction(fn) {
@@ -350,7 +350,7 @@ export default function GroupDetail() {
   return (
     <div className={`page gd-page ${group.deco_theme === 'heart' ? 'gd-themed' : ''}`}
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
-      {group.deco_theme === 'heart' && <ThemeHearts rise={220} />}
+      {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} />}
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">

@@ -151,7 +151,7 @@ export default function Dashboard() {
                 {g.description && <p className="tile-desc muted">{g.description}</p>}
                 {memberRow}
                 {premium && <PeekCat className="tile-couple-cat" width={96} />}
-                {g.deco_theme === 'heart' && <ThemeHearts rise={110} />}
+                {g.deco_theme === 'heart' && <ThemeHearts />}
               </Link>
             )
           })}
