@@ -303,12 +303,12 @@ export default function Layout() {
       </header>
     )
   } else if (touchMatch) {
-    // 입술 터치: 좌측 뒤로(그룹으로), 제목 "입술 터치"
+    // 우심뽀까: 좌측 뒤로(그룹으로), 제목 "우심뽀까"
     const id = touchMatch.params.groupId
     topbar = (
       <header className="topbar">
         <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">입술 터치</span>
+        <span className="topbar-heading">우심뽀까</span>
       </header>
     )
   } else if (memberDetailMatch) {

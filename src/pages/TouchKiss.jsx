@@ -5,6 +5,12 @@ import { supabase } from '../lib/supabase'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
 const PULSE_MS = 380        // 닿아 있는 동안 반복 진동 간격
+// "하트 뿅뿅" 테마 하트 색 — 맞닿을 때 뿅뿅 솟는 하트
+const HEART_COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
+const RISERS = [
+  { dx: -24, d: 0, s: 15 }, { dx: 18, d: 0.05, s: 21 }, { dx: -6, d: 0.12, s: 17 },
+  { dx: 30, d: 0.18, s: 13 }, { dx: -32, d: 0.24, s: 16 }, { dx: 8, d: 0.3, s: 23 },
+]
 
 export default function TouchKiss() {
   const { groupId } = useParams()
@@ -15,7 +21,6 @@ export default function TouchKiss() {
   const chanRef = useRef(null)
   const rafRef = useRef(0)
   const pendRef = useRef(null)     // 전송 대기 내 위치
-  const audioRef = useRef(null)
   const collidingRef = useRef(false)
   const pulseRef = useRef(0)
 
@@ -23,27 +28,8 @@ export default function TouchKiss() {
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
   const [peerCount, setPeerCount] = useState(1)
-  const [contact, setContact] = useState(false) // 닿아 있는 중(비주얼 확인용)
-  const [noVibe, setNoVibe] = useState(false)  // 이 기기 진동 미지원
+  const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
   const meRef = useRef(me); meRef.current = me
-  const peersRef = useRef(peers); peersRef.current = peers
-
-  // ---- 사운드(웹오디오, iOS 폴백) ----
-  function ensureAudio() {
-    if (!audioRef.current) {
-      const AC = window.AudioContext || window.webkitAudioContext
-      if (AC) audioRef.current = new AC()
-    }
-    audioRef.current?.resume?.()
-  }
-  function playPop() {
-    const ac = audioRef.current; if (!ac) return
-    const t = ac.currentTime
-    const o = ac.createOscillator(); const g = ac.createGain()
-    o.type = 'sine'; o.frequency.setValueAtTime(660, t); o.frequency.exponentialRampToValueAtTime(320, t + 0.12)
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18)
-    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.2)
-  }
 
   // ---- 실시간 채널 ----
   useEffect(() => {
@@ -92,7 +78,6 @@ export default function TouchKiss() {
   }
   function onDown(e) {
     e.currentTarget.setPointerCapture?.(e.pointerId)
-    ensureAudio()
     const n = norm(e); scheduleSend({ ...n, down: true })
   }
   function onMove(e) {
@@ -113,17 +98,14 @@ export default function TouchKiss() {
   }
   const endContact = useCallback(() => {
     collidingRef.current = false
-    setContact(false)
     if (pulseRef.current) { clearInterval(pulseRef.current); pulseRef.current = 0 }
   }, [])
   const startContact = useCallback((mx, my) => {
     collidingRef.current = true
-    setContact(true)
     buzz(200)
-    playPop()
     const id = crypto.randomUUID?.() || String(Math.random())
     setBursts((b) => [...b, { id, x: mx, y: my }])
-    setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 900)
+    setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 1200)
     if (!pulseRef.current) pulseRef.current = setInterval(() => buzz(80), PULSE_MS)
   }, [])
 
@@ -150,16 +132,16 @@ export default function TouchKiss() {
     <div className="page tk-page">
       <div className="tk-hint">
         <span className="draw-dot" aria-hidden="true" style={{ background: '#e5679a', boxShadow: '0 0 0 3px #fde8ef' }} />
-        {peerCount > 1 ? '같은 곳을 만지면 입술이 닿아요' : '상대가 들어오면 함께 만질 수 있어요'}
+        {peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}
       </div>
-      {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 소리·효과로 알려드려요</div>}
+      {noVibe && <div className="tk-novibe">이 기기는 웹 진동을 지원하지 않아 화면 효과로 표시돼요</div>}
 
-      <div className={`tk-area ${contact ? 'contact' : ''}`} ref={areaRef}
+      <div className="tk-area" ref={areaRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {!me && !anyPeerDown && (
           <div className="tk-empty">
             <div className="tk-empty-lips" aria-hidden="true">💋</div>
-            <div className="tk-empty-t">화면을 만져 보세요</div>
+            <div className="tk-empty-t">우리 심심한데 뽀뽀나 할까</div>
           </div>
         )}
         {Object.entries(peers).map(([id, p]) => (
@@ -168,9 +150,10 @@ export default function TouchKiss() {
         {me && <span className="tk-lips me pulse" style={{ left: `${me.x * 100}%`, top: `${me.y * 100}%` }} aria-hidden="true">💋</span>}
         {bursts.map((b) => (
           <span key={b.id} className="tk-burst" style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%` }} aria-hidden="true">
-            <span className="tk-ring" />
-            {['💗', '💕', '💖', '💘'].map((h, i) => (
-              <span key={i} className="tk-heart" style={{ '--a': `${i * 90 + 20}deg` }}>{h}</span>
+            <span className="tk-spread" />
+            {RISERS.map((r, i) => (
+              <span key={i} className="tk-riser"
+                style={{ color: HEART_COLORS[i % HEART_COLORS.length], fontSize: r.s, '--dx': `${r.dx}px`, animationDelay: `${r.d}s` }}>♥</span>
             ))}
           </span>
         ))}
