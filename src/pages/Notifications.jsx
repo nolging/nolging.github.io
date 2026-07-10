@@ -30,6 +30,7 @@ const ICONS = {
   cassette: '🎵',
   link: '🔗',
   video: '📹',
+  poke: '👉',
 }
 
 export default function Notifications() {

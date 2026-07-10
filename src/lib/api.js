@@ -720,6 +720,24 @@ export async function isCoupleGroup(groupId) {
   return !!data
 }
 
+// 이 그룹이 우정 그룹(적용된 우정 링 존재)인지. RPC 미배포/실패 시 false.
+export async function isFriendGroup(groupId) {
+  const { data, error } = await supabase.rpc('is_friend_group', { p_group_id: groupId })
+  if (error) return false
+  return !!data
+}
+
+// 콕 찌르기: 프리미엄 그룹에서 대상 멤버에게 알림 전송.
+export async function pokeMember(groupId, targetUserId) {
+  const { error } = await supabase.rpc('poke_member', { p_group_id: groupId, p_target: targetUserId })
+  if (error) {
+    if (error.code === 'PGRST202' || /poke_member/.test(error.message || '')) {
+      throw new Error('콕 찌르기 기능이 아직 DB에 설정되지 않았습니다. (poke_member 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
 // 우정 링 사용: 2명 이상 그룹에 즉시 적용 + 전원에게 쪽지/알림.
 export async function useFriendRing({ groupId, message }) {
   const { error } = await supabase.rpc('use_friend_ring', { p_group_id: groupId, p_message: message ?? null })

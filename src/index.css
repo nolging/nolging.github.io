@@ -1187,6 +1187,17 @@ a.mp-tel { display: inline-flex; align-items: center; gap: 5px; text-decoration:
 a.mp-tel::before { content: "\260E"; font-size: 14px; }
 a.mp-tel:active { opacity: .55; }
 .mp-empty { text-align: center; padding: 20px; }
+/* 콕 찌르기 (프리미엄 그룹) */
+.mp-poke {
+  margin-top: 4px; width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; border-radius: 16px; cursor: pointer;
+  background: var(--primary-soft); color: var(--primary); font-size: 15px; font-weight: 700;
+  transition: filter .12s, transform .1s;
+}
+.mp-poke:hover { filter: brightness(.97); }
+.mp-poke:active { transform: scale(.985); }
+.mp-poke:disabled { opacity: .6; cursor: default; }
+.mp-poke-emoji { font-size: 18px; }
 
 /* ---- 그룹 상세 헤더 (그룹명 + 멤버/초대 버튼) ---- */
 .gd-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

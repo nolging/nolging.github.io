@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { listMemberCards } from '../lib/api'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember } from '../lib/api'
 import CrownIcon from '../components/CrownIcon'
 import OttBadges from '../components/OttBadges'
 
@@ -23,17 +23,35 @@ function birthLabel(s) {
 export default function MemberDetail() {
   const { groupId, userId } = useParams()
   const [member, setMember] = useState(null)
+  const [premium, setPremium] = useState(false) // 프리미엄 그룹(커플/우정 링) → 콕 찌르기 가능
+  const [poking, setPoking] = useState(false)
+  const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const cards = await listMemberCards(groupId)
+      const [cards, couple, friend] = await Promise.all([
+        listMemberCards(groupId),
+        isCoupleGroup(groupId).catch(() => false),
+        isFriendGroup(groupId).catch(() => false),
+      ])
       setMember(cards.find((m) => m.user_id === userId) || null)
+      setPremium(couple || friend)
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, userId])
   useEffect(() => { load() }, [load])
+
+  async function poke() {
+    if (poking) return
+    setPoking(true); setError('')
+    try {
+      await pokeMember(groupId, userId)
+      setToast('콕 찔렀어요!')
+      setTimeout(() => setToast(''), 1600)
+    } catch (err) { setError(err.message) } finally { setPoking(false) }
+  }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error) return <div className="page"><div className="alert alert-error">{error}</div></div>
@@ -82,6 +100,15 @@ export default function MemberDetail() {
           <p className="muted sm mp-empty">공개된 정보가 없어요.</p>
         )}
       </div>
+
+      {premium && !member.is_self && (
+        <button type="button" className="mp-poke" disabled={poking} onClick={poke}>
+          <span className="mp-poke-emoji" aria-hidden="true">👉</span>
+          콕 찌르기
+        </button>
+      )}
+
+      {toast && <div className="toast">{toast}</div>}
     </div>
   )
 }

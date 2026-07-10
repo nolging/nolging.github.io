@@ -1795,3 +1795,31 @@ begin
 end;
 $$;
 grant execute on function public.claim_friend_ring(uuid) to authenticated;
+
+-- =============================================================
+--  콕 찌르기 (poke) — 프리미엄 그룹(커플/우정 링)에서만.
+--  멤버 상세에서 대상 멤버에게 알림 생성(정의자 권한).
+--  본문: "{보내는 사람의 그룹 내 닉네임} 님이 콕 찔렀어요!"
+-- =============================================================
+create or replace function public.poke_member(p_group_id uuid, p_target uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_name text;
+begin
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then
+    raise exception '콕 찌르기는 프리미엄 그룹에서만 가능해요.';
+  end if;
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 사용할 수 있어요.';
+  end if;
+  if p_target = auth.uid() then
+    raise exception '자기 자신은 찌를 수 없어요.';
+  end if;
+  if not public.is_group_member(p_group_id, p_target) then
+    raise exception '대상이 그룹 멤버가 아니에요.';
+  end if;
+  v_name := public.notif_member_name(p_group_id, auth.uid());
+  insert into public.notifications(user_id, actor_id, type, title, group_id)
+    values (p_target, auth.uid(), 'poke', coalesce(nullif(v_name, ''), '누군가') || ' 님이 콕 찔렀어요!', p_group_id);
+end;
+$$;
+grant execute on function public.poke_member(uuid, uuid) to authenticated;
