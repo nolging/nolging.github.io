@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
-const PULSE_MS = 380        // 닿아 있는 동안 반복 진동 간격
+const PULSE_MS = 430        // 닿아 있는 동안 진동+이펙트 반복 간격
 // "하트 뿅뿅" 테마 하트 색 — 맞닿을 때 뿅뿅 솟는 하트
 const HEART_COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
 const RISERS = [
@@ -23,6 +23,7 @@ export default function TouchKiss() {
   const pendRef = useRef(null)     // 전송 대기 내 위치
   const collidingRef = useRef(false)
   const pulseRef = useRef(0)
+  const midRef = useRef({ x: 0.5, y: 0.5 }) // 현재 맞닿은 지점(지속 이펙트용)
 
   const [me, setMe] = useState(null)          // {x,y} 정규화 or null
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
@@ -96,6 +97,11 @@ export default function TouchKiss() {
       if (ok === false || typeof navigator.vibrate !== 'function') setNoVibe(true)
     } catch { setNoVibe(true) }
   }
+  const spawnBurst = useCallback((x, y) => {
+    const id = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`
+    setBursts((b) => [...b, { id, x, y }])
+    setTimeout(() => setBursts((b) => b.filter((v) => v.id !== id)), 1500)
+  }, [])
   const endContact = useCallback(() => {
     collidingRef.current = false
     if (pulseRef.current) { clearInterval(pulseRef.current); pulseRef.current = 0 }
@@ -103,11 +109,12 @@ export default function TouchKiss() {
   const startContact = useCallback((mx, my) => {
     collidingRef.current = true
     buzz(200)
-    const id = crypto.randomUUID?.() || String(Math.random())
-    setBursts((b) => [...b, { id, x: mx, y: my }])
-    setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 1200)
-    if (!pulseRef.current) pulseRef.current = setInterval(() => buzz(80), PULSE_MS)
-  }, [])
+    spawnBurst(mx, my)
+    // 계속 맞대고 있으면 진동+그라데이션+하트를 반복
+    if (!pulseRef.current) pulseRef.current = setInterval(() => {
+      buzz(80); spawnBurst(midRef.current.x, midRef.current.y)
+    }, PULSE_MS)
+  }, [spawnBurst])
 
   useEffect(() => {
     const area = areaRef.current
@@ -120,6 +127,7 @@ export default function TouchKiss() {
       const dx = (me.x - p.x) * r.width, dy = (me.y - p.y) * r.height
       if (Math.hypot(dx, dy) <= HIT) { hit = { x: (me.x + p.x) / 2, y: (me.y + p.y) / 2 }; break }
     }
+    if (hit) midRef.current = hit
     if (hit && !collidingRef.current) startContact(hit.x, hit.y)
     else if (!hit && collidingRef.current) endContact()
   }, [me, peers, startContact, endContact])
@@ -140,7 +148,6 @@ export default function TouchKiss() {
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {!me && !anyPeerDown && (
           <div className="tk-empty">
-            <div className="tk-empty-lips" aria-hidden="true">💋</div>
             <div className="tk-empty-t">우리 심심한데 뽀뽀나 할까</div>
           </div>
         )}
