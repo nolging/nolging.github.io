@@ -154,19 +154,19 @@ export default function TouchKiss() {
   return (
     <div className="page tk-page">
       <div className="tk-greet">
-        <div className="tk-members">
-          {members.slice(0, 4).map((m) => (
-            <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
-          ))}
-        </div>
-        <div className="tk-greet-right">
-          <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
-          <PeekCat className={`tk-cat ${excited ? 'tk-cat-excited' : ''}`} sparkle="heart" width={72} />
-        </div>
+        <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
+        <PeekCat className={`tk-cat ${excited ? 'tk-cat-excited' : ''}`} sparkle="heart" width={72} />
       </div>
 
       <div className="tk-area" ref={areaRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        {members.length > 0 && (
+          <div className="tk-members">
+            {members.slice(0, 4).map((m) => (
+              <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
+            ))}
+          </div>
+        )}
         {!me && !anyPeerDown && (
           <div className="tk-empty">
             <div className="tk-empty-t">우리 심심한데 뽀뽀나 할까</div>
