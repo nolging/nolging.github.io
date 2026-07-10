@@ -13,18 +13,20 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [nameErr, setNameErr] = useState('')
+  const [typeErr, setTypeErr] = useState('')
 
   const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
   const noun = workNoun(category)
 
   function pickCategory(c) {
     const next = category === c ? '' : c
-    setCategory(next)
+    setCategory(next); if (typeErr) setTypeErr('')
     if (!MEDIA_LOOKUP_CATS.includes(next)) { setMediaInfo(null) } else { setComment('') }
   }
 
   async function submit(e) {
     e.preventDefault()
+    if (!category) { setTypeErr('위시 유형을 선택해 주세요.'); return }
     if (!title.trim()) { setNameErr('제목을 입력해 주세요.'); return }
     setBusy(true); setError('')
     try {
@@ -56,6 +58,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
               )
             })}
           </div>
+          {typeErr && <span className="field-error" style={{ marginTop: 8 }}>{typeErr}</span>}
         </div>
 
         {/* 제목 */}

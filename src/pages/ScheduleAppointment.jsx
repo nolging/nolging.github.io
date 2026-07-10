@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask, cancelAppointment,
+  updateTask, updateTaskMedia,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MediaCard from '../components/MediaCard'
+import WorkSearchSheet from '../components/WorkSearchSheet'
 import CgToggle from '../components/CgToggle'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -79,12 +81,19 @@ export default function ScheduleAppointment() {
   const [until, setUntil] = useState(defaultDate())
   const [remind, setRemind] = useState('')
   const [participants, setParticipants] = useState(() => new Set())
+  // 위시 정보(작성자=유형·제목·작품, 참여자=작품 카드) 편집
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
+  const [mediaInfo, setMediaInfo] = useState(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [wishErr, setWishErr] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const [g, t, m] = await Promise.all([getGroup(groupId), getTask(taskId), listMemberCards(groupId)])
       setGroup(g); setTask(t); setMembers(m)
+      setTitle(t.title || ''); setCategory(t.category || ''); setMediaInfo(t.media_info || null)
 
       if (t.scheduled_at) {
         const d = new Date(t.scheduled_at)
@@ -112,8 +121,17 @@ export default function ScheduleAppointment() {
   useEffect(() => { load() }, [load])
 
   const isReschedule = task && task.status !== 'open'
+  const isCreator = task?.created_by === profile.id
+  const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
+  const noun = workNoun(category)
   const mandatory = useMemo(() => new Set([task?.created_by, profile.id].filter(Boolean)), [task, profile.id])
   const needChoose = members.length >= 3
+
+  function pickCategory(c) {
+    const next = category === c ? '' : c
+    setCategory(next); if (wishErr) setWishErr('')
+    if (!MEDIA_LOOKUP_CATS.includes(next)) setMediaInfo(null)
+  }
 
   function toggleMember(uid) {
     if (mandatory.has(uid)) return
@@ -134,8 +152,23 @@ export default function ScheduleAppointment() {
   async function submit(e) {
     e.preventDefault()
     if (saving) return
+    if (isCreator) {
+      if (!category) { setWishErr('위시 유형을 선택해 주세요.'); return }
+      if (!title.trim()) { setWishErr('제목을 입력해 주세요.'); return }
+    }
     setSaving(true); setError('')
     try {
+      // 작성자: 유형·제목·작품 정보 저장 / 그 외 참여자: 작품 정보만 저장
+      if (isCreator) {
+        await updateTask(taskId, {
+          title: title.trim(),
+          description: mediaCat ? '' : (task.description ?? ''),
+          category: category || null,
+          media_info: mediaCat ? mediaInfo : null,
+        })
+      } else if (mediaCat) {
+        await updateTaskMedia(taskId, mediaInfo)
+      }
       let scheduledAt = null, timeSet = false
       if (dateOn) {
         if (!date) { setError('날짜를 설정해 주세요.'); setSaving(false); return }
@@ -167,23 +200,68 @@ export default function ScheduleAppointment() {
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!task) return null
 
-  const cat = task.category
-  const col = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
-  const showMedia = MEDIA_LOOKUP_CATS.includes(cat) && task.media_info
+  const col = CATEGORY_COLORS[category] || CATEGORY_COLORS['기타']
 
   return (
     <div className="page cg-page">
       <form onSubmit={submit} className="cg-form">
-        {/* 위시 요약 */}
-        <div className="sc-wish">
-          {cat && (
-            <span className="sc-wish-chip" style={{ background: col.bg, color: col.fg }}>
-              <span aria-hidden="true">{categoryEmoji(cat)}</span>{cat}
-            </span>
-          )}
-          <span className="sc-wish-title">{task.title}</span>
-        </div>
-        {showMedia && <div className="cg-mt-12"><MediaCard category={cat} info={task.media_info} /></div>}
+        {/* 위시 정보 — 작성자는 유형·제목 편집, 그 외엔 요약 표시 */}
+        {isCreator ? (
+          <>
+            <div className="cg-field">
+              <div className="cg-label">위시 유형 <span className="cg-req">*</span></div>
+              <div className="ts-chips" style={{ marginTop: 10 }}>
+                {WISH_CATEGORIES.map((c) => {
+                  const sel = category === c
+                  const cc = CATEGORY_COLORS[c] || CATEGORY_COLORS['기타']
+                  return (
+                    <button type="button" key={c} className={`ts-chip ${sel ? 'sel' : ''}`}
+                      style={sel ? { background: cc.bg, color: cc.fg, boxShadow: `inset 0 0 0 1.5px ${cc.fg}` } : undefined}
+                      onClick={() => pickCategory(c)}>
+                      {sel && <span className="ts-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>}{c}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="cg-field cg-mt-22">
+              <div className="cg-label">제목 <span className="cg-req">*</span></div>
+              <div className="cg-input-wrap">
+                <input className="cg-input" value={title} maxLength={30}
+                  onChange={(e) => { setTitle(e.target.value); if (wishErr) setWishErr('') }}
+                  placeholder="위시 제목을 입력하세요" />
+              </div>
+              {wishErr && <span className="field-error">{wishErr}</span>}
+            </div>
+          </>
+        ) : (
+          <div className="sc-wish">
+            {category && (
+              <span className="sc-wish-chip" style={{ background: col.bg, color: col.fg }}>
+                <span aria-hidden="true">{categoryEmoji(category)}</span>{category}
+              </span>
+            )}
+            <span className="sc-wish-title">{title}</span>
+          </div>
+        )}
+
+        {/* 작품 정보 — 미디어 유형이면 참여자 누구나 편집 */}
+        {mediaCat && (
+          <div className="cg-section cg-mt-24">
+            <div className="cg-label">{noun} 정보</div>
+            {!mediaInfo && <div className="cg-section-sub" style={{ marginTop: 4 }}>{workSearchHint(category)}</div>}
+            <div className="cg-mt-12">
+              {mediaInfo ? (
+                <MediaCard category={category} info={mediaInfo} onClear={() => setMediaInfo(null)} />
+              ) : (
+                <button type="button" className="ts-search-card" onClick={() => setSheetOpen(true)}>
+                  <span className="ts-search-icon"><svg width="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></span>
+                  <span className="ts-search-label">{noun} 검색</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 일정 */}
         <div className="cg-section-title cg-mt-24">일정</div>
@@ -287,6 +365,9 @@ export default function ScheduleAppointment() {
             </div>
           )}
         </div>
+
+        <WorkSearchSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
+          category={category} initialQuery={title} onPick={setMediaInfo} />
       </form>
     </div>
   )

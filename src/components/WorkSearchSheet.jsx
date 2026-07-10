@@ -65,7 +65,7 @@ export default function WorkSearchSheet({ open, onClose, category, initialQuery 
         {results && (
           <>
             <div className="ws-count"><span>검색 결과</span><span className="ws-count-n">{results.length}</span></div>
-            <div className="ws-list">
+            <div className="ws-list" onTouchStart={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
               {results.length === 0 ? (
                 <p className="ws-empty">검색 결과가 없어요. 제목을 확인해 주세요.</p>
               ) : results.map((it) => {
