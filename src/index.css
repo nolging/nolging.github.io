@@ -2041,10 +2041,14 @@ button.mlist-row:hover { background: #f6f5fa; }
 .iv-box.err { background: #fdecec; border-color: #e5484d; color: #e5484d; }
 /* 6칸 위에 겹치는 실제 입력: iOS 붙여넣기 콜아웃이 뜨도록 opacity:0 대신
    글자·커서·배경만 투명 처리(입력 자체는 '보이는' 편집 필드여야 콜아웃이 뜸).
-   font-size 16px 로 포커스 시 확대 방지. */
-.iv-code-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: none;
-  background: transparent; color: transparent; caret-color: transparent; font-size: 16px; cursor: text;
-  font-family: inherit; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+   전역 input(알약 배경·테두리·포커스 아웃라인, 0,1,1)보다 특이도를 높여 무력화. */
+.iv-boxwrap .iv-code-input,
+.iv-boxwrap .iv-code-input:focus {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
+  border: none; outline: none; border-radius: 0; box-shadow: none;
+  background: transparent; color: transparent; caret-color: transparent; font-size: 16px;
+  cursor: text; font-family: inherit; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+}
 .iv-code-input::selection { background: transparent; }
 .iv-boxes.shake { animation: iv-shake .4s cubic-bezier(.36, .07, .19, .97); }
 @keyframes iv-shake {
@@ -2079,6 +2083,13 @@ button.mlist-row:hover { background: #f6f5fa; }
   display: flex; align-items: center; justify-content: center; gap: 8px; }
 .iv-share:hover { background: #2c2938; }
 .iv-share:active { transform: scale(.985); }
+.iv-regen { width: 100%; margin-top: 14px; border: none; background: none; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #8b8798; }
+.iv-regen:hover { color: #191722; }
+.iv-regen:disabled { opacity: .6; cursor: default; }
+.iv-regen .iv-regen-spin { width: 14px; height: 14px; border: 2px solid #d7d4e0; border-top-color: #8b8798;
+  border-radius: 50%; animation: iv-spin .7s linear infinite; }
+@keyframes iv-spin { to { transform: rotate(360deg); } }
 
 /* 그룹 가입 STEP 2 (12c·12d) */
 .jg-page { display: flex; flex-direction: column; gap: 0; }

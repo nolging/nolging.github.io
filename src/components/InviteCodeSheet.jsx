@@ -30,6 +30,11 @@ export default function InviteCodeSheet({ open, onClose, onSuccess }) {
     if (error) setError(false)
   }
 
+  // 오류(빨간) 상태에서 다시 입력하려고 칸을 누르면 기존 코드·경고를 비움
+  function clearOnError() {
+    if (error) { setCode(''); setError(false); setShake(false) }
+  }
+
   function triggerShake() {
     setError(true)
     setShake(false)
@@ -80,6 +85,7 @@ export default function InviteCodeSheet({ open, onClose, onSuccess }) {
             {boxes.map((b, i) => <div key={i} className={`iv-box ${b.cls}`}>{b.ch}</div>)}
           </div>
           <input ref={inputRef} className="iv-code-input" value={code} onChange={onChange}
+            onPointerDown={clearOnError} onFocus={clearOnError}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirm() } }}
             inputMode="text" autoCapitalize="characters" autoComplete="off" autoCorrect="off"
             spellCheck="false" aria-label="초대 코드 입력" />

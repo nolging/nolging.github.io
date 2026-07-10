@@ -175,6 +175,31 @@ returns table (
 $$;
 grant execute on function public.preview_group(text) to authenticated;
 
+-- 초대 코드 새로 발급 (그룹 소유자만). 새 유니크 코드로 교체하고 반환.
+drop function if exists public.regenerate_invite_code(uuid);
+create or replace function public.regenerate_invite_code(p_group_id uuid)
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  v_code text;
+  v_tries int := 0;
+begin
+  if not public.is_group_owner(p_group_id, auth.uid()) then
+    raise exception 'not authorized';
+  end if;
+  loop
+    v_code := public.gen_invite_code();
+    begin
+      update public.groups set invite_code = v_code where id = p_group_id;
+      return v_code;
+    exception when unique_violation then
+      v_tries := v_tries + 1;
+      if v_tries > 10 then raise exception 'could not generate unique invite code'; end if;
+    end;
+  end loop;
+end;
+$$;
+grant execute on function public.regenerate_invite_code(uuid) to authenticated;
+
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;

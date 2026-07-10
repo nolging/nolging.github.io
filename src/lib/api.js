@@ -57,6 +57,18 @@ export async function deleteGroup(groupId) {
   if (error) throw error
 }
 
+// 초대 코드 새로 발급 (그룹 소유자 전용). 새 코드 문자열 반환.
+export async function regenerateInviteCode(groupId) {
+  const { data, error } = await supabase.rpc('regenerate_invite_code', { p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || /regenerate_invite_code/.test(error.message || '')) {
+      throw new Error('새 코드 발급 기능이 아직 DB에 설정되지 않았습니다. (regenerate_invite_code 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 export async function joinGroupByCode(code) {
   const { data, error } = await supabase.rpc('join_group', { p_code: code })
   if (error) throw error

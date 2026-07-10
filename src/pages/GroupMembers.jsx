@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, regenerateInviteCode } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 
@@ -35,6 +35,7 @@ export default function GroupMembers() {
   const [query, setQuery] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [regenBusy, setRegenBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -63,6 +64,15 @@ export default function GroupMembers() {
       if (navigator.share) { await navigator.share({ title: '그룹 초대', text }); return }
     } catch { return /* 사용자가 취소 */ }
     copyCode()
+  }
+  async function regenCode() {
+    if (regenBusy) return
+    if (!confirm('새 코드를 만들면 기존 코드는 더 이상 사용할 수 없어요. 계속할까요?')) return
+    setRegenBusy(true); setError('')
+    try {
+      const next = await regenerateInviteCode(groupId)
+      setGroup((g) => ({ ...g, invite_code: next })); setCopied(false)
+    } catch (err) { setError(err.message) } finally { setRegenBusy(false) }
   }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
@@ -150,6 +160,12 @@ export default function GroupMembers() {
         <button type="button" className="iv-share" onClick={shareCode}>
           <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" /><line x1="15.4" y1="6.5" x2="8.6" y2="10.5" /></svg>
           공유하기
+        </button>
+        <button type="button" className="iv-regen" onClick={regenCode} disabled={regenBusy}>
+          {regenBusy ? <span className="iv-regen-spin" aria-hidden="true" /> : (
+            <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" /></svg>
+          )}
+          {regenBusy ? '만드는 중…' : '새 코드 만들기'}
         </button>
       </BottomSheet>
     </div>
