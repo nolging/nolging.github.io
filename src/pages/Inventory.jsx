@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups } from '../lib/api'
+import ScratchCard from '../components/ScratchCard'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, scratchNyangpito } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -16,6 +18,7 @@ const MAX_VIDEO_MSG = 150
 
 export default function Inventory() {
   const { user } = useAuth()
+  const { refreshCoin } = useOutletContext()
   const [items, setItems] = useState([])   // 원본 인벤토리 행
   const [meta, setMeta] = useState({})     // itemId → { emoji, name }
   const [loading, setLoading] = useState(true)
@@ -31,6 +34,7 @@ export default function Inventory() {
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
   const [telescopeOpen, setTelescopeOpen] = useState(false)
+  const [scratchOpen, setScratchOpen] = useState(false)
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -91,6 +95,7 @@ export default function Inventory() {
     else if (g.id === 'video') setVideoOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'telescope') setTelescopeOpen(true)
+    else if (g.id === 'nyangpito') setScratchOpen(true)
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -154,7 +159,64 @@ export default function Inventory() {
           <button type="button" className="btn btn-primary btn-block" onClick={() => setTelescopeOpen(false)}>확인</button>
         </div>
       </Modal>
+
+      <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
     </div>
+  )
+}
+
+// ---- 냥피또: 스크래치 복권 ----
+function ScratchModal({ open, onClose, onDone, refreshCoin }) {
+  const [phase, setPhase] = useState('loading') // loading | ready | error
+  const [prize, setPrize] = useState(0)
+  const [revealed, setRevealed] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setPhase('loading'); setPrize(0); setRevealed(false); setError('')
+    let on = true
+    scratchNyangpito()
+      .then((p) => { if (on) { setPrize(p); setPhase('ready') } })
+      .catch((e) => { if (on) { setError(e.message); setPhase('error') } })
+    return () => { on = false }
+  }, [open])
+
+  async function finish() {
+    try { await onDone() } catch { /* noop */ }
+    refreshCoin?.()
+    onClose()
+  }
+
+  const win = prize > 0
+
+  return (
+    <Modal open={open} onClose={phase === 'ready' ? finish : onClose} title="냥피또">
+      <div className="scratch-modal">
+        {phase === 'error' ? (
+          <>
+            <div className="alert alert-error">{error}</div>
+            <button type="button" className="btn btn-primary btn-block" onClick={onClose}>닫기</button>
+          </>
+        ) : phase === 'loading' ? (
+          <div className="scratch-loading"><div className="spinner" /></div>
+        ) : (
+          <>
+            <p className="scratch-guide">동전으로 긁듯이 카드를 문질러 보세요</p>
+            <ScratchCard onReveal={() => setRevealed(true)}>
+              <div className={`scratch-result ${win ? '' : 'lose'}`}>
+                <span className="scratch-emoji">{win ? '🍬' : '🐾'}</span>
+                <span className="scratch-label">{win ? '축하해요! 츄르 당첨' : '아쉬워요… 다음 기회에'}</span>
+                <span className="scratch-amt">{win ? `+${prize}` : '꽝'}</span>
+              </div>
+            </ScratchCard>
+            <button type="button" className={`btn btn-block ${revealed ? 'btn-primary' : ''}`} onClick={finish}>
+              {revealed ? (win ? `${prize}츄르 받기` : '확인') : '건너뛰고 확인'}
+            </button>
+          </>
+        )}
+      </div>
+    </Modal>
   )
 }
 

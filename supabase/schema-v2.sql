@@ -1068,6 +1068,11 @@ alter table public.store_items add column if not exists tier text;   -- 'couple'
 -- 전광판 = 커플 전용 프리미엄
 update public.store_items set premium = true, tier = 'couple' where id = 'ledboard';
 
+-- 냥피또(스크래치 복권): 5츄르에 구매 → 긁으면 랜덤 츄르 당첨(꽝 포함). 일반 상점.
+insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
+  ('nyangpito', '냥피또', 5, '🐱', E'동전으로 긁으면 츄르가 쏟아질지도?\n*긁어서 즉시 당첨 확인', false, 10)
+on conflict (id) do nothing;
+
 -- =============================================================
 --  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템
 --  구매(purchase) 또는 선물(gift)로 획득. 선물은 준 사람 정보를 스냅샷.
@@ -1829,3 +1834,41 @@ begin
 end;
 $$;
 grant execute on function public.poke_member(uuid, uuid) to authenticated;
+
+-- =============================================================
+--  냥피또 (스크래치 복권) — 결과는 서버가 결정(조작 방지).
+--  활성 냥피또 1개 소모 + 가중 상품표로 랜덤 츄르 당첨(0=꽝) → 원장 적립.
+--  반환값 = 당첨 츄르(0이면 꽝).
+--  상품표(합100): 꽝40 / 3츄르28 / 5츄르18 / 10츄르9 / 30츄르4 / 100츄르1
+--  기대값 ≈ 4.84츄르 (가격 5츄르 대비 약한 하우스 엣지)
+-- =============================================================
+create or replace function public.scratch_nyangpito()
+returns integer language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_roll integer; v_prize integer;
+begin
+  select * into v_item from public.user_items
+    where user_id = auth.uid() and item_id = 'nyangpito' and status = 'active'
+    order by created_at asc limit 1 for update;
+  if v_item.id is null then raise exception '사용할 수 있는 냥피또가 없어요.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_roll := floor(random() * 100)::int;  -- 0..99
+  v_prize := case
+    when v_roll < 40 then 0
+    when v_roll < 68 then 3
+    when v_roll < 86 then 5
+    when v_roll < 95 then 10
+    when v_roll < 99 then 30
+    else 100
+  end;
+
+  if v_prize > 0 then
+    insert into public.coin_ledger(user_id, delta, reason, ref_type)
+      values (auth.uid(), v_prize, '냥피또 당첨', 'nyangpito');
+  end if;
+
+  return v_prize;
+end;
+$$;
+grant execute on function public.scratch_nyangpito() to authenticated;

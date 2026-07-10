@@ -625,6 +625,18 @@ export async function useVideo({ groupId, recipientId, message, url }) {
   return data
 }
 
+// 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).
+export async function scratchNyangpito() {
+  const { data, error } = await supabase.rpc('scratch_nyangpito')
+  if (error) {
+    if (error.code === 'PGRST202' || /scratch_nyangpito/.test(error.message || '')) {
+      throw new Error('냥피또 기능이 아직 DB에 설정되지 않았습니다. (scratch_nyangpito 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Number(data) || 0
+}
+
 // 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.
 export async function useLedboard({ text, color }) {
   const { error } = await supabase.rpc('use_ledboard', { p_text: text, p_color: color })
