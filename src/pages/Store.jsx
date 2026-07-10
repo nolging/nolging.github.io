@@ -5,7 +5,7 @@ import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
 import StoreItemImage from '../components/StoreItemImage'
 import { formatCoin } from '../lib/constants'
-import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups } from '../lib/api'
 
 export default function Store() {
   const { refreshCoin } = useOutletContext()
@@ -18,6 +18,9 @@ export default function Store() {
   const [busy, setBusy] = useState(false)        // 구매/선물 처리 중
   const [pickOpen, setPickOpen] = useState(false) // 선물 받는 사람 선택
   const [ownsCouple, setOwnsCouple] = useState(false) // 커플 링 보유 여부
+  const [hasCouple, setHasCouple] = useState(false)   // 커플 링 장착(프리미엄)
+  const [hasFriend, setHasFriend] = useState(false)   // 우정 링 장착(프리미엄)
+  const [premiumView, setPremiumView] = useState(false) // 프리미엄관 보기
   const [qty, setQty] = useState(1)              // 구매/선물 수량
   const [invCounts, setInvCounts] = useState({}) // itemId → 보유 개수
   // 안내 메시지 { type: 'ok' | 'err' | 'info', text }
@@ -35,6 +38,8 @@ export default function Store() {
   useEffect(() => {
     if (!user?.id) return
     ownsCoupleRing(user.id).then(setOwnsCouple).catch(() => {})
+    listCoupleGroups(user.id).then((g) => setHasCouple((g || []).length > 0)).catch(() => {})
+    listFriendGroups().then((g) => setHasFriend((g || []).length > 0)).catch(() => {})
   }, [user?.id])
 
   // 인벤토리 보유 개수(active) 집계
@@ -96,11 +101,32 @@ export default function Store() {
 
   const done = notice?.type === 'ok'
 
+  // 프리미엄 회원(커플/우정 링 장착)만 프리미엄관 진입 가능
+  const hasPremium = hasCouple || hasFriend
+  const inPremium = premiumView && hasPremium
+  // 아이템이 현재 화면(일반/프리미엄)에 보여야 하는지
+  function qualifies(item) {
+    if (!item.premium) return !inPremium // 일반 아이템은 일반관에만
+    if (!inPremium) return false          // 프리미엄 아이템은 프리미엄관에만
+    if (item.tier === 'couple') return hasCouple
+    if (item.tier === 'friend') return hasFriend
+    return true                           // tier 없음 = 아무 프리미엄 회원
+  }
+  const shownItems = items.filter(qualifies)
+
   return (
     <div className="page">
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
       <div className="store-toolbar">
+        {hasPremium ? (
+          <div className="store-seg" role="tablist">
+            <button type="button" role="tab" aria-selected={!premiumView}
+              className={`store-seg-btn ${!premiumView ? 'active' : ''}`} onClick={() => setPremiumView(false)}>일반 상점</button>
+            <button type="button" role="tab" aria-selected={premiumView}
+              className={`store-seg-btn ${premiumView ? 'active' : ''}`} onClick={() => setPremiumView(true)}>💎 프리미엄관</button>
+          </div>
+        ) : <span />}
         <button type="button" className="btn btn-sm inv-link" onClick={() => navigate('/inventory')}>
           🎒 인벤토리
         </button>
@@ -108,11 +134,11 @@ export default function Store() {
 
       {loading ? (
         <div className="spinner" />
-      ) : items.length === 0 ? (
-        <div className="empty">판매 중인 아이템이 없어요.</div>
+      ) : shownItems.length === 0 ? (
+        <div className="empty">{inPremium ? '아직 이용할 수 있는 프리미엄 아이템이 없어요.' : '판매 중인 아이템이 없어요.'}</div>
       ) : (
         <div className="store-grid">
-          {items.map((item) => (
+          {shownItems.map((item) => (
             <button key={item.id} type="button" className="store-card" onClick={() => open(item)}>
               <StoreItemImage id={item.id} emoji={item.emoji} className="store-card-img" />
               <span className="store-card-name">{item.name}</span>

@@ -522,16 +522,25 @@ export async function sendNote({ groupId, recipientId, body }) {
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only')
+    .select('id, name, price, emoji, description, gift_only, premium, tier')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
+    // premium/tier 컬럼 미배포(42703) 시 해당 컬럼 없이 재조회
+    if (error.code === '42703') {
+      const { data: d2, error: e2 } = await supabase
+        .from('store_items')
+        .select('id, name, price, emoji, description, gift_only')
+        .eq('is_active', true).order('sort_order', { ascending: true })
+      if (e2) { if (e2.code === '42P01') return []; throw e2 }
+      return (d2 ?? []).map((r) => ({ id: r.id, name: r.name, price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null }))
+    }
     if (error.code === '42P01') return []
     throw error
   }
   return (data ?? []).map((r) => ({
     id: r.id, name: r.name, price: r.price, emoji: r.emoji,
-    desc: r.description, giftOnly: r.gift_only,
+    desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
   }))
 }
 

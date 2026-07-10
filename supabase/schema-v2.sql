@@ -1062,6 +1062,12 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
   ('ledboard',    '전광판',      50, '📟', E'커플만 쓸 수 있는 프리미엄 전광판\n*24시간 동안 노출',                 false, 9)
 on conflict (id) do nothing;
 
+-- 프리미엄관: premium(프리미엄 전용 아이템) + tier(요구 링: couple/friend/NULL=아무 프리미엄)
+alter table public.store_items add column if not exists premium boolean not null default false;
+alter table public.store_items add column if not exists tier text;   -- 'couple' | 'friend' | null
+-- 전광판 = 커플 전용 프리미엄
+update public.store_items set premium = true, tier = 'couple' where id = 'ledboard';
+
 -- =============================================================
 --  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템
 --  구매(purchase) 또는 선물(gift)로 획득. 선물은 준 사람 정보를 스냅샷.

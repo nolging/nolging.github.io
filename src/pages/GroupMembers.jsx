@@ -87,33 +87,26 @@ export default function GroupMembers() {
         {shown.map((m, i) => {
           const contact = m.contact || null
           const birth = birthLabel(m.birthdate)
-          const row = (
-            <>
-              <MemberAvatar src={m.avatar_url} name={m.display_nickname} seed={m.user_id} size={46} />
-              <div className="mlist-main">
-                <div className="mlist-name">
-                  <span className="mlist-nick">{m.display_nickname}</span>
-                  {m.is_self && <span className="mlist-me">나</span>}
-                  {m.role === 'owner' && <OwnerBadge />}
-                </div>
-                <div className="mlist-meta">
-                  <span className={contact ? '' : 'hidden-v'}>{contact || '비공개'}</span>
-                  <span className="mlist-dot" />
-                  <span className={birth ? '' : 'hidden-v'}>{birth || '비공개'}</span>
-                </div>
-              </div>
-              {!m.is_self && <Chevron />}
-            </>
-          )
           return (
             <div key={m.user_id}>
               {i > 0 && <div className="mlist-div" />}
-              {m.is_self ? (
-                <div className="mlist-row">{row}</div>
-              ) : (
-                <button type="button" className="mlist-row"
-                  onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>{row}</button>
-              )}
+              <button type="button" className="mlist-row"
+                onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
+                <MemberAvatar src={m.avatar_url} name={m.display_nickname} seed={m.user_id} size={46} />
+                <div className="mlist-main">
+                  <div className="mlist-name">
+                    <span className="mlist-nick">{m.display_nickname}</span>
+                    {m.is_self && <span className="mlist-me">나</span>}
+                    {m.role === 'owner' && <OwnerBadge />}
+                  </div>
+                  <div className="mlist-meta">
+                    <span className={contact ? '' : 'hidden-v'}>{contact || '비공개'}</span>
+                    <span className="mlist-dot" />
+                    <span className={birth ? '' : 'hidden-v'}>{birth || '비공개'}</span>
+                  </div>
+                </div>
+                <Chevron />
+              </button>
             </div>
           )
         })}
