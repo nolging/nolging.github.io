@@ -24,16 +24,11 @@ export default function MediaCard({ category, info, onClear }) {
   if (!info) return null
   const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : '🎬'
 
-  // 상단 제공처 pill (OTT 만)
-  let providers = null
-  if (category === 'OTT') {
-    const list = info.providers?.length ? info.providers : info.providers_buy
-    if (list?.length) providers = list
-  }
-
   // 라벨-값 행
   const rows = []
   if (category === 'OTT') {
+    const list = info.providers?.length ? info.providers : info.providers_buy
+    if (list?.length) rows.push(['제공처', <span className="mc-ott">{list.map((p, i) => <OttBadge key={i} p={p} />)}</span>])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count}부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime}분`])
@@ -59,7 +54,6 @@ export default function MediaCard({ category, info, onClear }) {
         : <span className="mc-poster mc-poster-empty" aria-hidden="true">{posterEmoji}</span>}
       <div className="mc-main">
         <div className="mc-title">{info.title}</div>
-        {providers && <span className="mc-ott">{providers.map((p, i) => <OttBadge key={i} p={p} />)}</span>}
         {rows.length > 0 && (
           <div className="mc-rows">
             {rows.map(([k, v], i) => (

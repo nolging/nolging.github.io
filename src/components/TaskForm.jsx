@@ -97,8 +97,6 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
               <textarea className="cg-input cg-textarea" rows={3} value={comment}
                 onChange={(e) => setComment(e.target.value)} placeholder="어떤 위시인지 자유롭게 적어 주세요" />
             </div>
-            <div className="ts-etc-hint"><span aria-hidden="true">✨</span>
-              {category === '기타' ? "‘기타’ 유형은 작품 검색 없이 코멘트만 남겨요" : '이 유형은 검색 없이 코멘트만 남겨요'}</div>
           </div>
         ) : null}
 

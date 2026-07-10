@@ -321,11 +321,11 @@ export default function Layout() {
       </header>
     )
   } else if (taskEditMatch) {
-    // 태스크 편집 페이지: 좌측 뒤로(그룹으로), 제목은 유형별 명칭 + 편집
-    const id = taskEditMatch.params.groupId
+    // 태스크 수정 페이지: 좌측 뒤로(수정 진입했던 상세로), 제목은 유형별 명칭 + 수정
+    const { groupId: id, taskId: tid } = taskEditMatch.params
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={`/groups/${id}/tasks/${tid}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">{taskTerms(location.state?.groupType).noun} 수정</span>
       </header>
     )

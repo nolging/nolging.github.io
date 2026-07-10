@@ -1608,8 +1608,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 .mc-ott-badge { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 1px 2px rgba(20,22,40,.22); }
 .mc-ott-text { display: inline-flex; align-items: center; justify-content: center; width: auto; padding: 0 9px;
   font-size: 11px; font-weight: 700; background: #eeebfe; color: #7363e8; box-shadow: none; }
-.mc-rows { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
-.mc-row { display: flex; gap: 8px; }
+.mc-rows { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; }
+.mc-row { display: flex; gap: 8px; align-items: center; }
 .mc-k { color: #a9a6b4; width: 52px; flex-shrink: 0; }
 .mc-v { color: #5f5b6b; min-width: 0; }
 .mc-clear { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%;
