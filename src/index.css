@@ -453,10 +453,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .ds-clear { flex-shrink: 0; border: none; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; }
 .ds-join {
   width: 46px; height: 46px; flex-shrink: 0; border: none; padding: 0; cursor: pointer; border-radius: 50%;
-  background: #eeebfe; color: #7363e8; box-shadow: 0 0 0 2px #d9d2fb;
+  background: var(--canvas); color: #8b8798;
   display: inline-flex; align-items: center; justify-content: center;
 }
-.ds-join:hover { background: #e6e1fc; text-decoration: none; }
+.ds-join:hover { background: #e9e9ee; text-decoration: none; }
 .ds-join:active { transform: scale(.96); }
 
 /* ---- 그룹 대표 이모지 뱃지 ---- */
