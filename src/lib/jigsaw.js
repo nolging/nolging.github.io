@@ -1,5 +1,6 @@
 // 직소 퍼즐 조각 형태 생성. 시드 기반이라 두 클라이언트가 동일한 조각을 그림.
-// 인접 조각은 같은 경계선(같은 sign, 같은 곡선을 정/역방향)으로 그려 정확히 맞물림.
+// 인접 조각은 같은 경계선(같은 edge 객체를 정/역방향)으로 그려 정확히 맞물림.
+// 톡: 목이 잘록하고 끝이 둥근 자연스러운 직소 형태 + 시드 기반 미세 변형.
 
 function mulberry32(a) {
   return function () {
@@ -10,40 +11,46 @@ function mulberry32(a) {
   }
 }
 
-// 경계선 톡/홈 방향(±1). 시드로 결정.
+// 경계선: {s:톡방향±1, ja:위치지터, jb:크기지터}
 export function buildEdges(cols, rows, seed) {
   const rand = mulberry32(seed >>> 0)
-  const vSign = []                       // vSign[row][cb], cb=1..cols-1 (세로 경계선)
-  for (let r = 0; r < rows; r++) { vSign[r] = []; for (let cb = 1; cb < cols; cb++) vSign[r][cb] = rand() < 0.5 ? -1 : 1 }
-  const hSign = []                       // hSign[rb][col], rb=1..rows-1 (가로 경계선)
-  for (let rb = 1; rb < rows; rb++) { hSign[rb] = []; for (let c = 0; c < cols; c++) hSign[rb][c] = rand() < 0.5 ? -1 : 1 }
-  return { vSign, hSign }
+  const jit = () => rand() * 2 - 1
+  const v = []                       // v[r][cb], cb=1..cols-1 (세로 경계선)
+  for (let r = 0; r < rows; r++) { v[r] = []; for (let cb = 1; cb < cols; cb++) v[r][cb] = { s: rand() < 0.5 ? -1 : 1, ja: jit(), jb: jit() } }
+  const h = []                       // h[rb][c], rb=1..rows-1 (가로 경계선)
+  for (let rb = 1; rb < rows; rb++) { h[rb] = []; for (let c = 0; c < cols; c++) h[rb][c] = { s: rand() < 0.5 ? -1 : 1, ja: jit(), jb: jit() } }
+  return { v, h }
 }
 
-// 가로 경계(왼→오): (x0,yl)→(x0+w,yl), 톡 방향 s(+1=아래로), 높이 tb
-function hSegs(x0, yl, w, s, tb) {
-  const t = s * tb, nw = 0.09 * w, kr = 0.17 * w, cx = x0 + 0.5 * w
+// 자연스러운 톡(mushroom): 잘록한 목 + 둥근 머리. 가로 경계(왼→오): (x0,yl)→(x0+w,yl)
+function hSegs(x0, yl, w, e, tb) {
+  const t = e.s * tb * (1 + e.jb * 0.12)
+  const cx = x0 + (0.5 + e.ja * 0.05) * w
+  const neck = 0.075 * w, kw = 0.135 * w
   return [
-    { t: 'L', x: cx - nw, y: yl },
-    { t: 'C', a: cx - nw - 0.02 * w, b: yl + t * 0.28, c: cx - kr, d: yl + t, x: cx, y: yl + t },
-    { t: 'C', a: cx + kr, b: yl + t, c: cx + nw + 0.02 * w, d: yl + t * 0.28, x: cx + nw, y: yl },
+    { t: 'L', x: cx - neck, y: yl },
+    { t: 'C', a: cx - neck, b: yl + t * 0.5, c: cx - kw, d: yl + t * 0.42, x: cx - kw, y: yl + t },
+    { t: 'C', a: cx - kw, b: yl + t * 1.5, c: cx + kw, d: yl + t * 1.5, x: cx + kw, y: yl + t },
+    { t: 'C', a: cx + kw, b: yl + t * 0.42, c: cx + neck, d: yl + t * 0.5, x: cx + neck, y: yl },
     { t: 'L', x: x0 + w, y: yl },
   ]
 }
-// 세로 경계(위→아래): (xl,y0)→(xl,y0+h), 톡 방향 s(+1=오른쪽), 높이 tb
-function vSegs(xl, y0, h, s, tb) {
-  const t = s * tb, nw = 0.09 * h, kr = 0.17 * h, cy = y0 + 0.5 * h
+// 세로 경계(위→아래): (xl,y0)→(xl,y0+h)
+function vSegs(xl, y0, h, e, tb) {
+  const t = e.s * tb * (1 + e.jb * 0.12)
+  const cy = y0 + (0.5 + e.ja * 0.05) * h
+  const neck = 0.075 * h, kw = 0.135 * h
   return [
-    { t: 'L', x: xl, y: cy - nw },
-    { t: 'C', a: xl + t * 0.28, b: cy - nw - 0.02 * h, c: xl + t, d: cy - kr, x: xl + t, y: cy },
-    { t: 'C', a: xl + t, b: cy + kr, c: xl + t * 0.28, d: cy + nw + 0.02 * h, x: xl, y: cy + nw },
+    { t: 'L', x: xl, y: cy - neck },
+    { t: 'C', a: xl + t * 0.5, b: cy - neck, c: xl + t * 0.42, d: cy - kw, x: xl + t, y: cy - kw },
+    { t: 'C', a: xl + t * 1.5, b: cy - kw, c: xl + t * 1.5, d: cy + kw, x: xl + t, y: cy + kw },
+    { t: 'C', a: xl + t * 0.42, b: cy + kw, c: xl + t * 0.5, d: cy + neck, x: xl, y: cy + neck },
     { t: 'L', x: xl, y: y0 + h },
   ]
 }
 function fwd(segs) {
   return segs.map((s) => s.t === 'L' ? `L ${s.x} ${s.y}` : `C ${s.a} ${s.b} ${s.c} ${s.d} ${s.x} ${s.y}`).join(' ')
 }
-// 정방향(start→...)의 역방향 문자열: start 제외, 끝점에서 start 로 되돌아옴
 function rev(start, segs) {
   const pts = [start]
   for (const s of segs) pts.push([s.x, s.y])
@@ -56,20 +63,16 @@ function rev(start, segs) {
   return out
 }
 
-// 한 조각의 로컬 좌표 경로. 셀 좌상단은 (off,off), tab 은 바깥으로 off 만큼 돌출 가능.
+// 한 조각의 로컬 좌표 경로. 셀 좌상단 (off,off).
 export function piecePath(pr, pc, cols, rows, w, h, tb, edges) {
   const off = Math.ceil(tb) + 1
-  const { vSign, hSign } = edges
+  const { v, h: H } = edges
   const x0 = off, y0 = off
   let d = `M ${x0} ${y0} `
-  // top (L→R)
-  d += pr === 0 ? `L ${x0 + w} ${y0} ` : fwd(hSegs(x0, y0, w, hSign[pr][pc], tb)) + ' '
-  // right (T→B)
-  d += pc === cols - 1 ? `L ${x0 + w} ${y0 + h} ` : fwd(vSegs(x0 + w, y0, h, vSign[pr][pc + 1], tb)) + ' '
-  // bottom (R→L = reverse of L→R)
-  d += pr === rows - 1 ? `L ${x0} ${y0 + h} ` : rev([x0, y0 + h], hSegs(x0, y0 + h, w, hSign[pr + 1][pc], tb)) + ' '
-  // left (B→T = reverse of T→B)
-  d += pc === 0 ? `L ${x0} ${y0} ` : rev([x0, y0], vSegs(x0, y0, h, vSign[pr][pc], tb)) + ' '
+  d += pr === 0 ? `L ${x0 + w} ${y0} ` : fwd(hSegs(x0, y0, w, H[pr][pc], tb)) + ' '
+  d += pc === cols - 1 ? `L ${x0 + w} ${y0 + h} ` : fwd(vSegs(x0 + w, y0, h, v[pr][pc + 1], tb)) + ' '
+  d += pr === rows - 1 ? `L ${x0} ${y0 + h} ` : rev([x0, y0 + h], hSegs(x0, y0 + h, w, H[pr + 1][pc], tb)) + ' '
+  d += pc === 0 ? `L ${x0} ${y0} ` : rev([x0, y0], vSegs(x0, y0, h, v[pr][pc], tb)) + ' '
   d += 'Z'
   return { d, off, sw: w + 2 * off, sh: h + 2 * off }
 }

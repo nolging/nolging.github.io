@@ -2287,6 +2287,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .pz-drop-t { font-size: 14px; font-weight: 700; color: #7363e8; }
 .pz-grid-label { font-size: 14px; font-weight: 800; color: #191722; margin-bottom: 10px; }
 .pz-grid-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pz-grid-opts6 { grid-template-columns: repeat(3, 1fr); }
 .pz-grid-btn { border: 1.5px solid #ece9f3; background: #fff; border-radius: 14px; padding: 13px; font-size: 13.5px;
   font-weight: 700; color: #6f6a80; cursor: pointer; }
 .pz-grid-btn.on { border-color: #7363e8; background: #eeebfe; color: #7363e8; }
@@ -2299,18 +2300,20 @@ button.mlist-row:hover { background: #f6f5fa; }
 .pz-page { display: flex; flex-direction: column; gap: 10px; }
 .pz-bar { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .pz-bar .pz-peers { align-self: auto; }
-.pz-count { margin-left: auto; font-size: 14px; font-weight: 800; color: #191722; }
+.pz-thumb { margin-left: auto; width: 42px; height: 42px; flex-shrink: 0; padding: 0; border: 2px solid #fff;
+  border-radius: 10px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(25,23,34,.15); }
+.pz-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pz-reset { width: 38px; height: 38px; flex-shrink: 0; border: none; border-radius: 12px; background: #f4f3f7;
   color: #47444f; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .pz-reset:hover { background: #ecebf0; }
 .pz-wrap { position: relative; width: 100%; background: #f1eff5; border-radius: 18px;
   overflow: hidden; touch-action: none; box-shadow: inset 0 1px 4px rgba(25,23,34,.05); }
-.pz-board { position: absolute; border-radius: 8px; background: rgba(115,99,232,.05);
-  box-shadow: inset 0 0 0 2px rgba(115,99,232,.16); }
 .pz-piece { position: absolute; overflow: visible; touch-action: none; cursor: grab;
   filter: drop-shadow(0 1px 2px rgba(25,23,34,.28)); }
 .pz-piece:active { cursor: grabbing; }
-.pz-piece.placed { cursor: default; filter: none; }
+.pz-ref { position: absolute; inset: 0; margin: 0; padding: 20px; border: none; z-index: 90; cursor: zoom-out;
+  background: rgba(25,23,34,.45); display: flex; align-items: center; justify-content: center; }
+.pz-ref img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
 .pz-done { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(25,23,34,.32); z-index: 100; }
 .pz-done-card { background: #fff; border-radius: 22px; padding: 26px 28px; text-align: center; font-size: 40px;
