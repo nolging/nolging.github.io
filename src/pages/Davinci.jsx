@@ -9,7 +9,8 @@ import { davinci } from '../lib/api'
 function Tile({ t, onClick, selected, mine }) {
   const known = t.up || mine
   const face = known ? (t.j ? '-' : t.n) : '?'
-  const cls = `dv-tile ${t.c === 'b' ? 'blk' : 'wht'} ${known ? 'up' : 'down'} ${mine && t.up ? 'exposed' : ''} ${selected ? 'sel' : ''} ${onClick ? 'clk' : ''}`
+  const color = t.c === 'b' ? 'blk' : t.c === 'w' ? 'wht' : 'ph'
+  const cls = `dv-tile ${color} ${known ? 'up' : 'down'} ${mine && t.up ? 'exposed' : ''} ${selected ? 'sel' : ''} ${onClick ? 'clk' : ''}`
   return <button type="button" className={cls} disabled={!onClick} onClick={onClick}>{face}</button>
 }
 
@@ -26,6 +27,7 @@ export default function Davinci() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [sel, setSel] = useState(null)       // 추리 대상 상대 pos
+  const [moveSel, setMoveSel] = useState(null) // 정렬 단계: 옮길 내 조커 index
   const chanRef = useRef(null)
   const matchRef = useRef(null)
 
@@ -41,7 +43,7 @@ export default function Davinci() {
     setBusy(true); setErr('')
     try {
       const r = await davinci(action, { matchId: mid, ...payload })
-      setV(r); setSel(null)
+      setV(r); setSel(null); setMoveSel(null)
       if (r.matchId) matchRef.current = r.matchId
       ping()
     } catch (e) { setErr(e.message || '오류') }
@@ -118,24 +120,30 @@ export default function Davinci() {
   }
 
   // ---- 대국/종료 공통: 손패 렌더 ----
-  const gap = (slot, onPick) => <button type="button" className="dv-gap" onClick={() => onPick(slot)} aria-label="여기 배치" />
+  const gap = (slot, onPick) => <button type="button" className="dv-gap" onClick={() => onPick(slot)} aria-label="여기로" />
   const placing = v.phase === 'place' && myTurn && v.myToPlace[0]
   const selfrevealing = v.phase === 'selfreveal' && myTurn
+  const setupArrange = v.phase === 'setup' && !v.mySetupDone
+  const iHaveJoker = v.myHand.some((t) => t.j)
 
   function renderMyHand() {
-    const canGap = (v.phase === 'setup' && v.myToPlace.length > 0) || placing
+    const showGaps = (setupArrange && moveSel != null) || placing
+    const onGap = placing ? (s) => act('place', { slot: s }) : (s) => act('arrange', { from: moveSel, to: s })
     const items = []
     for (let i = 0; i < v.myHand.length; i++) {
-      if (canGap) items.push(<span key={`g${i}`}>{gap(i, (s) => act('place', { slot: s }))}</span>)
+      if (showGaps) items.push(<span key={`g${i}`}>{gap(i, onGap)}</span>)
       const t = v.myHand[i]
-      const clickable = selfrevealing && !t.up ? () => act('selfreveal', { pos: i }) : null
-      items.push(<Tile key={`t${i}`} t={t} mine onClick={clickable} />)
+      let onClick = null
+      if (selfrevealing && !t.up) onClick = () => act('selfreveal', { pos: i })
+      else if (setupArrange && t.j) onClick = () => setMoveSel(moveSel === i ? null : i)
+      items.push(<Tile key={`t${i}`} t={t} mine selected={setupArrange && moveSel === i} onClick={onClick} />)
     }
-    if (canGap) items.push(<span key="gend">{gap(v.myHand.length, (s) => act('place', { slot: s }))}</span>)
+    if (showGaps) items.push(<span key="gend">{gap(v.myHand.length, onGap)}</span>)
     return items
   }
   function renderOppHand() {
     return v.oppHand.map((t, i) => {
+      if (t.placeholder) return <Tile key={i} t={{ c: 'x', up: false }} />
       const clickable = myTurn && v.phase === 'guess' && !t.up ? () => setSel(i) : null
       return <Tile key={i} t={t} onClick={clickable} selected={sel === i} />
     })
@@ -143,7 +151,11 @@ export default function Davinci() {
 
   const statusText = () => {
     if (v.status === 'ended') return v.winner === v.meUid ? '🎉 승리!' : `${opp.name} 님 승리`
-    if (v.phase === 'setup') return v.myToPlace.length ? '조커 놓을 위치를 고르세요' : `${opp.name} 님이 조커 배치 중…`
+    if (v.phase === 'setup') {
+      if (v.mySetupDone) return `${opp.name} 님이 준비하는 중…`
+      if (moveSel != null) return '놓을 위치를 고르세요'
+      return iHaveJoker ? '조커(–)를 눌러 위치를 옮기고, 완료를 누르세요' : '배치를 확인하고 완료를 누르세요'
+    }
     if (!myTurn) return `${opp.name} 님 차례`
     if (v.phase === 'guess') return sel != null ? '숫자를 골라 추리하세요' : '상대의 가릴 타일을 고르세요'
     if (v.phase === 'decide') return '정답! 계속할까요, 멈출까요?'
@@ -170,7 +182,8 @@ export default function Davinci() {
       <div className="dv-center">
         {drawnTile && <div className="dv-drawn"><span className="dv-drawn-l">뽑은 타일</span><Tile t={{ ...drawnTile, up: true }} /></div>}
         {v.drawn?.hidden && <div className="dv-drawn dim"><span className="dv-drawn-l">상대가 뽑음</span><Tile t={{ c: 'b', up: false }} /></div>}
-        {v.status !== 'ended' && v.deckCount > 0 && <div className="dv-deck">더미 {v.deckCount}</div>}
+        {v.status !== 'ended' && v.phase !== 'setup' && v.deckCount > 0 && <div className="dv-deck">더미 {v.deckCount}</div>}
+        {v.phase === 'setup' && <div className="dv-deck">{v.mySetupDone ? '상대 준비 대기 중' : '타일을 배치하세요'}</div>}
       </div>
 
       <div className="dv-hand-area me">{renderMyHand()}</div>
@@ -188,6 +201,9 @@ export default function Davinci() {
         </div>
       ) : (
         <div className="dv-actions">
+          {v.phase === 'setup' && !v.mySetupDone && (
+            <button type="button" className="dv-start" disabled={busy} onClick={() => act('confirm')}>배치 완료</button>
+          )}
           {myTurn && v.phase === 'guess' && sel != null && (
             <div className="dv-guesspanel">
               <div className="dv-vals">
@@ -205,7 +221,7 @@ export default function Davinci() {
               <button type="button" disabled={busy} className="stop" onClick={() => act('decide', { cont: false })}>멈추기</button>
             </div>
           )}
-          {v.status === 'playing' && (
+          {v.status === 'playing' && v.phase !== 'setup' && (
             <button type="button" className="dv-resign" disabled={busy} onClick={() => { if (window.confirm('기권할까요? 상대가 판돈을 가져갑니다.')) act('resign') }}>기권</button>
           )}
         </div>

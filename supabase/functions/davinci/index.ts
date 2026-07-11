@@ -67,10 +67,6 @@ function beginTurn(s) {
   s.drawn = s.deck.length ? { uid: s.turn, tile: s.deck.shift() } : null
   s.phase = 'guess'
 }
-function trySetupDone(s) {
-  const pending = s.players.some((p) => (s.toPlace[p.uid] || []).length)
-  if (!pending) { s.turn = s.first; beginTurn(s) }
-}
 function log(s, t) { s.log.push({ t }); if (s.log.length > 40) s.log.shift() }
 
 Deno.serve(async (req) => {
@@ -115,18 +111,24 @@ Deno.serve(async (req) => {
     const stakeOk = {}
     if (s.players) for (const pl of s.players) stakeOk[pl.uid] = (pl.uid === me ? myBal : await balanceOf(pl.uid)) >= (row.stake || 0)
     const reveal = row.status === 'ended'   // 종료 시 상대 패까지 공개
+    const setup = s.phase === 'setup'
     const hideTile = (t) => (t.up || reveal) ? { ...t, up: t.up } : { c: t.c, n: null, j: false, up: false }
+    // 정렬 단계에는 상대에게 내 손패를 아예 안 보여줌(조커 위치 이동을 못 보게) → 중립 placeholder
+    const oppHand = opp
+      ? (setup ? (s.hands?.[opp] || []).map(() => ({ placeholder: true })) : (s.hands?.[opp] || []).map(hideTile))
+      : []
     return {
       matchId: row.id, status: row.status, stake: row.stake, winner: row.winner,
       phase: s.phase || 'lobby', turn: s.turn || null, first: s.first || null,
       players: s.players || [], ready: s.ready || {},
       meUid: me, oppUid: opp,
       myHand: s.hands?.[me] || [],
-      oppHand: opp ? (s.hands?.[opp] || []).map(hideTile) : [],
+      oppHand,
       deckCount: s.deck?.length || 0,
       drawn: s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile } : { hidden: true, uid: s.drawn.uid }) : null,
       myToPlace: (s.toPlace?.[me] || []).map((x) => ({ ...x })),
-      oppPlacing: opp ? (s.toPlace?.[opp] || []).length > 0 : false,
+      mySetupDone: !!(s.setupDone?.[me]),
+      oppSetupDone: opp ? !!(s.setupDone?.[opp]) : false,
       log: s.log || [],
       lastGuess: s.lastGuess || null,
       myBalance: myBal, stakeOk,
@@ -240,13 +242,14 @@ Deno.serve(async (req) => {
         if (!s.players.every((pl) => s.ready[pl.uid])) throw new Error('두 명 모두 준비해야 시작할 수 있어요.')
         for (const pl of s.players) if ((await balanceOf(pl.uid)) < m.stake) throw new Error(`${pl.name} 님의 보유 츄르가 부족해요.`)
         const deck = shuffle(makeDeck())
-        s.hands = {}; s.toPlace = {}
+        s.hands = {}; s.toPlace = {}; s.setupDone = {}
         for (const pl of s.players) {
           const drawn = deck.splice(0, 4)
-          const nums = drawn.filter((t) => !t.j).sort((a, b) => tileKey(a) - tileKey(b))
-          const jok = drawn.filter((t) => t.j)
-          s.hands[pl.uid] = nums
-          s.toPlace[pl.uid] = jok.map((t) => ({ tile: t, up: false, reason: 'setup' }))
+          const hand = drawn.filter((t) => !t.j).sort((a, b) => tileKey(a) - tileKey(b))
+          // 조커도 처음부터 손패에 포함(개수 항상 4장). 기본 위치는 랜덤 → 소유자가 정렬 단계에서 옮김.
+          for (const jt of drawn.filter((t) => t.j)) hand.splice(Math.floor(Math.random() * (hand.length + 1)), 0, { ...jt, up: false })
+          s.hands[pl.uid] = hand
+          s.toPlace[pl.uid] = []   // 대국 중 뽑은 조커 배치용(초기엔 비움)
         }
         s.deck = deck
         s.first = s.players[Math.floor(Math.random() * 2)].uid
@@ -254,13 +257,35 @@ Deno.serve(async (req) => {
         s.drawn = null; s.lastGuess = null; s.settled = false; s.settledAmount = undefined
         s.log = [{ t: `대국 시작! ${nameOf(s, s.first)} 님 선공` }]
         m.status = 'playing'
-        s.phase = s.players.some((pl) => s.toPlace[pl.uid].length) ? 'setup' : 'guess'
-        if (s.phase === 'guess') beginTurn(s)
+        s.phase = 'setup'   // 둘 다 정렬(조커 위치) 확인해야 대국 시작
         return
       }
 
       if (m.status !== 'playing') throw new Error('진행 중인 대국이 아니에요.')
 
+      // 정렬 단계: 내 조커를 원하는 위치로 이동 (턴과 무관, 양쪽 동시 가능)
+      if (action === 'arrange') {
+        if (s.phase !== 'setup') throw new Error('지금은 정렬할 수 없어요.')
+        if (s.setupDone?.[caller]) throw new Error('이미 배치를 확정했어요.')
+        const hand = s.hands[caller]
+        const from = Math.floor(Number(p.from)), toRaw = Math.floor(Number(p.to))
+        const t = hand[from]
+        if (!t || !t.j) throw new Error('조커만 옮길 수 있어요.')
+        hand.splice(from, 1)
+        let to = toRaw > from ? toRaw - 1 : toRaw
+        to = Math.max(0, Math.min(hand.length, to))
+        hand.splice(to, 0, t)
+        return
+      }
+      // 정렬 확정 (양쪽 모두 확정하면 대국 시작)
+      if (action === 'confirm') {
+        if (s.phase !== 'setup') throw new Error('지금은 확인할 수 없어요.')
+        s.setupDone = s.setupDone || {}
+        s.setupDone[caller] = true
+        if (s.players.every((pl) => s.setupDone[pl.uid])) { s.turn = s.first; beginTurn(s) }
+        return
+      }
+      // 대국 중 뽑은 조커 배치 → 턴 종료
       if (action === 'place') {
         const q = s.toPlace[caller] || []
         if (!q.length) throw new Error('배치할 조커가 없어요.')
@@ -268,11 +293,8 @@ Deno.serve(async (req) => {
         const slot = Math.max(0, Math.min(hand.length, Math.floor(Number(p.slot))))
         const item = q.shift()
         hand.splice(slot, 0, { ...item.tile, up: item.up })
-        log(s, `${nameOf(s, caller)} 님이 조커를 배치`)
-        if (s.phase === 'setup') { trySetupDone(s) }
-        else { // 대국 중 뽑은 조커 배치 완료 → 턴 종료
-          s.turn = other(s, caller); beginTurn(s)
-        }
+        if (item.up) log(s, `${nameOf(s, caller)} 님이 조커(-) 공개`)   // 오답 공개만 로그(뒷면 배치는 비공개)
+        s.turn = other(s, caller); beginTurn(s)
         return
       }
 
