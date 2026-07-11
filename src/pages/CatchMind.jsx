@@ -7,6 +7,14 @@ import { CATCH_WORDS, normWord, wordLen } from '../lib/catchWords'
 
 const TURNS = 10, TURN_SEC = 75, REVEAL_MS = 2800
 
+function Av({ name, avatar, className = '' }) {
+  return (
+    <span className={`cm-av ${className}`}>
+      {avatar ? <img src={avatar} alt="" /> : <span className="cm-av-ini">{(name || '?').slice(0, 1)}</span>}
+    </span>
+  )
+}
+
 export default function CatchMind() {
   const { groupId } = useParams()
   const { profile } = useAuth()
@@ -37,7 +45,9 @@ export default function CatchMind() {
   const timerRef = useRef(0)
   const chatEndRef = useRef(null)
   const myName = useRef(profile?.nickname || '')
+  const myAvatar = useRef(profile?.avatar_url || null)
   const drawing = useRef(null)
+  const playRef = useRef(null)
   // 순환 참조 방지용 ref
   const applyRef = useRef(null), startTurnRef = useRef(null), endTurnRef = useRef(null)
 
@@ -58,16 +68,12 @@ export default function CatchMind() {
     ctx.stroke()
   }, [])
   useEffect(() => {
-    const cv = canvasRef.current; if (!cv) return
-    const resize = () => {
-      const rect = cv.getBoundingClientRect(); if (rect.width < 1) return
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      cv.width = Math.round(rect.width * dpr); cv.height = Math.round(rect.width * dpr)
-      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctxRef.current = ctx; sizeRef.current = rect.width; clearCanvas()
-    }
-    resize(); const ro = new ResizeObserver(resize); ro.observe(cv)
-    return () => ro.disconnect()
+    const cv = canvasRef.current; if (!cv || g.phase !== 'play') return
+    // 고정 해상도 백버퍼(1024) → 표시 크기가 바뀌어도(키보드 등) 캔버스가 초기화/왜곡되지 않음
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    cv.width = Math.round(1024 * dpr); cv.height = Math.round(1024 * dpr)
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctxRef.current = ctx; sizeRef.current = 1024; clearCanvas()
   }, [clearCanvas, g.phase])
 
   const emit = useCallback((type, payload) => { chanRef.current?.send({ type: 'broadcast', event: type, payload }) }, [])
@@ -131,18 +137,35 @@ export default function CatchMind() {
 
   useEffect(() => {
     if (!groupId || !uid) return
-    getMyGroupMember(groupId, uid).then((m) => { if (m?.display_nickname) myName.current = m.display_nickname }).catch(() => {})
-    getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
     const ch = supabase.channel(`catch:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
+    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
+    // 그룹 표시 닉네임/아바타가 늦게 도착하면 presence 를 다시 track → 상대 화면에도 아이디 대신 닉네임으로 보이게
+    getMyGroupMember(groupId, uid).then((m) => {
+      if (m?.display_nickname) myName.current = m.display_nickname
+      if (m?.avatar_url) myAvatar.current = m.avatar_url
+      retrack()
+    }).catch(() => {})
+    getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
     ;['game_start', 'turn_start', 'stroke', 'guess', 'turn_end'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
-    ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) map[k] = st[k][0]?.name || '?'; setPeers(map) })
-    ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { try { await ch.track({ uid, name: myName.current }) } catch { /* noop */ } } })
+    ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } } setPeers(map) })
+    ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') retrack() })
     return () => { clearTimeout(timerRef.current); supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid])
 
   useEffect(() => { if (g.phase !== 'play' || !g.endsAt) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [g.phase, g.endsAt])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+  // 키보드가 올라오면 visualViewport 가 줄어듦 → 플레이 영역 높이를 실제 보이는 높이에 맞춰 캔버스를 줄이고 채팅+입력창은 항상 보이게
+  useEffect(() => {
+    if (g.phase !== 'play') return
+    const vv = window.visualViewport, el = playRef.current
+    if (!vv || !el) return
+    const fit = () => { const top = el.getBoundingClientRect().top; el.style.height = Math.max(240, vv.height - top - 4) + 'px' }
+    fit()
+    vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
+    const t = setTimeout(fit, 300)
+    return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); clearTimeout(t); if (el) el.style.height = '' }
+  }, [g.phase])
 
   function cPos(e) { const r = canvasRef.current.getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))] }
   function cDown(e) {
@@ -159,7 +182,8 @@ export default function CatchMind() {
   function cUp() { drawing.current = null }
 
   function startGame() {
-    const players = Object.entries({ [uid]: myName.current, ...peersRef.current }).map(([u, n]) => ({ uid: u, name: n }))
+    const all = { [uid]: { name: myName.current, avatar: myAvatar.current }, ...peersRef.current }
+    const players = Object.entries(all).map(([u, v]) => ({ uid: u, name: v.name, avatar: v.avatar }))
     if (players.length < 2) { alert('두 명 이상 접속해야 시작할 수 있어요.'); return }
     const payload = { players }; emit('game_start', payload); apply('game_start', payload)
   }
@@ -177,7 +201,7 @@ export default function CatchMind() {
   }
 
   const remain = Math.max(0, Math.ceil((g.endsAt - now) / 1000))
-  const peerList = Object.entries({ [uid]: myName.current, ...peers }).map(([u, n]) => ({ uid: u, name: n }))
+  const peerList = Object.entries({ [uid]: { name: myName.current, avatar: myAvatar.current }, ...peers }).map(([u, v]) => ({ uid: u, name: v.name, avatar: v.avatar }))
 
   if (g.phase === 'lobby') {
     return (
@@ -185,7 +209,7 @@ export default function CatchMind() {
         <div className="cm-lobby">
           <div className="cm-title">캐치마인드</div>
           <div className="cm-sub">돌아가며 제시어를 그리고, 채팅으로 맞혀요. 10턴 후 가장 많이 맞힌 사람이 <b>츄르 30개</b>!</div>
-          <div className="cm-players">{peerList.map((p) => <span key={p.uid} className="cm-chip">{p.name}{p.uid === uid ? ' (나)' : ''}</span>)}</div>
+          <div className="cm-players">{peerList.map((p) => <span key={p.uid} className="cm-chip"><Av name={p.name} avatar={p.avatar} />{p.name}{p.uid === uid ? ' (나)' : ''}</span>)}</div>
           <div className="cm-wordbox">
             <div className="cm-wordbox-t">제시어 추가 <span>(기본 {CATCH_WORDS.length}개 + 직접)</span></div>
             <form className="cm-wordadd" onSubmit={(e) => { e.preventDefault(); addWord() }}>
@@ -207,7 +231,7 @@ export default function CatchMind() {
           <div className="cm-result-emoji">🏆</div>
           <div className="cm-result-t">{g.winner && g.winScore > 0 ? `${g.winner.name} 우승!` : '무승부'}</div>
           {g.winner && g.winScore > 0 && <div className="cm-result-coin">{awarded ? (awarded.ok ? '🐾 츄르 30개 지급 완료!' : '오늘은 이미 보상을 받았어요') : '보상 지급 중…'}</div>}
-          <div className="cm-scoreboard">{rank.map((p, i) => <div key={p.uid} className="cm-score-row"><span className="cm-rank">{i + 1}</span><span className="cm-score-name">{p.name}</span><span className="cm-score-n">{p.s}</span></div>)}</div>
+          <div className="cm-scoreboard">{rank.map((p, i) => <div key={p.uid} className="cm-score-row"><span className="cm-rank">{i + 1}</span><Av name={p.name} avatar={p.avatar} /><span className="cm-score-name">{p.name}</span><span className="cm-score-n">{p.s}</span></div>)}</div>
           <button type="button" className="cm-start" onClick={() => setG((st) => ({ ...st, phase: 'lobby', players: [] }))}>다시 하기</button>
         </div>
       </div>
@@ -215,25 +239,27 @@ export default function CatchMind() {
   }
 
   return (
-    <div className="page cm-page cm-play">
+    <div className="page cm-page cm-play" ref={playRef}>
       <div className="cm-top">
         <span className="cm-turn">{g.turn}/{TURNS}턴</span>
         <span className="cm-word">{meDrawer ? <b>{wordRef.current}</b> : g.reveal ? <b>{g.reveal.word}</b> : Array.from({ length: g.hintLen }).map((_, i) => <span key={i} className="cm-blank" />)}</span>
         <span className={`cm-timer ${remain <= 10 ? 'hot' : ''}`}>{remain}s</span>
       </div>
-      <div className="cm-scores">{g.players.map((p) => <span key={p.uid} className={`cm-sc ${p.uid === g.drawer ? 'drawing' : ''}`}>{p.uid === g.drawer ? '✏️ ' : ''}{p.name} {g.scores[p.uid] || 0}</span>)}</div>
+      <div className="cm-scores">{g.players.map((p) => <span key={p.uid} className={`cm-sc ${p.uid === g.drawer ? 'drawing' : ''}`}><Av name={p.name} avatar={p.avatar} className="cm-sc-av" />{p.uid === g.drawer ? '✏️ ' : ''}{p.name} {g.scores[p.uid] || 0}</span>)}</div>
 
       <div className="cm-canvas-wrap">
-        <canvas ref={canvasRef} className="cm-canvas" onPointerDown={cDown} onPointerMove={cMove} onPointerUp={cUp} onPointerCancel={cUp}
-          style={{ touchAction: 'none', cursor: meDrawer && !g.reveal ? 'crosshair' : 'default' }} />
-        {meDrawer && !g.reveal && (
-          <div className="cm-pens">
-            {['#191722', '#e5484d', '#3b82f6', '#4a9d6a', '#f5860a', '#ffffff'].map((c) => (
-              <button key={c} type="button" className={`cm-pen ${pen === c ? 'on' : ''} ${c === '#ffffff' ? 'wht' : ''}`} style={{ background: c }} onClick={() => setPen(c)} aria-label="펜 색" />
-            ))}
-            <button type="button" className="cm-pen-clear" onClick={() => { clearCanvas(); emit('stroke', { clear: true }) }}>지우기</button>
-          </div>
-        )}
+        <div className="cm-canvas-box">
+          <canvas ref={canvasRef} className="cm-canvas" onPointerDown={cDown} onPointerMove={cMove} onPointerUp={cUp} onPointerCancel={cUp}
+            style={{ touchAction: 'none', cursor: meDrawer && !g.reveal ? 'crosshair' : 'default' }} />
+          {meDrawer && !g.reveal && (
+            <div className="cm-pens">
+              {['#191722', '#e5484d', '#3b82f6', '#4a9d6a', '#f5860a', '#ffffff'].map((c) => (
+                <button key={c} type="button" className={`cm-pen ${pen === c ? 'on' : ''} ${c === '#ffffff' ? 'wht' : ''}`} style={{ background: c }} onClick={() => setPen(c)} aria-label="펜 색" />
+              ))}
+              <button type="button" className="cm-pen-clear" onClick={() => { clearCanvas(); emit('stroke', { clear: true }) }}>지우기</button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="cm-chat">
