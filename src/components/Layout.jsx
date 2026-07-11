@@ -92,6 +92,7 @@ export default function Layout() {
   const touchMatch = useMatch('/groups/:groupId/touch')
   const puzzleMatch = useMatch('/groups/:groupId/puzzle')
   const catchMatch = useMatch('/groups/:groupId/catchmind')
+  const omokMatch = useMatch('/groups/:groupId/omok')
   const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
   const taskEditMatch = useMatch('/groups/:groupId/tasks/:taskId/edit')
   const taskScheduleMatch = useMatch('/groups/:groupId/tasks/:taskId/schedule')
@@ -237,7 +238,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -333,6 +334,16 @@ export default function Layout() {
       <header className="topbar">
         <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">캐치마인드</span>
+      </header>
+    )
+  } else if (omokMatch) {
+    // 오목: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
+    const id = omokMatch.params.groupId
+    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
+    topbar = (
+      <header className="topbar">
+        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">오목</span>
       </header>
     )
   } else if (memberDetailMatch) {

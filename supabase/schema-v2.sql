@@ -299,6 +299,35 @@ end;
 $$;
 grant execute on function public.award_catchmind(uuid, uuid[]) to authenticated;
 
+-- ---- 오목 (프리미엄 그룹 실시간 대전) --------------------------
+-- 승자에게 츄르 10개, 그룹당 하루 1회 제한.
+create table if not exists public.omok_awards (
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  day        date not null default current_date,
+  winner     uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (group_id, day)
+);
+alter table public.omok_awards enable row level security;
+
+create or replace function public.award_omok(p_group_id uuid, p_winner uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return jsonb_build_object('ok', false, 'reason', 'forbidden'); end if;
+  if not public.is_group_member(p_group_id, p_winner) then return jsonb_build_object('ok', false, 'reason', 'bad_winner'); end if;
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then return jsonb_build_object('ok', false, 'reason', 'not_premium'); end if;
+  begin
+    insert into public.omok_awards(group_id, day, winner) values (p_group_id, current_date, p_winner);
+  exception when unique_violation then
+    return jsonb_build_object('ok', false, 'reason', 'already');
+  end;
+  insert into public.coin_ledger(user_id, delta, reason, ref_type)
+    values (p_winner, 10, '오목 승리', 'omok');
+  return jsonb_build_object('ok', true, 'coin', 10);
+end;
+$$;
+grant execute on function public.award_omok(uuid, uuid) to authenticated;
+
 -- ---- 커플 공간: 기념일 -----------------------------------------
 alter table public.groups add column if not exists anniversary date;
 -- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.

@@ -83,6 +83,16 @@ export async function awardCatchmind(groupId, winnerIds) {
   return data || { ok: false }
 }
 
+// 오목 승자에게 츄르 10개, 그룹당 하루 1회. 반환: { ok, coin?, reason? }
+export async function awardOmok(groupId, winnerId) {
+  const { data, error } = await supabase.rpc('award_omok', { p_group_id: groupId, p_winner: winnerId })
+  if (error) {
+    if (error.code === 'PGRST202' || /award_omok/.test(error.message || '')) return { ok: false, reason: 'missing' }
+    throw error
+  }
+  return data || { ok: false }
+}
+
 // ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ----------------------
 export async function getGroupPuzzle(groupId) {
   const { data, error } = await supabase.from('group_puzzles').select('*').eq('group_id', groupId).maybeSingle()

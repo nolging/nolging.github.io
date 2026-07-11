@@ -400,6 +400,12 @@ export default function GroupDetail() {
               <span aria-hidden="true">🎨</span>
             </button>
           )}
+          {isFriend && !isCouple && (
+            <button type="button" className="gd-draw-btn gd-omok-btn" aria-label="오목" title="오목"
+              onClick={() => navigate(`/groups/${groupId}/omok`)}>
+              <span aria-hidden="true">⚫</span>
+            </button>
+          )}
           {members.length > 0 && (
             isCouple ? (
               <button type="button" className="gd-members gd-members-couple"
