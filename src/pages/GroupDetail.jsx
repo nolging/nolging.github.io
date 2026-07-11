@@ -406,6 +406,12 @@ export default function GroupDetail() {
               <span aria-hidden="true">⚫</span>
             </button>
           )}
+          {isFriend && !isCouple && (
+            <button type="button" className="gd-draw-btn gd-davinci-btn" aria-label="다빈치코드" title="다빈치코드"
+              onClick={() => navigate(`/groups/${groupId}/davinci`)}>
+              <span aria-hidden="true">🔢</span>
+            </button>
+          )}
           {members.length > 0 && (
             isCouple ? (
               <button type="button" className="gd-members gd-members-couple"

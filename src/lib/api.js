@@ -83,6 +83,18 @@ export async function awardCatchmind(groupId, winnerIds) {
   return data || { ok: false }
 }
 
+// 다빈치코드 심판(Edge Function). action 별 payload 를 넘기고 내 시점 view 반환.
+export async function davinci(action, payload = {}) {
+  const { data, error } = await supabase.functions.invoke('davinci', { body: { action, ...payload } })
+  if (error) {
+    let msg = error.message
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) msg = ctx.error } catch { /* noop */ }
+    throw new Error(msg)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 // 오목 승자에게 츄르 10개, 그룹당 하루 1회. 반환: { ok, coin?, reason? }
 export async function awardOmok(groupId, winnerId) {
   const { data, error } = await supabase.rpc('award_omok', { p_group_id: groupId, p_winner: winnerId })

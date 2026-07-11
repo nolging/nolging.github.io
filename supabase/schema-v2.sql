@@ -328,6 +328,23 @@ end;
 $$;
 grant execute on function public.award_omok(uuid, uuid) to authenticated;
 
+-- ---- 다빈치코드 (프리미엄 그룹, 숨은 정보 + 츄르 베팅) ---------
+-- 비밀 상태(state)는 오직 Edge Function(davinci)이 service_role 로만 접근.
+-- 클라이언트 직접 SELECT 정책 없음 = 접근 불가(상대 숫자 노출 방지).
+create table if not exists public.davinci_matches (
+  id         uuid primary key default gen_random_uuid(),
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  status     text not null default 'lobby',   -- lobby | playing | ended | cancelled
+  stake      int  not null default 0,
+  state      jsonb not null default '{}'::jsonb,
+  winner     uuid references public.profiles(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_davinci_group on public.davinci_matches(group_id, status);
+alter table public.davinci_matches enable row level security;
+-- (정책 없음 → authenticated 는 직접 읽기/쓰기 불가. 엣지 함수만 접근)
+
 -- ---- 커플 공간: 기념일 -----------------------------------------
 alter table public.groups add column if not exists anniversary date;
 -- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.

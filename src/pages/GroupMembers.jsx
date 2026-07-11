@@ -159,9 +159,13 @@ export default function GroupMembers() {
             <span className="cs-act-ico" style={{ background: '#fdeee6' }}>🎨</span>
             <span className="cs-act-t">캐치마인드</span>
           </button>
-          <button type="button" className="cs-act cs-act-wide" onClick={() => navigate(`/groups/${groupId}/omok`, { state: { from: 'members' } })}>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/omok`, { state: { from: 'members' } })}>
             <span className="cs-act-ico" style={{ background: '#efe7d8' }}>⚫</span>
             <span className="cs-act-t">오목</span>
+          </button>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
+            <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
+            <span className="cs-act-t">다빈치코드</span>
           </button>
         </div>
       </div>
