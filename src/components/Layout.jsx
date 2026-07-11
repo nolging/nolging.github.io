@@ -295,29 +295,32 @@ export default function Layout() {
       </header>
     )
   } else if (drawMatch) {
-    // 그림판: 좌측 뒤로(그룹으로), 제목 "그림판"
+    // 그림판: 좌측 뒤로 — 멤버 목록(커플 공간)에서 왔으면 멤버 목록으로, 아니면 그룹으로
     const id = drawMatch.params.groupId
+    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">그림판</span>
       </header>
     )
   } else if (touchMatch) {
-    // 우심뽀까: 좌측 뒤로(그룹으로), 제목 "우심뽀까"
+    // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
     const id = touchMatch.params.groupId
+    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
   } else if (puzzleMatch) {
-    // 함께 퍼즐: 좌측 뒤로(그룹으로), 제목 "퍼즐"
+    // 함께 퍼즐: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
     const id = puzzleMatch.params.groupId
+    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">퍼즐</span>
       </header>
     )

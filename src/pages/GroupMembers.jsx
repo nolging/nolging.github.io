@@ -141,17 +141,17 @@ export default function GroupMembers() {
         </div>
 
         <div className="cs-actions">
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`)}>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`, { state: { from: 'members' } })}>
             <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
               <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
             </span>
             <span className="cs-act-t">그림판</span>
           </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/touch`)}>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/touch`, { state: { from: 'members' } })}>
             <span className="cs-act-ico" style={{ background: '#fde8ef' }}>💋</span>
             <span className="cs-act-t">우심뽀까</span>
           </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`)}>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`, { state: { from: 'members' } })}>
             <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
             <span className="cs-act-t">퍼즐</span>
           </button>
