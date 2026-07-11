@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getMyGroupMember, getCatchWords, setCatchWords, awardCatchmind } from '../lib/api'
+import { getGroupMemberMap, getCatchWords, setCatchWords, awardCatchmind } from '../lib/api'
 import { CATCH_WORDS, normWord, wordLen } from '../lib/catchWords'
 
 const TURNS = 10, TURN_SEC = 75, REVEAL_MS = 2800
@@ -46,6 +46,8 @@ export default function CatchMind() {
   const chatEndRef = useRef(null)
   const myName = useRef(profile?.nickname || '')
   const myAvatar = useRef(profile?.avatar_url || null)
+  const [members, setMembers] = useState({})   // uid → {name, avatar} (DB 확정 이름)
+  const membersRef = useRef(members); membersRef.current = members
   const drawing = useRef(null)
   const playRef = useRef(null)
   // 순환 참조 방지용 ref
@@ -148,10 +150,10 @@ export default function CatchMind() {
     const ch = supabase.channel(`catch:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
     const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
-    // 그룹 표시 닉네임/아바타가 늦게 도착하면 presence 를 다시 track → 상대 화면에도 아이디 대신 닉네임으로 보이게
-    getMyGroupMember(groupId, uid).then((m) => {
-      if (m?.display_nickname) myName.current = m.display_nickname
-      if (m?.avatar_url) myAvatar.current = m.avatar_url
+    // 이름은 presence 가 아니라 DB 멤버 맵으로 확정(경합 방지) → 상대 이름도 항상 닉네임으로
+    getGroupMemberMap(groupId).then((mm) => {
+      setMembers(mm)
+      if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
     }).catch(() => {})
     getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
@@ -189,9 +191,13 @@ export default function CatchMind() {
   }
   function cUp() { drawing.current = null }
 
+  // 이름/아바타는 DB 멤버 맵 우선 → presence → 마지막에 내 값/기본값
+  const memberName = (u) => membersRef.current[u]?.name || peersRef.current[u]?.name || (u === uid ? myName.current : '?')
+  const memberAvatar = (u) => membersRef.current[u]?.avatar ?? (u === uid ? myAvatar.current : peersRef.current[u]?.avatar) ?? null
+
   function startGame() {
-    const all = { [uid]: { name: myName.current, avatar: myAvatar.current }, ...peersRef.current }
-    const players = Object.entries(all).map(([u, v]) => ({ uid: u, name: v.name, avatar: v.avatar }))
+    const uids = [...new Set([uid, ...Object.keys(peersRef.current)])]
+    const players = uids.map((u) => ({ uid: u, name: memberName(u), avatar: memberAvatar(u) }))
     if (players.length < 2) { alert('두 명 이상 접속해야 시작할 수 있어요.'); return }
     const payload = { players }; emit('game_start', payload); apply('game_start', payload)
   }
@@ -209,7 +215,7 @@ export default function CatchMind() {
   }
 
   const remain = Math.max(0, Math.ceil((g.endsAt - now) / 1000))
-  const peerList = Object.entries({ [uid]: { name: myName.current, avatar: myAvatar.current }, ...peers }).map(([u, v]) => ({ uid: u, name: v.name, avatar: v.avatar }))
+  const peerList = [...new Set([uid, ...Object.keys(peers)])].map((u) => ({ uid: u, name: memberName(u), avatar: memberAvatar(u) }))
 
   if (g.phase === 'lobby') {
     return (

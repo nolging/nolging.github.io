@@ -236,6 +236,20 @@ export async function listMemberCards(groupId) {
   return data ?? []
 }
 
+// 그룹 멤버 uid → { name(표시 닉네임), avatar } 맵. presence 경합 없이 이름을 확정하는 용도.
+export async function getGroupMemberMap(groupId) {
+  const { data, error } = await supabase
+    .from('group_members')
+    .select('user_id, display_nickname, avatar_url, profiles(nickname)')
+    .eq('group_id', groupId)
+  if (error) throw error
+  const map = {}
+  ;(data ?? []).forEach((m) => {
+    map[m.user_id] = { name: m.display_nickname || m.profiles?.nickname || '?', avatar: m.avatar_url || null }
+  })
+  return map
+}
+
 // 내 그룹내 설정 수정 (닉네임/프로필사진/공개토글)
 export async function updateMyGroupMember(groupId, userId, patch) {
   const { error } = await supabase

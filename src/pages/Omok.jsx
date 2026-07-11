@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getMyGroupMember, awardOmok } from '../lib/api'
+import { getGroupMemberMap, awardOmok } from '../lib/api'
 
 const N = 15               // 15×15 바둑판
 const GAP = 28, MARGIN = 22
@@ -42,6 +42,8 @@ export default function Omok() {
 
   const myName = useRef(profile?.nickname || '')
   const myAvatar = useRef(profile?.avatar_url || null)
+  const [members, setMembers] = useState({})   // uid → {name, avatar} (DB 확정 이름)
+  const membersRef = useRef(members); membersRef.current = members
   const boardRef = useRef(null)
   const applyRef = useRef(null)
 
@@ -88,9 +90,10 @@ export default function Omok() {
     const ch = supabase.channel(`omok:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
     const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
-    getMyGroupMember(groupId, uid).then((m) => {
-      if (m?.display_nickname) myName.current = m.display_nickname
-      if (m?.avatar_url) myAvatar.current = m.avatar_url
+    // 이름은 DB 멤버 맵으로 확정(presence 경합 방지)
+    getGroupMemberMap(groupId).then((mm) => {
+      setMembers(mm)
+      if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
     }).catch(() => {})
     ;['game_start', 'move', 'resign', 'reset', 'award'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
@@ -113,11 +116,15 @@ export default function Omok() {
     if (r < 0 || r >= N || c < 0 || c >= N) return
     place(r, c)
   }
+  // 이름/아바타는 DB 멤버 맵 우선 → presence → 내 값/기본값
+  const memberName = (u) => membersRef.current[u]?.name || peersRef.current[u]?.name || (u === uid ? myName.current : '?')
+  const memberAvatar = (u) => membersRef.current[u]?.avatar ?? (u === uid ? myAvatar.current : peersRef.current[u]?.avatar) ?? null
+
   function startGame(myStone) {
     const oppId = Object.keys(peersRef.current)[0]
     if (!oppId) { alert('상대가 같은 화면에 들어와야 시작할 수 있어요.'); return }
-    const me = { uid, name: myName.current, avatar: myAvatar.current }
-    const opp = { uid: oppId, name: peersRef.current[oppId].name, avatar: peersRef.current[oppId].avatar }
+    const me = { uid, name: memberName(uid), avatar: memberAvatar(uid) }
+    const opp = { uid: oppId, name: memberName(oppId), avatar: memberAvatar(oppId) }
     const black = myStone === 1 ? me : opp
     const white = myStone === 1 ? opp : me
     const pl = { black, white }; emit('game_start', pl); apply('game_start', pl)
@@ -129,8 +136,8 @@ export default function Omok() {
   function reset() { const pl = {}; emit('reset', pl); apply('reset', pl) }
 
   const oppId = Object.keys(peers)[0]
-  const opp = oppId ? peers[oppId] : null
-  const isHost = opp ? uid < oppId : false
+  const opp = oppId ? { name: memberName(oppId), avatar: memberAvatar(oppId) } : null
+  const isHost = oppId ? uid < oppId : false
 
   if (g.phase === 'lobby') {
     return (
@@ -139,7 +146,7 @@ export default function Omok() {
           <div className="omok-title">오목</div>
           <div className="omok-sub">가로·세로·대각선으로 <b>정확히 5목</b>을 먼저 만들면 승리! 이긴 사람은 <b>츄르 10개</b> (하루 1회)</div>
           <div className="omok-lobby-players">
-            <span className="omok-chip"><Av name={myName.current} avatar={myAvatar.current} />{myName.current || '나'} (나)</span>
+            <span className="omok-chip"><Av name={memberName(uid)} avatar={memberAvatar(uid)} />{memberName(uid) || '나'} (나)</span>
             {opp
               ? <span className="omok-chip"><Av name={opp.name} avatar={opp.avatar} />{opp.name}</span>
               : <span className="omok-chip omok-chip-wait">상대 기다리는 중…</span>}
