@@ -2387,6 +2387,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 .cm-result-coin { font-size: 14px; font-weight: 700; color: #d98a4e; }
 .cm-scoreboard { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 6px; }
 .cm-score-row { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 11px 14px; box-shadow: 0 2px 10px rgba(25,23,34,.04); }
+.cm-score-row.win { background: #fff7ed; box-shadow: 0 2px 10px rgba(217,138,78,.14); }
+.cm-score-row.win .cm-rank { background: #f5860a; color: #fff; }
 .cm-rank { width: 22px; height: 22px; border-radius: 50%; background: #eeebfe; color: #7363e8; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .cm-score-name { flex: 1; text-align: left; font-size: 14px; font-weight: 700; color: #191722; }
 .cm-score-n { font-size: 15px; font-weight: 800; color: #7363e8; }

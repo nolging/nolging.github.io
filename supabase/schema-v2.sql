@@ -265,24 +265,39 @@ create table if not exists public.catchmind_awards (
 );
 alter table public.catchmind_awards enable row level security;
 
--- 우승자에게 30 츄르 지급. 하루 1회/그룹 제한(unique). 이미 지급됐으면 false.
-create or replace function public.award_catchmind(p_group_id uuid, p_winner uuid)
-returns boolean language plpgsql security definer set search_path = public as $$
+-- 우승자에게 30 츄르 지급. 공동 우승이면 균등 분배(내림, 나머지 버림).
+-- 하루 1회/그룹 제한(unique). 반환: { ok, share, n, reason }
+drop function if exists public.award_catchmind(uuid, uuid);
+create or replace function public.award_catchmind(p_group_id uuid, p_winners uuid[])
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  n int := coalesce(array_length(p_winners, 1), 0);
+  share int;
+  w uuid;
 begin
-  if not public.is_group_member(p_group_id, auth.uid()) then raise exception 'not authorized'; end if;
-  if not public.is_group_member(p_group_id, p_winner) then raise exception 'winner not member'; end if;
-  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then raise exception 'not premium'; end if;
+  if n = 0 then return jsonb_build_object('ok', false, 'reason', 'no_winner'); end if;
+  if not public.is_group_member(p_group_id, auth.uid()) then return jsonb_build_object('ok', false, 'reason', 'forbidden'); end if;
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then return jsonb_build_object('ok', false, 'reason', 'not_premium'); end if;
+  foreach w in array p_winners loop
+    if not public.is_group_member(p_group_id, w) then return jsonb_build_object('ok', false, 'reason', 'bad_winner'); end if;
+  end loop;
+  -- 그룹당 하루 1회 지급 마커(대표로 첫 우승자 기록)
   begin
-    insert into public.catchmind_awards(group_id, day, winner) values (p_group_id, current_date, p_winner);
+    insert into public.catchmind_awards(group_id, day, winner) values (p_group_id, current_date, p_winners[1]);
   exception when unique_violation then
-    return false;   -- 오늘 이미 지급됨
+    return jsonb_build_object('ok', false, 'reason', 'already');
   end;
-  insert into public.coin_ledger(user_id, delta, reason, ref_type)
-    values (p_winner, 30, '캐치마인드 우승', 'catchmind');
-  return true;
+  share := floor(30.0 / n);
+  if share >= 1 then
+    foreach w in array p_winners loop
+      insert into public.coin_ledger(user_id, delta, reason, ref_type)
+        values (w, share, '캐치마인드 우승', 'catchmind');
+    end loop;
+  end if;
+  return jsonb_build_object('ok', true, 'share', share, 'n', n);
 end;
 $$;
-grant execute on function public.award_catchmind(uuid, uuid) to authenticated;
+grant execute on function public.award_catchmind(uuid, uuid[]) to authenticated;
 
 -- ---- 커플 공간: 기념일 -----------------------------------------
 alter table public.groups add column if not exists anniversary date;

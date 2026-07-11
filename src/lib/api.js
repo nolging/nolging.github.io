@@ -71,13 +71,16 @@ export async function setCatchWords(groupId, words) {
   }
 }
 // 우승자에게 30 츄르 지급(하루 1회/그룹). 지급됐으면 true, 이미 지급됐으면 false.
-export async function awardCatchmind(groupId, winnerId) {
-  const { data, error } = await supabase.rpc('award_catchmind', { p_group_id: groupId, p_winner: winnerId })
+// winnerIds: 공동 우승자 배열 → 30개를 균등 분배(내림), 그룹당 하루 1회.
+// 반환: { ok, share, n, reason }
+export async function awardCatchmind(groupId, winnerIds) {
+  const arr = Array.isArray(winnerIds) ? winnerIds : [winnerIds]
+  const { data, error } = await supabase.rpc('award_catchmind', { p_group_id: groupId, p_winners: arr })
   if (error) {
-    if (error.code === 'PGRST202' || /award_catchmind/.test(error.message || '')) return false
+    if (error.code === 'PGRST202' || /award_catchmind/.test(error.message || '')) return { ok: false, reason: 'missing' }
     throw error
   }
-  return !!data
+  return data || { ok: false }
 }
 
 // ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ----------------------

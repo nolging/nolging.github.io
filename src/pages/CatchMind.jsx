@@ -93,15 +93,21 @@ export default function CatchMind() {
   startTurnRef.current = startTurn
 
   const endGame = useCallback((scores, players) => {
-    let win = null, best = -1
-    for (const p of players) { const s = scores[p.uid] || 0; if (s > best) { best = s; win = p } }
-    setG((st) => ({ ...st, phase: 'ended', winner: win, winScore: best }))
-    if (win && best > 0) awardCatchmind(groupId, win.uid).then((ok) => setAwarded({ uid: win.uid, ok })).catch(() => {})
-  }, [groupId, setG])
+    const best = Math.max(0, ...players.map((p) => scores[p.uid] || 0))
+    const winners = best > 0 ? players.filter((p) => (scores[p.uid] || 0) === best) : []
+    setG((st) => ({ ...st, phase: 'ended', winners, winScore: best }))
+    if (!winners.length) return
+    // 공동 우승 시 중복 지급/메시지 경합 방지 → 지정된 한 클라이언트(uid 최소)만 RPC 호출 후 결과 방송
+    const caller = [...winners].sort((a, b) => (a.uid < b.uid ? -1 : 1))[0]
+    if (caller.uid !== uid) return
+    awardCatchmind(groupId, winners.map((w) => w.uid))
+      .then((res) => { emit('award', res); applyRef.current('award', res) })
+      .catch(() => {})
+  }, [groupId, setG, uid, emit])
 
   const apply = useCallback((type, pl) => {
     if (type === 'game_start') {
-      usedRef.current = new Set(); endedRef.current = -1
+      usedRef.current = new Set(); endedRef.current = -1; setAwarded(null)
       setChat([{ id: 'gs', kind: 'sys', text: '게임 시작! 10턴 동안 그림으로 제시어를 맞혀 보세요.' }])
       setG({ phase: 'play', players: pl.players, turn: 0, drawer: null, endsAt: 0, hintLen: 0, scores: {}, reveal: null })
       setTimeout(() => startTurnRef.current(1, pl.players), 400)
@@ -124,6 +130,8 @@ export default function CatchMind() {
       setG((st) => { const scores = { ...st.scores }; if (pl.winner) scores[pl.winner] = (scores[pl.winner] || 0) + 1; return { ...st, scores, reveal: { word: pl.word, winner: pl.winner } } })
       setChat((c) => [...c, { id: `e${pl.turn}`, kind: 'sys', text: winnerName ? `🎉 ${winnerName} 정답! (제시어: ${pl.word})` : `⏰ 시간 초과 — 제시어: ${pl.word}` }])
       setTimeout(() => { const players = gRef.current.players; if (pl.turn >= TURNS) endGame(gRef.current.scores, players); else startTurnRef.current(pl.turn + 1, players) }, REVEAL_MS)
+    } else if (type === 'award') {
+      setAwarded(pl)
     }
   }, [uid, setG, clearCanvas, drawSeg, endGame])
   applyRef.current = apply
@@ -147,7 +155,7 @@ export default function CatchMind() {
       retrack()
     }).catch(() => {})
     getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
-    ;['game_start', 'turn_start', 'stroke', 'guess', 'turn_end'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
+    ;['game_start', 'turn_start', 'stroke', 'guess', 'turn_end', 'award'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } } setPeers(map) })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') retrack() })
     return () => { clearTimeout(timerRef.current); supabase.removeChannel(ch); chanRef.current = null }
@@ -225,13 +233,22 @@ export default function CatchMind() {
   }
   if (g.phase === 'ended') {
     const rank = g.players.map((p) => ({ ...p, s: g.scores[p.uid] || 0 })).sort((a, b) => b.s - a.s)
+    const rankNo = rank.map((p, i) => (i > 0 && rank[i - 1].s === p.s ? null : i + 1))
+    for (let i = 0; i < rankNo.length; i++) if (rankNo[i] === null) rankNo[i] = rankNo[i - 1]  // 동점 → 공동 순위
+    const winners = g.winners || []
+    const isTie = winners.length > 1
+    const coinMsg = !awarded ? '보상 지급 중…'
+      : !awarded.ok ? (awarded.reason === 'already' ? '오늘은 이미 보상을 받았어요' : '보상은 다음 기회에!')
+      : awarded.share > 0
+        ? (awarded.n > 1 ? `🐾 공동 우승! 츄르 ${awarded.share}개씩 지급 완료!` : '🐾 츄르 30개 지급 완료!')
+        : '🐾 축하해요!'
     return (
       <div className="page cm-page">
         <div className="cm-result">
           <div className="cm-result-emoji">🏆</div>
-          <div className="cm-result-t">{g.winner && g.winScore > 0 ? `${g.winner.name} 우승!` : '무승부'}</div>
-          {g.winner && g.winScore > 0 && <div className="cm-result-coin">{awarded ? (awarded.ok ? '🐾 츄르 30개 지급 완료!' : '오늘은 이미 보상을 받았어요') : '보상 지급 중…'}</div>}
-          <div className="cm-scoreboard">{rank.map((p, i) => <div key={p.uid} className="cm-score-row"><span className="cm-rank">{i + 1}</span><Av name={p.name} avatar={p.avatar} /><span className="cm-score-name">{p.name}</span><span className="cm-score-n">{p.s}</span></div>)}</div>
+          <div className="cm-result-t">{winners.length ? (isTie ? `공동 우승! ${winners.map((w) => w.name).join(', ')}` : `${winners[0].name} 우승!`) : '무승부'}</div>
+          {winners.length > 0 && <div className="cm-result-coin">{coinMsg}</div>}
+          <div className="cm-scoreboard">{rank.map((p, i) => <div key={p.uid} className={`cm-score-row ${rankNo[i] === 1 ? 'win' : ''}`}><span className="cm-rank">{rankNo[i]}</span><Av name={p.name} avatar={p.avatar} /><span className="cm-score-name">{p.name}</span><span className="cm-score-n">{p.s}</span></div>)}</div>
           <button type="button" className="cm-start" onClick={() => setG((st) => ({ ...st, phase: 'lobby', players: [] }))}>다시 하기</button>
         </div>
       </div>
