@@ -394,6 +394,12 @@ export default function GroupDetail() {
               <span aria-hidden="true">🧩</span>
             </button>
           )}
+          {isFriend && !isCouple && (
+            <button type="button" className="gd-draw-btn gd-catch-btn" aria-label="캐치마인드" title="캐치마인드"
+              onClick={() => navigate(`/groups/${groupId}/catchmind`)}>
+              <span aria-hidden="true">🎨</span>
+            </button>
+          )}
           {members.length > 0 && (
             isCouple ? (
               <button type="button" className="gd-members gd-members-couple"

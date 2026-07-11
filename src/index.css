@@ -2320,3 +2320,67 @@ button.mlist-row:hover { background: #f6f5fa; }
   box-shadow: 0 12px 40px rgba(25,23,34,.25); display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .pz-done-t { font-size: 18px; font-weight: 800; color: #191722; }
 .pz-done-btn { margin-top: 12px; width: auto; padding: 0 22px; height: 46px; font-size: 14.5px; }
+
+/* ============ 캐치마인드 (프리미엄 그룹 실시간 그림 맞히기) ============ */
+.cs-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gd-catch-btn { background: #fdeee6; }
+.gd-catch-btn:hover { background: #fbe3d3; }
+.gd-catch-btn span { font-size: 18px; line-height: 1; }
+
+.cm-page { display: flex; flex-direction: column; gap: 10px; }
+.cm-play { height: 100%; }
+.cm-lobby, .cm-result { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 14px 4px; }
+.cm-title { font-size: 22px; font-weight: 800; letter-spacing: -.5px; color: #191722; }
+.cm-sub { font-size: 13px; color: #6f6a80; line-height: 1.6; max-width: 320px; }
+.cm-sub b { color: #7363e8; }
+.cm-players { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.cm-chip { background: #eeebfe; color: #7363e8; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; }
+.cm-wordbox { width: 100%; max-width: 340px; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(25,23,34,.05); padding: 14px 16px; }
+.cm-wordbox-t { font-size: 13px; font-weight: 800; color: #191722; text-align: left; }
+.cm-wordbox-t span { font-weight: 500; color: #8b8798; }
+.cm-wordadd { display: flex; gap: 8px; margin-top: 10px; }
+.cm-wordadd input { flex: 1; min-height: 0; border: 1.5px solid #ece9f3; border-radius: 12px; padding: 9px 12px; font-size: 14px; background: #f4f3f7; }
+.cm-wordbtn { flex-shrink: 0; border: none; border-radius: 12px; background: #eeebfe; color: #7363e8; font-weight: 700; padding: 0 16px; cursor: pointer; }
+.cm-start { font-family: inherit; width: 100%; max-width: 340px; height: 52px; border: none; border-radius: 999px; background: #191722; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+.cm-start:active { transform: scale(.985); }
+.cm-hint { font-size: 11.5px; color: #b0b0b8; }
+
+.cm-top { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.cm-turn { font-size: 13px; font-weight: 800; color: #7363e8; background: #eeebfe; border-radius: 999px; padding: 5px 11px; flex-shrink: 0; }
+.cm-word { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 19px; font-weight: 800; letter-spacing: 2px; color: #191722; min-width: 0; }
+.cm-blank { width: 15px; height: 3px; background: #c9c6d6; border-radius: 2px; }
+.cm-timer { font-size: 15px; font-weight: 800; color: #47444f; flex-shrink: 0; min-width: 38px; text-align: right; }
+.cm-timer.hot { color: #e5484d; }
+.cm-scores { display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+.cm-sc { font-size: 12px; font-weight: 600; color: #6f6a80; background: #f4f3f7; border-radius: 999px; padding: 4px 10px; }
+.cm-sc.drawing { background: #fdeee6; color: #d98a4e; }
+
+.cm-canvas-wrap { position: relative; flex-shrink: 0; }
+.cm-canvas { width: 100%; aspect-ratio: 1 / 1; max-height: 46vh; background: #fff; border-radius: 14px; display: block;
+  box-shadow: 0 4px 16px rgba(25,23,34,.06); }
+.cm-pens { position: absolute; left: 8px; bottom: 8px; right: 8px; display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.9); border-radius: 999px; padding: 6px 8px; box-shadow: 0 2px 8px rgba(25,23,34,.1); }
+.cm-pen { width: 24px; height: 24px; border-radius: 50%; border: none; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.cm-pen.wht { box-shadow: inset 0 0 0 1.5px #d7d4e0; }
+.cm-pen.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #47444f; }
+.cm-pen-clear { margin-left: auto; border: none; background: #f4f3f7; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: #6f6a80; cursor: pointer; }
+
+.cm-chat { flex: 1; min-height: 90px; display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
+.cm-msgs { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
+.cm-msg { font-size: 13.5px; color: #191722; line-height: 1.4; }
+.cm-msg b { color: #7363e8; font-weight: 700; margin-right: 4px; }
+.cm-msg-sys { font-size: 12px; color: #8b8798; text-align: center; padding: 2px 0; }
+.cm-guessbar { display: flex; gap: 8px; padding: 8px; border-top: 1px solid #f1eff5; }
+.cm-guessbar input { flex: 1; min-height: 0; border: 1.5px solid #ece9f3; border-radius: 12px; padding: 10px 12px; font-size: 14px; background: #f4f3f7; }
+.cm-guessbar input:disabled { opacity: .6; }
+.cm-send { flex-shrink: 0; border: none; border-radius: 12px; background: #191722; color: #fff; font-weight: 700; padding: 0 16px; cursor: pointer; }
+.cm-send:disabled { background: #ecebf0; color: #b6b3c0; }
+
+.cm-result-emoji { font-size: 52px; }
+.cm-result-t { font-size: 22px; font-weight: 800; color: #191722; }
+.cm-result-coin { font-size: 14px; font-weight: 700; color: #d98a4e; }
+.cm-scoreboard { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 6px; }
+.cm-score-row { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 11px 14px; box-shadow: 0 2px 10px rgba(25,23,34,.04); }
+.cm-rank { width: 22px; height: 22px; border-radius: 50%; background: #eeebfe; color: #7363e8; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cm-score-name { flex: 1; text-align: left; font-size: 14px; font-weight: 700; color: #191722; }
+.cm-score-n { font-size: 15px; font-weight: 800; color: #7363e8; }

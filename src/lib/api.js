@@ -57,6 +57,29 @@ export async function deleteGroup(groupId) {
   if (error) throw error
 }
 
+// ---- 캐치마인드 (프리미엄 그룹 실시간 그림 맞히기) -------------
+export async function getCatchWords(groupId) {
+  const { data, error } = await supabase.from('group_catch_words').select('words').eq('group_id', groupId).maybeSingle()
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return Array.isArray(data?.words) ? data.words : []
+}
+export async function setCatchWords(groupId, words) {
+  const { error } = await supabase.from('group_catch_words').upsert({ group_id: groupId, words })
+  if (error) {
+    if (error.code === '42P01') throw new Error('캐치마인드 기능이 아직 DB에 설정되지 않았습니다.')
+    throw error
+  }
+}
+// 우승자에게 30 츄르 지급(하루 1회/그룹). 지급됐으면 true, 이미 지급됐으면 false.
+export async function awardCatchmind(groupId, winnerId) {
+  const { data, error } = await supabase.rpc('award_catchmind', { p_group_id: groupId, p_winner: winnerId })
+  if (error) {
+    if (error.code === 'PGRST202' || /award_catchmind/.test(error.message || '')) return false
+    throw error
+  }
+  return !!data
+}
+
 // ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ----------------------
 export async function getGroupPuzzle(groupId) {
   const { data, error } = await supabase.from('group_puzzles').select('*').eq('group_id', groupId).maybeSingle()

@@ -155,6 +155,10 @@ export default function GroupMembers() {
             <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
             <span className="cs-act-t">퍼즐</span>
           </button>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/catchmind`, { state: { from: 'members' } })}>
+            <span className="cs-act-ico" style={{ background: '#fdeee6' }}>🎨</span>
+            <span className="cs-act-t">캐치마인드</span>
+          </button>
         </div>
       </div>
     )

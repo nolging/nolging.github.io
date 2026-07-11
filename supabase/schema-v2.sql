@@ -242,6 +242,48 @@ create policy gp_all on public.group_puzzles for all
   using (public.is_group_member(group_id, auth.uid()))
   with check (public.is_group_member(group_id, auth.uid()));
 
+-- ---- 캐치마인드 (프리미엄 그룹 실시간 그림 맞히기) --------------
+-- 그룹별 커스텀 제시어 (멤버 누구나 추가). 기본 리스트와 합쳐 사용.
+create table if not exists public.group_catch_words (
+  group_id uuid primary key references public.groups(id) on delete cascade,
+  words    jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.group_catch_words enable row level security;
+drop policy if exists gcw_all on public.group_catch_words;
+create policy gcw_all on public.group_catch_words for all
+  using (public.is_group_member(group_id, auth.uid()))
+  with check (public.is_group_member(group_id, auth.uid()));
+
+-- 우승 보상 지급 이력(그룹당 하루 1건) — 중복 지급 방지 & 하루 1회 제한
+create table if not exists public.catchmind_awards (
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  day        date not null default current_date,
+  winner     uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (group_id, day)
+);
+alter table public.catchmind_awards enable row level security;
+
+-- 우승자에게 30 츄르 지급. 하루 1회/그룹 제한(unique). 이미 지급됐으면 false.
+create or replace function public.award_catchmind(p_group_id uuid, p_winner uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception 'not authorized'; end if;
+  if not public.is_group_member(p_group_id, p_winner) then raise exception 'winner not member'; end if;
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then raise exception 'not premium'; end if;
+  begin
+    insert into public.catchmind_awards(group_id, day, winner) values (p_group_id, current_date, p_winner);
+  exception when unique_violation then
+    return false;   -- 오늘 이미 지급됨
+  end;
+  insert into public.coin_ledger(user_id, delta, reason, ref_type)
+    values (p_winner, 30, '캐치마인드 우승', 'catchmind');
+  return true;
+end;
+$$;
+grant execute on function public.award_catchmind(uuid, uuid) to authenticated;
+
 -- ---- 커플 공간: 기념일 -----------------------------------------
 alter table public.groups add column if not exists anniversary date;
 -- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.
