@@ -4,7 +4,15 @@
 // 숨은 정보 게임이라 비밀 상태(각자 타일 숫자, 더미)는 이 함수(service_role)만 접근.
 // 클라이언트는 자기 것 + 공개된 것만 view 로 받음. 츄르 베팅 정산도 여기서 처리.
 //
-// 배포:  supabase functions deploy davinci
+// ── 배포 (둘 중 하나) ──────────────────────────────────────────
+// A) 대시보드 에디터(권장, CLI 불필요):
+//    Supabase 대시보드 → Edge Functions → "Deploy a new function" →
+//    이름 davinci → 이 파일 전체를 붙여넣기 → Deploy.
+//    (Verify JWT 는 켠 채로 두면 됨. SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
+//     시크릿은 런타임에 자동 주입되므로 따로 등록 안 해도 됨.)
+// B) CLI:  supabase functions deploy davinci
+//
+// 단일 파일 + 외부 의존성은 아래 esm.sh import 하나뿐 → 에디터 붙여넣기로 충분.
 //
 // action:
 //  open        {groupId}            현재/신규 로비 반환
