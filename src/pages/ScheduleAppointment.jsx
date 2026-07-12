@@ -339,8 +339,8 @@ export default function ScheduleAppointment() {
                       <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
                       <span className="member-pick-name">
                         {m.display_nickname}
-                        {m.user_id === profile.id && <span className="mp-badge mp-me">나</span>}
-                        {m.user_id === task.created_by && <span className="mp-badge mp-author">위시 작성자</span>}
+                        {m.user_id === profile.id && <span className="mp-badge scp-me">나</span>}
+                        {m.user_id === task.created_by && <span className="mp-badge scp-author">위시 작성자</span>}
                       </span>
                       <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
                     </li>
