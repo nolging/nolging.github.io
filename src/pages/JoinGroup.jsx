@@ -32,18 +32,20 @@ export default function JoinGroup() {
   const [form, setForm] = useState({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false, show_ott: false })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [nickErr, setNickErr] = useState('')
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   function onCodeSuccess(g, c) {
     setPreview(g); setCode(c)
     setForm({ display_nickname: '', avatar_url: '', show_contact: false, show_birthdate: false, show_ott: false })
+    setNickErr('')
     setSheetOpen(false)
   }
 
   async function join() {
     // 닉네임 필수: 비우면 다른 멤버에게 아이디가 노출되므로 반드시 그룹 표시 닉네임을 받는다.
-    if (!form.display_nickname.trim()) { setError('닉네임을 입력해 주세요.'); return }
-    setBusy(true); setError('')
+    if (!form.display_nickname.trim()) { setNickErr('닉네임을 입력해 주세요.'); return }
+    setBusy(true); setError(''); setNickErr('')
     try {
       await joinGroupWithProfile(code.trim(), profile.id, form)
       navigate(`/groups/${preview.id}`)
@@ -94,8 +96,10 @@ export default function JoinGroup() {
       {/* 닉네임 */}
       <div className="jg-field">
         <div className="jg-label">닉네임 <span className="jg-req">*</span></div>
-        <input className="jg-input" value={form.display_nickname} maxLength={12}
-          onChange={(e) => set({ display_nickname: e.target.value })} placeholder="이 그룹에서 불릴 이름" />
+        <input className={`jg-input ${nickErr ? 'err' : ''}`} value={form.display_nickname} maxLength={12}
+          onChange={(e) => { set({ display_nickname: e.target.value }); if (e.target.value.trim()) setNickErr('') }}
+          placeholder="이 그룹에서 불릴 이름" aria-invalid={!!nickErr} />
+        {nickErr && <div className="jg-field-err">{nickErr}</div>}
       </div>
 
       {anyPublic ? (
