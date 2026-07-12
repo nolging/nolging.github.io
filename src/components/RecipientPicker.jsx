@@ -29,7 +29,7 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
 
   useEffect(() => { setMemberId('') }, [groupId])
 
-  const memberName = (m) => m.display_nickname || m.profiles?.nickname || '?'
+  const memberName = (m) => m.display_nickname || '멤버'   // 아이디는 타인에게 노출 안 함
 
   // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만
   const eligibleGroups = useMemo(() => groups.filter((g) => {

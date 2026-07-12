@@ -115,8 +115,8 @@ begin
   return query
     select
       gm.user_id,
-      p.nickname,
-      coalesce(nullif(gm.display_nickname, ''), p.nickname),
+      case when gm.user_id = auth.uid() then p.nickname else null end,  -- login_id: 본인에게만
+      coalesce(nullif(gm.display_nickname, ''), '멤버'),
       gm.avatar_url,
       gm.role,
       (gm.user_id = auth.uid()),
@@ -476,7 +476,7 @@ $$;
 
 create or replace function public.notif_member_name(p_group_id uuid, p_user_id uuid)
 returns text language sql stable security definer set search_path = public as $$
-  select coalesce(nullif(gm.display_nickname, ''), p.nickname)
+  select coalesce(nullif(gm.display_nickname, ''), '멤버')
   from public.group_members gm
   join public.profiles p on p.id = gm.user_id
   where gm.group_id = p_group_id and gm.user_id = p_user_id
@@ -1000,7 +1000,7 @@ begin
     select jsonb_build_object(
       'id', r.id,
       'author_id', r.author_id,
-      'nickname',  coalesce(nullif(gm.display_nickname, ''), p.nickname),
+      'nickname',  coalesce(nullif(gm.display_nickname, ''), '멤버'),
       'avatar_url', gm.avatar_url,
       'rating', r.rating,
       'comment', case when v_reveal or r.author_id = auth.uid() then r.comment else null end,
