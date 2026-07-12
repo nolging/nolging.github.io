@@ -547,11 +547,9 @@ export default function TaskDetail() {
   return (
     <div className="page task-detail">
       <div className="td-head">
-        <div className="task-headline">
+        <div className="td-head-top">
           <CategoryChip category={task.category} />
-          <span className="task-name td-name">{task.title}</span>
-        </div>
-        <div className="td-head-right">
+          <div className="td-head-right">
           {isScheduled && participants.length > 0 ? (
             <MemberStack groupId={groupId} userIds={participants} nameOf={nameOf} avatarOf={avatarOf} size={26} max={3} />
           ) : (
@@ -598,7 +596,9 @@ export default function TaskDetail() {
               )}
             </div>
           )}
+          </div>
         </div>
+        <h2 className="task-name td-name td-title">{task.title}</h2>
       </div>
 
       {task.description && <p className="td-desc">{task.description}</p>}
