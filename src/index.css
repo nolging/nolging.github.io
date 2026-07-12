@@ -1072,9 +1072,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .cg-list .member-pick-item:last-child { border-bottom: none; }
 .member-pick-item.fixed { cursor: default; }
 .member-pick-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.mp-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; line-height: 1.5; }
-.mp-badge.mp-me { background: #eeebfe; color: #7363e8; }
-.mp-badge.mp-author { background: #fdeee6; color: #d98a4e; }
+.mp-badge { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  height: 22px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 999px; line-height: 1; }
+.mp-badge.mp-me { background: #f0eef4; color: #6f6a80; }        /* 나: 회색 */
+.mp-badge.mp-author { background: #eeebfe; color: #7363e8; }    /* 위시 작성자: 보라 */
 .pick-check {
   width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
   color: transparent; display: flex; align-items: center; justify-content: center;
