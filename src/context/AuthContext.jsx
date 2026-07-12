@@ -14,15 +14,24 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return
     }
-    // contact/birthdate 는 프라이버시로 일반 조회에서 제외됨 → 필요한 컬럼만
+    // 그룹 접근에 꼭 필요한 컬럼만(항상 존재). 계정 아이디 컬럼명(login_id/nickname)에
+    // 의존하지 않아야 마이그레이션 상태와 무관하게 프로필이 로드됨(그룹 권한 보존).
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname, role, status, created_at')
+        .select('id, role, status, created_at')
         .eq('id', userId)
         .single()
-      // nickname 컬럼은 계정 아이디 → profile.login_id 로 노출(닉네임은 그룹 전용 개념)
-      setProfile(data ? { ...data, login_id: data.nickname } : null)
+      if (error || !data) { setProfile(null); return }
+      // 계정 아이디는 컬럼명이 login_id/nickname 중 무엇이든 관대하게 조회(둘 다 실패해도 진행)
+      let login_id = ''
+      const r1 = await supabase.from('profiles').select('login_id').eq('id', userId).maybeSingle()
+      if (!r1.error && r1.data?.login_id != null) login_id = r1.data.login_id
+      else {
+        const r2 = await supabase.from('profiles').select('nickname').eq('id', userId).maybeSingle()
+        if (!r2.error && r2.data?.nickname != null) login_id = r2.data.nickname
+      }
+      setProfile({ ...data, login_id })
     } catch {
       // 네트워크 오류 등으로 프로필 조회 실패해도 앱이 멈추지 않게
       setProfile(null)
@@ -108,7 +117,7 @@ export function AuthProvider({ children }) {
     // 비활성/승인대기 계정 차단
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, nickname, role, status')
+      .select('id, role, status')
       .eq('id', data.user.id)
       .single()
     if (prof?.status === 'pending') {
