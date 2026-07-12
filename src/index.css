@@ -401,6 +401,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
 .tile-members { margin-top: 8px; align-self: flex-start; }
+.tile-members-link { cursor: pointer; border-radius: 999px; padding: 2px; margin-left: -2px; transition: background .12s; }
+.tile-members-link:hover { background: rgba(0,0,0,.05); }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
 /* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 흰 테두리 + 가운데 하트(여백) */

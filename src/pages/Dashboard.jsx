@@ -141,16 +141,22 @@ export default function Dashboard() {
             const isMember = members.some((m) => m.user_id === profile?.id)
             const premium = premiumSet.has(g.id)
             const friend = !premium && friendSet.has(g.id)
+            // 아바타 영역 클릭 → 카드 이동 대신 멤버 목록 페이지로
+            const goMembers = (e) => { e.preventDefault(); e.stopPropagation(); navigate(`/groups/${g.id}/members`) }
             const memberRow = members.length > 0 && (
               premium ? (
-                <span className="task-parts tile-members tile-members-couple">
+                <span className="task-parts tile-members tile-members-couple tile-members-link" role="button" tabIndex={0}
+                  onClick={goMembers} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goMembers(e) }}
+                  aria-label="멤버 목록">
                   {members.slice(0, 2).map((m) => (
                     <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
                   ))}
                   <span className="tile-couple-heart" aria-hidden="true">♥</span>
                 </span>
               ) : (
-                <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>
+                <span className={`task-parts tile-members tile-members-link ${members.length > 1 ? 'multi' : ''}`} role="button" tabIndex={0}
+                  onClick={goMembers} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goMembers(e) }}
+                  aria-label="멤버 목록">
                   {members.slice(0, 3).map((m) => (
                     <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
                   ))}
