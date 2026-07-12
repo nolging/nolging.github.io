@@ -1064,10 +1064,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* 참여 멤버 (박스 없이 행) */
 .member-pick { list-style: none; margin: 0 0 20px; padding: 0; }
+.cg-list .member-pick { margin: 0; }               /* 흰 박스 안에 넣을 때 */
 .member-pick-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 2px;
+  display: flex; align-items: center; gap: 10px; padding: 12px 2px;
   border-bottom: 1px solid var(--border); cursor: pointer;
 }
+.cg-list .member-pick-item:last-child { border-bottom: none; }
 .member-pick-item.fixed { cursor: default; }
 .member-pick-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
 .pick-check {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -124,8 +124,8 @@ export default function ScheduleAppointment() {
   const isCreator = task?.created_by === profile.id
   const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
   const noun = workNoun(category)
-  const mandatory = useMemo(() => new Set([task?.created_by, profile.id].filter(Boolean)), [task, profile.id])
-  const needChoose = members.length >= 3
+  // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
+  const needChoose = members.length >= 2
 
   function pickCategory(c) {
     const next = category === c ? '' : c
@@ -134,7 +134,7 @@ export default function ScheduleAppointment() {
   }
 
   function toggleMember(uid) {
-    if (mandatory.has(uid)) return
+    // 위시 작성자·약속 잡는 멤버도 필수 아님(기본 체크, 해제 가능)
     setParticipants((p) => { const n = new Set(p); n.has(uid) ? n.delete(uid) : n.add(uid); return n })
   }
   function toggleWeekday(i) {
@@ -156,6 +156,8 @@ export default function ScheduleAppointment() {
       if (!category) { setWishErr('위시 유형을 선택해 주세요.'); return }
       if (!title.trim()) { setWishErr('제목을 입력해 주세요.'); return }
     }
+    const ids = needChoose ? [...participants] : members.map((m) => m.user_id)
+    if (needChoose && ids.length === 0) { setError('참여자를 한 명 이상 선택해 주세요.'); return }
     setSaving(true); setError('')
     try {
       // 작성자: 유형·제목·작품 정보 저장 / 그 외 참여자: 작품 정보만 저장
@@ -176,7 +178,6 @@ export default function ScheduleAppointment() {
         timeSet = timeOn
       }
       const rule = buildRepeat()
-      const ids = needChoose ? [...participants] : members.map((m) => m.user_id)
       const payload = {
         taskId, scheduledAt, timeSet, repeat: rule,
         repeatUntil: (dateOn && rule && untilOn) ? until : null,
@@ -326,22 +327,21 @@ export default function ScheduleAppointment() {
 
         {needChoose && (
           <>
-            <div className="cg-section-title cg-mt-24">참여 멤버</div>
-            <ul className="member-pick cg-mt-12">
-              {members.map((m) => {
-                const checked = participants.has(m.user_id)
-                const fixed = mandatory.has(m.user_id)
-                return (
-                  <li key={m.user_id} className={`member-pick-item ${fixed ? 'fixed' : ''}`} onClick={() => toggleMember(m.user_id)}>
-                    <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
-                    <span className="member-pick-name">
-                      {m.display_nickname}{fixed && <span className="muted sm"> · 필수</span>}
-                    </span>
-                    <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
-                  </li>
-                )
-              })}
-            </ul>
+            <div className="cg-section-title cg-mt-24">참여자</div>
+            <div className="cg-list cg-mt-12">
+              <ul className="member-pick">
+                {members.map((m) => {
+                  const checked = participants.has(m.user_id)
+                  return (
+                    <li key={m.user_id} className="member-pick-item" onClick={() => toggleMember(m.user_id)}>
+                      <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
+                      <span className="member-pick-name">{m.display_nickname}</span>
+                      <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           </>
         )}
 
