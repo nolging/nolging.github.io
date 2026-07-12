@@ -358,12 +358,12 @@ export default function Layout() {
       </header>
     )
   } else if (memberDetailMatch) {
-    // 멤버 상세: 좌측 뒤로(멤버 목록으로). 본인 상세면 우측에 설정(내 정보 수정) 톱니바퀴
+    // 멤버 상세: 좌측 뒤로(직전 페이지). 본인 상세면 우측에 설정(내 정보 수정) 톱니바퀴
     const { groupId: gid, userId: uid } = memberDetailMatch.params
     const isMe = uid === profile?.id
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${gid}/members`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">멤버 정보</span>
         {isMe && (
           <div className="topbar-right">

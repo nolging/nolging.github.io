@@ -403,6 +403,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .tile-members { margin-top: 8px; align-self: flex-start; }
 .tile-members-link { cursor: pointer; border-radius: 999px; padding: 2px; margin-left: -2px; transition: background .12s; }
 .tile-members-link:hover { background: rgba(0,0,0,.05); }
+.mavatar-btn { display: inline-flex; cursor: pointer; border-radius: 50%; flex-shrink: 0; }
+.mavatar-btn:hover { box-shadow: 0 0 0 2px #d8d3ea; }
+.mavatar-btn:active { transform: scale(.94); }
 .tile-members .task-parts-more { background: var(--primary-soft); color: var(--primary); }
 .tile-members .avatar { width: 24px; height: 24px; font-size: 10px; }
 /* 커플 그룹 카드: 아바타 2개 겹치지 않게 + 흰 테두리 + 가운데 하트(여백) */

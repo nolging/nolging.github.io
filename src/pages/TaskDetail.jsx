@@ -10,6 +10,7 @@ import {
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
+import MemberAvatarBtn from '../components/MemberAvatarBtn'
 import MediaInfo from '../components/MediaInfo'
 import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
@@ -404,7 +405,7 @@ export default function TaskDetail() {
     const canDelete = c.author_id === profile.id || isOwner || isAdmin
     return (
       <div data-cid={c.id} className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
-        <Avatar src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
+        <MemberAvatarBtn groupId={groupId} userId={c.author_id} src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
         <div className="comment-body">
           <div className="comment-meta">
             <span className="comment-author">{nameOf(c.author_id)}</span>
@@ -518,7 +519,7 @@ export default function TaskDetail() {
         {reviews.map((rv) => (
           <li key={rv.author_id} className="review-card">
             <div className="review-card-head">
-              <Avatar src={rv.avatar_url} name={rv.nickname} size={30} />
+              <MemberAvatarBtn groupId={groupId} userId={rv.author_id} src={rv.avatar_url} name={rv.nickname} size={30} />
               <span className="review-author">{rv.nickname}</span>
               <Stars value={rv.rating} />
               {isAdmin && (
@@ -559,7 +560,7 @@ export default function TaskDetail() {
             </span>
           ) : (
             <span className="task-author">
-              <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+              <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
               <span className="task-author-name">{nameOf(task.created_by)}</span>
             </span>
           )}
@@ -627,7 +628,7 @@ export default function TaskDetail() {
           </div>
         ) : (
           task.assignee_id && (
-            <span className="task-person"><Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
+            <span className="task-person"><MemberAvatarBtn groupId={groupId} userId={task.assignee_id} src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
           )
         )}
         <div className="task-actions">

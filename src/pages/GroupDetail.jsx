@@ -10,6 +10,7 @@ import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
+import MemberAvatarBtn from '../components/MemberAvatarBtn'
 import GroupBadge from '../components/GroupBadge'
 import ThemeHearts from '../components/ThemeHearts'
 import CategoryChip from '../components/CategoryChip'
@@ -503,6 +504,7 @@ export default function GroupDetail() {
 }
 
 function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
+  const { groupId } = useParams()
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner || isAdmin
   const stop = (e) => e.stopPropagation()
@@ -636,7 +638,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
               </span>
             ) : (
               <span className="task-author">
-                <Avatar src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+                <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
                 <span className="task-author-name">{nameOf(task.created_by)}</span>
               </span>
             )}
@@ -649,7 +651,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
             {mediaLine && <span className="task-media-line">{mediaLine}</span>}
             {task.assignee_id && !showParts && (
               <span className="task-person">
-                <Avatar src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
+                <MemberAvatarBtn groupId={groupId} userId={task.assignee_id} src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
                 담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
               </span>
             )}
