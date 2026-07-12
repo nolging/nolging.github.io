@@ -65,7 +65,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
         <div className="cg-field cg-mt-22">
           <div className="cg-label">제목 <span className="cg-req">*</span></div>
           <div className="cg-input-wrap">
-            <input className="cg-input" value={title} maxLength={30}
+            <input className="cg-input" value={title} maxLength={35}
               onChange={(e) => { setTitle(e.target.value); if (nameErr) setNameErr('') }}
               placeholder="위시 제목을 입력하세요" />
           </div>
