@@ -1,5 +1,6 @@
 // 카세트(음악) — 실제 재생은 전역 미니 플레이어(MiniPlayer)가 담당.
 // 여기서는 "이 곡을 전역 플레이어로 재생" 트리거 + 현재 재생상태 반영만 한다.
+import { safeUrl } from '../lib/safeUrl'
 
 export function parseMusicUrl(url) {
   if (!url) return null
@@ -15,7 +16,10 @@ const PauseIcon = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="c
 export default function MusicPlayer({ url, player }) {
   const parsed = parseMusicUrl(url)
   if (!parsed) {
-    return <a className="music-fallback" href={url} target="_blank" rel="noreferrer noopener">🔗 링크 열기</a>
+    const safe = safeUrl(url)
+    return safe
+      ? <a className="music-fallback" href={safe} target="_blank" rel="noreferrer noopener">🔗 링크 열기</a>
+      : <span className="music-fallback">🔗 열 수 없는 링크</span>
   }
   const key = parsed.kind === 'youtube' ? `yt:${parsed.id}` : `sc:${parsed.url}`
   const label = parsed.kind === 'youtube' ? '유튜브 음악' : '사운드클라우드'

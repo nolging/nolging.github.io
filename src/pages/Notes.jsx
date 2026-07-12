@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { safeUrl } from '../lib/safeUrl'
 import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
@@ -318,8 +319,8 @@ export default function Notes() {
               <p className="note-view-body">{open.body}</p>
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
-              {link && open.media_url && (
-                <a className="note-linkbtn" href={open.media_url} target="_blank" rel="noreferrer noopener">
+              {link && safeUrl(open.media_url) && (
+                <a className="note-linkbtn" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener">
                   {open.item_name || '링크 열기'}
                 </a>
               )}
