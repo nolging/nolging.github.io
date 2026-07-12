@@ -21,7 +21,8 @@ export function AuthProvider({ children }) {
         .select('id, nickname, role, status, created_at')
         .eq('id', userId)
         .single()
-      setProfile(data ?? null)
+      // nickname 컬럼은 계정 아이디 → profile.login_id 로 노출(닉네임은 그룹 전용 개념)
+      setProfile(data ? { ...data, login_id: data.nickname } : null)
     } catch {
       // 네트워크 오류 등으로 프로필 조회 실패해도 앱이 멈추지 않게
       setProfile(null)
@@ -100,10 +101,10 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const login = useCallback(async (nickname, password) => {
-    const email = nicknameToEmail(nickname)
+  const login = useCallback(async (loginId, password) => {
+    const email = nicknameToEmail(loginId)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw new Error('닉네임 또는 비밀번호가 올바르지 않습니다.')
+    if (error) throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.')
     // 비활성/승인대기 계정 차단
     const { data: prof } = await supabase
       .from('profiles')

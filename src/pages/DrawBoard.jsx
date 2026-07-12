@@ -120,7 +120,7 @@ export default function DrawBoard() {
 
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
-      try { await ch.track({ uid, name: profile?.nickname || '' }) } catch { /* noop */ }
+      try { await ch.track({ uid, name: profile?.login_id || '' }) } catch { /* noop */ }
       try {
         const rows = await listDrawingStrokes(groupId)
         for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, p: r.stroke.p })
@@ -129,7 +129,7 @@ export default function DrawBoard() {
     })
 
     return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, profile?.nickname, addCommitted, redrawAll])
+  }, [groupId, uid, profile?.login_id, addCommitted, redrawAll])
 
   // ---- 전송 버퍼 flush ----
   const flush = useCallback((end) => {

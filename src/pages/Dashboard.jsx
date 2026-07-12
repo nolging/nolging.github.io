@@ -145,14 +145,14 @@ export default function Dashboard() {
               premium ? (
                 <span className="task-parts tile-members tile-members-couple">
                   {members.slice(0, 2).map((m) => (
-                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || m.profiles?.nickname} size={24} />
+                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
                   ))}
                   <span className="tile-couple-heart" aria-hidden="true">♥</span>
                 </span>
               ) : (
                 <span className={`task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}>
                   {members.slice(0, 3).map((m) => (
-                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || m.profiles?.nickname} size={24} />
+                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
                   ))}
                   {extra > 0 && <span className="task-parts-more">+{extra}</span>}
                 </span>

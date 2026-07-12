@@ -198,7 +198,7 @@ export default function CreateGroup() {
         <div className="cg-continuity"><span>이 그룹에서 사용할 <b>내 정보</b>를 설정해요</span></div>
 
         <div className="cg-avatar-wrap">
-          <AvatarEditor value={prof.avatar_url} name={prof.display_nickname || profile?.nickname}
+          <AvatarEditor value={prof.avatar_url} name={prof.display_nickname || profile?.login_id}
             userId={profile?.id} onChange={(v) => setP({ avatar_url: v })} onError={setError} emptyIcon />
           <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>
         </div>

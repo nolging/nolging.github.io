@@ -44,7 +44,7 @@ export default function CatchMind() {
   const endedRef = useRef(-1)
   const timerRef = useRef(0)
   const chatEndRef = useRef(null)
-  const myName = useRef(profile?.nickname || '')
+  const myName = useRef(profile?.login_id || '')
   const myAvatar = useRef(profile?.avatar_url || null)
   const [members, setMembers] = useState({})   // uid → {name, avatar} (DB 확정 이름)
   const membersRef = useRef(members); membersRef.current = members

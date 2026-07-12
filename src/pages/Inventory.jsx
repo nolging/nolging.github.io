@@ -626,7 +626,7 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
   }, [open, groups.length])
   useEffect(() => { if (open) { setGroupId(''); setMessage(''); setError('') } }, [open])
 
-  const memberName = (m) => m.display_nickname || m.profiles?.nickname || '?'
+  const memberName = (m) => m.display_nickname || '멤버'
   // 멤버 2명 + 내가 멤버 + 아직 커플 링 안 낀(보내지 않은) 그룹
   const eligible = useMemo(() => groups.filter((g) => {
     const ms = g.group_members || []

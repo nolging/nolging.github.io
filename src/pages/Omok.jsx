@@ -39,7 +39,7 @@ export default function Omok() {
   const gRef = useRef(g)
   const setG = useCallback((up) => setGraw((p) => { const n = typeof up === 'function' ? up(p) : up; gRef.current = n; return n }), [])
 
-  const myName = useRef(profile?.nickname || '')
+  const myName = useRef(profile?.login_id || '')
   const myAvatar = useRef(profile?.avatar_url || null)
   const [members, setMembers] = useState({})   // uid → {name, avatar} (DB 확정 이름)
   const membersRef = useRef(members); membersRef.current = members

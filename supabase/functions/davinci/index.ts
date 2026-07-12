@@ -93,8 +93,8 @@ Deno.serve(async (req) => {
   }
   const membersOf = async (groupId) => {
     const { data } = await admin.from('group_members')
-      .select('user_id, display_nickname, avatar_url, profiles(nickname)').eq('group_id', groupId)
-    return (data || []).map((m) => ({ uid: m.user_id, name: m.display_nickname || m.profiles?.nickname || '?', avatar: m.avatar_url || null }))
+      .select('user_id, display_nickname, avatar_url').eq('group_id', groupId)
+    return (data || []).map((m) => ({ uid: m.user_id, name: m.display_nickname || '멤버', avatar: m.avatar_url || null }))
   }
   const isPremium = async (groupId) => {
     const [{ data: cp }, { data: fr }] = await Promise.all([

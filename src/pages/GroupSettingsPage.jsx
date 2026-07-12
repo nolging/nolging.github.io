@@ -19,7 +19,7 @@ export default function GroupSettingsPage() {
   // 실제 저장값(공개토글 포함)으로 초기화 — 카드 RPC 는 토글을 반환하지 않음
   const me = member && {
     user_id: profile.id,
-    login_id: profile.nickname,
+    login_id: profile.login_id,
     display_nickname: member.display_nickname || '',
     avatar_url: member.avatar_url || '',
     show_contact: !!member.show_contact,

@@ -97,7 +97,7 @@ export default function MyProfile() {
         <div className="card profile-view">
           <div className="pv-row">
             <span className="pv-label">아이디</span>
-            <span className="pv-value">{profile?.nickname || '—'}</span>
+            <span className="pv-value">{profile?.login_id || '—'}</span>
           </div>
           <div className="pv-row">
             <span className="pv-label">연락처</span>

@@ -86,7 +86,7 @@ export default function JoinGroup() {
 
       {/* 프로필 사진 */}
       <div className="jg-photo">
-        <AvatarEditor value={form.avatar_url} name={form.display_nickname || profile?.nickname}
+        <AvatarEditor value={form.avatar_url} name={form.display_nickname || profile?.login_id}
           userId={profile?.id} emptyIcon onChange={(v) => set({ avatar_url: v })} onError={setError} />
         <div className="jg-photo-label">프로필 사진 <span>선택</span></div>
       </div>

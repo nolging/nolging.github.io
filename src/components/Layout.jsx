@@ -569,7 +569,7 @@ export default function Layout() {
         </nav>
         <div className="topbar-right">
           <span className="me">
-            {profile?.nickname}
+            {profile?.login_id}
             {isAdmin && <span className="badge badge-admin">관리자</span>}
           </span>
           <NavLink to="/notifications" className="btn btn-ghost btn-sm icon-btn bell-btn" aria-label="알림" title="알림">

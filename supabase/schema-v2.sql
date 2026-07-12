@@ -34,6 +34,31 @@ alter table public.groups alter column theme set default 'default';
 alter table public.groups add  constraint groups_theme_check
   check (theme in ('default', 'couple', 'friend'));
 
+-- ---- 계정 아이디 컬럼 정리: profiles.nickname(=로그인 아이디) → login_id ----
+-- '닉네임'은 그룹 전용 개념(group_members.display_nickname)이라 혼란 방지를 위해 rename.
+-- 구버전 캐시 클라이언트/미갱신 함수 호환을 위해 nickname 을 동기화 그림자 컬럼으로 유지(무중단).
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema='public' and table_name='profiles' and column_name='nickname')
+     and not exists (select 1 from information_schema.columns
+             where table_schema='public' and table_name='profiles' and column_name='login_id') then
+    alter table public.profiles rename column nickname to login_id;
+  end if;
+end $$;
+alter table public.profiles add column if not exists nickname text;   -- 그림자(동기화). 안정화 후 제거 가능.
+create or replace function public.tg_sync_login_id()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.login_id is null and new.nickname is not null then new.login_id := new.nickname; end if;
+  new.nickname := new.login_id;   -- login_id 를 진실로, nickname 은 항상 미러
+  return new;
+end $$;
+drop trigger if exists trg_sync_login_id on public.profiles;
+create trigger trg_sync_login_id before insert or update on public.profiles
+  for each row execute function public.tg_sync_login_id();
+update public.profiles set nickname = login_id where nickname is distinct from login_id;
+
 -- ---- group_members: 그룹내 닉네임 / 프로필사진 / 공개 토글 ----
 alter table public.group_members add column if not exists display_nickname text;
 alter table public.group_members add column if not exists avatar_url       text;  -- data URI (정방형 → 원형 표시)

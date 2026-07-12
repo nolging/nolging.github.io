@@ -65,22 +65,22 @@ export default function TouchKiss() {
     })
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
-      let meta = { uid, name: profile?.nickname || '', avatar: null }
+      let meta = { uid, name: profile?.login_id || '', avatar: null }
       try {
         const m = await getMyGroupMember(groupId, uid)
-        if (m) meta = { uid, name: m.display_nickname || profile?.nickname || '', avatar: m.avatar_url || null }
+        if (m) meta = { uid, name: m.display_nickname || profile?.login_id || '', avatar: m.avatar_url || null }
       } catch { /* noop */ }
       try { await ch.track(meta) } catch { /* noop */ }
     })
     return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, profile?.nickname])
+  }, [groupId, uid, profile?.login_id])
 
   // ---- 내 손가락 위치 전송(rAF 스로틀) ----
   function sendPending() {
     rafRef.current = 0
     const p = pendRef.current; if (!p) return
     setMe(p.down ? { x: p.x, y: p.y } : null)
-    chanRef.current?.send({ type: 'broadcast', event: 'finger', payload: { uid, name: profile?.nickname || '', x: p.x, y: p.y, down: p.down } })
+    chanRef.current?.send({ type: 'broadcast', event: 'finger', payload: { uid, name: profile?.login_id || '', x: p.x, y: p.y, down: p.down } })
   }
   function scheduleSend(p) {
     pendRef.current = p

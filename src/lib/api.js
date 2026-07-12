@@ -8,7 +8,7 @@ const PROFILE_COLS = 'id, nickname, role, status, created_at'
 export async function listMyGroups() {
   const { data, error } = await supabase
     .from('groups')
-    .select('*, group_members!inner(user_id, display_nickname, avatar_url, profiles(nickname))')
+    .select('*, group_members!inner(user_id, display_nickname, avatar_url)')
     .order('created_at', { ascending: false })
     .order('joined_at', { referencedTable: 'group_members', ascending: true })
   if (error) throw error
@@ -264,12 +264,12 @@ export async function listMemberCards(groupId) {
 export async function getGroupMemberMap(groupId) {
   const { data, error } = await supabase
     .from('group_members')
-    .select('user_id, display_nickname, avatar_url, profiles(nickname)')
+    .select('user_id, display_nickname, avatar_url')
     .eq('group_id', groupId)
   if (error) throw error
   const map = {}
   ;(data ?? []).forEach((m) => {
-    map[m.user_id] = { name: m.display_nickname || m.profiles?.nickname || '?', avatar: m.avatar_url || null }
+    map[m.user_id] = { name: m.display_nickname || '멤버', avatar: m.avatar_url || null }
   })
   return map
 }
@@ -479,13 +479,13 @@ export async function listGroupMembersBrief(groupIds) {
   if (ids.length === 0) return {}
   const { data, error } = await supabase
     .from('group_members')
-    .select('group_id, user_id, display_nickname, avatar_url, profiles(nickname)')
+    .select('group_id, user_id, display_nickname, avatar_url')
     .in('group_id', ids)
   if (error) throw error
   const map = {}
   ;(data ?? []).forEach((m) => {
     map[`${m.group_id}:${m.user_id}`] = {
-      name: m.display_nickname || m.profiles?.nickname || '?',
+      name: m.display_nickname || '멤버',
       avatar: m.avatar_url,
     }
   })
