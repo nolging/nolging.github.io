@@ -11,6 +11,7 @@ import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } fr
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
+import MemberStack from '../components/MemberStack'
 import MediaInfo from '../components/MediaInfo'
 import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
@@ -552,12 +553,7 @@ export default function TaskDetail() {
         </div>
         <div className="td-head-right">
           {isScheduled && participants.length > 0 ? (
-            <span className={`task-parts ${participants.length > 1 ? 'multi' : ''}`}>
-              {participants.slice(0, 3).map((uid) => (
-                <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={26} />
-              ))}
-              {extra > 0 && <span className="task-parts-more">+{extra}</span>}
-            </span>
+            <MemberStack groupId={groupId} userIds={participants} nameOf={nameOf} avatarOf={avatarOf} size={26} max={3} />
           ) : (
             <span className="task-author">
               <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />

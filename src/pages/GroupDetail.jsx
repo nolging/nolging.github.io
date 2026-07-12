@@ -11,6 +11,7 @@ import {
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
+import MemberStack from '../components/MemberStack'
 import GroupBadge from '../components/GroupBadge'
 import ThemeHearts from '../components/ThemeHearts'
 import CategoryChip from '../components/CategoryChip'
@@ -629,13 +630,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
           </div>
           <div className="task-head-right">
             {showParts ? (
-              <span className={`task-parts ${parts.length > 1 ? 'multi' : ''}`}>
-                {parts.slice(0, 3).map((uid) => (
-                  <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={24} />
-                ))}
-                {extra > 0 && <span className="task-parts-more">+{extra}</span>}
-                {parts.length === 1 && <span className="task-author-name">{nameOf(parts[0])}</span>}
-              </span>
+              <MemberStack groupId={groupId} userIds={parts} nameOf={nameOf} avatarOf={avatarOf} size={24} max={3} singleName />
             ) : (
               <span className="task-author">
                 <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
