@@ -1217,6 +1217,8 @@ a.mp-tel:active { opacity: .55; }
 .mlist-invite { width: 100%; box-sizing: border-box; margin-top: 12px; height: 48px; border: none; border-radius: 999px; background: #eeebfe; color: #7363e8; font-size: 14.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .mlist-invite:hover { background: #e6e1fc; }
 .mlist { margin-top: 16px; }
+.mlist-games { margin-top: 26px; }
+.mlist-games-title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #191722; margin: 0 2px 12px; }
 .mlist-row { width: 100%; display: flex; align-items: center; gap: 13px; padding: 11px 4px; cursor: pointer; border-radius: 14px; background: none; border: none; text-align: left; color: inherit; box-sizing: border-box; }
 button.mlist-row:hover { background: #f6f5fa; }
 .mlist-div { height: 1px; background: #f1eff5; margin: 0 4px; }

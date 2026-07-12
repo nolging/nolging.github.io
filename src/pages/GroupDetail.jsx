@@ -382,36 +382,6 @@ export default function GroupDetail() {
           </div>
         </div>
         <div className="gd-head-actions">
-          {isFriend && !isCouple && (
-            <button type="button" className="gd-draw-btn" aria-label="그림판" title="그림판"
-              onClick={() => navigate(`/groups/${groupId}/draw`)}>
-              <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
-            </button>
-          )}
-          {isFriend && !isCouple && (
-            <button type="button" className="gd-draw-btn gd-puzzle-btn" aria-label="퍼즐" title="퍼즐"
-              onClick={() => navigate(`/groups/${groupId}/puzzle`)}>
-              <span aria-hidden="true">🧩</span>
-            </button>
-          )}
-          {isFriend && !isCouple && (
-            <button type="button" className="gd-draw-btn gd-catch-btn" aria-label="캐치마인드" title="캐치마인드"
-              onClick={() => navigate(`/groups/${groupId}/catchmind`)}>
-              <span aria-hidden="true">🎨</span>
-            </button>
-          )}
-          {isFriend && !isCouple && (
-            <button type="button" className="gd-draw-btn gd-omok-btn" aria-label="오목" title="오목"
-              onClick={() => navigate(`/groups/${groupId}/omok`)}>
-              <span aria-hidden="true">⚫</span>
-            </button>
-          )}
-          {isFriend && !isCouple && (
-            <button type="button" className="gd-draw-btn gd-davinci-btn" aria-label="다빈치코드" title="다빈치코드"
-              onClick={() => navigate(`/groups/${groupId}/davinci`)}>
-              <span aria-hidden="true">🔢</span>
-            </button>
-          )}
           {members.length > 0 && (
             isCouple ? (
               <button type="button" className="gd-members gd-members-couple"

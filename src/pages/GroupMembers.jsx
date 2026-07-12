@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, regenerateInviteCode, setGroupAnniversary } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 
@@ -47,6 +47,7 @@ export default function GroupMembers() {
   const [members, setMembers] = useState([])
   const [group, setGroup] = useState(null)
   const [couple, setCouple] = useState(false)
+  const [friend, setFriend] = useState(false)
   const [query, setQuery] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -58,12 +59,13 @@ export default function GroupMembers() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, c] = await Promise.all([
+      const [cards, g, c, f] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
+        isFriendGroup(groupId).catch(() => false),
       ])
-      setMembers(cards); setGroup(g); setCouple(c); setAnniv(g?.anniversary || '')
+      setMembers(cards); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
@@ -225,6 +227,37 @@ export default function GroupMembers() {
         })}
         {shown.length === 0 && <p className="comment-empty">멤버를 찾을 수 없어요.</p>}
       </div>
+
+      {/* 우정 그룹: 함께 놀기(게임) — 예전엔 그룹 상세 헤더에 있던 것 */}
+      {friend && (
+        <div className="mlist-games">
+          <div className="mlist-games-title">함께 놀기</div>
+          <div className="cs-actions">
+            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
+                <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
+              </span>
+              <span className="cs-act-t">그림판</span>
+            </button>
+            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
+              <span className="cs-act-t">퍼즐</span>
+            </button>
+            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/catchmind`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#fdeee6' }}>🎨</span>
+              <span className="cs-act-t">캐치마인드</span>
+            </button>
+            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/omok`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#efe7d8' }}>⚫</span>
+              <span className="cs-act-t">오목</span>
+            </button>
+            <button type="button" className="cs-act cs-act-wide" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
+              <span className="cs-act-t">다빈치코드</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomSheet open={inviteOpen} onClose={() => setInviteOpen(false)}>
         <div className="iv-head">
