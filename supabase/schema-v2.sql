@@ -328,6 +328,18 @@ end;
 $$;
 grant execute on function public.award_omok(uuid, uuid) to authenticated;
 
+-- 오목 진행 상태 저장(이어하기). 공개 정보라 그룹 멤버가 직접 읽고 쓸 수 있음.
+create table if not exists public.omok_matches (
+  group_id   uuid primary key references public.groups(id) on delete cascade,
+  state      jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.omok_matches enable row level security;
+drop policy if exists omok_matches_all on public.omok_matches;
+create policy omok_matches_all on public.omok_matches for all
+  using (public.is_group_member(group_id, auth.uid()))
+  with check (public.is_group_member(group_id, auth.uid()));
+
 -- ---- 다빈치코드 (프리미엄 그룹, 숨은 정보 + 츄르 베팅) ---------
 -- 비밀 상태(state)는 오직 Edge Function(davinci)이 service_role 로만 접근.
 -- 클라이언트 직접 SELECT 정책 없음 = 접근 불가(상대 숫자 노출 방지).

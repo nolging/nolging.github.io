@@ -83,6 +83,18 @@ export async function awardCatchmind(groupId, winnerIds) {
   return data || { ok: false }
 }
 
+// 오목 진행 상태 저장/복구 (이어하기). 테이블 없으면(42P01) 조용히 무시 → 브로드캐스트로만 동작.
+export async function getOmokState(groupId) {
+  const { data, error } = await supabase.from('omok_matches').select('state').eq('group_id', groupId).maybeSingle()
+  if (error) { if (error.code === '42P01') return null; throw error }
+  return data?.state || null
+}
+export async function saveOmokState(groupId, state) {
+  const { error } = await supabase.from('omok_matches')
+    .upsert({ group_id: groupId, state, updated_at: new Date().toISOString() }, { onConflict: 'group_id' })
+  if (error && error.code !== '42P01') throw error
+}
+
 // 다빈치코드 심판(Edge Function). action 별 payload 를 넘기고 내 시점 view 반환.
 export async function davinci(action, payload = {}) {
   const { data, error } = await supabase.functions.invoke('davinci', { body: { action, ...payload } })

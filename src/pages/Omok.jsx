@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getGroupMemberMap, awardOmok } from '../lib/api'
+import { getGroupMemberMap, awardOmok, getOmokState, saveOmokState } from '../lib/api'
 
 const N = 15               // 15×15 바둑판
 const GAP = 28, MARGIN = 22
@@ -38,7 +38,6 @@ export default function Omok() {
   const [g, setGraw] = useState({ phase: 'lobby', board: emptyBoard(), turn: 1, black: null, white: null, winner: null, line: null, reason: null, last: null })
   const gRef = useRef(g)
   const setG = useCallback((up) => setGraw((p) => { const n = typeof up === 'function' ? up(p) : up; gRef.current = n; return n }), [])
-  const [awarded, setAwarded] = useState(null)
 
   const myName = useRef(profile?.nickname || '')
   const myAvatar = useRef(profile?.avatar_url || null)
@@ -60,8 +59,7 @@ export default function Omok() {
 
   const apply = useCallback((type, pl) => {
     if (type === 'game_start') {
-      setAwarded(null)
-      setG({ phase: 'play', board: emptyBoard(), turn: 1, black: pl.black, white: pl.white, winner: null, line: null, reason: null, last: null })
+      setG({ phase: 'play', board: emptyBoard(), turn: 1, black: pl.black, white: pl.white, winner: null, line: null, reason: null, last: null, awarded: null })
     } else if (type === 'move') {
       const st = gRef.current
       if (st.phase !== 'play' || st.turn !== pl.color || st.board[pl.r][pl.c] !== 0) return
@@ -77,12 +75,15 @@ export default function Omok() {
       const winner = st.black?.uid === pl.by ? st.white : st.black
       setG({ ...st, phase: 'ended', winner, reason: 'resign' }); maybeAward(winner)
     } else if (type === 'reset') {
-      setAwarded(null)
-      setG((st) => ({ ...st, phase: 'lobby', board: emptyBoard(), turn: 1, winner: null, line: null, reason: null, last: null }))
+      setG((st) => ({ ...st, phase: 'lobby', board: emptyBoard(), turn: 1, winner: null, line: null, reason: null, last: null, awarded: null }))
     } else if (type === 'award') {
-      setAwarded(pl)
+      setG((st) => ({ ...st, awarded: pl }))
     }
-  }, [setG, maybeAward])
+    // 진행/결과 상태를 DB에 저장(이어하기)
+    if (type === 'game_start' || type === 'move' || type === 'resign' || type === 'reset' || type === 'award') {
+      saveOmokState(groupId, gRef.current).catch(() => {})
+    }
+  }, [setG, maybeAward, groupId])
   applyRef.current = apply
 
   useEffect(() => {
@@ -96,6 +97,8 @@ export default function Omok() {
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
     }).catch(() => {})
+    // 이어하기: 저장된 진행/종료 상태 복구
+    getOmokState(groupId).then((s) => { if (s && (s.phase === 'play' || s.phase === 'ended')) setG(s) }).catch(() => {})
     ;['game_start', 'move', 'resign', 'reset', 'award'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } } setPeers(map) })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') retrack() })
@@ -231,9 +234,9 @@ export default function Omok() {
           <div className="omok-result-t">{g.reason === 'draw' ? '무승부' : g.winner?.uid === uid ? '🎉 승리했어요!' : `${g.winner?.name || '상대'} 님 승리`}</div>
           {g.winner && (
             <div className="omok-result-coin">
-              {!awarded ? '보상 확인 중…'
-                : awarded.ok ? `🐾 ${g.winner.name} 님 츄르 10개 획득!`
-                : awarded.reason === 'already' ? '오늘은 이미 오목 보상을 받았어요'
+              {!g.awarded ? '보상 확인 중…'
+                : g.awarded.ok ? `🐾 ${g.winner.name} 님 츄르 10개 획득!`
+                : g.awarded.reason === 'already' ? '오늘은 이미 오목 보상을 받았어요'
                 : '보상은 다음 기회에!'}
             </div>
           )}
