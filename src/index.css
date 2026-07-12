@@ -2101,8 +2101,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .jg-pv-desc { margin-top: 3px; font-size: 12.5px; color: #8b8798; line-height: 1.45; }
 .jg-pv-div { height: 1px; background: #f1eff5; margin: 14px 0; }
 .jg-owner { display: flex; align-items: center; gap: 10px; }
-.jg-owner-av { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; color: #fff;
+.jg-owner-av { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; color: #fff; overflow: hidden;
   font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.jg-owner-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .jg-owner-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: #191722; }
 .jg-owner-badge { display: inline-flex; align-items: center; gap: 4px; background: #fbf1d3; color: #b08a20;
   border-radius: 999px; padding: 4px 10px 4px 8px; font-size: 11px; font-weight: 700; }

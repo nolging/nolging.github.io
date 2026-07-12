@@ -41,6 +41,8 @@ export default function JoinGroup() {
   }
 
   async function join() {
+    // 닉네임 필수: 비우면 다른 멤버에게 아이디가 노출되므로 반드시 그룹 표시 닉네임을 받는다.
+    if (!form.display_nickname.trim()) { setError('닉네임을 입력해 주세요.'); return }
     setBusy(true); setError('')
     try {
       await joinGroupWithProfile(code.trim(), profile.id, form)
@@ -72,7 +74,9 @@ export default function JoinGroup() {
         </div>
         <div className="jg-pv-div" />
         <div className="jg-owner">
-          <span className="jg-owner-av" style={{ background: '#9aa0ac' }}>{firstChar(preview.owner_nickname)}</span>
+          <span className="jg-owner-av" style={{ background: '#9aa0ac' }}>
+            {preview.owner_avatar ? <img src={preview.owner_avatar} alt="" /> : firstChar(preview.owner_nickname)}
+          </span>
           <span className="jg-owner-name">{preview.owner_nickname}</span>
           <span className="jg-owner-badge"><span aria-hidden="true">👑</span>소유자</span>
         </div>

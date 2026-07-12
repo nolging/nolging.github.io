@@ -159,18 +159,22 @@ returns table (
   emoji text,
   emoji_bg text,
   owner_nickname text,
+  owner_avatar text,
   show_contact boolean,
   show_birthdate boolean,
   show_ott boolean,
   already_member boolean
 ) language sql security definer stable set search_path = public as $$
+  -- 소유자 이름은 그룹 표시 닉네임(group_members.display_nickname)만 노출.
+  -- profiles.nickname(=아이디)은 본인 외엔 절대 노출하지 않음 → 미설정 시 '방장'.
   select g.id, g.name, g.description, g.group_type, g.theme,
          g.emoji, g.emoji_bg,
-         p.nickname as owner_nickname,
+         coalesce(nullif(gm.display_nickname, ''), '방장') as owner_nickname,
+         gm.avatar_url as owner_avatar,
          g.show_contact, g.show_birthdate, g.show_ott,
          public.is_group_member(g.id, auth.uid()) as already_member
   from public.groups g
-  join public.profiles p on p.id = g.owner_id
+  left join public.group_members gm on gm.group_id = g.id and gm.user_id = g.owner_id
   where upper(g.invite_code) = upper(trim(p_code));
 $$;
 grant execute on function public.preview_group(text) to authenticated;
