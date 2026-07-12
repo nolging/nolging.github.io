@@ -20,18 +20,30 @@ function timeoutFetch(input, init = {}, attempt = 0) {
   const isRead = method === 'GET' || method === 'HEAD'
   const limit = isRead ? 10000 : 30000
   const ctrl = new AbortController()
-  let timedOut = false
-  const t = setTimeout(() => { timedOut = true; ctrl.abort() }, limit)
   if (init.signal) {
     if (init.signal.aborted) ctrl.abort()
     else init.signal.addEventListener('abort', () => ctrl.abort(), { once: true })
   }
-  return fetch(input, { ...init, signal: ctrl.signal })
+  // 중요: iOS PWA(WebKit)는 프리즈→재개 시 중단된 fetch 를 abort() 해도 promise 를
+  // reject 하지 않고 그대로 매달아 둔다(dangling). 그러면 요청이 영영 settle 되지 않아
+  // 페이지 로딩이 무한히 돈다. → abort 에만 의존하지 않고, '거부하는 타임아웃 promise'
+  // 와 race 시켜 밑단 fetch 가 끝나지 않아도 반환 promise 는 반드시 settle 되게 한다.
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      try { ctrl.abort() } catch { /* noop */ }
+      reject(new DOMException('Request timeout', 'AbortError'))
+    }, limit)
+  })
+  return Promise.race([fetch(input, { ...init, signal: ctrl.signal }), timeout])
     .catch((err) => {
-      if (timedOut && isRead && attempt < 1) return timeoutFetch(input, init, attempt + 1)
+      // 호출자가 직접 취소한 경우는 재시도하지 않음
+      if (init.signal && init.signal.aborted) throw err
+      // 읽기(GET/HEAD)는 타임아웃/네트워크 실패 시 1회 자동 재시도(새 연결로 회복)
+      if (isRead && attempt < 1) return timeoutFetch(input, init, attempt + 1)
       throw err
     })
-    .finally(() => clearTimeout(t))
+    .finally(() => clearTimeout(timer))
 }
 
 // 인증 락 타임아웃:
