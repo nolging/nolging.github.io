@@ -14,24 +14,19 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return
     }
-    // 그룹 접근에 꼭 필요한 컬럼만(항상 존재). 계정 아이디 컬럼명(login_id/nickname)에
-    // 의존하지 않아야 마이그레이션 상태와 무관하게 프로필이 로드됨(그룹 권한 보존).
+    // 본인 프로필은 my_profile() RPC 로(본인 행만, role/login_id 포함) 로드.
+    // → profiles 테이블에 남의 아이디/role 을 grant 로 열지 않아도 됨(열거 방지).
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, role, status, created_at')
-        .eq('id', userId)
-        .single()
-      if (error || !data) { setProfile(null); return }
-      // 계정 아이디는 컬럼명이 login_id/nickname 중 무엇이든 관대하게 조회(둘 다 실패해도 진행)
-      let login_id = ''
-      const r1 = await supabase.from('profiles').select('login_id').eq('id', userId).maybeSingle()
-      if (!r1.error && r1.data?.login_id != null) login_id = r1.data.login_id
-      else {
-        const r2 = await supabase.from('profiles').select('nickname').eq('id', userId).maybeSingle()
-        if (!r2.error && r2.data?.nickname != null) login_id = r2.data.nickname
+      const { data: mine, error } = await supabase.rpc('my_profile')
+      const row = Array.isArray(mine) ? mine[0] : mine
+      if (!error && row) {
+        setProfile({ ...row, login_id: row.login_id ?? row.nickname ?? '' })
+        return
       }
-      setProfile({ ...data, login_id })
+      // 폴백(구 DB/RPC 미적용): 최소 컬럼만 직접 조회(민감 컬럼 미포함)
+      const { data } = await supabase
+        .from('profiles').select('id, status, created_at').eq('id', userId).single()
+      setProfile(data ? { ...data, login_id: '' } : null)
     } catch {
       // 네트워크 오류 등으로 프로필 조회 실패해도 앱이 멈추지 않게
       setProfile(null)
@@ -117,7 +112,7 @@ export function AuthProvider({ children }) {
     // 비활성/승인대기 계정 차단
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, role, status')
+      .select('status')
       .eq('id', data.user.id)
       .single()
     if (prof?.status === 'pending') {

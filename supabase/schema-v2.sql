@@ -85,10 +85,12 @@ create policy groups_select on public.groups
     or public.is_admin(auth.uid())
   );
 
--- ---- 프라이버시: 연락처/생년월일 컬럼은 일반 조회에서 숨김 ----
--- (닉네임/역할/상태 등은 그대로 조회 가능, 민감정보는 RPC 로만 조건부 노출)
+-- ---- 프라이버시: 아이디(login_id)/역할/연락처/생년월일은 일반 조회에서 숨김 ----
+-- 아이디(login_id, 구 nickname)는 "본인에게만" 보여야 하므로 테이블 grant 에서 제외.
+-- 남의 프로필 표시 이름은 그룹 컨텍스트 RPC(group_member_cards / preview_group 등)로만 노출.
+-- 본인 프로필(아이디/role 포함)은 SECURITY DEFINER 인 my_profile() 로만 로드(열거 방지).
 revoke select on public.profiles from anon, authenticated;
-grant  select (id, nickname, role, status, created_at) on public.profiles to anon, authenticated;
+grant  select (id, status, created_at) on public.profiles to authenticated;
 
 -- ---- RPC: 내 프로필 조회/수정 (민감정보 포함, 본인만) --------
 create or replace function public.my_profile()
