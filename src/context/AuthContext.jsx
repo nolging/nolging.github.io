@@ -88,19 +88,19 @@ export function AuthProvider({ children }) {
   // 새로고침(하드)으로 회복한다. 시간점프 감지는 visibility 이벤트가 안 오는
   // 환경(일부 iOS PWA/절전)을 위한 보조 수단으로 유지한다.
   useEffect(() => {
-    const SOFT_MS = 60000   // 1분 이상 숨김 → 세션 살아있는지 재검증
-    const HARD_MS = 300000  // 5분 이상 숨김/절전 → 새로고침으로 클린 회복
-    let hiddenAt = document.visibilityState === 'hidden' ? Date.now() : 0
-    let lastTick = Date.now()
+    const SOFT_MS = 60000   // 1분 이상 비활성 후 재개 → 세션 재검증
+    const HARD_MS = 300000  // 5분 이상 비활성/절전 후 재개 → 새로고침으로 클린 회복
+    // lastSeen = '앱이 실제로 살아 돌아가고 있던' 마지막 시각.
+    // 프리즈/절전 중엔 아래 tick 이 돌지 않고, 백그라운드(숨김)에선 lastSeen 을 갱신하지
+    // 않으므로, 다시 보일 때의 gap 이 곧 '자리 비운 시간' 이 된다. 이렇게 하면
+    // visibilitychange(hidden) 이벤트가 안 오는 iOS PWA 등에서도 재개를 놓치지 않는다.
+    let lastSeen = Date.now()
     let recovering = false
 
     const reload = () => { try { window.location.reload() } catch { /* noop */ } }
 
-    const recover = async (awayMs) => {
-      if (recovering) return
-      recovering = true
-      if (awayMs >= HARD_MS) { reload(); return } // 오래 비움 → 확실히 새로고침
-      // 소프트: 8초 내 세션 확인 실패(락/연결 고착)면 새로고침으로 회복
+    const softRecover = async () => {
+      // 8초 내 세션 확인 실패(락/연결 고착)면 새로고침으로 회복
       const hard = setTimeout(reload, 8000)
       try {
         const { data, error } = await supabase.auth.getSession()
@@ -114,33 +114,26 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const markHidden = () => { if (!hiddenAt) hiddenAt = Date.now() }
-    const onResume = () => {
-      const away = hiddenAt ? Date.now() - hiddenAt : 0
-      hiddenAt = 0
-      lastTick = Date.now() // 이 재개를 아래 시간점프 감지에서 중복 처리하지 않게
-      if (away >= SOFT_MS) recover(away)
-    }
-    const onVis = () => (document.visibilityState === 'hidden' ? markHidden() : onResume())
-
-    // 보조: 절전에서 깨어남(시간점프). visibility 이벤트가 없거나 화면만 꺼진 경우 대비.
-    const iv = setInterval(() => {
+    const check = () => {
+      if (document.visibilityState !== 'visible') return // 숨김 중엔 lastSeen 유지
       const now = Date.now()
-      const jump = now - lastTick
-      lastTick = now
-      if (jump >= HARD_MS && document.visibilityState === 'visible') recover(jump)
-    }, 5000)
+      const gap = now - lastSeen
+      lastSeen = now
+      if (gap < SOFT_MS || recovering) return
+      recovering = true
+      if (gap >= HARD_MS) reload()   // 오래 비움 → 새로고침으로 클린 회복
+      else softRecover()             // 중간 → 세션 재검증(실패 시 새로고침)
+    }
 
-    document.addEventListener('visibilitychange', onVis)
-    window.addEventListener('pagehide', markHidden)
-    window.addEventListener('focus', onResume)
-    window.addEventListener('pageshow', onResume)
+    const iv = setInterval(check, 5000)
+    document.addEventListener('visibilitychange', check)
+    window.addEventListener('focus', check)
+    window.addEventListener('pageshow', check)
     return () => {
       clearInterval(iv)
-      document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('pagehide', markHidden)
-      window.removeEventListener('focus', onResume)
-      window.removeEventListener('pageshow', onResume)
+      document.removeEventListener('visibilitychange', check)
+      window.removeEventListener('focus', check)
+      window.removeEventListener('pageshow', check)
     }
   }, [loadProfile])
 

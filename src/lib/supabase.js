@@ -34,10 +34,35 @@ function timeoutFetch(input, init = {}, attempt = 0) {
     .finally(() => clearTimeout(t))
 }
 
-// 인증 락은 기본값(navigator.locks) 사용 — 평상시 성능/재진입에 가장 안전.
-// 장시간 백그라운드 후 락이 굳어 멈추는 경우는 AuthContext 의 '재개 워치독'이
-// 감지해 새로고침으로 회복시킨다. (커스텀 락은 평시 로딩을 느리게 만들어 제거)
+// 인증 락 타임아웃:
+// supabase-js 는 모든 요청 직전에 인증 락(navigator.locks)을 잡아 토큰을 읽/갱신한다.
+// 장시간 백그라운드/절전 후 재개 시 이 락이 굳으면, 요청이 fetch 에 도달하기도 전에
+// 무한 대기해 (timeoutFetch 로도 못 잡음) "상단바만 뜨고 콘텐츠 로딩만 계속 도는" 상태가 된다.
+// 락을 일정 시간(최대 5초) 안에 못 잡으면 락 없이라도 진행해 무한 대기를 원천 차단한다.
+// 정상 상황(락이 비어 있음)에선 즉시 획득되므로 평시 성능 저하는 없다.
+async function authLockWithTimeout(name, acquireTimeout, fn) {
+  if (typeof navigator === 'undefined' || !navigator.locks || !navigator.locks.request) {
+    return fn() // Web Locks 미지원 환경 → 그냥 실행
+  }
+  const MAX = 5000
+  const wait = acquireTimeout > 0 ? Math.min(acquireTimeout, MAX) : MAX
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), wait)
+  try {
+    return await navigator.locks.request(name, { signal: ctrl.signal }, async () => {
+      clearTimeout(timer)
+      return await fn()
+    })
+  } catch (e) {
+    clearTimeout(timer)
+    // 타임아웃(AbortError)이면 락 고착으로 보고 락 없이 진행(최선). 그 외 오류는 전파.
+    if (e && e.name === 'AbortError') return fn()
+    throw e
+  }
+}
+
 export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key', {
+  auth: { lock: authLockWithTimeout },
   global: { fetch: timeoutFetch },
 })
 
