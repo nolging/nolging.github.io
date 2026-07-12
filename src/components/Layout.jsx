@@ -299,61 +299,49 @@ export default function Layout() {
     )
   } else if (drawMatch) {
     // 그림판: 좌측 뒤로 — 멤버 목록(커플 공간)에서 왔으면 멤버 목록으로, 아니면 그룹으로
-    const id = drawMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">그림판</span>
       </header>
     )
   } else if (touchMatch) {
     // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    const id = touchMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
   } else if (puzzleMatch) {
     // 함께 퍼즐: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    const id = puzzleMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">퍼즐</span>
       </header>
     )
   } else if (catchMatch) {
     // 캐치마인드: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    const id = catchMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">캐치마인드</span>
       </header>
     )
   } else if (omokMatch) {
     // 오목: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    const id = omokMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">오목</span>
       </header>
     )
   } else if (davinciMatch) {
     // 다빈치코드: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    const id = davinciMatch.params.groupId
-    const back = location.state?.from === 'members' ? `/groups/${id}/members` : `/groups/${id}`
     topbar = (
       <header className="topbar">
-        <Link to={back} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">다빈치코드</span>
       </header>
     )
