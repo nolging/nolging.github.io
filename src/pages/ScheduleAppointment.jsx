@@ -115,7 +115,9 @@ export default function ScheduleAppointment() {
       if (t.remind_min !== null && t.remind_min !== undefined) setRemind(String(t.remind_min))
 
       const existing = t.status !== 'open' ? await listTaskParticipants(taskId) : []
-      setParticipants(new Set([t.created_by, profile.id, ...existing].filter(Boolean)))
+      // 2인 그룹은 기본으로 두 명 다 체크. 그 외엔 위시 작성자·나 + 기존 참여자.
+      const base = m.length === 2 ? m.map((x) => x.user_id) : [t.created_by, profile.id]
+      setParticipants(new Set([...base, ...existing].filter(Boolean)))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId, profile.id])
   useEffect(() => { load() }, [load])
@@ -335,7 +337,11 @@ export default function ScheduleAppointment() {
                   return (
                     <li key={m.user_id} className="member-pick-item" onClick={() => toggleMember(m.user_id)}>
                       <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
-                      <span className="member-pick-name">{m.display_nickname}</span>
+                      <span className="member-pick-name">
+                        {m.display_nickname}
+                        {m.user_id === profile.id && <span className="mp-badge mp-me">나</span>}
+                        {m.user_id === task.created_by && <span className="mp-badge mp-author">위시 작성자</span>}
+                      </span>
                       <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
                     </li>
                   )
