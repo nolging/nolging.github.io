@@ -373,11 +373,10 @@ export default function Layout() {
       </header>
     )
   } else if (membersMatch) {
-    // 멤버 페이지: 좌측 뒤로(그룹으로), 제목 "멤버"
-    const id = membersMatch.params.groupId
+    // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 상세/대시보드 등), 제목 "멤버"
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">멤버</span>
       </header>
     )
