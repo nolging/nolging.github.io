@@ -206,6 +206,18 @@ export async function previewGroup(code) {
 
 // 프로필(사진/닉네임/공개토글) 설정과 함께 가입
 export async function joinGroupWithProfile(code, userId, { display_nickname, avatar_url, show_contact, show_birthdate, show_ott }) {
+  // 닉네임까지 담아 한 번에 가입(가입 알림이 아이디 대신 닉네임을 쓰게) → RPC 미적용 시 구 방식 폴백.
+  const { data, error } = await supabase.rpc('join_group_with_profile', {
+    p_code: String(code).trim(),
+    p_display_nickname: display_nickname?.trim() || null,
+    p_avatar_url: avatar_url || null,
+    p_show_contact: !!show_contact,
+    p_show_birthdate: !!show_birthdate,
+    p_show_ott: !!show_ott,
+  })
+  if (!error) return data
+  if (error.code !== 'PGRST202' && !/join_group_with_profile/.test(error.message || '')) throw error
+  // 폴백: 구 2단계(가입 후 프로필 업데이트)
   const group = await joinGroupByCode(code)
   await updateMyGroupMember(group.id, userId, {
     display_nickname: display_nickname?.trim() || null,

@@ -557,11 +557,10 @@ create trigger trg_notify_task_insert after insert on public.tasks
 -- ---- 트리거 4: 새 멤버 가입(기존 멤버에게) ----------------------
 create or replace function public.tg_notify_member_join()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare v_group public.groups; v_name text;
+declare v_name text;
 begin
-  select * into v_group from public.groups where id = NEW.group_id;
-  select coalesce(nullif(NEW.display_nickname, ''), p.nickname) into v_name
-    from public.profiles p where p.id = NEW.user_id;
+  -- 표시 닉네임만 사용. 아이디(profiles.nickname)는 타인에게 절대 노출하지 않음(미설정 시 '새 멤버').
+  v_name := coalesce(nullif(trim(NEW.display_nickname), ''), '새 멤버');
   insert into public.notifications(user_id, actor_id, type, title, body, group_id)
   select gm.user_id, NEW.user_id, 'new_member',
          '새 멤버가 가입했어요',
@@ -1785,6 +1784,34 @@ begin
 end;
 $$;
 grant execute on function public.join_group(text) to authenticated;
+
+-- 가입 + 그룹내 프로필(표시 닉네임/아바타/공개설정)을 한 번에 처리.
+-- 멤버 row 를 닉네임까지 채워서 insert → 가입 알림 트리거가 아이디 대신 닉네임을 사용.
+create or replace function public.join_group_with_profile(
+  p_code text, p_display_nickname text, p_avatar_url text,
+  p_show_contact boolean, p_show_birthdate boolean, p_show_ott boolean
+) returns public.groups language plpgsql security definer set search_path = public as $$
+declare g public.groups;
+begin
+  select * into g from public.groups where upper(invite_code) = upper(trim(p_code));
+  if g.id is null then raise exception '유효하지 않은 초대 코드입니다.'; end if;
+  if not public.is_group_member(g.id, auth.uid()) and public.is_couple_group(g.id) then
+    raise exception '커플 그룹에는 입장할 수 없어요.';
+  end if;
+  insert into public.group_members(group_id, user_id, role, display_nickname, avatar_url, show_contact, show_birthdate, show_ott)
+    values (g.id, auth.uid(), 'member',
+            nullif(trim(coalesce(p_display_nickname, '')), ''), nullif(p_avatar_url, ''),
+            coalesce(p_show_contact, false), coalesce(p_show_birthdate, false), coalesce(p_show_ott, false))
+  on conflict (group_id, user_id) do update
+    set display_nickname = excluded.display_nickname,
+        avatar_url       = excluded.avatar_url,
+        show_contact     = excluded.show_contact,
+        show_birthdate   = excluded.show_birthdate,
+        show_ott         = excluded.show_ott;
+  return g;
+end;
+$$;
+grant execute on function public.join_group_with_profile(text, text, text, boolean, boolean, boolean) to authenticated;
 
 -- =============================================================
 --  전광판 (LED 배너) — 커플 전용 프리미엄. 24시간 동안 커플에게만 노출.
