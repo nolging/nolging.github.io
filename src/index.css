@@ -726,13 +726,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .task-cc { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 
 /* ---- 태스크 상세 + 댓글 ---- */
-.td-head { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.td-head { display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
 .td-head-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .td-head-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .td-name { font-size: 1.15rem; }
 /* 제목은 배지/아바타/⋮ 다음 줄에 전체 너비로, 조금 더 굵게 */
 .td-title { display: block; flex: none; white-space: normal; overflow: visible; text-overflow: clip;
-  font-weight: 700; font-size: 1.2rem; line-height: 1.3; margin: 0; }
+  font-weight: 700; font-size: 1.32rem; line-height: 1.3; margin: 0; }
 .td-desc { margin: 0; color: var(--text); font-size: 15px; white-space: pre-wrap; word-break: break-word; }
 .td-actions { display: flex; align-items: center; gap: 8px; }
 /* 댓글 영역: 전체폭 흰색 패널. 상단 실선(border-top)이 화면 끝까지 닿고,
