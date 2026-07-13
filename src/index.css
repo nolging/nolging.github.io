@@ -2627,7 +2627,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dvt.wht .dvt-paw { opacity: .25; }
 .dvt.clk { cursor: pointer; }
 .dvt.clk:active { transform: scale(.95); }
-.dvt.sel, .dvt.drawn { box-shadow: 0 0 0 2.5px #7363e8, 0 6px 14px rgba(115,99,232,.3); transform: translateY(-4px); }
+.dvt.sel, .dvt.drawn, .dvt.newring { box-shadow: 0 0 0 2.5px #7363e8, 0 6px 14px rgba(115,99,232,.3); transform: translateY(-4px); }
 .dvt.ok { box-shadow: 0 0 0 2px #a8d5b5; }
 .dvt.bad { box-shadow: 0 0 0 2px #f3b1b4; }
 .dvt.myexp { box-shadow: 0 0 0 2px #f3b1b4; }              /* 내 공개된 타일: 옅은 빨강 테두리 */

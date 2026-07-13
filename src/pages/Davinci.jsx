@@ -354,7 +354,8 @@ export default function Davinci() {
   }
 
   // ---- 대국/종료 렌더 ----
-  const placing = v.phase === 'place' && myTurn && v.myToPlace[0]
+  // 조커를 뽑아서 아직 배치 안 했으면(몇 번째 조커든) 항상 배치 UI를 띄운다
+  const placing = myTurn && v.status !== 'ended' && !!v.drawn && !v.drawn.hidden && !!v.drawn.j && !v.drawn.placed
   const selfrevealing = v.phase === 'selfreveal' && myTurn
   const setupArrange = v.phase === 'setup' && !v.mySetupDone
   const lr = v.lastReveal
@@ -386,17 +387,17 @@ export default function Davinci() {
     const green = lr && lr.ok && lr.uid === v.oppUid && lr.id === t.id && t.up
     const lgw = v.lastGuess
     const wrong = !t.up && lgw && lgw.by === v.meUid && !lgw.correct && lgw.targetId === t.id
-    const clickable = myTurn && (v.phase === 'guess' || v.phase === 'decide') && !t.up
-    const badge = selected ? { c: 'sel', t: '선택' } : wrong ? { c: 'wrong', t: '오답' } : t.new ? { c: 'new', t: '새로 추가' } : null
+    const isNew = t.new && !green && !wrong && !selected
+    const clickable = myTurn && !placing && (v.phase === 'guess' || v.phase === 'decide') && !t.up
+    const badge = selected ? { c: 'sel', t: '선택' } : wrong ? { c: 'wrong', t: '오답' } : t.new && !green ? { c: 'new', t: '새로 추가' } : null
     return (
       <span key={i} className="dvt-wrap">
         {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
-        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${wrong ? 'wrong' : ''} ${clickable ? 'clk' : ''}`}
+        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${wrong ? 'wrong' : ''} ${isNew ? 'newring' : ''} ${clickable ? 'clk' : ''}`}
           disabled={!clickable} onClick={clickable ? () => (v.phase === 'decide' ? continueGuess(i) : setSel(i)) : undefined}>
           {t.up ? (t.j ? '-' : t.n) : (selected ? '?' : <PawMini />)}
         </button>
         {green && <span className="dvt-dot ok" />}
-        {t.new && !green && <span className="dvt-dot new" />}
       </span>
     )
   }
@@ -431,7 +432,7 @@ export default function Davinci() {
   }
 
   // 중앙 배너
-  const jokerToPlace = placing ? v.myToPlace[0].tile : null
+  const jokerToPlace = placing ? v.drawn : null
   let banner = null
   if (jokerToPlace) banner = { tile: { ...jokerToPlace, up: true }, title: '조커(-)를 뽑았어요', sub: '내 코드에 배치할 위치를 정해 주세요' }
   else if (myTurn && v.phase === 'decide') banner = { ok: true, title: '정답이에요!', sub: '추측을 이어 가거나, 여기에서 멈추고 턴을 넘길 수 있어요' }
@@ -481,8 +482,8 @@ export default function Davinci() {
           {v.phase === 'setup'
             ? <div className="dvc-setup-wait">세팅 중…</div>
             : <div className="dvc-row">{v.oppHand.map((t, i) => oppTile(t, i))}</div>}
-          {myTurn && v.phase === 'guess' && <div className="dvc-hint">{sel != null ? '선택한 타일의 숫자를 추측해서 제출하세요' : '상대 타일을 하나 선택해서 추측해 주세요'}</div>}
-          {myTurn && v.phase === 'decide' && <div className="dvc-hint">이어서 추측할 상대 타일을 선택하거나, 아래에서 멈춰요</div>}
+          {!placing && myTurn && v.phase === 'guess' && <div className="dvc-hint">{sel != null ? '선택한 타일의 숫자를 추측해서 제출하세요' : '상대 타일을 하나 선택해서 추측해 주세요'}</div>}
+          {!placing && myTurn && v.phase === 'decide' && <div className="dvc-hint">이어서 추측할 상대 타일을 선택하거나, 아래에서 멈춰요</div>}
         </div>
 
         {/* 중앙 배너 */}
@@ -509,8 +510,8 @@ export default function Davinci() {
             {!myTurn && v.phase !== 'setup' && <div className="dv-wait">상대방이 추측하는 동안 기다려요…</div>}
             {v.phase === 'setup' && !v.mySetupDone && <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>{v.myHand.some((t) => t.j) ? '배치 완료' : '확인'}</button>}
             {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
-            {myTurn && v.phase === 'decide' && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
-            {myTurn && v.phase === 'guess' && sel != null && (
+            {!placing && myTurn && v.phase === 'decide' && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
+            {!placing && myTurn && v.phase === 'guess' && sel != null && (
               <div className="dv-guess">
                 <div className="dv-guess-q">선택한 {sel + 1}번째 타일은 무엇일까요?</div>
                 <div className="dv-vals">

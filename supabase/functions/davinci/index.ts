@@ -353,14 +353,13 @@ Deno.serve(async (req) => {
         if (s.players.every((pl) => s.setupDone[pl.uid])) { s.turn = s.first; beginTurn(s) }
         return
       }
-      // 뽑은 조커를 추측 전에 선배치(위치만 예약, 실제 삽입은 턴 종료 시) → 추측 단계로
+      // 뽑은 조커를 추측 전에 선배치(위치만 예약, 실제 삽입은 턴 종료 시) → 추측 단계로.
+      // 몇 번째 조커든 뽑은 조커(s.drawn) 기준으로 처리한다.
       if (action === 'place') {
-        const q = s.toPlace[caller] || []
-        if (!q.length) throw new Error('배치할 조커가 없어요.')
-        const hand = s.hands[caller]
-        const slot = Math.max(0, Math.min(hand.length, Math.floor(Number(p.slot))))
-        q.shift()
-        if (s.drawn && s.drawn.uid === caller) { s.drawn.slot = slot; s.drawn.placed = true }
+        if (!(s.drawn && s.drawn.uid === caller && s.drawn.tile.j && !s.drawn.placed)) throw new Error('배치할 조커가 없어요.')
+        const slot = Math.max(0, Math.min(s.hands[caller].length, Math.floor(Number(p.slot))))
+        s.drawn.slot = slot; s.drawn.placed = true
+        if (Array.isArray(s.toPlace[caller])) s.toPlace[caller] = []
         s.phase = 'guess'
         return
       }
@@ -370,6 +369,7 @@ Deno.serve(async (req) => {
 
       if (action === 'guess') {
         if (s.phase !== 'guess') throw new Error('지금은 추리할 수 없어요.')
+        if (s.drawn && s.drawn.uid === caller && s.drawn.tile.j && !s.drawn.placed) throw new Error('먼저 조커를 배치해 주세요.')
         const opp = other(s, caller)
         const oh = s.hands[opp]
         const pos = Math.floor(Number(p.pos))
