@@ -2738,6 +2738,67 @@ button.mlist-row:hover { background: #f6f5fa; }
 .cm-res-n b { font-size: 17px; font-weight: 800; color: #191722; }
 .cm-res-btns { display: flex; gap: 10px; padding: 14px 20px calc(env(safe-area-inset-bottom) + 18px); flex-shrink: 0; }
 .cm-res-btns .cm-btn { height: 54px; }
+
+/* ===== 가위바위보 (14n,14o,14p) ===== */
+.rps-lobby { overflow-y: auto; }
+.rps-sec-t { margin: 18px 20px 0; font-size: 15px; font-weight: 800; color: #191722; }
+.rps-seg { margin: 10px 20px 0; display: flex; gap: 6px; background: #f1f0f5; border-radius: 14px; padding: 5px; }
+.rps-seg button { flex: 1; font-family: inherit; border: none; background: none; border-radius: 10px; padding: 11px 0; font-size: 13.5px; font-weight: 700; color: #8b8798; cursor: pointer; }
+.rps-seg button.on { background: #fff; color: #191722; box-shadow: 0 2px 6px rgba(25,23,34,.08); }
+.rps-wager { margin: 10px 20px 0; background: #fff; border-radius: 18px; padding: 15px 16px; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
+.rps-wager-t { font-size: 13.5px; font-weight: 800; color: #191722; }
+.rps-wager-in { font-family: inherit; width: 100%; box-sizing: border-box; margin-top: 10px; border: none; background: #f4f3f7; border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #191722; outline: none; }
+.rps-wager-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.rps-chip { font-family: inherit; border: none; background: #eeebfe; color: #7363e8; border-radius: 999px; padding: 8px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.rps-start-wrap { margin: auto 20px 0; padding: 18px 0 calc(env(safe-area-inset-bottom) + 16px); text-align: center; }
+.rps-start { font-family: inherit; width: 100%; height: 56px; border: none; border-radius: 999px; font-size: 16px; font-weight: 800; background: #ecebf0; color: #b6b3c0; cursor: default; }
+.rps-start.on { background: #191722; color: #fff; cursor: pointer; }
+.rps-start.on:active { transform: scale(.985); }
+.rps-start-hint { margin-top: 10px; font-size: 12px; color: #8b8798; }
+.rps-start-hint b { color: #7363e8; }
+
+/* 선택 화면 */
+.rps-play { background: #f2f0fb; align-items: center; justify-content: center; padding: 20px; }
+.rps-status { position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 20px; right: 20px; display: flex; justify-content: space-between; }
+.rps-pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px; padding: 6px 12px 6px 6px; font-size: 12.5px; font-weight: 800; color: #8b8798; box-shadow: 0 2px 8px rgba(25,23,34,.06); }
+.rps-pill.done { color: #34b37a; }
+.rps-timer-ring { position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; }
+.rps-timer-n { position: absolute; font-size: 40px; font-weight: 800; color: #191722; }
+.rps-call { margin-top: 18px; font-size: 19px; font-weight: 800; color: #191722; }
+.rps-hands { display: flex; gap: 16px; margin-top: 26px; }
+.rps-hand { position: relative; width: 92px; height: 92px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 4px 14px rgba(25,23,34,.08); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.rps-hand:disabled { cursor: default; }
+.rps-hand.on { box-shadow: 0 0 0 3px #7363e8, 0 6px 18px rgba(115,99,232,.25); }
+.rps-hand-emo { font-size: 42px; }
+.rps-hand-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #7363e8; color: #fff; font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 3px 9px; }
+.rps-spectate { margin-top: 22px; font-size: 12.5px; color: #8b8798; }
+.rps-wager-pill { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12.5px; font-weight: 700; color: #8b8798; background: #fff; border-radius: 999px; padding: 9px 16px; box-shadow: 0 2px 8px rgba(25,23,34,.06); }
+
+/* 결과 화면 */
+.rps-result { align-items: center; padding: calc(env(safe-area-inset-top) + 30px) 20px 0; }
+.rps-close { position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 16px; }
+.rps-res-scoreline { font-size: 13px; font-weight: 700; color: #8b8798; background: #f3f3f5; border-radius: 999px; padding: 8px 16px; }
+.rps-res-scoreline b { color: #7363e8; margin: 0 2px; }
+.rps-res-hands { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
+.rps-res-h { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.rps-res-emo { width: 120px; height: 120px; border-radius: 50%; background: #f3f2f7; display: flex; align-items: center; justify-content: center; font-size: 56px; }
+.rps-res-h.win .rps-res-emo { background: #e9f7ef; box-shadow: 0 0 0 3px #34b37a; }
+.rps-res-h.lose { opacity: .7; }
+.rps-res-badge { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 800; border-radius: 999px; padding: 3px 12px; z-index: 2; }
+.rps-res-badge.w { background: #34b37a; color: #fff; }
+.rps-res-badge.l { background: #d7d4de; color: #6f6a80; }
+.rps-res-nm { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 800; color: #191722; }
+.rps-res-vs { font-size: 14px; font-weight: 800; color: #b0abbd; }
+.rps-res-title { margin-top: 26px; font-size: 23px; font-weight: 800; letter-spacing: -.5px; color: #191722; text-align: center; }
+.rps-res-sub { margin-top: 6px; font-size: 13px; color: #8b8798; }
+.rps-res-wager { margin-top: 22px; width: 100%; max-width: 360px; background: #fdf6e3; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-sizing: border-box; }
+.rps-res-wager-l { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rps-res-wager-l span { font-size: 11.5px; font-weight: 700; color: #a98a3e; }
+.rps-res-wager-l b { font-size: 14.5px; font-weight: 800; color: #191722; }
+.rps-res-record { font-size: 12px; font-weight: 700; color: #6f6a80; background: #fff; border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.rps-res-coin { margin-top: 14px; font-size: 13.5px; font-weight: 800; color: #7363e8; }
+.rps-res-btns { margin-top: auto; width: 100%; max-width: 360px; padding: 20px 0 calc(env(safe-area-inset-bottom) + 18px); text-align: center; }
+.rps-quit { display: block; margin: 12px auto 0; font-family: inherit; border: none; background: none; color: #8b8798; font-size: 13px; font-weight: 600; cursor: pointer; }
 .gd-davinci-btn { background: #e6e9f2; }
 .gd-davinci-btn:hover { background: #dae0ee; }
 

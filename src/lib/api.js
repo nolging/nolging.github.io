@@ -83,6 +83,18 @@ export async function awardCatchmind(groupId, winnerIds) {
   return data || { ok: false }
 }
 
+// 가위바위보 베팅 정산: 패자→승자 츄르 이전(게임당 1회, 멱등). 승자 클라이언트가 호출.
+export async function settleRps(groupId, gameId, winnerId, loserId, bet) {
+  const { data, error } = await supabase.rpc('rps_settle', {
+    p_group_id: groupId, p_game_id: gameId, p_winner: winnerId, p_loser: loserId, p_bet: bet,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /rps_settle/.test(error.message || '')) return { ok: false, reason: 'missing' }
+    throw error
+  }
+  return data || { ok: false }
+}
+
 // 캐치마인드 베팅 정산: 참여자 각자 bet, 1등(들)이 판돈 분배(게임당 1회, 멱등). 우승 클라이언트가 호출.
 export async function settleCatchmind(groupId, gameId, participants, winners, bet) {
   const { data, error } = await supabase.rpc('catchmind_settle', {

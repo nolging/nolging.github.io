@@ -13,6 +13,7 @@ import Puzzle from './pages/Puzzle'
 import CatchMind from './pages/CatchMind'
 import Omok from './pages/Omok'
 import Davinci from './pages/Davinci'
+import Rps from './pages/Rps'
 import MemberDetail from './pages/MemberDetail'
 import CreateTask from './pages/CreateTask'
 import TaskEdit from './pages/TaskEdit'
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/groups/:groupId/catchmind" element={<CatchMind />} />
         <Route path="/groups/:groupId/omok" element={<Omok />} />
         <Route path="/groups/:groupId/davinci" element={<Davinci />} />
+        <Route path="/groups/:groupId/rps" element={<Rps />} />
         <Route path="/groups/:groupId/members/:userId" element={<MemberDetail />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />
         <Route path="/groups/:groupId/tasks/:taskId/edit" element={<TaskEdit />} />

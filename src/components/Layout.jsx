@@ -93,6 +93,7 @@ export default function Layout() {
   const puzzleMatch = useMatch('/groups/:groupId/puzzle')
   const catchMatch = useMatch('/groups/:groupId/catchmind')
   const omokMatch = useMatch('/groups/:groupId/omok')
+  const rpsMatch = useMatch('/groups/:groupId/rps')
   const davinciMatch = useMatch('/groups/:groupId/davinci')
   const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
   const taskEditMatch = useMatch('/groups/:groupId/tasks/:taskId/edit')
@@ -240,7 +241,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
     return () => { document.body.style.background = '' }
@@ -330,6 +331,9 @@ export default function Layout() {
     topbar = null
   } else if (davinciMatch) {
     // 다빈치코드: 페이지가 자체 헤더(대기실/게임 단계별)를 그리므로 Layout 상단바는 숨김
+    topbar = null
+  } else if (rpsMatch) {
+    // 가위바위보: 페이지가 자체 헤더를 그리므로 Layout 상단바는 숨김
     topbar = null
   } else if (memberDetailMatch) {
     // 멤버 상세: 좌측 뒤로(직전 페이지). 본인 상세면 우측에 설정(내 정보 수정) 톱니바퀴

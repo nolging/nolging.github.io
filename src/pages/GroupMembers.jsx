@@ -169,6 +169,10 @@ export default function GroupMembers() {
             <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
             <span className="cs-act-t">다빈치코드</span>
           </button>
+          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/rps`, { state: { from: 'members' } })}>
+            <span className="cs-act-ico" style={{ background: '#e9e4f7' }}>✊</span>
+            <span className="cs-act-t">가위바위보</span>
+          </button>
         </div>
       </div>
     )
@@ -251,9 +255,13 @@ export default function GroupMembers() {
               <span className="cs-act-ico" style={{ background: '#efe7d8' }}>⚫</span>
               <span className="cs-act-t">오목</span>
             </button>
-            <button type="button" className="cs-act cs-act-wide" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
+            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
               <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
               <span className="cs-act-t">다빈치코드</span>
+            </button>
+            <button type="button" className="cs-act cs-act-wide" onClick={() => navigate(`/groups/${groupId}/rps`, { state: { from: 'members' } })}>
+              <span className="cs-act-ico" style={{ background: '#e9e4f7' }}>✊</span>
+              <span className="cs-act-t">가위바위보</span>
             </button>
           </div>
         </div>
