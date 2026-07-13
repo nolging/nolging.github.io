@@ -1,4 +1,4 @@
-import { createClient, processLock } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -46,16 +46,13 @@ function timeoutFetch(input, init = {}, attempt = 0) {
     .finally(() => clearTimeout(timer))
 }
 
-// 인증 락: 기본값인 navigator.locks 대신 processLock(인메모리 락) 사용.
-// supabase-js 는 모든 요청 직전에 인증 락을 잡아 토큰을 읽/갱신하는데,
-// 기본 navigator.locks 는 '교차 컨텍스트(탭·서비스워커 공유)' 락이라
-// iOS PWA 콜드스타트/재개 시 이 락이 굳으면 토큰 조회가 fetch 이전 단계에서
-// 멈춰(→ "상단바만 뜨고 본문 무한로딩") 회복이 안 된다.
-// processLock 은 '이 창(window) 안에서만' 직렬화하는 인메모리 락이라 굳을 여지가 없고,
-// 단일 창 PWA 에선 창 내 직렬화만으로 토큰 갱신 경합을 충분히 막는다.
-// (Supabase 가 RN 등 navigator.locks 부적합 환경에서 공식 권장하는 방식)
+// 인증 락 옵션은 주지 않는다(기본 lockless 경로).
+// auth-js v2 는 커스텀 lock 을 주면 모든 인증 작업(getSession/refresh 등)을 그 락으로
+// 직렬화하는데, 작업 하나가 settle 되지 않으면 이후 모든 토큰 조회가 큐에 막혀
+// "이용 중 페이지 이동 시 무한 로딩" 이 된다. (navigator.locks 든 processLock 이든 동일)
+// 기본값(this.lock=null)은 락 없이 동작하며, 동시 refresh 는 클라이언트가 내부적으로
+// dedup 하므로 단일 창 PWA 에 안전하다. 무한 대기 방어는 timeoutFetch(race)가 담당.
 export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key', {
-  auth: { lock: processLock },
   global: { fetch: timeoutFetch },
 })
 
