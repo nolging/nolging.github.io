@@ -27,14 +27,6 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
     if (!open) { setGroupId(''); setMemberId(''); setError('') }
   }, [open])
 
-  // 그룹 선택 시: 나 외 멤버가 한 명뿐이면 자동 선택(추가 클릭 없이 '선택'만 누르면 됨),
-  // 여러 명이면 초기화해 직접 고르게 한다.
-  useEffect(() => {
-    const g = eligibleGroups.find((x) => x.id === groupId)
-    const others = (g?.group_members || []).filter((m) => m.user_id !== myId)
-    setMemberId(others.length === 1 ? others[0].user_id : '')
-  }, [groupId, eligibleGroups, myId])
-
   const memberName = (m) => m.display_nickname || '멤버'   // 아이디는 타인에게 노출 안 함
 
   // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만
@@ -42,6 +34,14 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
     const ms = g.group_members || []
     return ms.some((m) => m.user_id === myId) && ms.some((m) => m.user_id !== myId)
   }), [groups, myId])
+
+  // 그룹 선택 시: 나 외 멤버가 한 명뿐이면 자동 선택(추가 클릭 없이 '선택'만 누르면 됨),
+  // 여러 명이면 초기화해 직접 고르게 한다. (eligibleGroups 정의 이후에 두어 TDZ 방지)
+  useEffect(() => {
+    const g = eligibleGroups.find((x) => x.id === groupId)
+    const others = (g?.group_members || []).filter((m) => m.user_id !== myId)
+    setMemberId(others.length === 1 ? others[0].user_id : '')
+  }, [groupId, eligibleGroups, myId])
 
   const group = eligibleGroups.find((g) => g.id === groupId)
   const members = group?.group_members || []
