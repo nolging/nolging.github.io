@@ -138,20 +138,23 @@ export default function Davinci() {
   if (v.status === 'lobby') {
     const changeStake = (d) => act('stake', { stake: Math.max(0, Math.min(20, (v.stake || 0) + d)) })
     const bothReady = iReady && oppReady
+    // 준비(참여) 탭 전에는 자리를 비워 둔다(프로필·닉네임 미표시). 준비 = 자리에 앉음.
     const seat = (idx) => {
       const pl = v.players[idx]
       const mine = pl?.uid === v.meUid
-      const rdy = pl && v.ready[pl.uid]
+      const joined = pl && v.ready[pl.uid]           // 준비완료 = 참여(자리 점유)
       const afford = pl && v.stakeOk?.[pl.uid]
+      const canJoin = mine && (iReady || canAfford)
       return (
-        <div className={`om-seat ${pl ? 'taken' : 'empty'} ${mine ? 'mine' : ''} ${rdy ? 'dv-rdy' : ''}`}
+        <div className={`om-seat ${joined ? 'taken dv-rdy' : 'empty'} ${mine ? 'mine' : ''}`}
           role="button" tabIndex={0}
-          onClick={() => { if (mine && (iReady || canAfford) && !busy) act('ready', { ready: !iReady }) }}>
+          onClick={() => { if (canJoin && !busy) act('ready', { ready: !iReady }) }}>
           <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '⚡ 선공' : '후공'}</span></div>
-          {pl
+          {joined
             ? <><LobbyAvatar name={pl.name} avatar={pl.avatar} /><div className="om-seat-name">{pl.name}{mine && <span className="om-badge-me">나</span>}</div>
-                <div className={`dv-seat-st ${rdy ? 'on' : afford ? '' : 'short'}`}>{rdy ? '준비완료' : !afford ? '보유 부족' : mine ? '탭해서 준비' : '대기 중'}</div></>
-            : <><span className="om-seat-empty"><PersonIcon /></span><div className="om-seat-wait">대기 중</div></>}
+                <div className="dv-seat-st on">준비완료</div></>
+            : <><span className="om-seat-empty"><PersonIcon /></span>
+                <div className="om-seat-wait">{mine ? (afford ? '탭해서 참여' : '보유 부족') : '대기 중'}</div></>}
         </div>
       )
     }
@@ -165,7 +168,7 @@ export default function Davinci() {
         {chatBox}
         <div className="om-seats">
           <div className="om-seats-row">{seat(0)}{seat(1)}</div>
-          <div className="om-seats-hint">준비 상태를 <b>탭</b>해서 정하세요 · 선공이 먼저 추측해요</div>
+          <div className="om-seats-hint">내 자리를 <b>탭</b>해서 참여하세요 · 선공이 먼저 추측해요</div>
         </div>
         <div className="om-bet">
           <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 내 보유 {v.myBalance}</div></div>
