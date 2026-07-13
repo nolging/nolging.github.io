@@ -28,7 +28,9 @@ export default function CreateTask() {
           await scheduleTask({ taskId: task.id, ...schedule })
           if (status === 'done') await completeTask(task.id)
         }
-        navigate(`/groups/${groupId}`)
+        // 작성 후 해당 항목 상세로 이동. 상세의 '<' 는 상태에 맞는 그룹 탭으로 되돌아감
+        // (from 미지정 → /groups/:id?tab=<status>).
+        navigate(`/groups/${groupId}/tasks/${task.id}`, { state: { groupType } })
       }}
     />
   )
