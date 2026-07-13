@@ -363,10 +363,18 @@ export default function Davinci() {
   // 내 손패(표시용): 뽑은 숫자 타일을 정렬 위치에 삽입 → "방금 뽑음"
   const drawnMine = v.drawn && !v.drawn.hidden ? v.drawn : null
   const myTiles = v.myHand.map((t, i) => ({ ...t, idx: i }))
-  if (drawnMine && !drawnMine.j && (v.phase === 'guess' || v.phase === 'decide')) {
-    let pos = myTiles.length
-    for (let i = 0; i < myTiles.length; i++) { if (!myTiles[i].j && sortKey(myTiles[i]) > sortKey(drawnMine)) { pos = i; break } }
-    myTiles.splice(pos, 0, { ...drawnMine, drawn: true, idx: -1 })
+  if (drawnMine && (v.phase === 'guess' || v.phase === 'decide')) {
+    if (drawnMine.j) {
+      // 선배치한 조커는 예약 슬롯에 "방금 뽑음"으로 표시(실제 손패엔 턴 종료 시 삽입)
+      if (drawnMine.placed && drawnMine.slot != null) {
+        const pos = Math.max(0, Math.min(myTiles.length, drawnMine.slot))
+        myTiles.splice(pos, 0, { ...drawnMine, drawn: true, idx: -1 })
+      }
+    } else {
+      let pos = myTiles.length
+      for (let i = 0; i < myTiles.length; i++) { if (!myTiles[i].j && sortKey(myTiles[i]) > sortKey(drawnMine)) { pos = i; break } }
+      myTiles.splice(pos, 0, { ...drawnMine, drawn: true, idx: -1 })
+    }
   }
   const oppUp = v.oppHand.filter((t) => t.up).length
   const myUp = v.myHand.filter((t) => t.up).length

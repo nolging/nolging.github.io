@@ -67,7 +67,28 @@ function eliminated(s, uid) {
 }
 function beginTurn(s) {
   s.drawn = s.deck.length ? { uid: s.turn, tile: s.deck.shift() } : null
-  s.phase = 'guess'
+  // 조커를 뽑으면 추측 전에 먼저 배치. 상대에겐 계속 '뽑는 중'으로 보이도록 s.drawn 유지하고,
+  // 실제 손패 삽입은 턴 종료 시(commitDrawn)에 해서 숫자와 노출 타이밍을 똑같이 맞춘다(조커 노출 방지).
+  if (s.drawn && s.drawn.tile.j) {
+    s.toPlace[s.drawn.uid] = [{ tile: s.drawn.tile, up: false, reason: 'draw', pre: true }]
+    s.phase = 'place'
+  } else {
+    s.phase = 'guess'
+  }
+}
+// 이번 턴에 뽑은 타일을 손패에 확정 삽입. 조커는 선배치 슬롯에, 숫자는 정렬 위치에.
+function commitDrawn(s, uid, faceUp) {
+  const d = s.drawn
+  if (!d || d.uid !== uid) return null
+  const tile = { ...d.tile, up: !!faceUp }
+  if (d.tile.j && d.slot != null) {
+    const slot = Math.max(0, Math.min(s.hands[uid].length, Math.floor(d.slot)))
+    s.hands[uid].splice(slot, 0, tile)
+  } else {
+    insertNumbered(s.hands[uid], tile)
+  }
+  s.lastAddedId = tile.id
+  return tile
 }
 function log(s, t) { s.log.push({ t }); if (s.log.length > 40) s.log.shift() }
 function freshLobby(mem) {
@@ -139,7 +160,7 @@ Deno.serve(async (req) => {
       myHand: amPlayer ? (s.hands?.[me] || []) : [],
       oppHand,
       deckCount: s.deck?.length || 0,
-      drawn: amPlayer && s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile } : { hidden: true, uid: s.drawn.uid }) : null,
+      drawn: amPlayer && s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile, placed: !!s.drawn.placed, slot: s.drawn.slot } : { hidden: true, uid: s.drawn.uid }) : null,
       myToPlace: (amPlayer && s.toPlace?.[me] || []).map((x) => ({ ...x })),
       mySetupDone: !!(amPlayer && s.setupDone?.[me]),
       oppSetupDone: opp ? !!(s.setupDone?.[opp]) : false,
@@ -332,18 +353,15 @@ Deno.serve(async (req) => {
         if (s.players.every((pl) => s.setupDone[pl.uid])) { s.turn = s.first; beginTurn(s) }
         return
       }
-      // 대국 중 뽑은 조커 배치 → 턴 종료
+      // 뽑은 조커를 추측 전에 선배치(위치만 예약, 실제 삽입은 턴 종료 시) → 추측 단계로
       if (action === 'place') {
         const q = s.toPlace[caller] || []
         if (!q.length) throw new Error('배치할 조커가 없어요.')
         const hand = s.hands[caller]
         const slot = Math.max(0, Math.min(hand.length, Math.floor(Number(p.slot))))
-        const item = q.shift()
-        const placed = { ...item.tile, up: item.up }
-        hand.splice(slot, 0, placed)
-        s.lastAddedId = placed.id
-        if (item.up) log(s, `${nameOf(s, caller)} 님이 조커(-) 공개`)
-        s.turn = other(s, caller); beginTurn(s)
+        q.shift()
+        if (s.drawn && s.drawn.uid === caller) { s.drawn.slot = slot; s.drawn.placed = true }
+        s.phase = 'guess'
         return
       }
 
@@ -370,11 +388,10 @@ Deno.serve(async (req) => {
         } else {
           log(s, `❌ ${nameOf(s, caller)}: ${pos + 1}번 = ${label} 오답`)
           if (s.drawn) {
-            const t = { ...s.drawn.tile, up: true }
+            const t = commitDrawn(s, caller, true)   // 뽑은 타일(숫자/조커) 공개 배치
             s.drawn = null
-            s.lastReveal = { uid: caller, id: t.id, ok: false }
-            if (t.j) { s.toPlace[caller] = [{ tile: t, up: true, reason: 'draw' }]; s.phase = 'place' }
-            else { insertNumbered(s.hands[caller], t); s.lastAddedId = t.id; s.turn = opp; beginTurn(s) }
+            if (t) s.lastReveal = { uid: caller, id: t.id, ok: false }
+            s.turn = opp; beginTurn(s)
           } else {
             s.phase = 'selfreveal'
           }
@@ -386,12 +403,7 @@ Deno.serve(async (req) => {
         if (s.phase !== 'decide') throw new Error('결정할 상황이 아니에요.')
         if (p.cont) { s.phase = 'guess' }
         else {
-          const t = s.drawn ? { ...s.drawn.tile, up: false } : null
-          s.drawn = null
-          if (t) {
-            if (t.j) { s.toPlace[caller] = [{ tile: t, up: false, reason: 'draw' }]; s.phase = 'place'; return }
-            insertNumbered(s.hands[caller], t); s.lastAddedId = t.id
-          }
+          if (s.drawn) { commitDrawn(s, caller, false); s.drawn = null }   // 숫자/조커 뒷면 배치
           log(s, `${nameOf(s, caller)} 님이 멈춤`)
           s.turn = other(s, caller); beginTurn(s)
         }
