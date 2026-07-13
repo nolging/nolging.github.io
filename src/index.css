@@ -2656,6 +2656,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dvc-banner .dvt { border: 2px solid #7363e8; box-shadow: none; transform: none; }
 .dvc-banner .dvt.wht { color: #7363e8; }
 .dvc-banner-ic { font-size: 28px; }
+.dvc-banner-chk { width: 30px; height: 30px; border-radius: 50%; background: #7363e8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .dvc-banner-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dvc-banner-tx b { font-size: 13px; font-weight: 800; color: #7363e8; }
 .dvc-banner-tx span { font-size: 11.5px; color: #7d72c4; line-height: 1.4; }

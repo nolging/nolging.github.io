@@ -386,13 +386,13 @@ export default function Davinci() {
     const green = lr && lr.ok && lr.uid === v.oppUid && lr.id === t.id && t.up
     const lgw = v.lastGuess
     const wrong = !t.up && lgw && lgw.by === v.meUid && !lgw.correct && lgw.targetId === t.id
-    const clickable = myTurn && v.phase === 'guess' && !t.up
+    const clickable = myTurn && (v.phase === 'guess' || v.phase === 'decide') && !t.up
     const badge = selected ? { c: 'sel', t: '선택' } : wrong ? { c: 'wrong', t: '오답' } : t.new ? { c: 'new', t: '새로 추가' } : null
     return (
       <span key={i} className="dvt-wrap">
         {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
         <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${wrong ? 'wrong' : ''} ${clickable ? 'clk' : ''}`}
-          disabled={!clickable} onClick={clickable ? () => setSel(i) : undefined}>
+          disabled={!clickable} onClick={clickable ? () => (v.phase === 'decide' ? continueGuess(i) : setSel(i)) : undefined}>
           {t.up ? (t.j ? '-' : t.n) : (selected ? '?' : <PawMini />)}
         </button>
         {green && <span className="dvt-dot ok" />}
@@ -434,6 +434,7 @@ export default function Davinci() {
   const jokerToPlace = placing ? v.myToPlace[0].tile : null
   let banner = null
   if (jokerToPlace) banner = { tile: { ...jokerToPlace, up: true }, title: '조커(-)를 뽑았어요', sub: '내 코드에 배치할 위치를 정해 주세요' }
+  else if (myTurn && v.phase === 'decide') banner = { ok: true, title: '정답이에요!', sub: '추측을 이어 가거나, 여기에서 멈추고 턴을 넘길 수 있어요' }
   else if (drawnMine && (v.phase === 'guess' || v.phase === 'decide')) banner = { tile: { ...drawnMine, up: true }, title: '더미에서 뽑아서 배치했어요', sub: myTurn ? '상대방의 타일을 하나 선택해서 추측해 주세요' : `${opp.name} 님 차례예요` }
   else if (v.drawn?.hidden) banner = { back: v.drawn.c || 'b', title: `${opp.name} 님이 타일을 뽑았어요`, sub: '내 코드를 추측하는 중이에요' }
   else if (v.phase === 'setup') {
@@ -449,6 +450,15 @@ export default function Davinci() {
   function rematch() {
     chanRef.current?.send({ type: 'broadcast', event: 'rematch', payload: { uid, name: me.name } })
     act('reset')
+  }
+  // 정답 후 '멈추기' 대신 상대 타일을 선택하면 바로 이어서 추측(계속)
+  function continueGuess(i) {
+    const mid = matchRef.current; if (!mid) return
+    setV((prev) => (prev ? { ...prev, phase: 'guess' } : prev))   // 즉시 추측 단계로
+    setSel(i); setGuessVal(null); setErr('')
+    davinci('decide', { matchId: mid, cont: true })
+      .then((r) => { setV(r); serverSeatsRef.current = r.seats; ping() })
+      .catch((e) => { setErr(e.message || '오류'); refresh() })
   }
 
   const iWon = v.status === 'ended' && v.winner === v.meUid
@@ -472,6 +482,7 @@ export default function Davinci() {
             ? <div className="dvc-setup-wait">세팅 중…</div>
             : <div className="dvc-row">{v.oppHand.map((t, i) => oppTile(t, i))}</div>}
           {myTurn && v.phase === 'guess' && <div className="dvc-hint">{sel != null ? '선택한 타일의 숫자를 추측해서 제출하세요' : '상대 타일을 하나 선택해서 추측해 주세요'}</div>}
+          {myTurn && v.phase === 'decide' && <div className="dvc-hint">이어서 추측할 상대 타일을 선택하거나, 아래에서 멈춰요</div>}
         </div>
 
         {/* 중앙 배너 */}
@@ -479,6 +490,7 @@ export default function Davinci() {
           <div className="dvc-banner">
             {banner.tile ? <span className={`dvt ${banner.tile.c === 'b' ? 'blk' : 'wht'} lg`}>{banner.tile.j ? '-' : banner.tile.n}</span>
               : banner.back ? <span className={`dvt ${banner.back === 'b' ? 'blk' : 'wht'} back lg`}><PawMini /></span>
+              : banner.ok ? <span className="dvc-banner-chk"><svg width="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
               : banner.hidden ? <span className="dvt blk back lg"><PawMini /></span> : banner.plain ? null : <span className="dvc-banner-ic">🎴</span>}
             <div className="dvc-banner-tx"><b>{banner.title}</b>{banner.sub && <span>{banner.sub}</span>}</div>
           </div>
