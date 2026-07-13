@@ -71,12 +71,19 @@ export default function Rps() {
   const presentUids = [...new Set([uid, ...Object.keys(peers)])]
   const isSmall = Math.max(Object.keys(members).length, presentUids.length) <= 2
 
-  // 참여 인원 중 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
-  const capFromBals = () => { const bals = [myBalRef.current, ...Object.values(peersRef.current).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
-  const betCap = (() => { const bals = [myBal, ...Object.values(peers).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
-
   // 현재 판 참가자 2명
   const playerUids = isSmall ? presentUids.slice(0, 2) : lob.seats.filter(Boolean)
+
+  // 참여 확정(대결 예정)한 인원의 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  const capOf = (uids, balForUid) => { const bals = uids.map(balForUid).filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
+  const capFromBals = () => {
+    const l = lobRef.current
+    const present = [...new Set([uid, ...Object.keys(peersRef.current)])]
+    const small = Math.max(Object.keys(membersRef.current).length, present.length) <= 2
+    const uids = small ? present.slice(0, 2) : (l.seats || []).filter(Boolean)
+    return capOf(uids, (u) => (u === uid ? myBalRef.current : peersRef.current[u]?.bal))
+  }
+  const betCap = capOf(playerUids, (u) => (u === uid ? myBal : peers[u]?.bal))
 
   const maybeSettle = useCallback((winner, loser, bet, gameId) => {
     if (!winner || winner !== uid || !gameId) return
@@ -270,7 +277,7 @@ export default function Rps() {
         </div>
         {lob.betType === 'chur' ? (
           <div className="om-bet">
-            <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 최대 {betCap}개</div></div>
+            <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾</div></div>
             <button type="button" className="om-bet-btn" onClick={() => changeBet(-5)}>−</button>
             <span className="om-bet-val">{lob.bet}</span>
             <button type="button" className="om-bet-btn" onClick={() => changeBet(5)} disabled={lob.bet >= betCap}>+</button>

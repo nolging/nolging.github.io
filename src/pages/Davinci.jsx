@@ -88,11 +88,12 @@ export default function Davinci() {
     finally { setBusy(false) }
   }, [ping])
 
-  // 참여(로비) 인원 중 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  // 참여 확정(자리 선점)한 인원의 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
   const stakeCap = useCallback(() => {
-    const bals = [vRef.current?.myBalance, ...Object.values(peerBalsRef.current)].filter((b) => typeof b === 'number')
+    const seats = (vRef.current?.seats || []).filter(Boolean)
+    const bals = seats.map((u) => (u === uid ? vRef.current?.myBalance : peerBalsRef.current[u])).filter((b) => typeof b === 'number')
     return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20
-  }, [])
+  }, [uid])
 
   // 로비 상태 변경을 상대에게 즉시 브로드캐스트(델타) → 오목/캐치처럼 바로 반영.
   // 자리 변경은 { actor, seatIdx }(내 위치만), 판돈은 { stake } 로 보내 서로 덮어쓰지 않게.
@@ -225,7 +226,7 @@ export default function Davinci() {
   }, [])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
   // 참여 인원 보유 츄르가 바뀌어 상한이 내려가면 베팅도 자동으로 낮춘다
-  useEffect(() => { const cur = vRef.current; if (cur?.status === 'lobby' && (cur.stake || 0) > stakeCap()) changeStakeOptim(0) }, [peerBals, stakeCap, changeStakeOptim])
+  useEffect(() => { const cur = vRef.current; if (cur?.status === 'lobby' && (cur.stake || 0) > stakeCap()) changeStakeOptim(0) }, [peerBals, v?.seats, v?.stake, stakeCap, changeStakeOptim])
 
   if (err && !v) return <div className="page dv-page"><div className="dv-msg">{err}</div></div>
   if (!v) return <div className="page dv-page"><div className="dv-msg">불러오는 중…</div></div>
@@ -278,7 +279,7 @@ export default function Davinci() {
     const seats = v.seats
     const bothSeated = seats[0] && seats[1] && seats[0] !== seats[1]
     const memCount = (v.members || []).length
-    const stakeCapVal = (() => { const bals = [v.myBalance, ...Object.values(peerBals)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
+    const stakeCapVal = (() => { const seats = (v.seats || []).filter(Boolean); const bals = seats.map((u) => (u === uid ? v.myBalance : peerBals[u])).filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
     // 빈 자리는 누구나 탭해서 선점, 내 자리는 다시 탭해서 비우기
     const seat = (idx) => {
       const su = seats[idx]
@@ -311,7 +312,7 @@ export default function Davinci() {
           <div className="om-seats-hint">빈 자리를 <b>탭</b>해서 참여하세요 · 선공이 먼저 추측해요{memCount > 2 ? ' · 먼저 앉은 두 명이 대결해요' : ''}</div>
         </div>
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 최대 {stakeCapVal}개</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(-5)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{v.stake}</span>
           <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(5)} disabled={v.stake >= stakeCapVal} aria-label="늘리기">+</button>

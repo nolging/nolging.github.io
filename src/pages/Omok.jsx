@@ -79,12 +79,10 @@ export default function Omok() {
   const myColor = g.black?.uid === uid ? 1 : g.white?.uid === uid ? 2 : 0
   const myTurn = g.phase === 'play' && g.turn === myColor
 
-  // 참여 인원 중 최소 보유 츄르 기준으로 베팅 상한(5단위 내림, 최대 20)
-  const capFromBals = useCallback(() => {
-    const bals = [myBalRef.current, ...Object.values(peersRef.current).map((p) => p.bal)].filter((b) => typeof b === 'number')
-    return bals.length ? Math.max(0, Math.min(MAX_BET, Math.floor(Math.min(...bals) / BET_STEP) * BET_STEP)) : MAX_BET
-  }, [])
-  const betCap = (() => { const bals = [myBal, ...Object.values(peers).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(MAX_BET, Math.floor(Math.min(...bals) / BET_STEP) * BET_STEP)) : MAX_BET })()
+  // 참여 확정(자리 선점)한 인원의 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  const capOf = (uids, balForUid) => { const bals = uids.map(balForUid).filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(MAX_BET, Math.floor(Math.min(...bals) / BET_STEP) * BET_STEP)) : MAX_BET }
+  const capFromBals = () => { const st = gRef.current; return capOf([st.black?.uid, st.white?.uid].filter(Boolean), (u) => (u === uid ? myBalRef.current : peersRef.current[u]?.bal)) }
+  const betCap = capOf([g.black?.uid, g.white?.uid].filter(Boolean), (u) => (u === uid ? myBal : peers[u]?.bal))
 
   const broadcastLobby = useCallback((n) => emit('lobby', { black: n.black, white: n.white, bet: n.bet }), [emit])
 
@@ -371,7 +369,7 @@ export default function Omok() {
           <div className="om-seats-hint">원하는 돌을 <b>직접 탭</b>해서 자리를 선점하세요</div>
         </div>
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 최대 {betCap}개</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(-BET_STEP)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{g.bet}</span>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(BET_STEP)} disabled={g.bet >= betCap} aria-label="늘리기">+</button>

@@ -224,9 +224,10 @@ export default function CatchMind() {
   // ---- 로비 조작 ----
   const presentUids = [...new Set([uid, ...Object.keys(peers)])]
   const isSmall = Math.max(Object.keys(members).length, presentUids.length) <= 2
-  // 참여 인원 중 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
-  const capFromBals = () => { const bals = [myBalRef.current, ...Object.values(peersRef.current).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
-  const betCap = (() => { const bals = [myBal, ...Object.values(peers).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
+  // 참여 확정(준비 완료)한 인원의 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  const capOf = (uids, balForUid) => { const bals = uids.map(balForUid).filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
+  const capFromBals = () => capOf(lobRef.current.ready || [], (u) => (u === uid ? myBalRef.current : peersRef.current[u]?.bal))
+  const betCap = capOf(lob.ready || [], (u) => (u === uid ? myBal : peers[u]?.bal))
   useEffect(() => { if (gRef.current.phase === 'lobby' && (lobRef.current.bet || 0) > betCap) changeBet(0) }, [betCap])
   const parts = lob.participants
   const readySet = new Set(lob.ready)
@@ -329,7 +330,7 @@ export default function CatchMind() {
           </div>
         )}
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">1등이 다 가져가요 🐾 · 최대 {betCap}개</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">1등이 다 가져가요 🐾</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(-5)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{lob.bet}</span>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(5)} disabled={lob.bet >= betCap} aria-label="늘리기">+</button>
