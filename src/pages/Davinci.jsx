@@ -55,6 +55,9 @@ export default function Davinci() {
   const seenPeers = useRef(new Set())
   const stakeTimer = useRef(0)
   const pendingStake = useRef(null)
+  const seatInflight = useRef(false)
+  const serverSeatsRef = useRef(null)
+  const aliveRef = useRef(true)
   const [peerBals, setPeerBals] = useState({})
   const peerBalsRef = useRef({}); peerBalsRef.current = peerBals
 
@@ -70,7 +73,7 @@ export default function Davinci() {
 
   const refresh = useCallback(async () => {
     const mid = matchRef.current; if (!mid) return
-    try { const r = await davinci('view', { matchId: mid }); setV(r) } catch { /* noop */ }
+    try { const r = await davinci('view', { matchId: mid }); setV(r); serverSeatsRef.current = r.seats } catch { /* noop */ }
   }, [])
 
   const act = useCallback(async (action, payload = {}) => {
@@ -78,7 +81,7 @@ export default function Davinci() {
     setBusy(true); setErr('')
     try {
       const r = await davinci(action, { matchId: mid, ...payload })
-      setV(r); setSel(null); setMoveSel(null); setGuessVal(null); setJokerSlot(null)
+      setV(r); serverSeatsRef.current = r.seats; setSel(null); setMoveSel(null); setGuessVal(null); setJokerSlot(null)
       if (r.matchId) matchRef.current = r.matchId
       ping()
     } catch (e) { setErr(e.message || '오류') }
@@ -91,13 +94,34 @@ export default function Davinci() {
     return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20
   }, [])
 
-  // 로비 조작(자리/베팅)은 즉시 로컬 반영 후 서버는 백그라운드로 동기화 → 반응 빠르게
+  // 로비 상태 변경을 상대에게 즉시 브로드캐스트(델타) → 오목/캐치처럼 바로 반영.
+  // 자리 변경은 { actor, seatIdx }(내 위치만), 판돈은 { stake } 로 보내 서로 덮어쓰지 않게.
+  const broadcastLobby = useCallback((payload) => {
+    chanRef.current?.send({ type: 'broadcast', event: 'lobby', payload })
+  }, [])
+
+  // 로비 판돈 등 일반 서버 반영(즉시 로컬 반영 후 백그라운드 동기화)
   const bgAct = useCallback((action, payload = {}) => {
     const mid = matchRef.current; if (!mid) return
     davinci(action, { matchId: mid, ...payload })
-      .then((r) => { setV(r); ping() })
+      .then((r) => { setV(r); serverSeatsRef.current = r.seats; ping() })
       .catch((e) => { setErr(e.message || '오류'); refresh() })
   }, [ping, refresh])
+
+  // 자리 반영: 항상 1건만 in-flight 로 직렬화 → 빠른 연타에도 낙관적 잠금 충돌 방지.
+  // 서버가 내 목표 자리와 다르면 한 번만 요청, 끝나면 다시 목표와 비교해 수렴.
+  const syncSeatToServer = useCallback(() => {
+    if (seatInflight.current || !aliveRef.current) return
+    const mid = matchRef.current; if (!mid) return
+    const desired = (vRef.current?.seats || []).indexOf(uid)
+    const server = (serverSeatsRef.current || []).indexOf(uid)
+    if (desired === server) return
+    seatInflight.current = true
+    const call = desired < 0 ? davinci('unseat', { matchId: mid }) : davinci('seat', { matchId: mid, idx: desired })
+    call.then((r) => { serverSeatsRef.current = r.seats; ping() })
+      .catch((e) => { setErr(e.message || '오류'); refresh() })
+      .finally(() => { seatInflight.current = false; syncSeatToServer() })
+  }, [uid, ping, refresh])
 
   const toggleSeat = useCallback((idx) => {
     const cur = vRef.current; if (!cur || cur.status !== 'lobby') return
@@ -109,24 +133,39 @@ export default function Davinci() {
       seats[idx] = uid
     } else return   // 남의 자리
     setV((prev) => ({ ...prev, seats })); setErr('')
-    bgAct('seat', { idx })
-  }, [uid, bgAct])
+    broadcastLobby({ actor: uid, seatIdx: seats.indexOf(uid) })   // 상대 화면 즉시 반영(내 자리만)
+    syncSeatToServer()                  // 서버는 직렬화로 최종 상태만
+  }, [uid, broadcastLobby, syncSeatToServer])
 
   const changeStakeOptim = useCallback((d) => {
+    let ns = null
     setV((prev) => {
       const stake = Math.max(0, Math.min(stakeCap(), (prev.stake || 0) + d))
-      pendingStake.current = stake
+      pendingStake.current = stake; ns = stake
       return { ...prev, stake }
     })
+    broadcastLobby({ stake: ns })   // 상대 즉시 반영
     clearTimeout(stakeTimer.current)
     stakeTimer.current = setTimeout(() => { if (pendingStake.current != null) bgAct('stake', { stake: pendingStake.current }) }, 280)
-  }, [bgAct, stakeCap])
+  }, [bgAct, stakeCap, broadcastLobby])
+
+  // 시작: 내 자리 서버 반영을 먼저 확정한 뒤(상대 자리 반영 지연 흡수 위해) 재시도
+  const startGame = useCallback(async () => {
+    const mid = matchRef.current; if (!mid) return
+    syncSeatToServer()
+    for (let i = 0; i < 20 && seatInflight.current; i++) await new Promise((r) => setTimeout(r, 50))
+    setBusy(true); setErr('')
+    for (let i = 0; i < 3; i++) {
+      try { const r = await davinci('start', { matchId: mid }); setV(r); serverSeatsRef.current = r.seats; setSel(null); setMoveSel(null); setGuessVal(null); setJokerSlot(null); ping(); setBusy(false); return }
+      catch (e) { if (i === 2) { setErr(e.message || '오류'); setBusy(false); return } await new Promise((r) => setTimeout(r, 350)) }
+    }
+  }, [syncSeatToServer, ping])
 
   useEffect(() => {
     if (!groupId || !uid) return
-    let alive = true
+    let alive = true; aliveRef.current = true
     davinci('open', { groupId }).then((r) => {
-      if (!alive) return; setV(r); matchRef.current = r.matchId
+      if (!alive) return; setV(r); matchRef.current = r.matchId; serverSeatsRef.current = r.seats
       // 내 보유 츄르를 프레즌스로 공유(베팅 상한 계산용)
       chanRef.current?.track({ uid, bal: r.myBalance }).catch(() => {})
       if (!seenPeers.current.has(uid) && r.status === 'lobby') { seenPeers.current.add(uid); setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: uid }]) }
@@ -134,6 +173,20 @@ export default function Davinci() {
     const ch = supabase.channel(`davinci:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
     ch.on('broadcast', { event: 'sync' }, () => refresh())
+    ch.on('broadcast', { event: 'lobby' }, ({ payload }) => {
+      // 상대의 자리/판돈 변경을 서버 왕복 없이 즉시 반영(대기실 상태는 비밀이 아님)
+      if (vRef.current?.status !== 'lobby') return
+      setV((prev) => {
+        if (!prev) return prev
+        let seats = prev.seats, stake = prev.stake
+        if (payload.actor) {
+          seats = (prev.seats || [null, null]).map((s) => (s === payload.actor ? null : s))
+          if (payload.seatIdx != null && payload.seatIdx >= 0) { seats = [...seats]; seats[payload.seatIdx] = payload.actor }
+        }
+        if (payload.stake != null) stake = payload.stake
+        return { ...prev, seats, stake }
+      })
+    })
     ch.on('broadcast', { event: 'chat' }, ({ payload }) => pushChat(payload))
     ch.on('broadcast', { event: 'rematch' }, ({ payload }) => {
       if (payload?.uid !== uid) { setToast(`${payload?.name || '상대'} 님이 한 판 더 하고 싶대요`); setTimeout(() => setToast(''), 4000) }
@@ -155,7 +208,7 @@ export default function Davinci() {
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), m = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const bal = st[k][0]?.bal; if (typeof bal === 'number') m[k] = bal } setPeerBals(m) })
     ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {}) })
     return () => {
-      alive = false
+      alive = false; aliveRef.current = false
       // 대기실에서 게임 시작 전에 벗어나면 내 자리를 서버에서도 해제
       const cur = vRef.current
       if (cur && cur.status === 'lobby' && cur.seats?.includes(uid) && matchRef.current) davinci('unseat', { matchId: matchRef.current }).catch(() => {})
@@ -264,7 +317,7 @@ export default function Davinci() {
           <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(5)} disabled={v.stake >= stakeCapVal} aria-label="늘리기">+</button>
         </div>
         <div className="om-start-wrap">
-          <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated || busy} onClick={() => act('start')}>
+          <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated || busy} onClick={startGame}>
             {bothSeated ? '게임 시작' : '두 자리가 다 차면 시작할 수 있어요'}
           </button>
         </div>
