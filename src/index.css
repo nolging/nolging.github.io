@@ -1608,6 +1608,13 @@ button.mlist-row:hover { background: #f6f5fa; }
 
 /* ===== 위시 작성/수정 · 약속 잡기/수정 (시안) ===== */
 /* 유형 칩 (선택 시에만 이모지 표시) */
+/* 상태 선택 탭 (위시/약속/추억) — 그룹 상세 탭과 동일한 언더라인 스타일 */
+.ts-status-tabs { display: flex; gap: 4px; border-bottom: 1.5px solid #ececf0; }
+.ts-status-tab { flex: 1; background: none; border: none; padding: 10px 0; font-size: 15px;
+  font-weight: 600; color: var(--muted); position: relative; cursor: pointer; transition: color .18s ease; }
+.ts-status-tab.active { color: var(--text); font-weight: 700; }
+.ts-status-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1.5px;
+  height: 2.5px; background: #7363e8; border-radius: 2px; }
 .ts-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ts-chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: none;
   border-radius: 999px; padding: 9px 11px; font-size: 12.5px; cursor: pointer; white-space: nowrap;

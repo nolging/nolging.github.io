@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import { WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
+import { useEffect, useRef, useState } from 'react'
+import { WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint, TASK_STATUSES, taskTerms } from '../lib/constants'
 import MediaCard from './MediaCard'
 import WorkSearchSheet from './WorkSearchSheet'
+import ScheduleFields, { defaultSchedule, buildSchedulePayload } from './ScheduleFields'
 
 // 위시 작성/편집 공용 폼(시안). onSubmit(values) 는 저장 후 이동, 실패 시 throw.
-export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete, deleteLabel = '위시 삭제하기' }) {
+// allowStatus=true 면 상단에 상태(위시/약속/추억) 탭이 나오고, 약속·추억 선택 시
+// 일정·참여자 입력이 함께 노출된다. (작성 화면 전용, 편집 화면에선 미사용)
+export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete, deleteLabel = '위시 삭제하기',
+  allowStatus = false, members = [], meId }) {
   const [title, setTitle] = useState(initial.title || '')
   const [category, setCategory] = useState(initial.category || '')
   const [mediaInfo, setMediaInfo] = useState(initial.media_info || null)
@@ -14,9 +18,22 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
   const [error, setError] = useState('')
   const [nameErr, setNameErr] = useState('')
   const [typeErr, setTypeErr] = useState('')
+  const [status, setStatus] = useState('open')       // open=위시 / accepted=약속 / done=추억
+  const [sched, setSched] = useState(defaultSchedule)
+  const partsInit = useRef(false)
 
   const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
   const noun = workNoun(category)
+  const terms = taskTerms()
+  const scheduled = allowStatus && status !== 'open'
+
+  // 멤버가 로드되면 참여자 기본값 1회 설정: 2인 그룹은 둘 다, 그 외엔 나만(작성자=나)
+  useEffect(() => {
+    if (!allowStatus || partsInit.current || members.length === 0) return
+    partsInit.current = true
+    const base = members.length === 2 ? members.map((m) => m.user_id) : (meId ? [meId] : [])
+    setSched((s) => ({ ...s, participants: base }))
+  }, [allowStatus, members, meId])
 
   function pickCategory(c) {
     const next = category === c ? '' : c
@@ -28,6 +45,13 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
     e.preventDefault()
     if (!category) { setTypeErr('위시 유형을 선택해 주세요.'); return }
     if (!title.trim()) { setNameErr('제목을 입력해 주세요.'); return }
+    let schedule = null
+    if (scheduled) {
+      if (sched.dateOn && !sched.date) { setError('날짜를 설정해 주세요.'); return }
+      const ids = members.length >= 2 ? sched.participants : members.map((m) => m.user_id)
+      if (members.length >= 2 && ids.length === 0) { setError('참여자를 한 명 이상 선택해 주세요.'); return }
+      schedule = { ...buildSchedulePayload(sched), participantIds: ids }
+    }
     setBusy(true); setError('')
     try {
       await onSubmit({
@@ -35,6 +59,8 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
         description: mediaCat ? '' : comment.trim(),
         category: category || null,
         media_info: mediaCat ? mediaInfo : null,
+        status,
+        schedule, // null=위시 / {…}=약속·추억(status 로 구분)
       })
     } catch (err) { setError(err.message); setBusy(false) }
   }
@@ -42,8 +68,19 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
   return (
     <form onSubmit={submit} className="page cg-page">
       <div className="cg-form">
+        {allowStatus && (
+          <div className="cg-field">
+            <div className="cg-label">상태</div>
+            <div className="ts-status-tabs">
+              {TASK_STATUSES.map((s) => (
+                <button type="button" key={s} className={`ts-status-tab ${status === s ? 'active' : ''}`}
+                  onClick={() => setStatus(s)}>{terms.status[s]}</button>
+              ))}
+            </div>
+          </div>
+        )}
         {/* 위시 유형 */}
-        <div className="cg-field">
+        <div className={`cg-field ${allowStatus ? 'cg-mt-22' : ''}`}>
           <div className="cg-label">위시 유형 <span className="cg-req">*</span></div>
           <div className="ts-chips">
             {WISH_CATEGORIES.map((c) => {
@@ -99,6 +136,11 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
             </div>
           </div>
         ) : null}
+
+        {scheduled && (
+          <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))}
+            members={members} meId={meId} authorId={meId} />
+        )}
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
