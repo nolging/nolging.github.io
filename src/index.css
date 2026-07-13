@@ -2660,6 +2660,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* ===== 캐치마인드 (14k,14r,14l,14m,14s) ===== */
 .cm-count { margin-left: auto; font-size: 12px; font-weight: 700; color: #7363e8; background: #eeebfe; border-radius: 999px; padding: 5px 12px; }
 .cm-lobby .om-chat, .cm-play .cm-chat2 { flex: 1 1 auto; min-height: 0; }
+/* 대기실 채팅은 시안처럼 고정 높이(약 240px)로 — 큰 화면에서 세로로 늘어나지 않게 */
+.om-lobby > .om-chat, .cm-lobby > .om-chat, .rps-lobby > .om-chat { flex: 0 1 auto; min-height: 200px; max-height: 240px; }
 /* 2인 카드 */
 .cm-cards { display: flex; gap: 10px; margin: 14px 20px 0; flex-shrink: 0; }
 .cm-card { flex: 1; display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 18px; padding: 13px; box-shadow: 0 4px 16px rgba(25,23,34,.05); border: 1.5px solid transparent; min-width: 0; }
