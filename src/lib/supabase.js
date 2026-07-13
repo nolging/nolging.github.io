@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, processLock } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -46,35 +46,16 @@ function timeoutFetch(input, init = {}, attempt = 0) {
     .finally(() => clearTimeout(timer))
 }
 
-// 인증 락 타임아웃:
-// supabase-js 는 모든 요청 직전에 인증 락(navigator.locks)을 잡아 토큰을 읽/갱신한다.
-// 장시간 백그라운드/절전 후 재개 시 이 락이 굳으면, 요청이 fetch 에 도달하기도 전에
-// 무한 대기해 (timeoutFetch 로도 못 잡음) "상단바만 뜨고 콘텐츠 로딩만 계속 도는" 상태가 된다.
-// 락을 일정 시간(최대 5초) 안에 못 잡으면 락 없이라도 진행해 무한 대기를 원천 차단한다.
-// 정상 상황(락이 비어 있음)에선 즉시 획득되므로 평시 성능 저하는 없다.
-async function authLockWithTimeout(name, acquireTimeout, fn) {
-  if (typeof navigator === 'undefined' || !navigator.locks || !navigator.locks.request) {
-    return fn() // Web Locks 미지원 환경 → 그냥 실행
-  }
-  const MAX = 5000
-  const wait = acquireTimeout > 0 ? Math.min(acquireTimeout, MAX) : MAX
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), wait)
-  try {
-    return await navigator.locks.request(name, { signal: ctrl.signal }, async () => {
-      clearTimeout(timer)
-      return await fn()
-    })
-  } catch (e) {
-    clearTimeout(timer)
-    // 타임아웃(AbortError)이면 락 고착으로 보고 락 없이 진행(최선). 그 외 오류는 전파.
-    if (e && e.name === 'AbortError') return fn()
-    throw e
-  }
-}
-
+// 인증 락: 기본값인 navigator.locks 대신 processLock(인메모리 락) 사용.
+// supabase-js 는 모든 요청 직전에 인증 락을 잡아 토큰을 읽/갱신하는데,
+// 기본 navigator.locks 는 '교차 컨텍스트(탭·서비스워커 공유)' 락이라
+// iOS PWA 콜드스타트/재개 시 이 락이 굳으면 토큰 조회가 fetch 이전 단계에서
+// 멈춰(→ "상단바만 뜨고 본문 무한로딩") 회복이 안 된다.
+// processLock 은 '이 창(window) 안에서만' 직렬화하는 인메모리 락이라 굳을 여지가 없고,
+// 단일 창 PWA 에선 창 내 직렬화만으로 토큰 갱신 경합을 충분히 막는다.
+// (Supabase 가 RN 등 navigator.locks 부적합 환경에서 공식 권장하는 방식)
 export const supabase = createClient(url || 'http://localhost', anonKey || 'public-anon-key', {
-  auth: { lock: authLockWithTimeout },
+  auth: { lock: processLock },
   global: { fetch: timeoutFetch },
 })
 
