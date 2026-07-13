@@ -2596,6 +2596,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dv-turnpill { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700;
   color: #8b8798; background: #f3f3f5; border-radius: 999px; padding: 5px 12px; }
 .dv-turnpill.on { color: #7363e8; background: #eeebfe; }
+.dv-resign { margin-left: auto; font-family: inherit; border: 1.5px solid #f0dfe4; background: #fff; color: #d4577a;
+  font-size: 12px; font-weight: 800; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.dv-resign:active { transform: scale(.95); }
+.dv-resign:disabled { opacity: .5; cursor: default; }
 .dv-play.om-root { background: #f6f5f9; }
 .dv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
   padding: 12px 16px calc(env(safe-area-inset-bottom) + 16px); }
@@ -2626,11 +2630,15 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dvt.sel, .dvt.drawn { box-shadow: 0 0 0 2.5px #7363e8, 0 6px 14px rgba(115,99,232,.3); transform: translateY(-4px); }
 .dvt.ok { box-shadow: 0 0 0 2px #a8d5b5; }
 .dvt.bad { box-shadow: 0 0 0 2px #f3b1b4; }
+.dvt.myexp { box-shadow: 0 0 0 2px #f3b1b4; }              /* 내 공개된 타일: 옅은 빨강 테두리 */
+.dvt.myjust { box-shadow: 0 0 0 2.5px #c03a3f; transform: translateY(-4px); }  /* 방금 공개된 내 타일: 진한 빨강 */
+.dvt.wrong { box-shadow: 0 0 0 2px #f3b1b4 !important; }   /* 내가 틀린 상대 타일: 옅은 빨강 테두리 */
 .dvt.lift { transform: translateY(-4px); }
 .dvt.lg { width: 32px; height: 42px; font-size: 20px; flex-shrink: 0; }
 .dvt-badge { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap;
   font-size: 8.5px; font-weight: 800; border-radius: 999px; padding: 1px 6px; z-index: 3; }
 .dvt-badge.sel, .dvt-badge.new, .dvt-badge.drawn { background: #eeebfe; color: #7363e8; }
+.dvt-badge.wrong { background: #fdecec; color: #e5484d; }
 .dvt-dot { position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fdfcfe; z-index: 2; }
 .dvt-dot.ok, .dvt-dot.new { background: #4a9d6a; }
 .dvt-dot.bad, .dvt-dot.exposed { background: #e5484d; }
@@ -2654,6 +2662,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 
 /* 하단 패널 */
 .dv-panel { margin-top: auto; padding-top: 6px; }
+.dv-wait { background: #f4f3f7; border-radius: 16px; padding: 14px; text-align: center; font-size: 13px; color: #8b8798; }
 .dv-cbtn { font-family: inherit; width: 100%; height: 54px; border: none; border-radius: 999px; font-size: 16px;
   font-weight: 700; background: #ecebf0; color: #b6b3c0; cursor: default; }
 .dv-cbtn.on { background: #191722; color: #fff; cursor: pointer; }
@@ -2661,14 +2670,13 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dv-cbtn.ghost { background: #fff; color: #191722; box-shadow: inset 0 0 0 1.5px #e5e3ec; cursor: pointer; }
 .dv-cbtn.blk.on { background: #26242f; }
 .dv-cbtn.wht.on { background: #fff; color: #191722; box-shadow: inset 0 0 0 2px #191722; }
-.dv-guess { background: #f4f3f7; border-radius: 20px; padding: 16px; }
-.dv-guess-q { text-align: center; font-size: 15px; font-weight: 800; color: #191722; margin-bottom: 14px; }
-.dv-vals { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
-.dv-val { font-family: inherit; height: 44px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; }
-.dv-val.blk { background: #26242f; color: #fff; }
-.dv-val.wht { background: #fff; color: #191722; box-shadow: inset 0 0 0 1.5px #d9d6e2; }
-.dv-val.on { box-shadow: 0 0 0 2.5px #7363e8; }
-.dv-val.dim { background: #d7d4de; color: #98949f; box-shadow: none; }
+.dv-guess { background: #f4f3f7; border-radius: 22px; padding: 16px; }
+.dv-guess-q { text-align: center; font-size: 14px; font-weight: 800; color: #191722; margin-bottom: 12px; }
+.dv-vals { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-bottom: 14px; }
+.dv-val { font-family: inherit; width: 36px; height: 50px; border: 1.5px solid #8b8798; box-sizing: border-box; border-radius: 9px;
+  font-size: 17px; font-weight: 800; color: #fff; background: #8b8798; cursor: pointer; transition: background .12s ease, box-shadow .12s ease; }
+.dv-val:active { transform: scale(.95); }
+.dv-val.on { background: #191722; border-color: #7363e8; box-shadow: 0 4px 12px rgba(115,99,232,.35); }
 .dv-toast-float { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 20; }
 
 /* ===== 캐치마인드 (14k,14r,14l,14m,14s) ===== */
@@ -2890,12 +2898,6 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dv-drawn-l { font-size: 11px; color: #8b8798; font-weight: 600; }
 .dv-deck { font-size: 12px; color: #a7a3b3; font-weight: 700; background: #f4f3f7; border-radius: 999px; padding: 5px 12px; }
 
-.dv-actions { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.dv-guesspanel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.dv-vals { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.dv-vals button { font-family: inherit; width: 40px; height: 40px; border: 1.5px solid #ece9f3; background: #fff; border-radius: 10px; font-size: 15px; font-weight: 800; color: #191722; cursor: pointer; }
-.dv-vals button:active { background: #eeebfe; }
-.dv-vals .dv-joker { width: auto; padding: 0 12px; color: #7363e8; }
 .dv-cancel { font-family: inherit; border: none; background: none; color: #a7a3b3; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .dv-decide { display: flex; gap: 10px; width: 100%; max-width: 320px; }
 .dv-decide button { font-family: inherit; flex: 1; height: 46px; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; }

@@ -384,12 +384,14 @@ export default function Davinci() {
     const black = t.c === 'b'
     const selected = sel === i
     const green = lr && lr.ok && lr.uid === v.oppUid && lr.id === t.id && t.up
+    const lgw = v.lastGuess
+    const wrong = !t.up && lgw && lgw.by === v.meUid && !lgw.correct && lgw.targetId === t.id
     const clickable = myTurn && v.phase === 'guess' && !t.up
-    const badge = selected ? { c: 'sel', t: '선택' } : (t.new && !t.up) ? { c: 'new', t: '새로 추가' } : (t.new && t.up ? { c: 'new', t: '새로 추가' } : null)
+    const badge = selected ? { c: 'sel', t: '선택' } : wrong ? { c: 'wrong', t: '오답' } : t.new ? { c: 'new', t: '새로 추가' } : null
     return (
       <span key={i} className="dvt-wrap">
         {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
-        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${clickable ? 'clk' : ''}`}
+        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${wrong ? 'wrong' : ''} ${clickable ? 'clk' : ''}`}
           disabled={!clickable} onClick={clickable ? () => setSel(i) : undefined}>
           {t.up ? (t.j ? '-' : t.n) : (selected ? '?' : <PawMini />)}
         </button>
@@ -405,10 +407,11 @@ export default function Davinci() {
     if (setupArrange && t.j && !t.drawn) { onClick = () => setMoveSel(moveSel === t.idx ? null : t.idx); sel2 = moveSel === t.idx }
     else if (selfrevealing && !t.up && !t.drawn) onClick = () => act('selfreveal', { pos: t.idx })
     const badge = t.drawn ? { c: 'drawn', t: '방금 뽑음' } : null
+    const exposed = t.up && !t.drawn
     return (
       <span key={i} className="dvt-wrap">
         {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
-        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.drawn ? 'drawn' : ''} ${sel2 ? 'sel' : ''} ${red ? 'bad lift' : ''} ${onClick ? 'clk' : ''}`}
+        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.drawn ? 'drawn' : ''} ${sel2 ? 'sel' : ''} ${exposed ? (red ? 'myjust' : 'myexp') : ''} ${onClick ? 'clk' : ''}`}
           disabled={!onClick} onClick={onClick}>{t.j ? '-' : t.n}</button>
         {t.up && <span className={`dvt-dot ${red ? 'bad' : 'exposed'}`} />}
       </span>
@@ -432,7 +435,7 @@ export default function Davinci() {
   let banner = null
   if (jokerToPlace) banner = { tile: { ...jokerToPlace, up: true }, title: '조커(-)를 뽑았어요', sub: '내 코드에 배치할 위치를 정해 주세요' }
   else if (drawnMine && (v.phase === 'guess' || v.phase === 'decide')) banner = { tile: { ...drawnMine, up: true }, title: '더미에서 뽑아서 배치했어요', sub: myTurn ? '상대방의 타일을 하나 선택해서 추측해 주세요' : `${opp.name} 님 차례예요` }
-  else if (v.drawn?.hidden) banner = { hidden: true, title: `${opp.name} 님이 뽑는 중…`, sub: '' }
+  else if (v.drawn?.hidden) banner = { back: v.drawn.c || 'b', title: `${opp.name} 님이 타일을 뽑았어요`, sub: '내 코드를 추측하는 중이에요' }
   else if (v.phase === 'setup') {
     const jk = v.myHand.find((t) => t.j)
     banner = v.mySetupDone
@@ -457,7 +460,7 @@ export default function Davinci() {
       <div className="om-head">
         <button type="button" className="om-icon-btn" aria-label="나가기" onClick={() => navigate(-1)}><CloseIcon /></button>
         <div className="om-title">다빈치 코드</div>
-        {v.status !== 'ended' && <span className={`dv-turnpill ${myTurn ? 'on' : ''}`}>{myTurn ? <><span className="om-sub-dot" /> 내 차례</> : '상대 차례'}</span>}
+        {v.status !== 'ended' && <button type="button" className="dv-resign" disabled={busy} onClick={() => { if (window.confirm('기권할까요? 상대가 승리합니다.')) act('resign') }}>기권</button>}
       </div>
 
       <div className="dv-body">
@@ -475,6 +478,7 @@ export default function Davinci() {
         {banner && (
           <div className="dvc-banner">
             {banner.tile ? <span className={`dvt ${banner.tile.c === 'b' ? 'blk' : 'wht'} lg`}>{banner.tile.j ? '-' : banner.tile.n}</span>
+              : banner.back ? <span className={`dvt ${banner.back === 'b' ? 'blk' : 'wht'} back lg`}><PawMini /></span>
               : banner.hidden ? <span className="dvt blk back lg"><PawMini /></span> : banner.plain ? null : <span className="dvc-banner-ic">🎴</span>}
             <div className="dvc-banner-tx"><b>{banner.title}</b>{banner.sub && <span>{banner.sub}</span>}</div>
           </div>
@@ -490,6 +494,7 @@ export default function Davinci() {
         {/* 하단 패널 */}
         {v.status !== 'ended' && (
           <div className="dv-panel">
+            {!myTurn && v.phase !== 'setup' && <div className="dv-wait">상대방이 추측하는 동안 기다려요…</div>}
             {v.phase === 'setup' && !v.mySetupDone && <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>{v.myHand.some((t) => t.j) ? '배치 완료' : '확인'}</button>}
             {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
             {myTurn && v.phase === 'decide' && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
@@ -498,11 +503,11 @@ export default function Davinci() {
                 <div className="dv-guess-q">선택한 {sel + 1}번째 타일은 무엇일까요?</div>
                 <div className="dv-vals">
                   {Array.from({ length: 12 }).map((_, n) => (
-                    <button key={n} type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === String(n) ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
+                    <button key={n} type="button" className={`dv-val ${guessVal === String(n) ? 'on' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
                   ))}
-                  <button type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === 'joker' ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal('joker')}>-</button>
+                  <button type="button" className={`dv-val ${guessVal === 'joker' ? 'on' : ''}`} onClick={() => setGuessVal('joker')}>-</button>
                 </div>
-                <button type="button" className={`dv-cbtn ${tgtBlack ? 'blk' : 'wht'} ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy} onClick={() => act('guess', { pos: sel, val: guessVal })}>추측하기</button>
+                <button type="button" className={`dv-cbtn ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy} onClick={() => act('guess', { pos: sel, val: guessVal })}>추측하기</button>
               </div>
             )}
           </div>

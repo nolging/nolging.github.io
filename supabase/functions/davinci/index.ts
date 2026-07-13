@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       myHand: amPlayer ? (s.hands?.[me] || []) : [],
       oppHand,
       deckCount: s.deck?.length || 0,
-      drawn: amPlayer && s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile, placed: !!s.drawn.placed, slot: s.drawn.slot } : { hidden: true, uid: s.drawn.uid }) : null,
+      drawn: amPlayer && s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile, placed: !!s.drawn.placed, slot: s.drawn.slot } : { hidden: true, uid: s.drawn.uid, c: s.drawn.tile.c }) : null,
       myToPlace: (amPlayer && s.toPlace?.[me] || []).map((x) => ({ ...x })),
       mySetupDone: !!(amPlayer && s.setupDone?.[me]),
       oppSetupDone: opp ? !!(s.setupDone?.[opp]) : false,
@@ -378,7 +378,7 @@ Deno.serve(async (req) => {
         const val = String(p.val)
         const correct = val === 'joker' ? !!target.j : (!target.j && target.n === Number(val))
         const label = val === 'joker' ? '조커' : val
-        s.lastGuess = { by: caller, pos, val, correct }
+        s.lastGuess = { by: caller, pos, targetId: target.id, val, correct }
         if (correct) {
           target.up = true
           s.lastReveal = { uid: opp, id: target.id, ok: true }
