@@ -202,7 +202,7 @@ export default function CatchMind() {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
-    const fit = () => { const el = playRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }
+    const fit = () => { const el = playRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.style.top = (vv.offsetTop || 0) + 'px' }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     const t = setTimeout(fit, 300)
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); clearTimeout(t) }
@@ -281,8 +281,9 @@ export default function CatchMind() {
         </div>
         <form className="om-chat-input" onSubmit={sendLobbyChat}>
           <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
-            onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
-          <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
+            onFocus={() => playRef.current?.classList.add('om-kbd')}
+            onBlur={() => setTimeout(() => playRef.current?.classList.remove('om-kbd'), 150)} />
+          <button type="submit" className="om-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
         </form>
       </div>
     )

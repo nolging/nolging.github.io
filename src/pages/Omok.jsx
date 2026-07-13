@@ -192,7 +192,7 @@ export default function Omok() {
   // 키보드가 올라와도 입력창이 보이게: 루트 높이를 실제 보이는 뷰포트에 맞춤
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
-    const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }
+    const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.style.top = (vv.offsetTop || 0) + 'px' }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
   }, [])
@@ -257,8 +257,9 @@ export default function Omok() {
       </div>
       <form className="om-chat-input" onSubmit={sendChat}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
-          onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
-        <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
+          onFocus={() => rootRef.current?.classList.add('om-kbd')}
+          onBlur={() => setTimeout(() => rootRef.current?.classList.remove('om-kbd'), 150)} />
+        <button type="submit" className="om-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
       </form>
     </div>
   )

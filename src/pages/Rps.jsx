@@ -158,7 +158,7 @@ export default function Rps() {
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid, emit])
 
-  useEffect(() => { const vv = window.visualViewport; if (!vv) return; const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }; fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) } }, [])
+  useEffect(() => { const vv = window.visualViewport; if (!vv) return; const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.style.top = (vv.offsetTop || 0) + 'px' }; fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) } }, [])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
   useEffect(() => { if (g.phase !== 'play') return; const t = setInterval(() => setNow(Date.now()), 100); return () => clearInterval(t) }, [g.phase, g.round])
   // 마감 시간 지나면 판정(양쪽 각자)
@@ -213,8 +213,9 @@ export default function Rps() {
       </div>
       <form className="om-chat-input" onSubmit={sendChat}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
-          onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
-        <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
+          onFocus={() => rootRef.current?.classList.add('om-kbd')}
+          onBlur={() => setTimeout(() => rootRef.current?.classList.remove('om-kbd'), 150)} />
+        <button type="submit" className="om-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
       </form>
     </div>
   )

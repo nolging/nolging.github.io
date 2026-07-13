@@ -53,6 +53,8 @@ export default function Davinci() {
   const chatEndRef = useRef(null)
   const rootRef = useRef(null)
   const seenPeers = useRef(new Set())
+  const stakeTimer = useRef(0)
+  const pendingStake = useRef(null)
 
   const ping = useCallback(() => { chanRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} }) }, [])
   const pushChat = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
@@ -80,6 +82,37 @@ export default function Davinci() {
     } catch (e) { setErr(e.message || '오류') }
     finally { setBusy(false) }
   }, [ping])
+
+  // 로비 조작(자리/베팅)은 즉시 로컬 반영 후 서버는 백그라운드로 동기화 → 반응 빠르게
+  const bgAct = useCallback((action, payload = {}) => {
+    const mid = matchRef.current; if (!mid) return
+    davinci(action, { matchId: mid, ...payload })
+      .then((r) => { setV(r); ping() })
+      .catch((e) => { setErr(e.message || '오류'); refresh() })
+  }, [ping, refresh])
+
+  const toggleSeat = useCallback((idx) => {
+    const cur = vRef.current; if (!cur || cur.status !== 'lobby') return
+    const seats = [...(cur.seats || [null, null])]
+    if (seats[idx] === uid) seats[idx] = null
+    else if (!seats[idx]) {
+      if (!(cur.stakeOk?.[uid] ?? (cur.myBalance >= (cur.stake || 0)))) { setErr('보유 츄르가 판돈보다 적어요.'); return }
+      const at = seats.indexOf(uid); if (at >= 0) seats[at] = null
+      seats[idx] = uid
+    } else return   // 남의 자리
+    setV((prev) => ({ ...prev, seats })); setErr('')
+    bgAct('seat', { idx })
+  }, [uid, bgAct])
+
+  const changeStakeOptim = useCallback((d) => {
+    setV((prev) => {
+      const stake = Math.max(0, Math.min(20, (prev.stake || 0) + d))
+      pendingStake.current = stake
+      return { ...prev, stake }
+    })
+    clearTimeout(stakeTimer.current)
+    stakeTimer.current = setTimeout(() => { if (pendingStake.current != null) bgAct('stake', { stake: pendingStake.current }) }, 280)
+  }, [bgAct])
 
   useEffect(() => {
     if (!groupId || !uid) return
@@ -122,7 +155,7 @@ export default function Davinci() {
   // 키보드 위에 입력창 유지 + 채팅 자동 스크롤
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
-    const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }
+    const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.style.top = (vv.offsetTop || 0) + 'px' }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
   }, [])
@@ -153,8 +186,9 @@ export default function Davinci() {
       </div>
       <form className="om-chat-input" onSubmit={sendChat}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
-          onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
-        <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
+          onFocus={() => rootRef.current?.classList.add('om-kbd')}
+          onBlur={() => setTimeout(() => rootRef.current?.classList.remove('om-kbd'), 150)} />
+        <button type="submit" className="om-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
       </form>
     </div>
   )
@@ -175,21 +209,19 @@ export default function Davinci() {
         </div>
       )
     }
-    const changeStake = (d) => act('stake', { stake: Math.max(0, Math.min(20, (v.stake || 0) + d)) })
     const seats = v.seats
     const bothSeated = seats[0] && seats[1] && seats[0] !== seats[1]
-    const iSeated = seats.includes(uid)
     const memCount = (v.members || []).length
     // 빈 자리는 누구나 탭해서 선점, 내 자리는 다시 탭해서 비우기
     const seat = (idx) => {
       const su = seats[idx]
       const mine = su === uid
       const afford = su ? v.stakeOk?.[su] : canAfford
-      const clickable = !busy && (mine || (!su && canAfford))
+      const clickable = mine || (!su && canAfford)
       return (
         <div className={`om-seat ${su ? 'taken dv-rdy' : 'empty'} ${mine ? 'mine' : ''}`}
           role="button" tabIndex={0}
-          onClick={() => { if (clickable) act('seat', { idx }) }}>
+          onClick={() => { if (clickable) toggleSeat(idx) }}>
           <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '선공' : '후공'}</span></div>
           {su
             ? <><LobbyAvatar name={nameOf(su)} avatar={avatarOf(su)} /><div className="om-seat-name">{nameOf(su)}{mine && <span className="om-badge-me">나</span>}</div></>
@@ -213,9 +245,9 @@ export default function Davinci() {
         </div>
         <div className="om-bet">
           <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 내 보유 {v.myBalance}</div></div>
-          <button type="button" className="om-bet-btn" onClick={() => !busy && changeStake(-5)} aria-label="줄이기">−</button>
+          <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(-5)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{v.stake}</span>
-          <button type="button" className="om-bet-btn" onClick={() => !busy && changeStake(5)} aria-label="늘리기">+</button>
+          <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(5)} aria-label="늘리기">+</button>
         </div>
         <div className="om-start-wrap">
           <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated || busy} onClick={() => act('start')}>
