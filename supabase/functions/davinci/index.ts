@@ -4,22 +4,23 @@
 // 숨은 정보 게임이라 비밀 상태(각자 타일 숫자, 더미)는 이 함수(service_role)만 접근.
 // 클라이언트는 자기 것 + 공개된 것만 view 로 받음. 츄르 베팅 정산도 여기서 처리.
 //
+// 자리(선공/후공)는 대기실에서 자유롭게 선점한다. 3인 이상 그룹도 가능하며,
+// 두 자리를 먼저 맡은 두 명이 대국하고 나머지는 관전한다.
+//
 // ── 배포 (둘 중 하나) ──────────────────────────────────────────
 // A) 대시보드 에디터(권장, CLI 불필요):
-//    Supabase 대시보드 → Edge Functions → "Deploy a new function" →
-//    이름 davinci → 이 파일 전체를 붙여넣기 → Deploy.
+//    Supabase 대시보드 → Edge Functions → davinci → 이 파일 전체를 붙여넣기 → Deploy.
 //    (Verify JWT 는 켠 채로 두면 됨. SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
 //     시크릿은 런타임에 자동 주입되므로 따로 등록 안 해도 됨.)
 // B) CLI:  supabase functions deploy davinci
 //
-// 단일 파일 + 외부 의존성은 아래 esm.sh import 하나뿐 → 에디터 붙여넣기로 충분.
-//
 // action:
 //  open        {groupId}            현재/신규 로비 반환
 //  view        {matchId}            내 시점 상태 재조회
-//  stake       {matchId, stake}     로비에서 판돈 설정(ready 초기화)
-//  ready       {matchId, ready}     준비 토글(판돈보다 보유가 적으면 준비 불가)
-//  start       {matchId}            둘 다 준비 시 대국 시작(딜)
+//  stake       {matchId, stake}     로비에서 판돈 설정(못 내는 자리 자동 해제)
+//  seat        {matchId, idx}       자리(0=선공/1=후공) 선점 토글
+//  unseat      {matchId}            내 자리 비우기(대기실 이탈용)
+//  start       {matchId}            두 자리가 차면 대국 시작(딜)
 //  place       {matchId, slot}      조커를 내 줄 slot 위치에 배치
 //  guess       {matchId, pos, val}  상대 pos 타일을 val(0~11 | 'joker')로 추리
 //  decide      {matchId, cont}      정답 후 계속(true)/멈춤(false)
@@ -58,7 +59,7 @@ function insertNumbered(hand, tile) {
   return i
 }
 const other = (s, uid) => s.players.find((p) => p.uid !== uid).uid
-const nameOf = (s, uid) => (s.players.find((p) => p.uid === uid) || {}).name || '?'
+const nameOf = (s, uid) => ((s.players || []).find((p) => p.uid === uid) || (s.members || []).find((p) => p.uid === uid) || {}).name || '?'
 function eliminated(s, uid) {
   if ((s.toPlace[uid] || []).length) return false
   const h = s.hands[uid] || []
@@ -69,6 +70,9 @@ function beginTurn(s) {
   s.phase = 'guess'
 }
 function log(s, t) { s.log.push({ t }); if (s.log.length > 40) s.log.shift() }
+function freshLobby(mem) {
+  return { members: mem, seats: [null, null], players: [], phase: 'lobby', log: [], hands: {}, deck: [], toPlace: {}, drawn: null, turn: null, first: null, winner: null }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -107,10 +111,12 @@ Deno.serve(async (req) => {
 
   async function viewOf(row, me) {
     const s = row.state || {}
-    const opp = s.players ? other(s, me) : null
+    const members = s.members || []
+    const amPlayer = (s.players || []).some((pl) => pl.uid === me)
+    const opp = amPlayer ? other(s, me) : null
     const myBal = await balanceOf(me)
     const stakeOk = {}
-    if (s.players) for (const pl of s.players) stakeOk[pl.uid] = (pl.uid === me ? myBal : await balanceOf(pl.uid)) >= (row.stake || 0)
+    for (const pl of members) stakeOk[pl.uid] = (pl.uid === me ? myBal : await balanceOf(pl.uid)) >= (row.stake || 0)
     const reveal = row.status === 'ended'   // 종료 시 상대 패까지 공개
     const setup = s.phase === 'setup'
     // 숨긴 타일엔 id/숫자 미노출. '새로 추가(직전 턴에 들어온 타일)' 만 new 플래그로 표시.
@@ -120,20 +126,22 @@ Deno.serve(async (req) => {
       return base
     }
     // 정렬 단계에는 상대에게 내 손패를 아예 안 보여줌(조커 위치 이동을 못 보게) → 중립 placeholder
-    const oppHand = opp
+    const oppHand = (amPlayer && opp)
       ? (setup ? (s.hands?.[opp] || []).map(() => ({ placeholder: true })) : (s.hands?.[opp] || []).map(hideTile))
       : []
     return {
       matchId: row.id, status: row.status, stake: row.stake, winner: row.winner,
       phase: s.phase || 'lobby', turn: s.turn || null, first: s.first || null,
+      members, seats: s.seats || [null, null],
       players: s.players || [], ready: s.ready || {},
+      spectator: row.status !== 'lobby' && !amPlayer,
       meUid: me, oppUid: opp,
-      myHand: s.hands?.[me] || [],
+      myHand: amPlayer ? (s.hands?.[me] || []) : [],
       oppHand,
       deckCount: s.deck?.length || 0,
-      drawn: s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile } : { hidden: true, uid: s.drawn.uid }) : null,
-      myToPlace: (s.toPlace?.[me] || []).map((x) => ({ ...x })),
-      mySetupDone: !!(s.setupDone?.[me]),
+      drawn: amPlayer && s.drawn ? (s.drawn.uid === me ? { ...s.drawn.tile } : { hidden: true, uid: s.drawn.uid }) : null,
+      myToPlace: (amPlayer && s.toPlace?.[me] || []).map((x) => ({ ...x })),
+      mySetupDone: !!(amPlayer && s.setupDone?.[me]),
       oppSetupDone: opp ? !!(s.setupDone?.[opp]) : false,
       log: s.log || [],
       lastGuess: s.lastGuess || null,
@@ -186,20 +194,29 @@ Deno.serve(async (req) => {
       const groupId = p.groupId
       const mem = await membersOf(groupId)
       if (!mem.find((x) => x.uid === caller)) return json({ error: '이 그룹의 멤버가 아니에요.' }, 403)
-      if (mem.length !== 2) return json({ error: '2인 그룹에서만 플레이할 수 있어요.' }, 400)
+      if (mem.length < 2) return json({ error: '두 명 이상 있어야 플레이할 수 있어요.' }, 400)
       if (!(await isPremium(groupId))) return json({ error: '프리미엄 그룹 전용 기능이에요.' }, 403)
       const { data: rows } = await admin.from('davinci_matches').select('*')
         .eq('group_id', groupId).neq('status', 'cancelled').order('created_at', { ascending: false }).limit(1)
       let row = rows?.[0]
       if (!row) {
-        const s0 = { players: mem, ready: {}, phase: 'lobby', log: [], hands: {}, deck: [], toPlace: {}, drawn: null, turn: null, first: null, winner: null }
         const { data: ins, error: ie } = await admin.from('davinci_matches')
-          .insert({ group_id: groupId, status: 'lobby', stake: 5, state: s0 }).select('*').single()
+          .insert({ group_id: groupId, status: 'lobby', stake: 5, state: freshLobby(mem) }).select('*').single()
         if (ie) return json({ error: ie.message }, 500)
         row = ins
-      } else if (row.state?.players?.length !== 2) {
-        // 멤버 정보 최신화
-        row.state.players = mem
+      } else if (row.status === 'ended') {
+        // 지난 대국이 종료된 채 남아 있으면 열 때 새 로비로 초기화(같은 row 재사용)
+        const s0 = freshLobby(mem)
+        const { data: row2 } = await admin.from('davinci_matches')
+          .update({ status: 'lobby', winner: null, state: s0, updated_at: new Date().toISOString() })
+          .eq('id', row.id).select('*').single()
+        row = row2 || { ...row, status: 'lobby', winner: null, state: s0 }
+      } else if (row.status === 'lobby') {
+        // 멤버/좌석 최신화
+        row.state = row.state || {}
+        row.state.members = mem
+        if (!Array.isArray(row.state.seats)) row.state.seats = [null, null]
+        if (!Array.isArray(row.state.players)) row.state.players = []
         await admin.from('davinci_matches').update({ state: row.state }).eq('id', row.id)
       }
       return json(await viewOf(row, caller))
@@ -211,64 +228,87 @@ Deno.serve(async (req) => {
     if (action === 'view') {
       const { data: row } = await admin.from('davinci_matches').select('*').eq('id', matchId).maybeSingle()
       if (!row) return json({ error: '경기를 찾을 수 없어요.' }, 404)
-      if (!row.state?.players?.find((x) => x.uid === caller)) return json({ error: '참가자가 아니에요.' }, 403)
+      const inGame = row.state?.members?.find((x) => x.uid === caller) || row.state?.players?.find((x) => x.uid === caller)
+      if (!inGame) return json({ error: '참가자가 아니에요.' }, 403)
       return json(await viewOf(row, caller))
     }
 
-    const isPlayer = (s) => s.players?.find((x) => x.uid === caller)
+    const isMember = (s) => (s.members || []).some((x) => x.uid === caller) || (s.players || []).some((x) => x.uid === caller)
+    const isPlayer = (s) => (s.players || []).some((x) => x.uid === caller)
 
     if (action === 'reset') {
       const { data: cur } = await admin.from('davinci_matches').select('*').eq('id', matchId).single()
       if (!cur) return json({ error: '경기를 찾을 수 없어요.' }, 404)
-      if (!cur.state?.players?.find((x) => x.uid === caller)) return json({ error: '참가자가 아니에요.' }, 403)
-      const mem = cur.state?.players?.length === 2 ? cur.state.players : await membersOf(cur.group_id)
-      const s0 = { players: mem, ready: {}, phase: 'lobby', log: [], hands: {}, deck: [], toPlace: {}, drawn: null, turn: null, first: null, winner: null }
+      if (!isMember(cur.state || {})) return json({ error: '참가자가 아니에요.' }, 403)
+      const mem = await membersOf(cur.group_id)
       const { data: row2 } = await admin.from('davinci_matches')
-        .update({ status: 'lobby', winner: null, state: s0, updated_at: new Date().toISOString() })
+        .update({ status: 'lobby', winner: null, state: freshLobby(mem), updated_at: new Date().toISOString() })
         .eq('id', matchId).select('*').single()
       return json(await viewOf(row2, caller))
     }
 
     const row = await withMatch(matchId, async (s, m) => {
-      if (!isPlayer(s)) throw new Error('참가자가 아니에요.')
+      if (!isMember(s)) throw new Error('이 그룹의 멤버가 아니에요.')
 
+      // ---- 로비 액션 (멤버 누구나) ----
       if (action === 'stake') {
         if (m.status !== 'lobby') throw new Error('로비에서만 판돈을 바꿀 수 있어요.')
         const v = Math.max(0, Math.min(1000, Math.floor(Number(p.stake) || 0)))
-        m.stake = v; s.ready = {}
+        m.stake = v
+        // 판돈보다 보유가 적은 자리는 자동 해제
+        s.seats = s.seats || [null, null]
+        for (let i = 0; i < s.seats.length; i++) { const uid = s.seats[i]; if (uid && (await balanceOf(uid)) < v) s.seats[i] = null }
         return
       }
-      if (action === 'ready') {
-        if (m.status !== 'lobby') throw new Error('로비에서만 준비할 수 있어요.')
-        if (p.ready) { if ((await balanceOf(caller)) < m.stake) throw new Error('보유 츄르가 판돈보다 적어요.') ; s.ready[caller] = true }
-        else delete s.ready[caller]
+      if (action === 'seat') {
+        if (m.status !== 'lobby') throw new Error('로비에서만 자리를 정할 수 있어요.')
+        s.seats = s.seats || [null, null]
+        const idx = Number(p.idx) === 1 ? 1 : 0
+        if (s.seats[idx] === caller) { s.seats[idx] = null; return }   // 내 자리 → 비우기
+        if (s.seats[idx]) throw new Error('이미 다른 사람이 앉았어요.')
+        if ((await balanceOf(caller)) < (m.stake || 0)) throw new Error('보유 츄르가 판돈보다 적어요.')
+        const o = idx === 0 ? 1 : 0
+        if (s.seats[o] === caller) s.seats[o] = null   // 두 자리 동시 점유 불가
+        s.seats[idx] = caller
+        return
+      }
+      if (action === 'unseat') {
+        if (m.status === 'lobby' && Array.isArray(s.seats)) s.seats = s.seats.map((x) => (x === caller ? null : x))
         return
       }
       if (action === 'start') {
         if (m.status !== 'lobby') throw new Error('이미 시작됐어요.')
-        if (!s.players.every((pl) => s.ready[pl.uid])) throw new Error('두 명 모두 준비해야 시작할 수 있어요.')
-        for (const pl of s.players) if ((await balanceOf(pl.uid)) < m.stake) throw new Error(`${pl.name} 님의 보유 츄르가 부족해요.`)
+        const seats = s.seats || [null, null]
+        const [a, b] = seats
+        if (!a || !b || a === b) throw new Error('두 자리가 모두 차야 시작할 수 있어요.')
+        if (!seats.includes(caller)) throw new Error('자리에 앉은 사람만 시작할 수 있어요.')
+        const pa = (s.members || []).find((x) => x.uid === a)
+        const pb = (s.members || []).find((x) => x.uid === b)
+        if (!pa || !pb) throw new Error('자리 정보를 확인할 수 없어요.')
+        for (const pl of [pa, pb]) if ((await balanceOf(pl.uid)) < m.stake) throw new Error(`${pl.name} 님의 보유 츄르가 부족해요.`)
+        s.players = [pa, pb]   // index 0 = 선공
         const deck = shuffle(makeDeck())
         s.hands = {}; s.toPlace = {}; s.setupDone = {}
         for (const pl of s.players) {
           const drawn = deck.splice(0, 4)
-          const hand = drawn.filter((t) => !t.j).sort((a, b) => tileKey(a) - tileKey(b))
+          const hand = drawn.filter((t) => !t.j).sort((x, y) => tileKey(x) - tileKey(y))
           // 조커도 처음부터 손패에 포함(개수 항상 4장). 기본 위치는 랜덤 → 소유자가 정렬 단계에서 옮김.
           for (const jt of drawn.filter((t) => t.j)) hand.splice(Math.floor(Math.random() * (hand.length + 1)), 0, { ...jt, up: false })
           s.hands[pl.uid] = hand
-          s.toPlace[pl.uid] = []   // 대국 중 뽑은 조커 배치용(초기엔 비움)
+          s.toPlace[pl.uid] = []
         }
         s.deck = deck
-        s.first = s.players[Math.floor(Math.random() * 2)].uid
+        s.first = a   // 선공 = 0번 자리
         s.turn = s.first
         s.drawn = null; s.lastGuess = null; s.lastReveal = null; s.lastAddedId = null; s.settled = false; s.settledAmount = undefined
         s.log = [{ t: `대국 시작! ${nameOf(s, s.first)} 님 선공` }]
         m.status = 'playing'
-        s.phase = 'setup'   // 둘 다 정렬(조커 위치) 확인해야 대국 시작
+        s.phase = 'setup'
         return
       }
 
       if (m.status !== 'playing') throw new Error('진행 중인 대국이 아니에요.')
+      if (!isPlayer(s)) throw new Error('관전 중이에요 — 대국이 끝나면 참여할 수 있어요.')
 
       // 정렬 단계: 내 조커를 원하는 위치로 이동 (턴과 무관, 양쪽 동시 가능)
       if (action === 'arrange') {
@@ -302,7 +342,7 @@ Deno.serve(async (req) => {
         const placed = { ...item.tile, up: item.up }
         hand.splice(slot, 0, placed)
         s.lastAddedId = placed.id
-        if (item.up) log(s, `${nameOf(s, caller)} 님이 조커(-) 공개`)   // 오답 공개만 로그(뒷면 배치는 비공개)
+        if (item.up) log(s, `${nameOf(s, caller)} 님이 조커(-) 공개`)
         s.turn = other(s, caller); beginTurn(s)
         return
       }
@@ -323,7 +363,7 @@ Deno.serve(async (req) => {
         s.lastGuess = { by: caller, pos, val, correct }
         if (correct) {
           target.up = true
-          s.lastReveal = { uid: opp, id: target.id, ok: true }   // 내가 맞힌 상대 타일(초록)
+          s.lastReveal = { uid: opp, id: target.id, ok: true }
           log(s, `✅ ${nameOf(s, caller)}: ${nameOf(s, opp)}의 ${pos + 1}번 = ${label} 정답!`)
           if (eliminated(s, opp)) { await settle(m, s, caller); return }
           s.phase = 'decide'
@@ -332,11 +372,11 @@ Deno.serve(async (req) => {
           if (s.drawn) {
             const t = { ...s.drawn.tile, up: true }
             s.drawn = null
-            s.lastReveal = { uid: caller, id: t.id, ok: false }   // 오답으로 공개된 내 뽑은 타일(빨강)
+            s.lastReveal = { uid: caller, id: t.id, ok: false }
             if (t.j) { s.toPlace[caller] = [{ tile: t, up: true, reason: 'draw' }]; s.phase = 'place' }
             else { insertNumbered(s.hands[caller], t); s.lastAddedId = t.id; s.turn = opp; beginTurn(s) }
           } else {
-            s.phase = 'selfreveal'   // 더미 없음 → 내 타일 공개
+            s.phase = 'selfreveal'
           }
         }
         return

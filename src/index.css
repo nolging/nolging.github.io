@@ -2579,6 +2579,11 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dv-seat-st { font-size: 11.5px; font-weight: 700; color: #b0b0b8; }
 .dv-seat-st.on { color: #7363e8; }
 .dv-seat-st.short { color: #d4577a; }
+.dv-spectate { margin: 16px 20px 4px; background: #fff; border-radius: 20px; padding: 22px 16px; box-shadow: 0 4px 16px rgba(25,23,34,.05); flex-shrink: 0; }
+.dv-spectate-vs { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.dv-spectate-p { display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 13px; font-weight: 800; color: #191722; }
+.dv-spectate-x { font-size: 13px; font-weight: 800; color: #b0b0b8; }
+.dv-spectate-tx { margin-top: 16px; text-align: center; font-size: 13px; font-weight: 600; color: #8b8798; line-height: 1.7; }
 .dv-turnpill { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700;
   color: #8b8798; background: #f3f3f5; border-radius: 999px; padding: 5px 12px; }
 .dv-turnpill.on { color: #7363e8; background: #eeebfe; }

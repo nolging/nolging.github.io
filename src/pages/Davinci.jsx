@@ -112,9 +112,9 @@ export default function Davinci() {
     ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid }).catch(() => {}) })
     return () => {
       alive = false
-      // 대기실에서 게임 시작 전에 벗어나면 내 자리(준비)를 서버에서도 해제
+      // 대기실에서 게임 시작 전에 벗어나면 내 자리를 서버에서도 해제
       const cur = vRef.current
-      if (cur && cur.status === 'lobby' && cur.ready?.[uid] && matchRef.current) davinci('ready', { matchId: matchRef.current, ready: false }).catch(() => {})
+      if (cur && cur.status === 'lobby' && cur.seats?.includes(uid) && matchRef.current) davinci('unseat', { matchId: matchRef.current }).catch(() => {})
       supabase.removeChannel(ch); chanRef.current = null
     }
   }, [groupId, uid, refresh, pushChat])
@@ -133,14 +133,13 @@ export default function Davinci() {
 
   const me = v.players.find((p) => p.uid === v.meUid) || {}
   const opp = v.players.find((p) => p.uid === v.oppUid) || {}
-  const iReady = !!v.ready[v.meUid]
-  const oppReady = !!v.ready[v.oppUid]
   const myTurn = v.turn === v.meUid
-  const canAfford = v.stakeOk?.[v.meUid]
+  const canAfford = v.stakeOk?.[uid] ?? (v.myBalance >= (v.stake || 0))
 
-  // 채팅 이름/아바타는 v.players 에서 uid 로 조회(아이디 노출 방지)
-  const nameOf = (u) => v.players.find((p) => p.uid === u)?.name || '멤버'
-  const avatarOf = (u) => v.players.find((p) => p.uid === u)?.avatar || null
+  // 이름/아바타는 멤버 목록에서 uid 로 조회(아이디 노출 방지)
+  const roster = (v.members && v.members.length ? v.members : v.players) || []
+  const nameOf = (u) => roster.find((p) => p.uid === u)?.name || v.players.find((p) => p.uid === u)?.name || '멤버'
+  const avatarOf = (u) => roster.find((p) => p.uid === u)?.avatar ?? v.players.find((p) => p.uid === u)?.avatar ?? null
 
   const chatBox = (
     <div className="om-chat">
@@ -162,25 +161,40 @@ export default function Davinci() {
 
   // ---- 로비 (14e) ----
   if (v.status === 'lobby') {
-    const changeStake = (d) => act('stake', { stake: Math.max(0, Math.min(20, (v.stake || 0) + d)) })
-    const bothReady = iReady && oppReady
-    // 준비(참여) 탭 전에는 자리를 비워 둔다(프로필·닉네임 미표시). 준비 = 자리에 앉음.
-    const seat = (idx) => {
-      const pl = v.players[idx]
-      const mine = pl?.uid === v.meUid
-      const joined = pl && v.ready[pl.uid]           // 준비완료 = 참여(자리 점유)
-      const afford = pl && v.stakeOk?.[pl.uid]
-      const canJoin = mine && (iReady || canAfford)
+    // 구버전 함수(좌석 미지원) 감지 → 재배포 안내
+    if (!Array.isArray(v.seats)) {
       return (
-        <div className={`om-seat ${joined ? 'taken dv-rdy' : 'empty'} ${mine ? 'mine' : ''}`}
+        <div className="om-root om-lobby" ref={rootRef}>
+          <div className="om-head">
+            <button type="button" className="om-icon-btn" aria-label="뒤로" onClick={() => navigate(-1)}><BackIcon /></button>
+            <div className="om-title">다빈치 코드</div><span className="om-pill">대기실</span>
+          </div>
+          <div className="dv-msg" style={{ margin: 'auto', textAlign: 'center', lineHeight: 1.6 }}>
+            서버 업데이트를 적용하는 중이에요.<br />잠시 후 다시 들어와 주세요. 🐾
+          </div>
+        </div>
+      )
+    }
+    const changeStake = (d) => act('stake', { stake: Math.max(0, Math.min(20, (v.stake || 0) + d)) })
+    const seats = v.seats
+    const bothSeated = seats[0] && seats[1] && seats[0] !== seats[1]
+    const iSeated = seats.includes(uid)
+    const memCount = (v.members || []).length
+    // 빈 자리는 누구나 탭해서 선점, 내 자리는 다시 탭해서 비우기
+    const seat = (idx) => {
+      const su = seats[idx]
+      const mine = su === uid
+      const afford = su ? v.stakeOk?.[su] : canAfford
+      const clickable = !busy && (mine || (!su && canAfford))
+      return (
+        <div className={`om-seat ${su ? 'taken dv-rdy' : 'empty'} ${mine ? 'mine' : ''}`}
           role="button" tabIndex={0}
-          onClick={() => { if (canJoin && !busy) act('ready', { ready: !iReady }) }}>
-          <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '⚡ 선공' : '후공'}</span></div>
-          {joined
-            ? <><LobbyAvatar name={pl.name} avatar={pl.avatar} /><div className="om-seat-name">{pl.name}{mine && <span className="om-badge-me">나</span>}</div>
-                <div className="dv-seat-st on">준비완료</div></>
+          onClick={() => { if (clickable) act('seat', { idx }) }}>
+          <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '선공' : '후공'}</span></div>
+          {su
+            ? <><LobbyAvatar name={nameOf(su)} avatar={avatarOf(su)} /><div className="om-seat-name">{nameOf(su)}{mine && <span className="om-badge-me">나</span>}</div></>
             : <><span className="om-seat-empty"><PersonIcon /></span>
-                <div className="om-seat-wait">{mine ? (afford ? '탭해서 참여' : '보유 부족') : '대기 중'}</div></>}
+                <div className="om-seat-wait">{afford ? '탭해서 참여' : '보유 부족'}</div></>}
         </div>
       )
     }
@@ -189,12 +203,13 @@ export default function Davinci() {
         <div className="om-head">
           <button type="button" className="om-icon-btn" aria-label="뒤로" onClick={() => navigate(-1)}><BackIcon /></button>
           <div className="om-title">다빈치 코드</div><span className="om-pill">대기실</span>
+          {memCount > 2 && <span className="cm-count">👥 {memCount}</span>}
           <button type="button" className="om-icon-btn om-help" aria-label="게임 룰" onClick={() => setRuleOn(true)}>?</button>
         </div>
         {chatBox}
         <div className="om-seats">
           <div className="om-seats-row">{seat(0)}{seat(1)}</div>
-          <div className="om-seats-hint">내 자리를 <b>탭</b>해서 참여하세요 · 선공이 먼저 추측해요</div>
+          <div className="om-seats-hint">빈 자리를 <b>탭</b>해서 참여하세요 · 선공이 먼저 추측해요{memCount > 2 ? ' · 먼저 앉은 두 명이 대결해요' : ''}</div>
         </div>
         <div className="om-bet">
           <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 내 보유 {v.myBalance}</div></div>
@@ -203,12 +218,37 @@ export default function Davinci() {
           <button type="button" className="om-bet-btn" onClick={() => !busy && changeStake(5)} aria-label="늘리기">+</button>
         </div>
         <div className="om-start-wrap">
-          <button type="button" className={`om-start ${bothReady ? 'on' : ''}`} disabled={!bothReady || busy} onClick={() => act('start')}>
-            {bothReady ? '게임 시작' : '둘 다 준비되면 시작할 수 있어요'}
+          <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated || busy} onClick={() => act('start')}>
+            {bothSeated ? '게임 시작' : '두 자리가 다 차면 시작할 수 있어요'}
           </button>
         </div>
         {err && <div className="dv-err" style={{ position: 'absolute', bottom: 8, left: 20, right: 20 }}>{err}</div>}
         {ruleOn && <DvRuleModal onClose={() => setRuleOn(false)} />}
+      </div>
+    )
+  }
+
+  // ---- 관전 (자리를 못 잡은 3번째+ 멤버: 대국이 끝나면 대기실로 자동 복귀) ----
+  if (v.spectator) {
+    const [pa, pb] = v.players || []
+    return (
+      <div className="om-root om-lobby" ref={rootRef}>
+        <div className="om-head">
+          <button type="button" className="om-icon-btn" aria-label="뒤로" onClick={() => navigate(-1)}><BackIcon /></button>
+          <div className="om-title">다빈치 코드</div><span className="om-pill">관전</span>
+        </div>
+        <div className="dv-spectate">
+          <div className="dv-spectate-vs">
+            <div className="dv-spectate-p"><LobbyAvatar name={pa?.name} avatar={pa?.avatar} size={56} /><span>{pa?.name || '?'}</span></div>
+            <span className="dv-spectate-x">VS</span>
+            <div className="dv-spectate-p"><LobbyAvatar name={pb?.name} avatar={pb?.avatar} size={56} /><span>{pb?.name || '?'}</span></div>
+          </div>
+          <div className="dv-spectate-tx">
+            {v.status === 'ended' ? '대국이 끝났어요 · 곧 대기실로 돌아가요' : '지금 두 사람이 대국 중이에요'}<br />
+            대국이 끝나면 대기실에서 참여할 수 있어요 🐾
+          </div>
+        </div>
+        {chatBox}
       </div>
     )
   }
