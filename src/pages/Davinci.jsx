@@ -429,7 +429,9 @@ export default function Davinci() {
     const jk = v.myHand.find((t) => t.j)
     banner = v.mySetupDone
       ? { setup: true, title: '상대 준비를 기다리는 중…', sub: '' }
-      : { tile: jk ? { ...jk, up: true } : null, title: '조커(-)를 어디에 둘까요', sub: '조커를 탭한 뒤 굵은 선을 골라 배치하고 완료를 눌러요' }
+      : jk
+        ? { tile: { ...jk, up: true }, title: '조커(-)를 어디에 둘까요', sub: '조커를 탭한 뒤 굵은 선을 골라 배치하고 완료를 눌러요' }
+        : { plain: true, title: '내 코드를 확인해 주세요', sub: '확인 버튼을 누르면 게임을 시작해요' }
   }
   else if (v.phase === 'selfreveal' && myTurn) banner = { setup: true, title: '더미가 비었어요', sub: '공개할 내 타일을 고르세요' }
 
@@ -463,7 +465,7 @@ export default function Davinci() {
         {banner && (
           <div className="dvc-banner">
             {banner.tile ? <span className={`dvt ${banner.tile.c === 'b' ? 'blk' : 'wht'} lg`}>{banner.tile.j ? '-' : banner.tile.n}</span>
-              : banner.hidden ? <span className="dvt blk back lg"><PawMini /></span> : <span className="dvc-banner-ic">🎴</span>}
+              : banner.hidden ? <span className="dvt blk back lg"><PawMini /></span> : banner.plain ? null : <span className="dvc-banner-ic">🎴</span>}
             <div className="dvc-banner-tx"><b>{banner.title}</b>{banner.sub && <span>{banner.sub}</span>}</div>
           </div>
         )}
@@ -478,7 +480,7 @@ export default function Davinci() {
         {/* 하단 패널 */}
         {v.status !== 'ended' && (
           <div className="dv-panel">
-            {v.phase === 'setup' && !v.mySetupDone && <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>배치 완료</button>}
+            {v.phase === 'setup' && !v.mySetupDone && <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>{v.myHand.some((t) => t.j) ? '배치 완료' : '확인'}</button>}
             {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
             {myTurn && v.phase === 'decide' && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
             {myTurn && v.phase === 'guess' && sel != null && (
