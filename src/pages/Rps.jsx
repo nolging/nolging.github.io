@@ -158,7 +158,7 @@ export default function Rps() {
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid, emit])
 
-  useEffect(() => { const vv = window.visualViewport; if (!vv) return; const fit = () => { if (rootRef.current) rootRef.current.style.height = vv.height + 'px' }; fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) } }, [])
+  useEffect(() => { const vv = window.visualViewport; if (!vv) return; const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }; fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) } }, [])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
   useEffect(() => { if (g.phase !== 'play') return; const t = setInterval(() => setNow(Date.now()), 100); return () => clearInterval(t) }, [g.phase, g.round])
   // 마감 시간 지나면 판정(양쪽 각자)

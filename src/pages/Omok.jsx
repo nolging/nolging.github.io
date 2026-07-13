@@ -192,7 +192,7 @@ export default function Omok() {
   // 키보드가 올라와도 입력창이 보이게: 루트 높이를 실제 보이는 뷰포트에 맞춤
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
-    const fit = () => { if (rootRef.current) rootRef.current.style.height = vv.height + 'px' }
+    const fit = () => { const el = rootRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
   }, [])

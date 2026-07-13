@@ -201,12 +201,11 @@ export default function CatchMind() {
   useEffect(() => { if (g.phase !== 'play' || !g.endsAt) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [g.phase, g.endsAt])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
   useEffect(() => {
-    const vv = window.visualViewport, el = playRef.current
-    if (g.phase !== 'play' || !vv || !el) return
-    const fit = () => { el.style.height = vv.height + 'px' }
+    const vv = window.visualViewport; if (!vv) return
+    const fit = () => { const el = playRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.classList.toggle('om-kbd', (window.innerHeight - vv.height) > 120) }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     const t = setTimeout(fit, 300)
-    return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); clearTimeout(t); if (el) el.style.height = '' }
+    return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); clearTimeout(t) }
   }, [g.phase])
 
   function cPos(e) { const r = canvasRef.current.getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))] }
