@@ -331,13 +331,8 @@ export default function Layout() {
       </header>
     )
   } else if (omokMatch) {
-    // 오목: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    topbar = (
-      <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">오목</span>
-      </header>
-    )
+    // 오목: 페이지가 자체 헤더(대기실/게임 단계별)를 그리므로 Layout 상단바는 숨김
+    topbar = null
   } else if (davinciMatch) {
     // 다빈치코드: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
     topbar = (

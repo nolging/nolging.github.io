@@ -359,6 +359,47 @@ end;
 $$;
 grant execute on function public.award_omok(uuid, uuid) to authenticated;
 
+-- ---- 오목 베팅 정산: 패자→승자 츄르 이전(게임당 1회, 멱등) ----
+-- 하루 1회 보상(award_omok) 대신 베팅으로 전환. 승자 클라이언트가 game_id 로 호출.
+create table if not exists public.omok_settlements (
+  game_id    text primary key,
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  winner     uuid not null references public.profiles(id) on delete cascade,
+  loser      uuid not null references public.profiles(id) on delete cascade,
+  bet        int  not null,
+  created_at timestamptz not null default now()
+);
+alter table public.omok_settlements enable row level security;
+
+create or replace function public.omok_settle(p_group_id uuid, p_game_id text, p_winner uuid, p_loser uuid, p_bet int)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_bal int; v_amt int; v_done public.omok_settlements;
+begin
+  if auth.uid() is null or auth.uid() not in (p_winner, p_loser) then
+    return jsonb_build_object('ok', false, 'reason', 'forbidden'); end if;
+  if not public.is_group_member(p_group_id, p_winner) or not public.is_group_member(p_group_id, p_loser) then
+    return jsonb_build_object('ok', false, 'reason', 'not_member'); end if;
+  if p_winner = p_loser then return jsonb_build_object('ok', false, 'reason', 'same'); end if;
+  -- 멱등: 이미 정산됐으면 그 결과 그대로 반환
+  select * into v_done from public.omok_settlements where game_id = p_game_id;
+  if found then return jsonb_build_object('ok', true, 'already', true, 'bet', v_done.bet); end if;
+  v_amt := greatest(0, coalesce(p_bet, 0));
+  if v_amt > 0 then
+    select coalesce(sum(delta), 0) into v_bal from public.coin_ledger where user_id = p_loser;
+    v_amt := least(v_amt, greatest(0, v_bal));   -- 패자 잔액 한도까지만
+  end if;
+  insert into public.omok_settlements(game_id, group_id, winner, loser, bet)
+    values (p_game_id, p_group_id, p_winner, p_loser, v_amt);
+  if v_amt > 0 then
+    insert into public.coin_ledger(user_id, delta, reason, ref_type) values
+      (p_winner, v_amt, '오목 베팅 승리', 'omok'),
+      (p_loser, -v_amt, '오목 베팅 패배', 'omok');
+  end if;
+  return jsonb_build_object('ok', true, 'bet', v_amt);
+end;
+$$;
+grant execute on function public.omok_settle(uuid, text, uuid, uuid, int) to authenticated;
+
 -- 오목 진행 상태 저장(이어하기). 공개 정보라 그룹 멤버가 직접 읽고 쓸 수 있음.
 create table if not exists public.omok_matches (
   group_id   uuid primary key references public.groups(id) on delete cascade,

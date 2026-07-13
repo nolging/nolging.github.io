@@ -117,6 +117,19 @@ export async function awardOmok(groupId, winnerId) {
   return data || { ok: false }
 }
 
+// 오목 베팅 정산: 패자→승자 츄르 이전(게임당 1회, 멱등). 승자 클라이언트가 호출.
+// 반환: { ok, bet, already? } / RPC 미배포 시 { ok:false, reason:'missing' }
+export async function settleOmok(groupId, gameId, winnerId, loserId, bet) {
+  const { data, error } = await supabase.rpc('omok_settle', {
+    p_group_id: groupId, p_game_id: gameId, p_winner: winnerId, p_loser: loserId, p_bet: bet,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /omok_settle/.test(error.message || '')) return { ok: false, reason: 'missing' }
+    throw error
+  }
+  return data || { ok: false }
+}
+
 // ---- 함께 퍼즐 (프리미엄 그룹 실시간 직소) ----------------------
 export async function getGroupPuzzle(groupId) {
   const { data, error } = await supabase.from('group_puzzles').select('*').eq('group_id', groupId).maybeSingle()
