@@ -146,6 +146,14 @@ export default function Rps() {
       if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${membersRef.current[key]?.name || '누군가'} 님 등장! 🐾` }])
     })
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } } setPeers(map) })
+    ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      if (key === uid) return
+      seenPeers.current.delete(key)
+      if (gRef.current.phase !== 'lobby') return
+      const nm = membersRef.current[key]?.name || peersRef.current[key]?.name || leftPresences?.[0]?.name || '누군가'
+      setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
+      setLob((l) => (l.seats.includes(key) ? { ...l, seats: l.seats.map((s) => (s === key ? null : s)) } : l))
+    })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { retrack(); setTimeout(() => emit('lobby_req', {}), 200) } })
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid, emit])

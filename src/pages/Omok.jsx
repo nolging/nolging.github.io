@@ -171,6 +171,20 @@ export default function Omok() {
       for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } }
       setPeers(map)
     })
+    ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      if (key === uid) return
+      seenPeers.current.delete(key)
+      if (gRef.current.phase !== 'lobby') return
+      const nm = membersRef.current[key]?.name || peersRef.current[key]?.name || leftPresences?.[0]?.name || '누군가'
+      pushSys(`${nm} 님 퇴장 👋`)
+      setG((s) => {
+        if (s.phase !== 'lobby') return s
+        let n = s
+        if (s.black?.uid === key) n = { ...n, black: null }
+        if (s.white?.uid === key) n = { ...n, white: null }
+        return n
+      })
+    })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { retrack(); setTimeout(() => emit('lobby_req', {}), 200) } })
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [groupId, uid, setG, pushSys, emit])

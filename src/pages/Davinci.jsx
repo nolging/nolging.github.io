@@ -37,6 +37,7 @@ export default function Davinci() {
 
   const navigate = useNavigate()
   const [v, setV] = useState(null)
+  const vRef = useRef(v); vRef.current = v
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [sel, setSel] = useState(null)       // 추리 대상 상대 pos
@@ -99,8 +100,23 @@ export default function Davinci() {
       seenPeers.current.add(key)
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: key }])
     })
+    ch.on('presence', { event: 'leave' }, ({ key }) => {
+      if (key === uid) return
+      seenPeers.current.delete(key)
+      if (vRef.current?.status !== 'lobby') return
+      setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, leaveUid: key }])
+      // 떠난 상대가 서버측 준비(자리)를 해제할 시간을 준 뒤 상태를 다시 불러온다
+      setTimeout(() => refresh(), 300)
+      setTimeout(() => refresh(), 1100)
+    })
     ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid }).catch(() => {}) })
-    return () => { alive = false; supabase.removeChannel(ch); chanRef.current = null }
+    return () => {
+      alive = false
+      // 대기실에서 게임 시작 전에 벗어나면 내 자리(준비)를 서버에서도 해제
+      const cur = vRef.current
+      if (cur && cur.status === 'lobby' && cur.ready?.[uid] && matchRef.current) davinci('ready', { matchId: matchRef.current, ready: false }).catch(() => {})
+      supabase.removeChannel(ch); chanRef.current = null
+    }
   }, [groupId, uid, refresh, pushChat])
 
   // 키보드 위에 입력창 유지 + 채팅 자동 스크롤
@@ -130,7 +146,7 @@ export default function Davinci() {
     <div className="om-chat">
       <div className="om-chat-scroll">
         {chat.map((m) => m.sys
-          ? <div key={m.id} className="om-chat-sys">{nameOf(m.joinUid)} 님 등장! 🐾</div>
+          ? <div key={m.id} className="om-chat-sys">{m.leaveUid ? `${nameOf(m.leaveUid)} 님 퇴장 👋` : `${nameOf(m.joinUid)} 님 등장! 🐾`}</div>
           : m.uid === uid
             ? <div key={m.id} className="om-chat-row om-me"><span className="om-bubble om-me">{m.text}</span></div>
             : <div key={m.id} className="om-chat-row"><LobbyAvatar name={nameOf(m.uid)} avatar={avatarOf(m.uid)} size={26} /><div className="om-chat-msg"><span className="om-chat-nm">{nameOf(m.uid)}</span><span className="om-bubble">{m.text}</span></div></div>)}
