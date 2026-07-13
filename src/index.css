@@ -2457,17 +2457,19 @@ button.mlist-row:hover { background: #f6f5fa; }
 .om-chat-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
 .om-chat-sys { align-self: center; background: #e7e5f0; color: #8b8798; font-size: 11px; font-weight: 700;
   border-radius: 999px; padding: 4px 12px; }
-.om-chat-row { display: flex; align-items: flex-start; gap: 7px; }
-.om-chat-row.me { flex-direction: row-reverse; }
+.om-chat-row { display: flex !important; align-items: flex-start; gap: 7px; }
+.om-chat-row.om-me { flex-direction: row-reverse; }
 .om-chat-msg { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .om-chat-nm { font-size: 10.5px; font-weight: 700; color: #8b8798; padding-left: 3px; }
-.om-bubble { background: #fff; border-radius: 4px 14px 14px 14px; padding: 8px 11px; font-size: 12.5px; color: #191722;
+.om-bubble { background: #fff; border-radius: 4px 14px 14px 14px; padding: 8px 11px; font-size: 12.5px; font-weight: 500; color: #191722;
   line-height: 1.4; word-break: break-word; max-width: 230px; }
-.om-bubble.me { background: #eeebfe; border-radius: 14px 4px 14px 14px; }
-.om-chat-input { margin-top: 10px; display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 999px;
-  padding: 8px 8px 8px 14px; flex-shrink: 0; }
+.om-bubble.om-me { background: #eeebfe; border-radius: 14px 4px 14px 14px; }
+.om-chat-input { margin-top: 10px; display: flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px;
+  padding: 5px 5px 5px 14px; flex-shrink: 0; }
 .om-chat-input input { font-family: inherit; flex: 1; border: none; background: transparent; outline: none;
-  font-size: 13px; color: #191722; min-width: 0; }
+  font-size: 13px; color: #191722; min-width: 0; height: 30px; }
+/* 대기실은 키보드가 올라오면 입력창이 보이도록 스크롤 가능하게 */
+.om-lobby, .cm-lobby, .rps-lobby { overflow-y: auto; }
 .om-send { width: 30px; height: 30px; border: none; border-radius: 50%; background: #7363e8; display: inline-flex;
   align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 .om-send:active { transform: scale(.92); }

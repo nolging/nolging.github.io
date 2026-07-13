@@ -175,6 +175,7 @@ export default function CatchMind() {
       setMembers(mm)
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
+      if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }]) }
     }).catch(() => {})
     getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
     ;['lobby', 'lobby_req', 'chat', 'game_start', 'turn_start', 'stroke', 'guess', 'turn_end', 'award']
@@ -267,12 +268,13 @@ export default function CatchMind() {
           {chat.map((m) => m.sys
             ? <div key={m.id} className="om-chat-sys">{m.text}</div>
             : m.uid === uid
-              ? <div key={m.id} className="om-chat-row me"><span className="om-bubble me">{m.text}</span></div>
+              ? <div key={m.id} className="om-chat-row om-me"><span className="om-bubble om-me">{m.text}</span></div>
               : <div key={m.id} className="om-chat-row"><Av name={nameOf(m.uid)} avatar={memberAvatar(m.uid)} size={26} /><div className="om-chat-msg"><span className="om-chat-nm">{nameOf(m.uid)}</span><span className="om-bubble">{m.text}</span></div></div>)}
           <div ref={chatEndRef} />
         </div>
         <form className="om-chat-input" onSubmit={sendLobbyChat}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
+            onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
           <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
         </form>
       </div>

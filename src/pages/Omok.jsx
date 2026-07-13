@@ -155,6 +155,7 @@ export default function Omok() {
       setMembers(mm)
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
+      if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') pushSys(`${myName.current} 님 등장! 🐾`) }
     }).catch(() => {})
     getOmokState(groupId).then((s) => { if (s && (s.phase === 'play' || s.phase === 'ended')) setG(s) }).catch(() => {})
     ;['chat', 'lobby', 'lobby_req', 'game_start', 'move', 'resign', 'settle', 'rematch', 'reset']
@@ -236,12 +237,13 @@ export default function Omok() {
         {chat.map((m) => m.sys
           ? <div key={m.id} className="om-chat-sys">{m.text}</div>
           : m.uid === uid
-            ? <div key={m.id} className="om-chat-row me"><span className="om-bubble me">{m.text}</span></div>
+            ? <div key={m.id} className="om-chat-row om-me"><span className="om-bubble om-me">{m.text}</span></div>
             : <div key={m.id} className="om-chat-row"><Avatar name={m.name} avatar={m.avatar} size={26} /><div className="om-chat-msg"><span className="om-chat-nm">{m.name}</span><span className="om-bubble">{m.text}</span></div></div>)}
         <div ref={chatEndRef} />
       </div>
       <form className="om-chat-input" onSubmit={sendChat}>
-        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
+          onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
         <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
       </form>
     </div>

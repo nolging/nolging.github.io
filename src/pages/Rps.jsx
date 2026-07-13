@@ -135,7 +135,10 @@ export default function Rps() {
     const ch = supabase.channel(`rps:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
     const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
-    getGroupMemberMap(groupId).then((mm) => { setMembers(mm); if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar } retrack() }).catch(() => {})
+    getGroupMemberMap(groupId).then((mm) => {
+      setMembers(mm); if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar } retrack()
+      if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }]) }
+    }).catch(() => {})
     ;['lobby', 'lobby_req', 'chat', 'start', 'pick', 'next', 'settle', 'reset'].forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
     ch.on('presence', { event: 'join' }, ({ key }) => {
       if (key === uid || seenPeers.current.has(key)) return
@@ -196,12 +199,13 @@ export default function Rps() {
         {chat.map((m) => m.sys
           ? <div key={m.id} className="om-chat-sys">{m.text}</div>
           : m.uid === uid
-            ? <div key={m.id} className="om-chat-row me"><span className="om-bubble me">{m.text}</span></div>
+            ? <div key={m.id} className="om-chat-row om-me"><span className="om-bubble om-me">{m.text}</span></div>
             : <div key={m.id} className="om-chat-row"><Av name={memberName(m.uid)} avatar={memberAvatar(m.uid)} size={26} /><div className="om-chat-msg"><span className="om-chat-nm">{memberName(m.uid)}</span><span className="om-bubble">{m.text}</span></div></div>)}
         <div ref={chatEndRef} />
       </div>
       <form className="om-chat-input" onSubmit={sendChat}>
-        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
+          onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ block: 'center' }), 300)} />
         <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
       </form>
     </div>
