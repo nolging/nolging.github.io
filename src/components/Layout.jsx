@@ -129,6 +129,7 @@ export default function Layout() {
   const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false })
   const player = {
     playTrack: (t) => playerRef.current?.play(t),
+    prewarm: (kind) => playerRef.current?.prewarm(kind),
     current: nowPlaying.current,
     playing: nowPlaying.playing,
   }

@@ -1,5 +1,6 @@
 // 카세트(음악) — 실제 재생은 전역 미니 플레이어(MiniPlayer)가 담당.
 // 여기서는 "이 곡을 전역 플레이어로 재생" 트리거 + 현재 재생상태 반영만 한다.
+import { useEffect } from 'react'
 import { safeUrl } from '../lib/safeUrl'
 
 export function parseMusicUrl(url) {
@@ -15,6 +16,11 @@ const PauseIcon = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="c
 
 export default function MusicPlayer({ url, player }) {
   const parsed = parseMusicUrl(url)
+  // 음악 카드가 뜨면 플레이어를 미리 준비(prewarm) → 탭 시 제스처 안에서 바로 재생(iOS 무음 방지)
+  useEffect(() => {
+    if (parsed && player?.prewarm) player.prewarm(parsed.kind)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url])
   if (!parsed) {
     const safe = safeUrl(url)
     return safe

@@ -52,22 +52,31 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   useEffect(() => { onState?.({ current: track, playing }) }, [track, playing, onState])
 
   // ---- 유튜브 ----
+  function ytStateEvents(YT) {
+    return {
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PLAYING) setPlaying(true)
+        else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
+      },
+    }
+  }
   function ytPlay(id) {
+    // 이미 생성(prewarm)된 플레이어면 '탭 제스처 안에서 동기 재생' → iOS 자동재생 차단 회피.
+    // (탭 후 비동기로 플레이어를 만들면 제스처가 만료돼 소리가 안 남)
+    if (ytRef.current && ytRef.current.loadVideoById) {
+      ytRef.current.loadVideoById(id)
+      ytRef.current.playVideo?.()
+      return
+    }
+    // 폴백: 아직 없으면 API 로드 후 생성(최초 1회). onReady 에서 재생.
     loadYT().then((YT) => {
       if (ytRef.current && ytRef.current.loadVideoById) {
-        ytRef.current.loadVideoById(id)
-        ytRef.current.playVideo?.()
+        ytRef.current.loadVideoById(id); ytRef.current.playVideo?.()
       } else {
         ytRef.current = new YT.Player(ytHostRef.current, {
           videoId: id,
           playerVars: { playsinline: 1, rel: 0 },
-          events: {
-            onReady: (e) => e.target.playVideo(),
-            onStateChange: (e) => {
-              if (e.data === YT.PlayerState.PLAYING) setPlaying(true)
-              else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
-            },
-          },
+          events: { onReady: (e) => e.target.playVideo(), ...ytStateEvents(YT) },
         })
       }
     }).catch(() => {})
@@ -114,6 +123,19 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
       ytStop(); scStop()                                    // 다른 곡 → 기존 정지
       setTrack(t); setPlaying(true)                         // 낙관적 표시
       if (t.kind === 'youtube') ytPlay(t.id); else scPlay(t.url)
+    },
+    // 음악 카드가 화면에 뜰 때 미리 호출 → 재생 버튼 탭 시 제스처 안에서 바로 소리가 나게.
+    // 유튜브: idle 플레이어를 미리 만들어 두어, 탭 시 loadVideoById+playVideo 를 동기 실행.
+    prewarm(kind) {
+      if (kind === 'soundcloud') { loadSC().catch(() => {}); return }
+      loadYT().then((YT) => {
+        if (!ytRef.current && ytHostRef.current) {
+          ytRef.current = new YT.Player(ytHostRef.current, {
+            playerVars: { playsinline: 1, rel: 0 },
+            events: ytStateEvents(YT),
+          })
+        }
+      }).catch(() => {})
     },
     close,
   }), [])
