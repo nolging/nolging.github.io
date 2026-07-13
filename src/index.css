@@ -2507,6 +2507,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .om-bet-btn { width: 34px; height: 34px; border: none; border-radius: 50%; background: #f3f3f5; color: #191722;
   font-size: 18px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
 .om-bet-btn:active { transform: scale(.9); }
+.om-bet-btn:disabled { opacity: .38; cursor: default; transform: none; }
 .om-bet-val { min-width: 40px; text-align: center; font-size: 20px; font-weight: 800; color: #191722; }
 
 /* start */

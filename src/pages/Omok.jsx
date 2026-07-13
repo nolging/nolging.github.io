@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getGroupMemberMap, settleOmok, getOmokState, saveOmokState } from '../lib/api'
+import { getGroupMemberMap, settleOmok, getOmokState, saveOmokState, getMyCoinBalance } from '../lib/api'
 
 const N = 15
 const GAP = 28, MARGIN = 22
@@ -54,6 +54,8 @@ export default function Omok() {
   const membersRef = useRef(members); membersRef.current = members
   const myName = useRef(profile?.login_id || '')
   const myAvatar = useRef(profile?.avatar_url || null)
+  const [myBal, setMyBal] = useState(0)
+  const myBalRef = useRef(0)
 
   const [g, setGraw] = useState({
     phase: 'lobby', board: emptyBoard(), turn: 1, black: null, white: null, bet: 5,
@@ -76,6 +78,13 @@ export default function Omok() {
 
   const myColor = g.black?.uid === uid ? 1 : g.white?.uid === uid ? 2 : 0
   const myTurn = g.phase === 'play' && g.turn === myColor
+
+  // 참여 인원 중 최소 보유 츄르 기준으로 베팅 상한(5단위 내림, 최대 20)
+  const capFromBals = useCallback(() => {
+    const bals = [myBalRef.current, ...Object.values(peersRef.current).map((p) => p.bal)].filter((b) => typeof b === 'number')
+    return bals.length ? Math.max(0, Math.min(MAX_BET, Math.floor(Math.min(...bals) / BET_STEP) * BET_STEP)) : MAX_BET
+  }, [])
+  const betCap = (() => { const bals = [myBal, ...Object.values(peers).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(MAX_BET, Math.floor(Math.min(...bals) / BET_STEP) * BET_STEP)) : MAX_BET })()
 
   const broadcastLobby = useCallback((n) => emit('lobby', { black: n.black, white: n.white, bet: n.bet }), [emit])
 
@@ -150,13 +159,14 @@ export default function Omok() {
     if (!groupId || !uid) return
     const ch = supabase.channel(`omok:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
-    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
+    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current, bal: myBalRef.current }).catch(() => {}) }
     getGroupMemberMap(groupId).then((mm) => {
       setMembers(mm)
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
       if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') pushSys(`${myName.current} 님 등장! 🐾`) }
     }).catch(() => {})
+    getMyCoinBalance().then((b) => { myBalRef.current = b; setMyBal(b); retrack() }).catch(() => {})
     getOmokState(groupId).then((s) => { if (s && (s.phase === 'play' || s.phase === 'ended')) setG(s) }).catch(() => {})
     ;['chat', 'lobby', 'lobby_req', 'game_start', 'move', 'resign', 'settle', 'rematch', 'reset']
       .forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
@@ -168,7 +178,7 @@ export default function Omok() {
     })
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState(), map = {}
-      for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } }
+      for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null, bal: p.bal } }
       setPeers(map)
     })
     ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
@@ -197,6 +207,8 @@ export default function Omok() {
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
   }, [])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+  // 참여 인원 보유 츄르가 바뀌어 상한이 내려가면 베팅도 자동으로 낮춘다
+  useEffect(() => { if (gRef.current.phase === 'lobby' && (gRef.current.bet || 0) > betCap) changeBet(0) }, [betCap])
 
   function sendChat(e) {
     e?.preventDefault?.()
@@ -218,7 +230,7 @@ export default function Omok() {
     })
   }
   function changeBet(delta) {
-    setG((st) => { if (st.phase !== 'lobby') return st; const bet = Math.max(0, Math.min(MAX_BET, (st.bet || 0) + delta)); const n = { ...st, bet }; broadcastLobby(n); return n })
+    setG((st) => { if (st.phase !== 'lobby') return st; const bet = Math.max(0, Math.min(capFromBals(), (st.bet || 0) + delta)); const n = { ...st, bet }; broadcastLobby(n); return n })
   }
   function startGame() {
     const st = gRef.current
@@ -359,10 +371,10 @@ export default function Omok() {
           <div className="om-seats-hint">원하는 돌을 <b>직접 탭</b>해서 자리를 선점하세요</div>
         </div>
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 최대 {betCap}개</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(-BET_STEP)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{g.bet}</span>
-          <button type="button" className="om-bet-btn" onClick={() => changeBet(BET_STEP)} aria-label="늘리기">+</button>
+          <button type="button" className="om-bet-btn" onClick={() => changeBet(BET_STEP)} disabled={g.bet >= betCap} aria-label="늘리기">+</button>
         </div>
         <div className="om-start-wrap">
           <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated} onClick={startGame}>

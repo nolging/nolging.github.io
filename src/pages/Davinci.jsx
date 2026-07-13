@@ -55,6 +55,8 @@ export default function Davinci() {
   const seenPeers = useRef(new Set())
   const stakeTimer = useRef(0)
   const pendingStake = useRef(null)
+  const [peerBals, setPeerBals] = useState({})
+  const peerBalsRef = useRef({}); peerBalsRef.current = peerBals
 
   const ping = useCallback(() => { chanRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} }) }, [])
   const pushChat = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
@@ -83,6 +85,12 @@ export default function Davinci() {
     finally { setBusy(false) }
   }, [ping])
 
+  // 참여(로비) 인원 중 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  const stakeCap = useCallback(() => {
+    const bals = [vRef.current?.myBalance, ...Object.values(peerBalsRef.current)].filter((b) => typeof b === 'number')
+    return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20
+  }, [])
+
   // 로비 조작(자리/베팅)은 즉시 로컬 반영 후 서버는 백그라운드로 동기화 → 반응 빠르게
   const bgAct = useCallback((action, payload = {}) => {
     const mid = matchRef.current; if (!mid) return
@@ -106,19 +114,21 @@ export default function Davinci() {
 
   const changeStakeOptim = useCallback((d) => {
     setV((prev) => {
-      const stake = Math.max(0, Math.min(20, (prev.stake || 0) + d))
+      const stake = Math.max(0, Math.min(stakeCap(), (prev.stake || 0) + d))
       pendingStake.current = stake
       return { ...prev, stake }
     })
     clearTimeout(stakeTimer.current)
     stakeTimer.current = setTimeout(() => { if (pendingStake.current != null) bgAct('stake', { stake: pendingStake.current }) }, 280)
-  }, [bgAct])
+  }, [bgAct, stakeCap])
 
   useEffect(() => {
     if (!groupId || !uid) return
     let alive = true
     davinci('open', { groupId }).then((r) => {
       if (!alive) return; setV(r); matchRef.current = r.matchId
+      // 내 보유 츄르를 프레즌스로 공유(베팅 상한 계산용)
+      chanRef.current?.track({ uid, bal: r.myBalance }).catch(() => {})
       if (!seenPeers.current.has(uid) && r.status === 'lobby') { seenPeers.current.add(uid); setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: uid }]) }
     }).catch((e) => { if (alive) setErr(e.message || '열기 실패') })
     const ch = supabase.channel(`davinci:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
@@ -142,7 +152,8 @@ export default function Davinci() {
       setTimeout(() => refresh(), 300)
       setTimeout(() => refresh(), 1100)
     })
-    ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid }).catch(() => {}) })
+    ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), m = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const bal = st[k][0]?.bal; if (typeof bal === 'number') m[k] = bal } setPeerBals(m) })
+    ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {}) })
     return () => {
       alive = false
       // 대기실에서 게임 시작 전에 벗어나면 내 자리를 서버에서도 해제
@@ -160,6 +171,8 @@ export default function Davinci() {
     return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
   }, [])
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+  // 참여 인원 보유 츄르가 바뀌어 상한이 내려가면 베팅도 자동으로 낮춘다
+  useEffect(() => { const cur = vRef.current; if (cur?.status === 'lobby' && (cur.stake || 0) > stakeCap()) changeStakeOptim(0) }, [peerBals, stakeCap, changeStakeOptim])
 
   if (err && !v) return <div className="page dv-page"><div className="dv-msg">{err}</div></div>
   if (!v) return <div className="page dv-page"><div className="dv-msg">불러오는 중…</div></div>
@@ -212,6 +225,7 @@ export default function Davinci() {
     const seats = v.seats
     const bothSeated = seats[0] && seats[1] && seats[0] !== seats[1]
     const memCount = (v.members || []).length
+    const stakeCapVal = (() => { const bals = [v.myBalance, ...Object.values(peerBals)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
     // 빈 자리는 누구나 탭해서 선점, 내 자리는 다시 탭해서 비우기
     const seat = (idx) => {
       const su = seats[idx]
@@ -244,10 +258,10 @@ export default function Davinci() {
           <div className="om-seats-hint">빈 자리를 <b>탭</b>해서 참여하세요 · 선공이 먼저 추측해요{memCount > 2 ? ' · 먼저 앉은 두 명이 대결해요' : ''}</div>
         </div>
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 내 보유 {v.myBalance}</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 최대 {stakeCapVal}개</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(-5)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{v.stake}</span>
-          <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(5)} aria-label="늘리기">+</button>
+          <button type="button" className="om-bet-btn" onClick={() => changeStakeOptim(5)} disabled={v.stake >= stakeCapVal} aria-label="늘리기">+</button>
         </div>
         <div className="om-start-wrap">
           <button type="button" className={`om-start ${bothSeated ? 'on' : ''}`} disabled={!bothSeated || busy} onClick={() => act('start')}>

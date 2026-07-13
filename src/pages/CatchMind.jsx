@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getGroupMemberMap, getCatchWords, setCatchWords, settleCatchmind } from '../lib/api'
+import { getGroupMemberMap, getCatchWords, setCatchWords, settleCatchmind, getMyCoinBalance } from '../lib/api'
 import { CATCH_WORDS, normWord, wordLen } from '../lib/catchWords'
 
 const TURNS = 5, TURN_SEC = 75, REVEAL_MS = 2800, HINT_AT = 10
@@ -61,6 +61,8 @@ export default function CatchMind() {
   const chatEndRef = useRef(null)
   const myName = useRef(profile?.login_id || '')
   const myAvatar = useRef(profile?.avatar_url || null)
+  const [myBal, setMyBal] = useState(0)
+  const myBalRef = useRef(0)
   const [members, setMembers] = useState({})
   const membersRef = useRef(members); membersRef.current = members
   const drawing = useRef(null)
@@ -170,13 +172,14 @@ export default function CatchMind() {
     if (!groupId || !uid) return
     const ch = supabase.channel(`catch:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
-    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current }).catch(() => {}) }
+    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current, bal: myBalRef.current }).catch(() => {}) }
     getGroupMemberMap(groupId).then((mm) => {
       setMembers(mm)
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
       if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }]) }
     }).catch(() => {})
+    getMyCoinBalance().then((b) => { myBalRef.current = b; setMyBal(b); retrack() }).catch(() => {})
     getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
     ;['lobby', 'lobby_req', 'chat', 'game_start', 'turn_start', 'stroke', 'guess', 'turn_end', 'award']
       .forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
@@ -185,7 +188,7 @@ export default function CatchMind() {
       seenPeers.current.add(key)
       if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${membersRef.current[key]?.name || '누군가'} 님 등장! 🐾` }])
     })
-    ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null } } setPeers(map) })
+    ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), map = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const p = st[k][0] || {}; map[k] = { name: p.name || '?', avatar: p.avatar || null, bal: p.bal } } setPeers(map) })
     ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
       if (key === uid) return
       seenPeers.current.delete(key)
@@ -221,6 +224,10 @@ export default function CatchMind() {
   // ---- 로비 조작 ----
   const presentUids = [...new Set([uid, ...Object.keys(peers)])]
   const isSmall = Math.max(Object.keys(members).length, presentUids.length) <= 2
+  // 참여 인원 중 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
+  const capFromBals = () => { const bals = [myBalRef.current, ...Object.values(peersRef.current).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
+  const betCap = (() => { const bals = [myBal, ...Object.values(peers).map((p) => p.bal)].filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 })()
+  useEffect(() => { if (gRef.current.phase === 'lobby' && (lobRef.current.bet || 0) > betCap) changeBet(0) }, [betCap])
   const parts = lob.participants
   const readySet = new Set(lob.ready)
   const iPart = isSmall ? true : parts.includes(uid)   // 2인 그룹은 자동 참여
@@ -237,7 +244,7 @@ export default function CatchMind() {
       const n = { ...l, participants: p, ready: r }; broadcastLobby(n); return n
     })
   }
-  function changeBet(d) { setLob((l) => { const bet = Math.max(0, Math.min(20, (l.bet || 0) + d)); const n = { ...l, bet }; broadcastLobby(n); return n }) }
+  function changeBet(d) { setLob((l) => { const bet = Math.max(0, Math.min(capFromBals(), (l.bet || 0) + d)); const n = { ...l, bet }; broadcastLobby(n); return n }) }
   function sendLobbyChat(e) {
     e?.preventDefault?.(); const text = draft.trim(); if (!text) return
     const m = { id: uuid(), uid, text }; emit('chat', m); pushChat(m); setDraft('')
@@ -322,10 +329,10 @@ export default function CatchMind() {
           </div>
         )}
         <div className="om-bet">
-          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">1등이 다 가져가요 🐾</div></div>
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">1등이 다 가져가요 🐾 · 최대 {betCap}개</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(-5)} aria-label="줄이기">−</button>
           <span className="om-bet-val">{lob.bet}</span>
-          <button type="button" className="om-bet-btn" onClick={() => changeBet(5)} aria-label="늘리기">+</button>
+          <button type="button" className="om-bet-btn" onClick={() => changeBet(5)} disabled={lob.bet >= betCap} aria-label="늘리기">+</button>
         </div>
         <div className="cm-lobby-btns">
           {!isSmall && !iPart && <button type="button" className="cm-btn primary" onClick={toggleParticipate}>참여하기</button>}
