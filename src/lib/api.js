@@ -83,6 +83,18 @@ export async function awardCatchmind(groupId, winnerIds) {
   return data || { ok: false }
 }
 
+// 캐치마인드 베팅 정산: 참여자 각자 bet, 1등(들)이 판돈 분배(게임당 1회, 멱등). 우승 클라이언트가 호출.
+export async function settleCatchmind(groupId, gameId, participants, winners, bet) {
+  const { data, error } = await supabase.rpc('catchmind_settle', {
+    p_group_id: groupId, p_game_id: gameId, p_participants: participants, p_winners: winners, p_bet: bet,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /catchmind_settle/.test(error.message || '')) return { ok: false, reason: 'missing' }
+    throw error
+  }
+  return data || { ok: false }
+}
+
 // 오목 진행 상태 저장/복구 (이어하기). 테이블 없으면(42P01) 조용히 무시 → 브로드캐스트로만 동작.
 export async function getOmokState(groupId) {
   const { data, error } = await supabase.from('omok_matches').select('state').eq('group_id', groupId).maybeSingle()

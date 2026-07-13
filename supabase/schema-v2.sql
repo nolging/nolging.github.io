@@ -400,6 +400,49 @@ end;
 $$;
 grant execute on function public.omok_settle(uuid, text, uuid, uuid, int) to authenticated;
 
+-- ---- 캐치마인드 베팅 정산: 참여자 각자 bet, 1등(들)이 판돈 분배(게임당 1회, 멱등) ----
+create table if not exists public.catchmind_settlements (
+  game_id    text primary key,
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  bet        int  not null,
+  created_at timestamptz not null default now()
+);
+alter table public.catchmind_settlements enable row level security;
+
+create or replace function public.catchmind_settle(p_group_id uuid, p_game_id text, p_participants uuid[], p_winners uuid[], p_bet int)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_bet int; v_losers uuid[]; v_pot int := 0; v_share int; u uuid; v_bal int; v_paid int;
+begin
+  if auth.uid() is null or not (auth.uid() = any(p_winners)) then return jsonb_build_object('ok', false, 'reason', 'forbidden'); end if;
+  if coalesce(array_length(p_winners, 1), 0) = 0 or coalesce(array_length(p_participants, 1), 0) = 0 then
+    return jsonb_build_object('ok', false, 'reason', 'bad'); end if;
+  if exists (select 1 from public.catchmind_settlements where game_id = p_game_id) then
+    return jsonb_build_object('ok', true, 'already', true); end if;
+  v_bet := greatest(0, coalesce(p_bet, 0));
+  insert into public.catchmind_settlements(game_id, group_id, bet) values (p_game_id, p_group_id, v_bet);
+  if v_bet = 0 then return jsonb_build_object('ok', true, 'bet', 0, 'share', 0); end if;
+  select array_agg(x) into v_losers from unnest(p_participants) x where not (x = any(p_winners));
+  if v_losers is not null then
+    foreach u in array v_losers loop
+      select coalesce(sum(delta), 0) into v_bal from public.coin_ledger where user_id = u;
+      v_paid := least(v_bet, greatest(0, v_bal));
+      if v_paid > 0 then
+        insert into public.coin_ledger(user_id, delta, reason, ref_type) values (u, -v_paid, '캐치마인드 베팅 패배', 'catchmind');
+        v_pot := v_pot + v_paid;
+      end if;
+    end loop;
+  end if;
+  v_share := v_pot / array_length(p_winners, 1);   -- 공동 우승 시 floor 분배(나머지 버림)
+  if v_share > 0 then
+    foreach u in array p_winners loop
+      insert into public.coin_ledger(user_id, delta, reason, ref_type) values (u, v_share, '캐치마인드 베팅 승리', 'catchmind');
+    end loop;
+  end if;
+  return jsonb_build_object('ok', true, 'bet', v_bet, 'pot', v_pot, 'share', v_share, 'n', array_length(p_winners, 1));
+end;
+$$;
+grant execute on function public.catchmind_settle(uuid, text, uuid[], uuid[], int) to authenticated;
+
 -- 오목 진행 상태 저장(이어하기). 공개 정보라 그룹 멤버가 직접 읽고 쓸 수 있음.
 create table if not exists public.omok_matches (
   group_id   uuid primary key references public.groups(id) on delete cascade,
