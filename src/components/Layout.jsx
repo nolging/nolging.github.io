@@ -334,13 +334,8 @@ export default function Layout() {
     // 오목: 페이지가 자체 헤더(대기실/게임 단계별)를 그리므로 Layout 상단바는 숨김
     topbar = null
   } else if (davinciMatch) {
-    // 다빈치코드: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    topbar = (
-      <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">다빈치코드</span>
-      </header>
-    )
+    // 다빈치코드: 페이지가 자체 헤더(대기실/게임 단계별)를 그리므로 Layout 상단바는 숨김
+    topbar = null
   } else if (memberDetailMatch) {
     // 멤버 상세: 좌측 뒤로(직전 페이지). 본인 상세면 우측에 설정(내 정보 수정) 톱니바퀴
     const { groupId: gid, userId: uid } = memberDetailMatch.params

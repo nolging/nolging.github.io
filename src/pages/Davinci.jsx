@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { davinci } from '../lib/api'
+
+const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
+const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
+const CloseIcon = () => <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+const SendIcon = () => <svg width="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
+const PersonIcon = () => <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+function LobbyAvatar({ name, avatar, size = 52 }) {
+  return avatar
+    ? <img className="om-av-img" src={avatar} alt="" style={{ width: size, height: size }} />
+    : <span className="om-av-ini" style={{ width: size, height: size }}>{(name || '?').slice(0, 1)}</span>
+}
 
 // 타일 표시: 색은 공개(뒷면도), 숫자만 숨김. 조커는 공개 시 "-".
 // mine=true 면 내 타일 → 뒷면이라도 내 숫자는 항상 보이고, 상대에게 공개된 건 exposed 표시.
@@ -23,15 +34,30 @@ export default function Davinci() {
   const { profile } = useAuth()
   const uid = profile?.id
 
+  const navigate = useNavigate()
   const [v, setV] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [sel, setSel] = useState(null)       // 추리 대상 상대 pos
   const [moveSel, setMoveSel] = useState(null) // 정렬 단계: 옮길 내 조커 index
+  const [chat, setChat] = useState([])
+  const [draft, setDraft] = useState('')
+  const [ruleOn, setRuleOn] = useState(false)
   const chanRef = useRef(null)
   const matchRef = useRef(null)
+  const chatEndRef = useRef(null)
+  const rootRef = useRef(null)
+  const seenPeers = useRef(new Set())
 
   const ping = useCallback(() => { chanRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} }) }, [])
+  const pushChat = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
+  const sendChat = useCallback((e) => {
+    e?.preventDefault?.()
+    const text = draft.trim(); if (!text) return
+    // 이름/아바타는 수신 측이 v.players 에서 uid 로 조회(아이디 노출 방지) → payload 엔 uid 만
+    const m = { id: uuid(), uid, text }
+    chanRef.current?.send({ type: 'broadcast', event: 'chat', payload: m }); pushChat(m); setDraft('')
+  }, [draft, uid, pushChat])
 
   const refresh = useCallback(async () => {
     const mid = matchRef.current; if (!mid) return
@@ -55,12 +81,27 @@ export default function Davinci() {
     let alive = true
     davinci('open', { groupId }).then((r) => { if (!alive) return; setV(r); matchRef.current = r.matchId })
       .catch((e) => { if (alive) setErr(e.message || '열기 실패') })
-    const ch = supabase.channel(`davinci:${groupId}`, { config: { broadcast: { self: false } } })
+    const ch = supabase.channel(`davinci:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
     ch.on('broadcast', { event: 'sync' }, () => refresh())
-    ch.subscribe()
+    ch.on('broadcast', { event: 'chat' }, ({ payload }) => pushChat(payload))
+    ch.on('presence', { event: 'join' }, ({ key }) => {
+      if (key === uid || seenPeers.current.has(key)) return
+      seenPeers.current.add(key)
+      setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: key }])
+    })
+    ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid }).catch(() => {}) })
     return () => { alive = false; supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, refresh])
+  }, [groupId, uid, refresh, pushChat])
+
+  // 키보드 위에 입력창 유지 + 채팅 자동 스크롤
+  useEffect(() => {
+    const vv = window.visualViewport; if (!vv) return
+    const fit = () => { if (rootRef.current) rootRef.current.style.height = vv.height + 'px' }
+    fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
+    return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit) }
+  }, [])
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
 
   if (err && !v) return <div className="page dv-page"><div className="dv-msg">{err}</div></div>
   if (!v) return <div className="page dv-page"><div className="dv-msg">불러오는 중…</div></div>
@@ -72,49 +113,73 @@ export default function Davinci() {
   const myTurn = v.turn === v.meUid
   const canAfford = v.stakeOk?.[v.meUid]
 
-  // ---- 로비 ----
+  // 채팅 이름/아바타는 v.players 에서 uid 로 조회(아이디 노출 방지)
+  const nameOf = (u) => v.players.find((p) => p.uid === u)?.name || '멤버'
+  const avatarOf = (u) => v.players.find((p) => p.uid === u)?.avatar || null
+
+  const chatBox = (
+    <div className="om-chat">
+      <div className="om-chat-scroll">
+        {chat.map((m) => m.sys
+          ? <div key={m.id} className="om-chat-sys">{nameOf(m.joinUid)} 님 등장! 🐾</div>
+          : m.uid === uid
+            ? <div key={m.id} className="om-chat-row me"><span className="om-bubble me">{m.text}</span></div>
+            : <div key={m.id} className="om-chat-row"><LobbyAvatar name={nameOf(m.uid)} avatar={avatarOf(m.uid)} size={26} /><div className="om-chat-msg"><span className="om-chat-nm">{nameOf(m.uid)}</span><span className="om-bubble">{m.text}</span></div></div>)}
+        <div ref={chatEndRef} />
+      </div>
+      <form className="om-chat-input" onSubmit={sendChat}>
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+        <button type="submit" className="om-send" aria-label="전송"><SendIcon /></button>
+      </form>
+    </div>
+  )
+
+  // ---- 로비 (14e) ----
   if (v.status === 'lobby') {
-    const setStake = (d) => act('stake', { stake: Math.max(0, (v.stake || 0) + d) })
-    return (
-      <div className="page dv-page">
-        <div className="dv-lobby">
-          <div className="dv-title">다빈치코드</div>
-          <div className="dv-sub">숫자 타일을 추리해 상대 걸 모두 공개시키면 승리! 서로 <b>츄르를 걸고</b> 이긴 사람이 판돈을 가져가요.</div>
-
-          <div className="dv-stakebox">
-            <div className="dv-stake-label">판돈 (각자)</div>
-            <div className="dv-stake-ctl">
-              <button type="button" onClick={() => setStake(-5)} disabled={busy || v.stake <= 0}>−5</button>
-              <button type="button" onClick={() => setStake(-1)} disabled={busy || v.stake <= 0}>−1</button>
-              <span className="dv-stake-val">🐾 {v.stake}</span>
-              <button type="button" onClick={() => setStake(1)} disabled={busy}>+1</button>
-              <button type="button" onClick={() => setStake(5)} disabled={busy}>+5</button>
-            </div>
-            <div className="dv-mybal">내 보유: 🐾 {v.myBalance}</div>
-          </div>
-
-          <div className="dv-lobby-players">
-            {v.players.map((pl) => (
-              <div key={pl.uid} className={`dv-lp ${v.ready[pl.uid] ? 'rdy' : ''}`}>
-                <Av name={pl.name} avatar={pl.avatar} />
-                <span className="dv-lp-name">{pl.name}{pl.uid === v.meUid ? ' (나)' : ''}</span>
-                <span className={`dv-lp-state ${v.stakeOk?.[pl.uid] ? '' : 'short'}`}>
-                  {v.ready[pl.uid] ? '준비완료' : v.stakeOk?.[pl.uid] ? '대기중' : '보유 부족'}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <button type="button" className={`dv-ready ${iReady ? 'on' : ''}`} disabled={busy || (!iReady && !canAfford)}
-            onClick={() => act('ready', { ready: !iReady })}>
-            {iReady ? '준비 취소' : canAfford ? '준비' : '보유 츄르 부족'}
-          </button>
-          <button type="button" className="dv-start" disabled={busy || !(iReady && oppReady)} onClick={() => act('start')}>
-            게임 시작
-          </button>
-          {err && <div className="dv-err">{err}</div>}
-          <div className="dv-hint">둘 다 준비해야 시작할 수 있어요. 판돈을 바꾸면 준비가 초기화돼요.</div>
+    const changeStake = (d) => act('stake', { stake: Math.max(0, Math.min(20, (v.stake || 0) + d)) })
+    const bothReady = iReady && oppReady
+    const seat = (idx) => {
+      const pl = v.players[idx]
+      const mine = pl?.uid === v.meUid
+      const rdy = pl && v.ready[pl.uid]
+      const afford = pl && v.stakeOk?.[pl.uid]
+      return (
+        <div className={`om-seat ${pl ? 'taken' : 'empty'} ${mine ? 'mine' : ''} ${rdy ? 'dv-rdy' : ''}`}
+          role="button" tabIndex={0}
+          onClick={() => { if (mine && (iReady || canAfford) && !busy) act('ready', { ready: !iReady }) }}>
+          <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '⚡ 선공' : '후공'}</span></div>
+          {pl
+            ? <><LobbyAvatar name={pl.name} avatar={pl.avatar} /><div className="om-seat-name">{pl.name}{mine && <span className="om-badge-me">나</span>}</div>
+                <div className={`dv-seat-st ${rdy ? 'on' : afford ? '' : 'short'}`}>{rdy ? '준비완료' : !afford ? '보유 부족' : mine ? '탭해서 준비' : '대기 중'}</div></>
+            : <><span className="om-seat-empty"><PersonIcon /></span><div className="om-seat-wait">대기 중</div></>}
         </div>
+      )
+    }
+    return (
+      <div className="om-root om-lobby" ref={rootRef}>
+        <div className="om-head">
+          <button type="button" className="om-icon-btn" aria-label="뒤로" onClick={() => navigate(-1)}><BackIcon /></button>
+          <div className="om-title">다빈치 코드</div><span className="om-pill">대기실</span>
+          <button type="button" className="om-icon-btn om-help" aria-label="게임 룰" onClick={() => setRuleOn(true)}>?</button>
+        </div>
+        {chatBox}
+        <div className="om-seats">
+          <div className="om-seats-row">{seat(0)}{seat(1)}</div>
+          <div className="om-seats-hint">준비 상태를 <b>탭</b>해서 정하세요 · 선공이 먼저 추측해요</div>
+        </div>
+        <div className="om-bet">
+          <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">이긴 사람이 전부 가져가요 🐾 · 내 보유 {v.myBalance}</div></div>
+          <button type="button" className="om-bet-btn" onClick={() => !busy && changeStake(-5)} aria-label="줄이기">−</button>
+          <span className="om-bet-val">{v.stake}</span>
+          <button type="button" className="om-bet-btn" onClick={() => !busy && changeStake(5)} aria-label="늘리기">+</button>
+        </div>
+        <div className="om-start-wrap">
+          <button type="button" className={`om-start ${bothReady ? 'on' : ''}`} disabled={!bothReady || busy} onClick={() => act('start')}>
+            {bothReady ? '게임 시작' : '둘 다 준비되면 시작할 수 있어요'}
+          </button>
+        </div>
+        {err && <div className="dv-err" style={{ position: 'absolute', bottom: 8, left: 20, right: 20 }}>{err}</div>}
+        {ruleOn && <DvRuleModal onClose={() => setRuleOn(false)} />}
       </div>
     )
   }
@@ -167,7 +232,13 @@ export default function Davinci() {
   const drawnTile = v.drawn && !v.drawn.hidden ? v.drawn : null
 
   return (
-    <div className="page dv-page dv-play">
+    <div className="om-root dv-play" ref={rootRef}>
+      <div className="om-head">
+        <button type="button" className="om-icon-btn" aria-label="나가기" onClick={() => navigate(-1)}><CloseIcon /></button>
+        <div className="om-title">다빈치 코드</div>
+        {v.status !== 'ended' && <span className={`dv-turnpill ${myTurn ? 'on' : ''}`}>{myTurn ? <><span className="om-sub-dot" /> 내 차례</> : '상대 차례'}</span>}
+      </div>
+      <div className="dv-body">
       <div className="dv-bar">
         <div className={`dv-pl ${v.turn === v.oppUid ? 'on' : ''}`}>
           <Av name={opp.name} avatar={opp.avatar} /><span className="dv-pl-name">{opp.name}</span>
@@ -229,6 +300,30 @@ export default function Davinci() {
 
       {err && <div className="dv-err">{err}</div>}
       <div className="dv-log">{(v.log || []).slice(-4).map((l, i) => <div key={i} className="dv-log-l">{l.t}</div>)}</div>
+      </div>
+      {ruleOn && <DvRuleModal onClose={() => setRuleOn(false)} />}
+    </div>
+  )
+}
+
+function DvRuleModal({ onClose }) {
+  const rules = [
+    '숫자 타일을 오름차순으로 두고, 같은 숫자면 검정이 왼쪽',
+    '상대 타일 하나를 골라 숫자를 추측해요',
+    '맞히면 그 타일이 공개되고 계속 추측하거나 멈출 수 있어요',
+    '틀리면 방금 뽑은 내 타일이 공개되고 턴이 넘어가요',
+    '조커(-)는 어디든 놓을 수 있어요 · 상대 타일을 모두 공개시키면 승리! 🐾',
+  ]
+  return (
+    <div className="om-modal-back" onClick={onClose}>
+      <div className="om-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="om-modal-head"><div className="om-modal-title">다빈치 코드, 이렇게 해요</div>
+          <button type="button" className="om-icon-btn sm" aria-label="닫기" onClick={onClose}><CloseIcon /></button></div>
+        <div className="om-modal-rules">
+          {rules.map((r, i) => <div key={i} className="om-rule"><span className="om-rule-n">{i + 1}</span>{r}</div>)}
+        </div>
+        <button type="button" className="om-modal-ok" onClick={onClose}>알겠어요</button>
+      </div>
     </div>
   )
 }

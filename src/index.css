@@ -2571,6 +2571,19 @@ button.mlist-row:hover { background: #f6f5fa; }
   font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px; }
 @keyframes om-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes om-pop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ===== 다빈치 대기실/헤더 (om-* 재사용 + dv 보조) ===== */
+.dv-order { font-size: 13.5px; font-weight: 800; color: #191722; }
+.om-seat.dv-rdy { border-color: #7363e8; box-shadow: 0 4px 16px rgba(115,99,232,.16); }
+.dv-seat-st { font-size: 11.5px; font-weight: 700; color: #b0b0b8; }
+.dv-seat-st.on { color: #7363e8; }
+.dv-seat-st.short { color: #d4577a; }
+.dv-turnpill { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700;
+  color: #8b8798; background: #f3f3f5; border-radius: 999px; padding: 5px 12px; }
+.dv-turnpill.on { color: #7363e8; background: #eeebfe; }
+.dv-play.om-root { background: #f6f5f9; }
+.dv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 16px calc(env(safe-area-inset-bottom) + 16px); }
 .gd-davinci-btn { background: #e6e9f2; }
 .gd-davinci-btn:hover { background: #dae0ee; }
 
