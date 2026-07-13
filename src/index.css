@@ -2674,10 +2674,14 @@ button.mlist-row:hover { background: #f6f5fa; }
 .dv-guess { background: #f4f3f7; border-radius: 22px; padding: 16px; }
 .dv-guess-q { text-align: center; font-size: 14px; font-weight: 800; color: #191722; margin-bottom: 12px; }
 .dv-vals { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-bottom: 14px; }
-.dv-val { font-family: inherit; width: 36px; height: 50px; border: 1.5px solid #8b8798; box-sizing: border-box; border-radius: 9px;
-  font-size: 17px; font-weight: 800; color: #fff; background: #8b8798; cursor: pointer; transition: background .12s ease, box-shadow .12s ease; }
+/* 추측 숫자 타일: 선택한 상대 타일 색을 따름(흰↔검), 선택 후 나머지는 회색으로 */
+.dv-val { font-family: inherit; width: 36px; height: 50px; border: 1.5px solid transparent; box-sizing: border-box; border-radius: 9px;
+  font-size: 17px; font-weight: 800; cursor: pointer; transition: background .12s ease, box-shadow .12s ease, color .12s ease; }
 .dv-val:active { transform: scale(.95); }
-.dv-val.on { background: #191722; border-color: #7363e8; box-shadow: 0 4px 12px rgba(115,99,232,.35); }
+.dv-val.blk { background: linear-gradient(160deg, #332e3e, #1d1a26); color: #fff; }
+.dv-val.wht { background: #fff; color: #191722; border-color: #dcd9e4; }
+.dv-val.on { box-shadow: 0 0 0 2.5px #7363e8, 0 4px 12px rgba(115,99,232,.3); }
+.dv-val.dim { background: #d9d6e0 !important; color: #9a95a6 !important; border-color: transparent !important; box-shadow: none; }
 .dv-toast-float { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 20; }
 
 /* ===== 캐치마인드 (14k,14r,14l,14m,14s) ===== */

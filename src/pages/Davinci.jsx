@@ -516,11 +516,11 @@ export default function Davinci() {
                 <div className="dv-guess-q">선택한 {sel + 1}번째 타일은 무엇일까요?</div>
                 <div className="dv-vals">
                   {Array.from({ length: 12 }).map((_, n) => (
-                    <button key={n} type="button" className={`dv-val ${guessVal === String(n) ? 'on' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
+                    <button key={n} type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === String(n) ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
                   ))}
-                  <button type="button" className={`dv-val ${guessVal === 'joker' ? 'on' : ''}`} onClick={() => setGuessVal('joker')}>-</button>
+                  <button type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === 'joker' ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal('joker')}>-</button>
                 </div>
-                <button type="button" className={`dv-cbtn ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy} onClick={() => act('guess', { pos: sel, val: guessVal })}>추측하기</button>
+                <button type="button" className={`dv-cbtn ${tgtBlack ? 'blk' : 'wht'} ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy} onClick={() => act('guess', { pos: sel, val: guessVal })}>추측하기</button>
               </div>
             )}
           </div>
