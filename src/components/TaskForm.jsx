@@ -70,12 +70,15 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
       <div className="cg-form">
         {allowStatus && (
           <div className="cg-field">
-            <div className="cg-label">상태</div>
-            <div className="ts-status-tabs">
+            <div className="cg-label">상태 <span className="cg-req">*</span></div>
+            <div className="tabs ts-status-tabs" role="tablist">
               {TASK_STATUSES.map((s) => (
-                <button type="button" key={s} className={`ts-status-tab ${status === s ? 'active' : ''}`}
+                <button type="button" key={s} role="tab" aria-selected={status === s}
+                  className={`tab ${status === s ? 'active' : ''}`}
                   onClick={() => setStatus(s)}>{terms.status[s]}</button>
               ))}
+              <span className="tab-underline ts-status-pill"
+                style={{ width: 'calc((100% - 8px) / 3)', transform: `translateX(calc(${TASK_STATUSES.indexOf(status)} * 100%))` }} />
             </div>
           </div>
         )}
