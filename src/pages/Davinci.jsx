@@ -456,8 +456,10 @@ export default function Davinci() {
         {/* 상대 코드 */}
         <div className="dvc-card">
           <div className="dvc-head"><LobbyAvatar name={opp.name} avatar={opp.avatar} size={30} /><b>{opp.name} 님의 코드</b>
-            <span className="dvc-count">공개 {oppUp} · 비공개 {v.oppHand.length - oppUp}</span></div>
-          <div className="dvc-row">{v.oppHand.map((t, i) => oppTile(t, i))}</div>
+            {v.phase !== 'setup' && <span className="dvc-count">공개 {oppUp} · 비공개 {v.oppHand.length - oppUp}</span>}</div>
+          {v.phase === 'setup'
+            ? <div className="dvc-setup-wait">세팅 중…</div>
+            : <div className="dvc-row">{v.oppHand.map((t, i) => oppTile(t, i))}</div>}
           {myTurn && v.phase === 'guess' && <div className="dvc-hint">{sel != null ? '선택한 타일의 숫자를 추측해서 제출하세요' : '상대 타일을 하나 선택해서 추측해 주세요'}</div>}
         </div>
 
