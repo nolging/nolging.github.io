@@ -9,6 +9,7 @@ const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="c
 const CloseIcon = () => <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 const SendIcon = () => <svg width="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
 const PersonIcon = () => <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+const PawMini = () => <svg className="dvt-paw" width="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="10" r="1.9" /><circle cx="10" cy="6.6" r="1.9" /><circle cx="14" cy="6.6" r="1.9" /><circle cx="18" cy="10" r="1.9" /><path d="M12 11.2c2.9 0 4.9 2 4.9 4.3 0 1.7-1.4 2.8-2.9 2.3-.9-.3-1.4-.5-2-.5s-1.1.2-2 .5c-1.5.5-2.9-.6-2.9-2.3 0-2.3 2-4.3 4.9-4.3Z" /></svg>
 function LobbyAvatar({ name, avatar, size = 52 }) {
   return avatar
     ? <img className="om-av-img" src={avatar} alt="" style={{ width: size, height: size }} />
@@ -40,6 +41,9 @@ export default function Davinci() {
   const [busy, setBusy] = useState(false)
   const [sel, setSel] = useState(null)       // 추리 대상 상대 pos
   const [moveSel, setMoveSel] = useState(null) // 정렬 단계: 옮길 내 조커 index
+  const [guessVal, setGuessVal] = useState(null) // 추측 값(0~11/joker)
+  const [jokerSlot, setJokerSlot] = useState(null) // 조커 배치 자리
+  const [toast, setToast] = useState('')
   const [chat, setChat] = useState([])
   const [draft, setDraft] = useState('')
   const [ruleOn, setRuleOn] = useState(false)
@@ -69,7 +73,7 @@ export default function Davinci() {
     setBusy(true); setErr('')
     try {
       const r = await davinci(action, { matchId: mid, ...payload })
-      setV(r); setSel(null); setMoveSel(null)
+      setV(r); setSel(null); setMoveSel(null); setGuessVal(null); setJokerSlot(null)
       if (r.matchId) matchRef.current = r.matchId
       ping()
     } catch (e) { setErr(e.message || '오류') }
@@ -85,6 +89,9 @@ export default function Davinci() {
     chanRef.current = ch
     ch.on('broadcast', { event: 'sync' }, () => refresh())
     ch.on('broadcast', { event: 'chat' }, ({ payload }) => pushChat(payload))
+    ch.on('broadcast', { event: 'rematch' }, ({ payload }) => {
+      if (payload?.uid !== uid) { setToast(`${payload?.name || '상대'} 님이 한 판 더 하고 싶대요`); setTimeout(() => setToast(''), 4000) }
+    })
     ch.on('presence', { event: 'join' }, ({ key }) => {
       if (key === uid || seenPeers.current.has(key)) return
       seenPeers.current.add(key)
@@ -187,52 +194,89 @@ export default function Davinci() {
     )
   }
 
-  // ---- 대국/종료 공통: 손패 렌더 ----
-  const gap = (slot, onPick) => <button type="button" className="dv-gap" onClick={() => onPick(slot)} aria-label="여기로" />
+  // ---- 대국/종료 렌더 ----
   const placing = v.phase === 'place' && myTurn && v.myToPlace[0]
   const selfrevealing = v.phase === 'selfreveal' && myTurn
   const setupArrange = v.phase === 'setup' && !v.mySetupDone
-  const iHaveJoker = v.myHand.some((t) => t.j)
+  const lr = v.lastReveal
+  const sortKey = (t) => (t.j ? 999 : t.n * 2 + (t.c === 'w' ? 1 : 0))
 
-  function renderMyHand() {
-    const showGaps = (setupArrange && moveSel != null) || placing
-    const onGap = placing ? (s) => act('place', { slot: s }) : (s) => act('arrange', { from: moveSel, to: s })
-    const items = []
-    for (let i = 0; i < v.myHand.length; i++) {
-      if (showGaps) items.push(<span key={`g${i}`}>{gap(i, onGap)}</span>)
-      const t = v.myHand[i]
-      let onClick = null
-      if (selfrevealing && !t.up) onClick = () => act('selfreveal', { pos: i })
-      else if (setupArrange && t.j) onClick = () => setMoveSel(moveSel === i ? null : i)
-      items.push(<Tile key={`t${i}`} t={t} mine selected={setupArrange && moveSel === i} onClick={onClick} />)
-    }
-    if (showGaps) items.push(<span key="gend">{gap(v.myHand.length, onGap)}</span>)
-    return items
+  // 내 손패(표시용): 뽑은 숫자 타일을 정렬 위치에 삽입 → "방금 뽑음"
+  const drawnMine = v.drawn && !v.drawn.hidden ? v.drawn : null
+  const myTiles = v.myHand.map((t, i) => ({ ...t, idx: i }))
+  if (drawnMine && !drawnMine.j && (v.phase === 'guess' || v.phase === 'decide')) {
+    let pos = myTiles.length
+    for (let i = 0; i < myTiles.length; i++) { if (!myTiles[i].j && sortKey(myTiles[i]) > sortKey(drawnMine)) { pos = i; break } }
+    myTiles.splice(pos, 0, { ...drawnMine, drawn: true, idx: -1 })
   }
-  function renderOppHand() {
-    return v.oppHand.map((t, i) => {
-      if (t.placeholder) return <Tile key={i} t={{ c: 'x', up: false }} />
-      const clickable = myTurn && v.phase === 'guess' && !t.up ? () => setSel(i) : null
-      return <Tile key={i} t={t} onClick={clickable} selected={sel === i} />
-    })
+  const oppUp = v.oppHand.filter((t) => t.up).length
+  const myUp = v.myHand.filter((t) => t.up).length
+
+  const oppTile = (t, i) => {
+    if (t.placeholder) return <span key={i} className="dvt-wrap"><span className="dvt blk back"><PawMini /></span></span>
+    const black = t.c === 'b'
+    const selected = sel === i
+    const green = lr && lr.ok && lr.uid === v.oppUid && lr.id === t.id && t.up
+    const clickable = myTurn && v.phase === 'guess' && !t.up
+    const badge = selected ? { c: 'sel', t: '선택' } : (t.new && !t.up) ? { c: 'new', t: '새로 추가' } : (t.new && t.up ? { c: 'new', t: '새로 추가' } : null)
+    return (
+      <span key={i} className="dvt-wrap">
+        {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
+        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${clickable ? 'clk' : ''}`}
+          disabled={!clickable} onClick={clickable ? () => setSel(i) : undefined}>
+          {t.up ? (t.j ? '-' : t.n) : <PawMini />}
+        </button>
+        {green && <span className="dvt-dot ok" />}
+        {t.new && !green && <span className="dvt-dot new" />}
+      </span>
+    )
+  }
+  const myTile = (t, i) => {
+    const black = t.c === 'b'
+    const red = lr && !lr.ok && lr.uid === v.meUid && lr.id === t.id && t.up
+    let onClick = null, sel2 = false
+    if (setupArrange && t.j && !t.drawn) { onClick = () => setMoveSel(moveSel === t.idx ? null : t.idx); sel2 = moveSel === t.idx }
+    else if (selfrevealing && !t.up && !t.drawn) onClick = () => act('selfreveal', { pos: t.idx })
+    const badge = t.drawn ? { c: 'drawn', t: '방금 뽑음' } : null
+    return (
+      <span key={i} className="dvt-wrap">
+        {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
+        <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.drawn ? 'drawn' : ''} ${sel2 ? 'sel' : ''} ${red ? 'bad lift' : ''} ${onClick ? 'clk' : ''}`}
+          disabled={!onClick} onClick={onClick}>{t.j ? '-' : t.n}</button>
+        {t.up && <span className={`dvt-dot ${red ? 'bad' : 'exposed'}`} />}
+      </span>
+    )
+  }
+  const divider = (slot) => {
+    const active = jokerSlot === slot
+    const onClick = placing ? () => setJokerSlot(slot) : () => act('arrange', { from: moveSel, to: slot })
+    return <button key={`d${slot}`} type="button" className={`dvt-div ${active ? 'on' : 'blink'}`} onClick={onClick} aria-label="여기" />
+  }
+  function renderMyRow() {
+    const showGaps = placing || (setupArrange && moveSel != null)
+    const out = []
+    for (let i = 0; i < myTiles.length; i++) { if (showGaps) out.push(divider(i)); out.push(myTile(myTiles[i], i)) }
+    if (showGaps) out.push(divider(myTiles.length))
+    return out
   }
 
-  const statusText = () => {
-    if (v.status === 'ended') return v.winner === v.meUid ? '🎉 승리!' : `${opp.name} 님 승리`
-    if (v.phase === 'setup') {
-      if (v.mySetupDone) return `${opp.name} 님이 준비하는 중…`
-      if (moveSel != null) return '놓을 위치를 고르세요'
-      return iHaveJoker ? '조커(–)를 눌러 위치를 옮기고, 완료를 누르세요' : '배치를 확인하고 완료를 누르세요'
-    }
-    if (!myTurn) return `${opp.name} 님 차례`
-    if (v.phase === 'guess') return sel != null ? '숫자를 골라 추리하세요' : '상대의 가릴 타일을 고르세요'
-    if (v.phase === 'decide') return '정답! 계속할까요, 멈출까요?'
-    if (v.phase === 'place') return '뽑은 조커를 놓을 위치를 고르세요'
-    if (v.phase === 'selfreveal') return '더미가 비었어요 — 공개할 내 타일을 고르세요'
-    return ''
+  // 중앙 배너
+  const jokerToPlace = placing ? v.myToPlace[0].tile : null
+  let banner = null
+  if (jokerToPlace) banner = { tile: { ...jokerToPlace, up: true }, title: '조커(-)를 뽑았어요', sub: '내 코드에 배치할 위치를 정해 주세요' }
+  else if (drawnMine && (v.phase === 'guess' || v.phase === 'decide')) banner = { tile: { ...drawnMine, up: true }, title: '더미에서 뽑아서 배치했어요', sub: myTurn ? '상대방의 타일을 하나 선택해서 추측해 주세요' : `${opp.name} 님 차례예요` }
+  else if (v.drawn?.hidden) banner = { hidden: true, title: `${opp.name} 님이 뽑는 중…`, sub: '' }
+  else if (v.phase === 'setup') banner = { setup: true, title: v.mySetupDone ? '상대 준비를 기다리는 중…' : '조커 위치를 정하고 배치 완료를 누르세요', sub: '' }
+  else if (v.phase === 'selfreveal' && myTurn) banner = { setup: true, title: '더미가 비었어요', sub: '공개할 내 타일을 고르세요' }
+
+  function rematch() {
+    chanRef.current?.send({ type: 'broadcast', event: 'rematch', payload: { uid, name: me.name } })
+    act('reset')
   }
 
-  const drawnTile = v.drawn && !v.drawn.hidden ? v.drawn : null
+  const iWon = v.status === 'ended' && v.winner === v.meUid
+  const tgt = sel != null ? v.oppHand[sel] : null
+  const tgtBlack = tgt?.c === 'b'
 
   return (
     <div className="om-root dv-play" ref={rootRef}>
@@ -241,69 +285,70 @@ export default function Davinci() {
         <div className="om-title">다빈치 코드</div>
         {v.status !== 'ended' && <span className={`dv-turnpill ${myTurn ? 'on' : ''}`}>{myTurn ? <><span className="om-sub-dot" /> 내 차례</> : '상대 차례'}</span>}
       </div>
+
       <div className="dv-body">
-      <div className="dv-bar">
-        <div className={`dv-pl ${v.turn === v.oppUid ? 'on' : ''}`}>
-          <Av name={opp.name} avatar={opp.avatar} /><span className="dv-pl-name">{opp.name}</span>
-          <span className="dv-pot">🐾 {v.stake}</span>
+        {/* 상대 코드 */}
+        <div className="dvc-card">
+          <div className="dvc-head"><LobbyAvatar name={opp.name} avatar={opp.avatar} size={30} /><b>{opp.name} 님의 코드</b>
+            <span className="dvc-count">공개 {oppUp} · 비공개 {v.oppHand.length - oppUp}</span></div>
+          <div className="dvc-row">{v.oppHand.map((t, i) => oppTile(t, i))}</div>
+          {myTurn && v.phase === 'guess' && <div className="dvc-hint">{sel != null ? '선택한 타일의 숫자를 추측해서 제출하세요' : '상대 타일을 하나 선택해서 추측해 주세요'}</div>}
         </div>
-      </div>
 
-      <div className="dv-hand-area opp">{renderOppHand()}</div>
+        {/* 중앙 배너 */}
+        {banner && (
+          <div className="dvc-banner">
+            {banner.tile ? <span className={`dvt ${banner.tile.c === 'b' ? 'blk' : 'wht'} lg`}>{banner.tile.j ? '-' : banner.tile.n}</span>
+              : banner.hidden ? <span className="dvt blk back lg"><PawMini /></span> : <span className="dvc-banner-ic">🎴</span>}
+            <div className="dvc-banner-tx"><b>{banner.title}</b>{banner.sub && <span>{banner.sub}</span>}</div>
+          </div>
+        )}
 
-      <div className={`dv-status ${myTurn ? 'mine' : ''} ${v.status === 'ended' ? 'end' : ''}`}>{statusText()}</div>
-
-      <div className="dv-center">
-        {drawnTile && <div className="dv-drawn"><span className="dv-drawn-l">뽑은 타일</span><Tile t={{ ...drawnTile, up: true }} /></div>}
-        {v.drawn?.hidden && <div className="dv-drawn dim"><span className="dv-drawn-l">상대가 뽑음</span><Tile t={{ c: 'b', up: false }} /></div>}
-        {v.status !== 'ended' && v.phase !== 'setup' && v.deckCount > 0 && <div className="dv-deck">더미 {v.deckCount}</div>}
-        {v.phase === 'setup' && <div className="dv-deck">{v.mySetupDone ? '상대 준비 대기 중' : '타일을 배치하세요'}</div>}
-      </div>
-
-      <div className="dv-hand-area me">{renderMyHand()}</div>
-
-      {/* 액션 패널 */}
-      {v.status === 'ended' ? (
-        <div className="dv-result">
-          <div className="dv-result-t">{v.winner === v.meUid ? '🎉 승리했어요!' : `${opp.name} 님 승리`}</div>
-          {v.stake > 0 && v.settledAmount != null && (
-            <div className={`dv-result-coin ${v.winner === v.meUid ? 'up' : 'down'}`}>
-              {v.winner === v.meUid ? `🐾 +${v.settledAmount} 츄르` : `🐾 −${v.settledAmount} 츄르`}
-            </div>
-          )}
-          <button type="button" className="dv-again" disabled={busy} onClick={() => act('reset')}>다시 하기</button>
+        {/* 내 코드 */}
+        <div className="dvc-card">
+          <div className="dvc-head"><LobbyAvatar name={me.name} avatar={me.avatar} size={30} /><b>내 코드</b>
+            <span className="dvc-count">공개 {myUp} · 비공개 {v.myHand.length - myUp}</span></div>
+          <div className={`dvc-row ${placing || (setupArrange && moveSel != null) ? 'gapped' : ''}`}>{renderMyRow()}</div>
         </div>
-      ) : (
-        <div className="dv-actions">
-          {v.phase === 'setup' && !v.mySetupDone && (
-            <button type="button" className="dv-start" disabled={busy} onClick={() => act('confirm')}>배치 완료</button>
-          )}
-          {myTurn && v.phase === 'guess' && sel != null && (
-            <div className="dv-guesspanel">
-              <div className="dv-vals">
-                {Array.from({ length: 12 }).map((_, n) => (
-                  <button key={n} type="button" disabled={busy} onClick={() => act('guess', { pos: sel, val: String(n) })}>{n}</button>
-                ))}
-                <button type="button" className="dv-joker" disabled={busy} onClick={() => act('guess', { pos: sel, val: 'joker' })}>조커(-)</button>
+
+        {/* 하단 패널 */}
+        {v.status !== 'ended' && (
+          <div className="dv-panel">
+            {v.phase === 'setup' && !v.mySetupDone && <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>배치 완료</button>}
+            {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
+            {myTurn && v.phase === 'decide' && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
+            {myTurn && v.phase === 'guess' && sel != null && (
+              <div className="dv-guess">
+                <div className="dv-guess-q">선택한 {sel + 1}번째 타일은 무엇일까요?</div>
+                <div className="dv-vals">
+                  {Array.from({ length: 12 }).map((_, n) => (
+                    <button key={n} type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === String(n) ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
+                  ))}
+                  <button type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === 'joker' ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal('joker')}>-</button>
+                </div>
+                <button type="button" className={`dv-cbtn ${tgtBlack ? 'blk' : 'wht'} ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy} onClick={() => act('guess', { pos: sel, val: guessVal })}>추측하기</button>
               </div>
-              <button type="button" className="dv-cancel" onClick={() => setSel(null)}>취소</button>
-            </div>
-          )}
-          {myTurn && v.phase === 'decide' && (
-            <div className="dv-decide">
-              <button type="button" disabled={busy} className="cont" onClick={() => act('decide', { cont: true })}>계속 추리</button>
-              <button type="button" disabled={busy} className="stop" onClick={() => act('decide', { cont: false })}>멈추기</button>
-            </div>
-          )}
-          {v.status === 'playing' && v.phase !== 'setup' && (
-            <button type="button" className="dv-resign" disabled={busy} onClick={() => { if (window.confirm('기권할까요? 상대가 판돈을 가져갑니다.')) act('resign') }}>기권</button>
-          )}
+            )}
+          </div>
+        )}
+        {err && <div className="dv-err">{err}</div>}
+      </div>
+
+      {v.status === 'ended' && (
+        <div className="om-sheet-wrap">
+          {toast && <div className="om-toast">{toast}</div>}
+          <div className="om-sheet">
+            {iWon
+              ? <><div className="om-sheet-emoji">🏆</div><div className="om-sheet-title">이겼다! 🎉</div>
+                  <div className="om-sheet-sub">{v.settledAmount > 0 ? <>{opp.name} 님의 츄르 <b>{v.settledAmount}개</b>를 받았어요</> : '한 판 잘했어요!'}</div></>
+              : <><div className="om-sheet-title big">LOSE!</div>
+                  <div className="om-sheet-sub">{v.settledAmount > 0 ? <>츄르 <b className="lose">{v.settledAmount}개</b>를 {opp.name} 님께 보냈어요</> : '다음 판을 노려요!'}</div></>}
+            <button type="button" className="om-again" disabled={busy} onClick={rematch}>선후공 바꿔서 한 판 더!</button>
+            <button type="button" className="om-tolobby" disabled={busy} onClick={() => act('reset')}>대기실로 돌아가기</button>
+          </div>
         </div>
       )}
-
-      {err && <div className="dv-err">{err}</div>}
-      <div className="dv-log">{(v.log || []).slice(-4).map((l, i) => <div key={i} className="dv-log-l">{l.t}</div>)}</div>
-      </div>
+      {toast && v.status !== 'ended' && <div className="om-toast dv-toast-float">{toast}</div>}
       {ruleOn && <DvRuleModal onClose={() => setRuleOn(false)} />}
     </div>
   )

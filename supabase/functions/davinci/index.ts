@@ -42,9 +42,10 @@ function json(body: unknown, status = 200) {
 const tileKey = (t) => t.n * 2 + (t.c === 'w' ? 1 : 0)     // 흑<백 정렬키
 function makeDeck() {
   const d = []
-  for (const c of ['b', 'w']) for (let n = 0; n <= 11; n++) d.push({ c, n, j: false, up: false })
-  d.push({ c: 'b', n: null, j: true, up: false })
-  d.push({ c: 'w', n: null, j: true, up: false })
+  // id 는 타일마다 고유(공개 타일 매칭용). 숫자 노출은 뷰에서 숨기므로 안전.
+  for (const c of ['b', 'w']) for (let n = 0; n <= 11; n++) d.push({ c, n, j: false, up: false, id: `${c}${n}` })
+  d.push({ c: 'b', n: null, j: true, up: false, id: 'bj' })
+  d.push({ c: 'w', n: null, j: true, up: false, id: 'wj' })
   return d
 }
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]] } return a }
@@ -112,7 +113,12 @@ Deno.serve(async (req) => {
     if (s.players) for (const pl of s.players) stakeOk[pl.uid] = (pl.uid === me ? myBal : await balanceOf(pl.uid)) >= (row.stake || 0)
     const reveal = row.status === 'ended'   // 종료 시 상대 패까지 공개
     const setup = s.phase === 'setup'
-    const hideTile = (t) => (t.up || reveal) ? { ...t, up: t.up } : { c: t.c, n: null, j: false, up: false }
+    // 숨긴 타일엔 id/숫자 미노출. '새로 추가(직전 턴에 들어온 타일)' 만 new 플래그로 표시.
+    const hideTile = (t) => {
+      const base = (t.up || reveal) ? { ...t, up: t.up } : { c: t.c, n: null, j: false, up: false }
+      base.new = (t.id != null && t.id === s.lastAddedId)
+      return base
+    }
     // 정렬 단계에는 상대에게 내 손패를 아예 안 보여줌(조커 위치 이동을 못 보게) → 중립 placeholder
     const oppHand = opp
       ? (setup ? (s.hands?.[opp] || []).map(() => ({ placeholder: true })) : (s.hands?.[opp] || []).map(hideTile))
@@ -131,6 +137,7 @@ Deno.serve(async (req) => {
       oppSetupDone: opp ? !!(s.setupDone?.[opp]) : false,
       log: s.log || [],
       lastGuess: s.lastGuess || null,
+      lastReveal: s.lastReveal || null,   // {uid,id,ok} 방금 공개된 타일(초록/빨강 표시용)
       myBalance: myBal, stakeOk,
       settledAmount: s.settledAmount ?? null,
     }
@@ -254,7 +261,7 @@ Deno.serve(async (req) => {
         s.deck = deck
         s.first = s.players[Math.floor(Math.random() * 2)].uid
         s.turn = s.first
-        s.drawn = null; s.lastGuess = null; s.settled = false; s.settledAmount = undefined
+        s.drawn = null; s.lastGuess = null; s.lastReveal = null; s.lastAddedId = null; s.settled = false; s.settledAmount = undefined
         s.log = [{ t: `대국 시작! ${nameOf(s, s.first)} 님 선공` }]
         m.status = 'playing'
         s.phase = 'setup'   // 둘 다 정렬(조커 위치) 확인해야 대국 시작
@@ -292,7 +299,9 @@ Deno.serve(async (req) => {
         const hand = s.hands[caller]
         const slot = Math.max(0, Math.min(hand.length, Math.floor(Number(p.slot))))
         const item = q.shift()
-        hand.splice(slot, 0, { ...item.tile, up: item.up })
+        const placed = { ...item.tile, up: item.up }
+        hand.splice(slot, 0, placed)
+        s.lastAddedId = placed.id
         if (item.up) log(s, `${nameOf(s, caller)} 님이 조커(-) 공개`)   // 오답 공개만 로그(뒷면 배치는 비공개)
         s.turn = other(s, caller); beginTurn(s)
         return
@@ -314,6 +323,7 @@ Deno.serve(async (req) => {
         s.lastGuess = { by: caller, pos, val, correct }
         if (correct) {
           target.up = true
+          s.lastReveal = { uid: opp, id: target.id, ok: true }   // 내가 맞힌 상대 타일(초록)
           log(s, `✅ ${nameOf(s, caller)}: ${nameOf(s, opp)}의 ${pos + 1}번 = ${label} 정답!`)
           if (eliminated(s, opp)) { await settle(m, s, caller); return }
           s.phase = 'decide'
@@ -322,8 +332,9 @@ Deno.serve(async (req) => {
           if (s.drawn) {
             const t = { ...s.drawn.tile, up: true }
             s.drawn = null
+            s.lastReveal = { uid: caller, id: t.id, ok: false }   // 오답으로 공개된 내 뽑은 타일(빨강)
             if (t.j) { s.toPlace[caller] = [{ tile: t, up: true, reason: 'draw' }]; s.phase = 'place' }
-            else { insertNumbered(s.hands[caller], t); s.turn = opp; beginTurn(s) }
+            else { insertNumbered(s.hands[caller], t); s.lastAddedId = t.id; s.turn = opp; beginTurn(s) }
           } else {
             s.phase = 'selfreveal'   // 더미 없음 → 내 타일 공개
           }
@@ -339,7 +350,7 @@ Deno.serve(async (req) => {
           s.drawn = null
           if (t) {
             if (t.j) { s.toPlace[caller] = [{ tile: t, up: false, reason: 'draw' }]; s.phase = 'place'; return }
-            insertNumbered(s.hands[caller], t)
+            insertNumbered(s.hands[caller], t); s.lastAddedId = t.id
           }
           log(s, `${nameOf(s, caller)} 님이 멈춤`)
           s.turn = other(s, caller); beginTurn(s)
@@ -354,6 +365,7 @@ Deno.serve(async (req) => {
         const t = hand[pos]
         if (!t || t.up) throw new Error('공개되지 않은 내 타일을 골라 주세요.')
         t.up = true
+        s.lastReveal = { uid: caller, id: t.id, ok: false }
         log(s, `${nameOf(s, caller)} 님이 자기 타일 공개`)
         if (eliminated(s, caller)) { await settle(m, s, other(s, caller)); return }
         s.turn = other(s, caller); beginTurn(s)
