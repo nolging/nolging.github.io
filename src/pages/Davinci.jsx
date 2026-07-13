@@ -382,7 +382,7 @@ export default function Davinci() {
         {badge && <span className={`dvt-badge ${badge.c}`}>{badge.t}</span>}
         <button type="button" className={`dvt ${black ? 'blk' : 'wht'} ${t.up ? '' : 'back'} ${selected ? 'sel' : ''} ${green ? 'ok lift' : ''} ${clickable ? 'clk' : ''}`}
           disabled={!clickable} onClick={clickable ? () => setSel(i) : undefined}>
-          {t.up ? (t.j ? '-' : t.n) : <PawMini />}
+          {t.up ? (t.j ? '-' : t.n) : (selected ? '?' : <PawMini />)}
         </button>
         {green && <span className="dvt-dot ok" />}
         {t.new && !green && <span className="dvt-dot new" />}
@@ -424,7 +424,12 @@ export default function Davinci() {
   if (jokerToPlace) banner = { tile: { ...jokerToPlace, up: true }, title: '조커(-)를 뽑았어요', sub: '내 코드에 배치할 위치를 정해 주세요' }
   else if (drawnMine && (v.phase === 'guess' || v.phase === 'decide')) banner = { tile: { ...drawnMine, up: true }, title: '더미에서 뽑아서 배치했어요', sub: myTurn ? '상대방의 타일을 하나 선택해서 추측해 주세요' : `${opp.name} 님 차례예요` }
   else if (v.drawn?.hidden) banner = { hidden: true, title: `${opp.name} 님이 뽑는 중…`, sub: '' }
-  else if (v.phase === 'setup') banner = { setup: true, title: v.mySetupDone ? '상대 준비를 기다리는 중…' : '조커 위치를 정하고 배치 완료를 누르세요', sub: '' }
+  else if (v.phase === 'setup') {
+    const jk = v.myHand.find((t) => t.j)
+    banner = v.mySetupDone
+      ? { setup: true, title: '상대 준비를 기다리는 중…', sub: '' }
+      : { tile: jk ? { ...jk, up: true } : null, title: '조커(-)를 어디에 둘까요', sub: '조커를 탭한 뒤 굵은 선을 골라 배치하고 완료를 눌러요' }
+  }
   else if (v.phase === 'selfreveal' && myTurn) banner = { setup: true, title: '더미가 비었어요', sub: '공개할 내 타일을 고르세요' }
 
   function rematch() {
