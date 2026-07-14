@@ -276,6 +276,9 @@ export default function Layout() {
   const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     document.body.style.background = storePremium ? '#0d0a22' : (isGroupView ? 'var(--bg)' : 'var(--surface)')
+    // iOS 홈화면 앱: 상태바/다이나믹 아일랜드 영역 색을 상단바 색과 맞춰 이어지게
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', storePremium ? '#2c2560' : '#fdfcfe')
     return () => { document.body.style.background = '' }
   }, [isGroupView, storePremium])
 
