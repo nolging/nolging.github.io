@@ -23,18 +23,21 @@ export default function VideoPlayer({ url }) {
   const hostRef = useRef(null)
   const playingRef = useRef(false); playingRef.current = playing
 
-  // 전원 ON → 플레이어 생성/재생. (컴포넌트가 사라지면 정지)
+  // 플레이어를 미리 생성해 둔다(대기). → 전원 버튼 탭 '제스처 안에서' 바로 재생 가능
+  //   (모바일 자동재생 차단 회피). 자막(cc) 끔, 컨트롤/타이틀/추천 최소화.
   useEffect(() => {
-    if (!on || !parsed || parsed.kind !== 'youtube') return
+    if (!parsed || parsed.kind !== 'youtube') return
     let cancelled = false
     loadYT().then((YT) => {
-      if (cancelled || !hostRef.current) return
-      if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(parsed.id); ytRef.current.playVideo?.(); return }
+      if (cancelled || !hostRef.current || ytRef.current) return
       ytRef.current = new YT.Player(hostRef.current, {
         videoId: parsed.id,
-        playerVars: { playsinline: 1, rel: 0, modestbranding: 1, controls: 0, fs: 0, iv_load_policy: 3 },
+        playerVars: {
+          playsinline: 1, rel: 0, modestbranding: 1, controls: 0, fs: 0,
+          iv_load_policy: 3, cc_load_policy: 0, disablekb: 1, showinfo: 0,
+        },
         events: {
-          onReady: (e) => e.target.playVideo(),
+          onReady: (e) => { try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } },
           onStateChange: (e) => {
             if (e.data === YT.PlayerState.PLAYING) setPlaying(true)
             else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
@@ -43,15 +46,18 @@ export default function VideoPlayer({ url }) {
       })
     }).catch(() => {})
     return () => { cancelled = true }
-  }, [on, parsed?.id])
+  }, [parsed?.id])
 
   useEffect(() => () => { try { ytRef.current?.destroy?.() } catch { /* noop */ } }, [])
 
+  // 전원 ON → 즉시 재생(제스처 안에서), OFF → 정지 + 까맣게
   function powerToggle(e) {
     e.stopPropagation()
     setOn((o) => {
       const next = !o
-      if (!next) { try { ytRef.current?.pauseVideo?.() } catch { /* noop */ } setPlaying(false) }
+      const p = ytRef.current
+      if (next) { try { p?.playVideo?.() } catch { /* noop */ } }
+      else { try { p?.pauseVideo?.() } catch { /* noop */ } setPlaying(false) }
       return next
     })
   }
@@ -79,7 +85,12 @@ export default function VideoPlayer({ url }) {
               <div className="crt-scan" />
               <div className="crt-sweep" />
               <div className="crt-vig" />
-              {!playing && <span className="crt-play"><PlayGlyph /></span>}
+              {/* 일시정지 시 유튜브가 띄우는 영상 제목/링크를 가리는 상하 마스크 + 재생 아이콘 */}
+              {!playing && <>
+                <div className="crt-maskt" />
+                <div className="crt-maskb" />
+                <span className="crt-play"><PlayGlyph /></span>
+              </>}
             </>}
             {!on && <div className="crt-dark" />}
           </div>
