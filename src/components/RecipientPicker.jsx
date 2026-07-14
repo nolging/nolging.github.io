@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import Modal from './Modal'
@@ -15,12 +15,32 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
   const [groupId, setGroupId] = useState('')
   const [memberId, setMemberId] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
-  // 최초 오픈 시 내 그룹 목록 로드 (각 그룹의 전체 멤버 포함)
+  // 그룹 목록 로드. 실패해도 이전 목록은 유지(깜빡임 방지)하고, 성공 시에만 교체.
+  const loadGroups = useCallback(() => {
+    setLoading(true); setError('')
+    return listMyGroups()
+      .then((gs) => { setGroups(gs); setLoaded(true) })
+      .catch((e) => setError(e.message || '그룹을 불러오지 못했어요.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // 열 때마다 최신화(백그라운드 후 재개 시 캐시가 비어 있거나 실패했던 경우 회복).
+  useEffect(() => { if (open) loadGroups() }, [open, loadGroups])
+
+  // 앱이 백그라운드에서 돌아오면(재개) 열려 있는 동안 다시 불러온다.
   useEffect(() => {
-    if (!open || groups.length) return
-    listMyGroups().then(setGroups).catch((e) => setError(e.message))
-  }, [open, groups.length])
+    if (!open) return
+    const onResume = () => { if (document.visibilityState === 'visible') loadGroups() }
+    document.addEventListener('visibilitychange', onResume)
+    window.addEventListener('focus', onResume)
+    return () => {
+      document.removeEventListener('visibilitychange', onResume)
+      window.removeEventListener('focus', onResume)
+    }
+  }, [open, loadGroups])
 
   // 닫으면 선택 초기화 (그룹 목록 캐시는 유지)
   useEffect(() => {
@@ -42,6 +62,14 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
     const others = (g?.group_members || []).filter((m) => m.user_id !== myId)
     setMemberId(others.length === 1 ? others[0].user_id : '')
   }, [groupId, eligibleGroups, myId])
+
+  // 로딩/에러/실제 없음을 구분해 표시 (일시적 실패를 "그룹 없음"으로 오인하지 않게)
+  const notReady = loading || !myId
+  const groupPlaceholder = eligibleGroups.length ? '그룹 선택'
+    : notReady ? '불러오는 중…'
+    : error ? '불러오지 못했어요'
+    : loaded ? '보낼 수 있는 그룹이 없어요'
+    : '불러오는 중…'
 
   const group = eligibleGroups.find((g) => g.id === groupId)
   const members = group?.group_members || []
@@ -65,14 +93,19 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <div className="note-pick">
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error">
+            {error}
+            <button type="button" className="btn btn-sm picker-retry" onClick={loadGroups} disabled={loading}>
+              {loading ? '불러오는 중…' : '다시 시도'}
+            </button>
+          </div>
+        )}
 
         <label className="field">
           <span>그룹</span>
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">
-              {eligibleGroups.length ? '그룹 선택' : '보낼 수 있는 그룹이 없어요'}
-            </option>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)} disabled={notReady}>
+            <option value="">{groupPlaceholder}</option>
             {eligibleGroups.map((g) => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}

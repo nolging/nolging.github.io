@@ -2101,6 +2101,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .note-body-input:focus { outline: none; border-color: transparent; }
 .note-char-count { position: absolute; right: 14px; bottom: 10px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .note-pick { display: flex; flex-direction: column; gap: 14px; }
+.picker-retry { display: block; margin-top: 8px; }
 .note-pick-actions { display: flex; gap: 10px; margin-top: 4px; }
 .note-pick-actions .btn { flex: 1; min-height: 44px; }
 
