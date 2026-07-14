@@ -1903,8 +1903,14 @@ button.mlist-row:hover { background: #f6f5fa; }
 .crt-body { position: relative; z-index: 1; display: flex; gap: 12px; background: #e6dccb; border-radius: 18px; padding: 14px; box-shadow: 0 12px 30px rgba(25,23,34,.22), inset 0 0 0 1px rgba(0,0,0,.05); }
 .crt-screen-frame { flex: 1; min-width: 0; background: #171512; border-radius: 12px; padding: 10px; }
 .crt-screen { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px / 14px; overflow: hidden; cursor: pointer; box-shadow: inset 0 0 24px rgba(0,0,0,.7); background: #000; }
-.crt-yt { position: absolute; inset: -2px; pointer-events: none; }
-.crt-yt iframe { width: 100%; height: 100%; border: 0; }
+.crt-yt { position: absolute; inset: 0; pointer-events: none; }
+/* 유튜브 iframe 은 YT API 가 .crt-yt 를 교체하므로 .crt-screen 하위로 직접 타겟.
+   16:9 영상을 4:3 브라운관 화면에 꽉 차게(cover) — 높이를 채우고 좌우를 살짝 잘라냄. */
+.crt-screen iframe {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  height: 100%; width: auto; aspect-ratio: 16 / 9; min-width: 100%;
+  border: 0; pointer-events: none;
+}
 .crt-scan { position: absolute; inset: 0; background: repeating-linear-gradient(rgba(0,0,0,.16) 0 1px, rgba(0,0,0,0) 1px 3px); pointer-events: none; z-index: 2; }
 .crt-sweep { position: absolute; left: 0; right: 0; height: 16px; background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,0)); animation: crt-line 2.6s linear infinite; pointer-events: none; z-index: 3; }
 .crt-vig { position: absolute; inset: 0; box-shadow: inset 0 0 40px rgba(0,0,0,.5); border-radius: 10px / 14px; pointer-events: none; z-index: 3; animation: crt-flicker 5.5s steps(2, jump-none) infinite; }
