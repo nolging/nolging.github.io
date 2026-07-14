@@ -46,7 +46,7 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name }
+    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0 }
     setMeta(m)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -75,10 +75,13 @@ export default function Inventory() {
 
   // 전광판 게재 중이면(아이템은 소모됨) "사용 중" 카드가 보이도록 합성 항목 추가
   const displayGroups = useMemo(() => {
+    let list = groups
     if (ledBanner && !groups.some((g) => g.id === 'ledboard')) {
-      return [...groups, { id: 'ledboard', name: meta.ledboard?.name || '전광판', emoji: meta.ledboard?.emoji || '📟', count: 0, rows: [] }]
+      list = [...groups, { id: 'ledboard', name: meta.ledboard?.name || '전광판', emoji: meta.ledboard?.emoji || '📟', count: 0, rows: [] }]
     }
-    return groups
+    // 상점과 동일한 정렬(sort_order) 로 노출
+    const ord = (id) => (meta[id]?.sortOrder ?? 999)
+    return [...list].sort((a, b) => ord(a.id) - ord(b.id))
   }, [groups, ledBanner, meta])
 
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])

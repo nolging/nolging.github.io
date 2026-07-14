@@ -1401,15 +1401,15 @@ create policy store_items_write on public.store_items
 
 -- 초기 6종 시드. 이미 있으면 유지(관리자 편집 보존) → do nothing.
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
-  ('wish',        '소원권',      5,    '🎫', E'상대방이 소원을 적어서 나에게 보내면 무엇이든 들어줘야 해요\n*선물만 가능', true,  1),
-  ('couple-ring', '커플 링',     5000, '💍', E'연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',            false, 2),
-  ('friend-ring', '우정 링',     3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 3),
-  ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 4),
-  ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 5),
-  ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 6),
-  ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 7),
-  ('video',       '비디오 테이프', 10, '📹', '쪽지와 함께 영상을 선물해 보세요',                                     false, 8),
-  ('ledboard',    '전광판',      50, '📟', E'커플만 쓸 수 있는 프리미엄 전광판\n*24시간 동안 노출',                 false, 9)
+  ('couple-ring', '커플 링',     5000, '💍', E'연인과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',            false, 1),
+  ('friend-ring', '우정 링',     3000, '🤝', E'친구들과 나눠 끼면 특별한 능력이 생겨요\n*프리미엄 기능 오픈',          false, 2),
+  ('wish',        '소원권',      5,    '🎫', E'상대방이 소원을 적어서 나에게 보내면 무엇이든 들어줘야 해요\n*선물만 가능', true,  3),
+  ('link',        '링크',        3,    '🔗', '쪽지에 클릭 가능한 링크를 붙여 보내요',                                false, 4),
+  ('cassette',    '카세트 테이프', 5,  '📼', '쪽지와 함께 음악을 선물해 보세요',                                     false, 5),
+  ('video',       '비디오 테이프', 10, '📹', '쪽지와 함께 영상을 선물해 보세요',                                     false, 6),
+  ('telescope',   '천체 망원경', 3,    '🔭', '블러 처리된 리뷰를 볼 수 있어요',                                      false, 9),
+  ('eraser',      '지우개',      3,    '🧽', '내 이름을 지우고 쪽지를 보내 보세요',                                  false, 8),
+  ('ledboard',    '전광판',      50, '📟', E'커플만 쓸 수 있는 프리미엄 전광판\n*24시간 동안 노출',                 false, 11)
 on conflict (id) do nothing;
 
 -- 프리미엄관: premium(프리미엄 전용 아이템) + tier(요구 링: couple/friend/NULL=아무 프리미엄)
@@ -1422,6 +1422,7 @@ update public.store_items set premium = true, tier = 'couple' where id = 'ledboa
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
   ('nyangpito', '냥피또', 5, '🐱', E'동전으로 긁으면 츄르가 쏟아질지도?\n*긁어서 즉시 당첨 확인', false, 10)
 on conflict (id) do nothing;
+-- theme-heart 프리미엄 테마는 프리미엄관 마지막(12)
 
 -- 그룹 테마(꾸미기): 프리미엄 그룹 전용. 적용하면 그룹 카드·상세에 테마 효과.
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
@@ -1431,8 +1432,23 @@ update public.store_items set premium = true, tier = null where id = 'theme-hear
 
 -- 블루레이: 비디오 테이프와 유사(쪽지+영상)하되 시네마 플레이어 + 인앱 PIP 지원.
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
-  ('bluray', '블루레이', 12, '💿', '쪽지와 함께 영상을 선물해요 (PIP 지원)', false, 12)
+  ('bluray', '블루레이', 12, '💿', '쪽지와 함께 영상을 선물해요 (PIP 지원)', false, 7)
 on conflict (id) do nothing;
+
+-- 상점/인벤토리 노출 순서(sort_order) 확정 — 기존 행에도 반영(재실행 안전).
+-- 커플 링, 우정 링, 소원권, 링크, 카세트, 비디오, 블루레이, 지우개, 천체 망원경, 냥피또
+update public.store_items set sort_order = 1  where id = 'couple-ring';
+update public.store_items set sort_order = 2  where id = 'friend-ring';
+update public.store_items set sort_order = 3  where id = 'wish';
+update public.store_items set sort_order = 4  where id = 'link';
+update public.store_items set sort_order = 5  where id = 'cassette';
+update public.store_items set sort_order = 6  where id = 'video';
+update public.store_items set sort_order = 7  where id = 'bluray';
+update public.store_items set sort_order = 8  where id = 'eraser';
+update public.store_items set sort_order = 9  where id = 'telescope';
+update public.store_items set sort_order = 10 where id = 'nyangpito';
+update public.store_items set sort_order = 11 where id = 'ledboard';
+update public.store_items set sort_order = 12 where id = 'theme-heart';
 
 -- =============================================================
 --  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템

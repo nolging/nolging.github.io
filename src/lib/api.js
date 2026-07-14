@@ -714,7 +714,7 @@ export async function sendNote({ groupId, recipientId, body }) {
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only, premium, tier')
+    .select('id, name, price, emoji, description, gift_only, premium, tier, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
@@ -725,7 +725,7 @@ export async function listStoreItems() {
         .select('id, name, price, emoji, description, gift_only')
         .eq('is_active', true).order('sort_order', { ascending: true })
       if (e2) { if (e2.code === '42P01') return []; throw e2 }
-      return (d2 ?? []).map((r) => ({ id: r.id, name: r.name, price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null }))
+      return (d2 ?? []).map((r, i) => ({ id: r.id, name: r.name, price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null, sortOrder: i }))
     }
     if (error.code === '42P01') return []
     throw error
@@ -733,6 +733,7 @@ export async function listStoreItems() {
   return (data ?? []).map((r) => ({
     id: r.id, name: r.name, price: r.price, emoji: r.emoji,
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
+    sortOrder: r.sort_order ?? 0,
   }))
 }
 
