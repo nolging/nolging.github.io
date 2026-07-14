@@ -1562,8 +1562,17 @@ button.mlist-row:hover { background: #f6f5fa; }
 .store-page { position: relative; }
 @keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
 
-/* 툴바: 세그먼트 + 인벤토리 버튼 */
-.st-toolbar { display: flex; align-items: center; gap: 10px; }
+/* 툴바(세그먼트 토글): 스크롤해도 상단에 고정(sticky) — 스크롤 콘텐츠를 가리도록 배경 풀블리드 */
+.st-toolbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  margin: calc(-1 * var(--pad-y, 16px)) calc(-1 * var(--pad-x, 20px)) 0;
+  padding: var(--pad-y, 16px) var(--pad-x, 20px) 10px;
+  background: var(--bg);
+}
+.premium-shop .st-toolbar {
+  background: rgba(24,19,56,.6); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
 .st-seg { flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
 .st-seg button { flex: 1; border: none; background: none; cursor: pointer; border-radius: 999px; padding: 10px 0;
   font-size: 13px; font-weight: 700; color: #8b8798; transition: color .15s; }
