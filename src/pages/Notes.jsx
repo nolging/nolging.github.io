@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
+import { BluraySlot } from '../components/BlurayPlayer'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing } from '../lib/api'
 
 function NoteFabIcon() {
@@ -323,13 +324,7 @@ export default function Notes() {
               <p className="note-view-body">{open.body}</p>
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
-              {bluray && open.media_url && (
-                <button type="button" className="bluray-note" onClick={() => blurayPlayer?.open(open.media_url)}>
-                  <span className="bluray-note-badge">BLU-RAY</span>
-                  <span className="bluray-note-play"><svg width="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg></span>
-                  <span className="bluray-note-label">눌러서 재생 · 작게 띄우기(PIP) 지원</span>
-                </button>
-              )}
+              {bluray && open.media_url && <BluraySlot url={open.media_url} player={blurayPlayer} />}
               {link && safeUrl(open.media_url) && (
                 <a className="note-linkbtn" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener">
                   {open.item_name || '링크 열기'}

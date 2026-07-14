@@ -137,9 +137,13 @@ export default function Layout() {
     current: nowPlaying.current,
     playing: nowPlaying.playing,
   }
-  // 전역 블루레이 플레이어(전체 화면 시네마 ↔ 인앱 PIP, 페이지 이동해도 유지)
+  // 전역 블루레이 플레이어(쪽지 안 인라인 재생 ↔ 인앱 PIP, 페이지 이동해도 유지)
   const blurayRef = useRef(null)
-  const bluray = { open: (url) => blurayRef.current?.open(url) }
+  const bluray = {
+    mount: (url, el) => blurayRef.current?.mount(url, el),
+    release: (el) => blurayRef.current?.release(el),
+    expand: () => blurayRef.current?.expand(),
+  }
 
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
