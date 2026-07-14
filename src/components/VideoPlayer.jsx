@@ -37,10 +37,14 @@ export default function VideoPlayer({ url }) {
           iv_load_policy: 3, cc_load_policy: 0, disablekb: 1, showinfo: 0,
         },
         events: {
+          // 자막(cc) 모듈은 재생이 시작돼 로드된 뒤 unload 해야 확실히 꺼진다 → onApiChange.
+          onApiChange: (e) => { try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } },
           onReady: (e) => { try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } },
           onStateChange: (e) => {
-            if (e.data === YT.PlayerState.PLAYING) setPlaying(true)
-            else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
+            if (e.data === YT.PlayerState.PLAYING) {
+              setPlaying(true)
+              try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ }
+            } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
           },
         },
       })
@@ -85,12 +89,9 @@ export default function VideoPlayer({ url }) {
               <div className="crt-scan" />
               <div className="crt-sweep" />
               <div className="crt-vig" />
-              {/* 일시정지 시 유튜브가 띄우는 영상 제목/링크를 가리는 상하 마스크 + 재생 아이콘 */}
-              {!playing && <>
-                <div className="crt-maskt" />
-                <div className="crt-maskb" />
-                <span className="crt-play"><PlayGlyph /></span>
-              </>}
+              {/* 재생 시작 직후·일시정지 때 유튜브가 띄우는 영상 제목/링크를 항상 가림 */}
+              <div className="crt-maskt" />
+              {!playing && <span className="crt-play"><PlayGlyph /></span>}
             </>}
             {!on && <div className="crt-dark" />}
           </div>

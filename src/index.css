@@ -1905,17 +1905,16 @@ button.mlist-row:hover { background: #f6f5fa; }
 .crt-screen { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px / 14px; overflow: hidden; cursor: pointer; box-shadow: inset 0 0 24px rgba(0,0,0,.7); background: #000; }
 .crt-yt { position: absolute; inset: 0; pointer-events: none; }
 /* 유튜브 iframe 은 YT API 가 .crt-yt 를 교체하므로 .crt-screen 하위로 직접 타겟.
-   16:9 영상을 4:3 화면 폭에 맞춰(letterbox) — 좌우 크롭 없이 위아래 검은 여백. */
+   화면을 꽉 채우도록(cover) — 검은 여백 없이 높이를 채우고 좌우를 살짝 잘라냄. */
 .crt-screen iframe {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 100%; height: auto; aspect-ratio: 16 / 9;
+  height: 100%; width: auto; aspect-ratio: 16 / 9; min-width: 100%;
   border: 0; pointer-events: none;
 }
-/* 일시정지 시 유튜브가 노출하는 영상 제목/공유/‘YouTube에서 보기’ 링크 가림 */
-.crt-maskt { position: absolute; top: 0; left: 0; right: 0; height: 42%; z-index: 4; pointer-events: none;
-  background: linear-gradient(180deg, #000 0, #000 60%, transparent 100%); }
-.crt-maskb { position: absolute; bottom: 0; left: 0; right: 0; height: 26%; z-index: 4; pointer-events: none;
-  background: linear-gradient(0deg, #000 0, #000 55%, transparent 100%); }
+/* 유튜브가 (재생 시작 직후·일시정지 때) 노출하는 영상 제목/공유/‘YouTube에서 보기’
+   링크를 항상 가리는 상단 마스크 (그라데이션으로 자연스럽게). */
+.crt-maskt { position: absolute; top: 0; left: 0; right: 0; height: 32%; z-index: 4; pointer-events: none;
+  background: linear-gradient(180deg, #000 0, rgba(0,0,0,.92) 42%, transparent 100%); }
 .crt-scan { position: absolute; inset: 0; background: repeating-linear-gradient(rgba(0,0,0,.16) 0 1px, rgba(0,0,0,0) 1px 3px); pointer-events: none; z-index: 2; }
 .crt-sweep { position: absolute; left: 0; right: 0; height: 16px; background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,0)); animation: crt-line 2.6s linear infinite; pointer-events: none; z-index: 3; }
 .crt-vig { position: absolute; inset: 0; box-shadow: inset 0 0 40px rgba(0,0,0,.5); border-radius: 10px / 14px; pointer-events: none; z-index: 3; animation: crt-flicker 5.5s steps(2, jump-none) infinite; }
