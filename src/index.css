@@ -1560,11 +1560,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 
 /* ============ 상점 시안 리디자인 (st-*) ============ */
 .store-page { position: relative; }
-.store-page.is-premium { background: radial-gradient(125% 80% at 50% -5%, #2f2860 0%, #1a1540 48%, #0d0a22 100%); }
 @keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
-.st-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.st-stars span { position: absolute; border-radius: 50%; animation: st-twinkle 3s ease-in-out infinite; }
-.store-page > *:not(.st-stars) { position: relative; z-index: 1; }
 
 /* 툴바: 세그먼트 + 인벤토리 버튼 */
 .st-toolbar { display: flex; align-items: center; gap: 10px; }
@@ -1652,17 +1648,32 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-done-s { margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #8b8798; }
 .st-done .st-btn-text { margin-top: 9px; }
 
-/* 프리미엄 상점: 앱 전체(상단바·하단탭)까지 다크 테마 */
+/* 프리미엄 상점: 앱 전체를 하나의 연속된 다크 배경(별 백드롭)으로 */
 .app-shell.premium-shop { background: #0d0a22; }
-.premium-shop .topbar { background: #17132f; }
+/* 화면 전체를 덮는 고정 백드롭 (상단바·본문·하단탭 뒤로 끊김 없이 연결) */
+.premium-backdrop {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  background: radial-gradient(130% 90% at 50% -8%, #322a68 0%, #201a4a 38%, #120e2e 70%, #0b0820 100%);
+}
+.premium-backdrop span { position: absolute; border-radius: 50%; animation: st-twinkle 3s ease-in-out infinite; }
+/* 상단바·본문·페이지 배경을 투명하게 → 백드롭이 그대로 비쳐 보임 */
+.premium-shop .topbar { background: transparent; }
 .premium-shop .topbar-heading { color: #f4f2fd; }
 .premium-shop .topbar .icon-btn.store-inv-btn { background: rgba(255,255,255,.12); color: #efecfb; }
 .premium-shop .topbar .icon-btn.store-inv-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
 .premium-shop .coin-pill { background: #7363e8; color: #fff; }
-.premium-shop .content { background: transparent; }
-.premium-shop .bottomnav { background: #1b1740; border-top: 1px solid rgba(255,255,255,.1); box-shadow: 0 -6px 24px rgba(6,4,20,.5); }
-.premium-shop .bottomnav a { color: rgba(233,230,250,.45); }
+.premium-shop .content { background: transparent; position: relative; z-index: 1; }
+.premium-shop .store-page.is-premium { background: transparent; }
+/* 하단 플로팅 탭: 흰 테두리·흰 페이드 제거하고 반투명 다크 + 블러로 자연스럽게 */
+.premium-shop .bottomnav {
+  background: rgba(28,23,66,.62); border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 10px 30px rgba(6,4,20,.5); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.premium-shop .bottomnav a { color: rgba(233,230,250,.5); }
 .premium-shop .bottomnav a.active { color: #c3b6ff; }
+.premium-shop.app-shell.has-nav::after {
+  background: rgba(13,10,34,.45); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+}
 
 /* 냥피또 스크래치 복권 */
 .scratch-modal { display: flex; flex-direction: column; gap: 14px; }

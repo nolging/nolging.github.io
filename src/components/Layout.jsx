@@ -91,6 +91,16 @@ const NoteIcon = () => tabSvg(<>
   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 </>)
 
+// 프리미엄 상점 배경의 반짝이는 별 (앱 전체를 덮는 고정 백드롭에 렌더)
+const PREM_STARS = [
+  ['11%', '9%', 3, '#fff', 2.6, 0], ['26%', '5%', 2, '#dcd3ff', 3.4, .6], ['44%', '11%', 2.5, '#fff', 2.2, .3],
+  ['63%', '6%', 2, '#fff', 3, 1.1], ['88%', '10%', 3, '#f0c968', 2.8, .9], ['6%', '24%', 2, '#fff', 3.2, .2],
+  ['34%', '20%', 2, '#dcd3ff', 2.4, 1.4], ['72%', '22%', 2.5, '#fff', 3.6, .5], ['92%', '27%', 2, '#fff', 2.9, 1.7],
+  ['18%', '38%', 2, '#fff', 3.1, .8], ['82%', '42%', 2, '#dcd3ff', 2.5, .1], ['10%', '54%', 2, '#fff', 3, .4],
+  ['48%', '60%', 2.5, '#dcd3ff', 2.7, 1], ['86%', '58%', 2, '#fff', 3.3, .7], ['30%', '72%', 2, '#fff', 2.6, 1.3],
+  ['66%', '78%', 2.5, '#f0c968', 3, .3], ['14%', '86%', 2, '#dcd3ff', 2.8, .9], ['90%', '84%', 2, '#fff', 3.2, 1.5],
+]
+
 export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const location = useLocation()
@@ -587,6 +597,13 @@ export default function Layout() {
 
   return (
     <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''}`} ref={shellRef}>
+      {storePremium && (
+        <div className="premium-backdrop" aria-hidden="true">
+          {PREM_STARS.map(([l, t, s, c, d, dl], i) => (
+            <span key={i} style={{ left: l, top: t, width: s, height: s, background: c, boxShadow: `0 0 6px 1px ${c}`, animationDuration: `${d}s`, animationDelay: `${dl}s` }} />
+          ))}
+        </div>
+      )}
       {topbar}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}

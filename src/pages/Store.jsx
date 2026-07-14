@@ -32,16 +32,6 @@ const PawIcon = ({ className }) => (
     <path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" />
   </svg>
 )
-// 프리미엄 배경 반짝임 별
-const STARS = [
-  { l: '11%', t: '9%', s: 3, c: '#fff', d: 2.6, dl: 0 }, { l: '26%', t: '5%', s: 2, c: '#dcd3ff', d: 3.4, dl: .6 },
-  { l: '44%', t: '11%', s: 2.5, c: '#fff', d: 2.2, dl: .3 }, { l: '63%', t: '6%', s: 2, c: '#fff', d: 3, dl: 1.1 },
-  { l: '88%', t: '10%', s: 3, c: '#f0c968', d: 2.8, dl: .9 }, { l: '6%', t: '24%', s: 2, c: '#fff', d: 3.2, dl: .2 },
-  { l: '34%', t: '20%', s: 2, c: '#dcd3ff', d: 2.4, dl: 1.4 }, { l: '72%', t: '22%', s: 2.5, c: '#fff', d: 3.6, dl: .5 },
-  { l: '92%', t: '27%', s: 2, c: '#fff', d: 2.9, dl: 1.7 }, { l: '18%', t: '38%', s: 2, c: '#fff', d: 3.1, dl: .8 },
-  { l: '82%', t: '42%', s: 2, c: '#dcd3ff', d: 2.5, dl: .1 },
-]
-
 export default function Store() {
   const { refreshCoin, setStorePremium } = useOutletContext()
   const { user } = useAuth()
@@ -140,17 +130,6 @@ export default function Store() {
 
   return (
     <div className={`page store-page ${inPremium ? 'is-premium' : ''}`}>
-      {inPremium && (
-        <div className="st-stars" aria-hidden="true">
-          {STARS.map((s, i) => (
-            <span key={i} style={{
-              left: s.l, top: s.t, width: s.s, height: s.s, background: s.c,
-              boxShadow: `0 0 6px 1px ${s.c}`, animationDuration: `${s.d}s`, animationDelay: `${s.dl}s`,
-            }} />
-          ))}
-        </div>
-      )}
-
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
       {hasPremium && (
