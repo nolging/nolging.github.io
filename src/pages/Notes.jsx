@@ -42,7 +42,7 @@ export default function Notes() {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { setRefreshHandler, player } = useOutletContext()
+  const { setRefreshHandler, player, bluray: blurayPlayer } = useOutletContext()
   const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
   const [received, setReceived] = useState([])
   const [sent, setSent] = useState([])
@@ -253,6 +253,7 @@ export default function Notes() {
             const cassette = n.kind === 'cassette'
             const link = n.kind === 'link'
             const video = n.kind === 'video'
+            const bluray = n.kind === 'bluray'
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             return (
@@ -269,6 +270,7 @@ export default function Notes() {
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                         {link && <span className="note-tag note-tag-link">🔗 링크</span>}
                         {video && <span className="note-tag note-tag-video">📹 영상</span>}
+                        {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
@@ -288,7 +290,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : open?.kind === 'video' ? 'modal-video' : ''}>
+        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -298,6 +300,7 @@ export default function Notes() {
           const cassette = open.kind === 'cassette'
           const link = open.kind === 'link'
           const video = open.kind === 'video'
+          const bluray = open.kind === 'bluray'
           const mine = open.recipient_id === user?.id
           return (
             <div className="note-view">
@@ -311,6 +314,7 @@ export default function Notes() {
                     {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                     {link && <span className="note-tag note-tag-link">🔗 링크</span>}
                     {video && <span className="note-tag note-tag-video">📹 영상</span>}
+                    {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
@@ -319,6 +323,13 @@ export default function Notes() {
               <p className="note-view-body">{open.body}</p>
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
+              {bluray && open.media_url && (
+                <button type="button" className="bluray-note" onClick={() => blurayPlayer?.open(open.media_url)}>
+                  <span className="bluray-note-badge">BLU-RAY</span>
+                  <span className="bluray-note-play"><svg width="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg></span>
+                  <span className="bluray-note-label">눌러서 재생 · 작게 띄우기(PIP) 지원</span>
+                </button>
+              )}
               {link && safeUrl(open.media_url) && (
                 <a className="note-linkbtn" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener">
                   {open.item_name || '링크 열기'}

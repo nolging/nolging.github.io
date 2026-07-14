@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -15,6 +15,7 @@ const MAX_WISH = 300
 const MAX_CASSETTE_MSG = 150
 const MAX_LINK_MSG = 150
 const MAX_VIDEO_MSG = 150
+const MAX_BLURAY_MSG = 150
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -30,6 +31,7 @@ export default function Inventory() {
   const [cassetteOpen, setCassetteOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
+  const [blurayOpen, setBlurayOpen] = useState(false)
   const [ledboardOpen, setLedboardOpen] = useState(false)
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
@@ -94,6 +96,7 @@ export default function Inventory() {
     else if (g.id === 'cassette') setCassetteOpen(true)
     else if (g.id === 'link') setLinkOpen(true)
     else if (g.id === 'video') setVideoOpen(true)
+    else if (g.id === 'bluray') setBlurayOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'telescope') setTelescopeOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
@@ -162,6 +165,7 @@ export default function Inventory() {
       <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
       <LinkModal open={linkOpen} onClose={() => setLinkOpen(false)} onDone={reload} />
       <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} onDone={reload} />
+      <BlurayModal open={blurayOpen} onClose={() => setBlurayOpen(false)} onDone={reload} />
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
@@ -372,6 +376,74 @@ function VideoModal({ open, onClose, onDone }) {
             <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
               value={message} maxLength={MAX_VIDEO_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
             <span className="couple-msg-count">{message.length}/{MAX_VIDEO_MSG}</span>
+          </div>
+
+          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
+            {sending ? '보내는 중…' : '보내기'}
+          </button>
+        </div>
+      </Modal>
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
+        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
+    </>
+  )
+}
+
+// ---- 블루레이: 영상 링크 + 메시지 보내기 (시네마 플레이어 + PIP) ----
+function BlurayModal({ open, onClose, onDone }) {
+  const [message, setMessage] = useState('')
+  const [url, setUrl] = useState('')
+  const [recipient, setRecipient] = useState(null)
+  const [pickOpen, setPickOpen] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
+  }, [open])
+
+  const parsed = parseVideoUrl(url.trim())
+  const urlOk = !url.trim() || !!parsed
+
+  async function send() {
+    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
+    if (!url.trim()) { setError('영상 링크를 입력해 주세요.'); return }
+    if (!parsed) { setError('유튜브 영상 링크만 보낼 수 있어요.'); return }
+    setSending(true); setError('')
+    try {
+      await useBluray({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: url.trim() })
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setSending(false) }
+  }
+
+  return (
+    <>
+      <Modal open={open && !pickOpen} onClose={onClose} title="블루레이">
+        <div className="couple-modal">
+          {error && <div className="alert alert-error">{error}</div>}
+          <p className="couple-hint">쪽지와 함께 영상(유튜브)을 보내요. 받는 사람은 시네마 화면으로 감상하고, 작게 띄워(PIP) 앱을 쓰면서도 볼 수 있어요.</p>
+
+          {recipient ? (
+            <div className="couple-to">
+              <span className="couple-to-label">To.</span>
+              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
+              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
+          )}
+
+          <label className="field">
+            <span>영상 링크</span>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="유튜브 링크" inputMode="url" autoCapitalize="none" autoCorrect="off" />
+          </label>
+          {!urlOk && <p className="field-error">유튜브 영상 링크만 가능해요.</p>}
+
+          <div className="couple-msg">
+            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
+              value={message} maxLength={MAX_BLURAY_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
+            <span className="couple-msg-count">{message.length}/{MAX_BLURAY_MSG}</span>
           </div>
 
           <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>

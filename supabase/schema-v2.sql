@@ -1429,6 +1429,11 @@ insert into public.store_items (id, name, price, emoji, description, gift_only, 
 on conflict (id) do nothing;
 update public.store_items set premium = true, tier = null where id = 'theme-heart';
 
+-- 블루레이: 비디오 테이프와 유사(쪽지+영상)하되 시네마 플레이어 + 인앱 PIP 지원.
+insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
+  ('bluray', '블루레이', 12, '💿', '쪽지와 함께 영상을 선물해요 (PIP 지원)', false, 12)
+on conflict (id) do nothing;
+
 -- =============================================================
 --  인벤토리 (user_items) — 내가 구매/선물받아 보유한 아이템
 --  구매(purchase) 또는 선물(gift)로 획득. 선물은 준 사람 정보를 스냅샷.
@@ -1772,6 +1777,45 @@ begin
 end;
 $$;
 grant execute on function public.use_video(uuid, uuid, text, text) to authenticated;
+
+-- =============================================================
+--  블루레이: 쪽지와 함께 영상 링크(유튜브) 보내기. 블루레이 1개 소모.
+--  블루레이 1개 소모 → 상대 쪽지함에 kind=bluray + media_url 쪽지 생성
+--  (비디오 테이프와 동일한 흐름, 프론트에서 시네마 플레이어 + PIP 로 재생)
+-- =============================================================
+create or replace function public.use_bluray(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text;
+begin
+  if p_url is null or btrim(p_url) = '' then raise exception '영상 링크를 입력해 주세요.'; end if;
+
+  select * into v_item from public.user_items
+   where user_id = auth.uid() and item_id = 'bluray' and status = 'active'
+   order by created_at asc limit 1;
+  if v_item.id is null then raise exception '사용할 수 있는 블루레이가 없습니다.'; end if;
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = v_item.id;
+
+  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
+  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), '영상을 보냈어요 💿');
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, media_url)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'bluray', 'bluray', btrim(p_url));
+
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_recipient_id, auth.uid(), 'bluray',
+            case when v_sender <> '' then v_sender || ' 님이 영상을 보냈어요' else '영상이 도착했어요' end,
+            '쪽지함에서 확인하세요 💿', p_group_id);
+end;
+$$;
+grant execute on function public.use_bluray(uuid, uuid, text, text) to authenticated;
 
 -- =============================================================
 --  커플 링 나눠 끼기 (use_couple_ring / claim_couple_ring / reject_couple_ring)

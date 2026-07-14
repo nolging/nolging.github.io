@@ -1924,6 +1924,80 @@ button.mlist-row:hover { background: #f6f5fa; }
 .crt-feet { display: flex; justify-content: center; gap: 200px; margin-top: -2px; }
 .crt-feet span { width: 20px; height: 10px; background: #d3c8b4; border-radius: 0 0 6px 6px; }
 
+/* ---- 블루레이: 미니멀 시네마(1d) + 인앱 PIP(1e) 전역 플레이어 ---- */
+.bluray-stage.bluray-off { display: none; }
+/* full: 다크 시네마 전체 화면 오버레이 */
+.bluray-stage.bluray-full {
+  position: fixed; inset: 0; z-index: 4000; background: #0d0c11; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 52px) 20px calc(env(safe-area-inset-bottom) + 24px);
+}
+.bluray-full .bluray-shell { width: min(100%, 680px); display: flex; flex-direction: column; gap: 16px; }
+.bluray-full .bluray-box {
+  width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
+  position: relative; background: #000; cursor: pointer; box-shadow: 0 14px 34px rgba(0,0,0,.5);
+}
+/* pip: 우하단 플로팅 카드 (모달보다도 위에 떠 있음) */
+.bluray-stage.bluray-pip {
+  position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 74px);
+  z-index: 3000; width: 172px;
+}
+.bluray-pip .bluray-shell { width: 172px; }
+.bluray-pip .bluray-box {
+  width: 172px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
+  position: relative; background: #000; cursor: pointer; box-shadow: 0 14px 34px rgba(25,23,34,.34);
+}
+.bluray-yt { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bluray-yt iframe { width: 100%; height: 100%; display: block; border: 0; }
+.bluray-vig { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(0,0,0,.4); }
+.bluray-playbig {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.12);
+  border: 1.5px solid rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center;
+  color: #fff; pointer-events: none;
+}
+.bluray-pip .bluray-playbig { width: 40px; height: 40px; background: rgba(0,0,0,.42); border: none; }
+/* full 하단 컨트롤 */
+.bluray-ctrl { display: flex; align-items: center; gap: 12px; }
+.bluray-pp { border: none; background: transparent; color: #fff; cursor: pointer; padding: 0; display: flex; }
+.bluray-pp:active { transform: scale(.9); }
+.bluray-bar { flex: 1; height: 3px; background: rgba(255,255,255,.2); position: relative; cursor: pointer; border-radius: 2px; }
+.bluray-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #e9e3ff; border-radius: 2px; }
+.bluray-knob { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.bluray-time { font-size: 11px; color: rgba(255,255,255,.7); letter-spacing: .03em; min-width: 78px; text-align: right; }
+/* full 상단 최소화/닫기 */
+.bluray-top { position: fixed; top: calc(env(safe-area-inset-top) + 12px); right: 16px; display: flex; gap: 10px; z-index: 1; }
+.bluray-rnd {
+  width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.4); border: none;
+  color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+}
+.bluray-rnd-lg { width: 34px; height: 34px; background: rgba(255,255,255,.14); }
+.bluray-rnd:active { transform: scale(.92); }
+/* pip 컨트롤 */
+.bluray-pip-top { position: absolute; top: 6px; left: 6px; right: 6px; display: flex; justify-content: space-between; z-index: 2; }
+.bluray-pip-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.3); }
+.bluray-pip-fill { height: 100%; background: #7363e8; }
+
+/* 쪽지 안의 블루레이 재생 트리거(시네마 포스터) */
+.bluray-note {
+  width: 100%; margin: 6px 0 2px; border: none; padding: 0; cursor: pointer; display: block;
+  position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(160deg, #2a2740, #4a3f6e 58%, #141225); box-shadow: 0 8px 22px rgba(0,0,0,.28);
+}
+.bluray-note-play {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.14);
+  border: 1.5px solid rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.bluray-note-badge {
+  position: absolute; right: 10px; top: 10px; font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  color: #d7d0ff; background: rgba(0,0,0,.35); padding: 3px 7px; border-radius: 6px;
+}
+.bluray-note-label {
+  position: absolute; left: 12px; bottom: 10px; color: #fff; font-size: 12px; font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
 /* ---- 도트 LED 전광판 마퀴 ---- */
 .led-board {
   position: relative; overflow: hidden; height: 46px; border-radius: 12px;

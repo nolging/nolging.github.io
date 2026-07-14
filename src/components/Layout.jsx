@@ -6,6 +6,7 @@ import { unreadNotificationCount, getMyCoinBalance } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
 import MiniPlayer from './MiniPlayer'
+import BlurayPlayer from './BlurayPlayer'
 
 function GearIcon() {
   return (
@@ -134,6 +135,9 @@ export default function Layout() {
     current: nowPlaying.current,
     playing: nowPlaying.playing,
   }
+  // 전역 블루레이 플레이어(전체 화면 시네마 ↔ 인앱 PIP, 페이지 이동해도 유지)
+  const blurayRef = useRef(null)
+  const bluray = { open: (url) => blurayRef.current?.open(url) }
 
   // 당겨서 새로고침 (모바일): 콘텐츠 최상단에서 아래로 당기면 핸들러 실행
   const contentRef = useRef(null)
@@ -572,9 +576,10 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin, player }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
+      <BlurayPlayer ref={blurayRef} />
       {showBottomNav && (
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>

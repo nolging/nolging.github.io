@@ -817,6 +817,20 @@ export async function useVideo({ groupId, recipientId, message, url }) {
   return data
 }
 
+// 블루레이: 영상 링크와 메시지를 상대 쪽지함으로. 블루레이 1개 소모.
+export async function useBluray({ groupId, recipientId, message, url }) {
+  const { data, error } = await supabase.rpc('use_bluray', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_bluray/.test(error.message || '')) {
+      throw new Error('블루레이 기능이 아직 DB에 설정되지 않았습니다. (use_bluray 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // 그룹 꾸미기 테마 적용: 프리미엄 그룹에 테마 아이템 1개 소모 + groups.deco_theme 설정.
 export async function applyGroupTheme(groupId, theme) {
   const { error } = await supabase.rpc('apply_group_theme', { p_group_id: groupId, p_theme: theme })
