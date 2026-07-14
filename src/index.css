@@ -1850,6 +1850,27 @@ button.mlist-row:hover { background: #f6f5fa; }
 .inv-applied-btn { color: #7363e8; background: rgba(115, 99, 232, .12); border: none; font-weight: 700; }
 .inv-applied-btn:hover { background: rgba(115, 99, 232, .2); }
 
+/* ============ 인벤토리 시안 (카테고리 섹션 + 썸네일 카드) ============ */
+.inv-section { display: flex; flex-direction: column; gap: 12px; }
+.inv-section-head { display: flex; align-items: baseline; gap: 7px; }
+.inv-section-title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #191722; }
+.inv-section-count { font-size: 12px; font-weight: 600; color: #b0b0b8; }
+.inv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.inv-card2 { background: #fff; border: none; border-radius: 18px; padding: 10px; cursor: pointer; text-align: left;
+  box-shadow: 0 4px 16px rgba(25,23,34,.05); display: flex; flex-direction: column; transition: transform .12s; }
+.inv-card2:active { transform: scale(.97); }
+.inv-card2.is-static, .inv-card2.is-static:active { cursor: default; transform: none; }
+.inv-thumb { position: relative; height: 82px; border-radius: 14px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; }
+.inv-thumb-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 31px; line-height: 1; }
+.inv-thumb-img img.store-img { width: 58%; height: 58%; object-fit: contain; }
+.inv-badge-count { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff;
+  border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
+.inv-badge-state { position: absolute; top: 6px; left: 6px; background: #7363e8; color: #fff;
+  border-radius: 999px; padding: 2px 7px; font-size: 9px; font-weight: 700; }
+.inv-name { margin-top: 9px; font-size: 12px; font-weight: 700; color: #191722;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
 /* ---- 커플 링 나눠 끼기 모달 ---- */
 .couple-modal { display: flex; flex-direction: column; gap: 14px; }
 .couple-hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }

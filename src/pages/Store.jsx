@@ -5,24 +5,7 @@ import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
 import StoreItemImage from '../components/StoreItemImage'
 import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups } from '../lib/api'
-
-// 시안: 아이템 이미지 배경색(파스텔) — id 별. 없으면 기본값.
-const IMG_BG = {
-  'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
-  'nyangpito': '#eaf4ec', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
-  'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'theme-heart': '#3a2b52',
-}
-const imgBgOf = (id, premium) => IMG_BG[id] || (premium ? '#2f2a49' : '#f3f2f7')
-
-// 카테고리(섹션) 분류
-const CAT = { special: '스페셜', feature: '기능 강화', avatar: '아바타 꾸미기', theme: '테마', etc: '기타' }
-const CAT_ORDER = ['special', 'feature', 'avatar', 'theme', 'etc']
-function catOf(id) {
-  if (id === 'couple-ring' || id === 'friend-ring' || id === 'wish') return 'special'
-  if (id.startsWith('theme-')) return 'theme'
-  if (id === 'nyangpito') return 'etc'
-  return 'feature'
-}
+import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 

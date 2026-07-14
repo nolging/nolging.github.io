@@ -10,6 +10,7 @@ import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, us
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
+import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
 
 const MAX_WISH = 300
 const MAX_CASSETTE_MSG = 150
@@ -84,6 +85,11 @@ export default function Inventory() {
     return [...list].sort((a, b) => ord(a.id) - ord(b.id))
   }, [groups, ledBanner, meta])
 
+  // 카테고리 섹션으로 묶기 (상점과 동일한 분류)
+  const invSections = useMemo(() => CAT_ORDER.map((key) => ({
+    key, label: CAT[key], items: displayGroups.filter((g) => catOf(g.id) === key),
+  })).filter((s) => s.items.length), [displayGroups])
+
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])
   // 이미 커플 링을 보냈거나(수락 대기) 장착한 그룹(중복 방지)
   const coupleGroupIds = useMemo(
@@ -120,46 +126,42 @@ export default function Inventory() {
       ) : displayGroups.length === 0 ? (
         <div className="empty">보유한 아이템이 없어요.<br />상점에서 구매하거나 선물받아 보세요.</div>
       ) : (
-        <div className="store-grid">
-          {displayGroups.map((g) => {
-            const hasActive = g.rows.some((r) => r.status === 'active')
-            const equipped = (g.id === 'couple-ring' || g.id === 'friend-ring') && g.rows.some((r) => r.status === 'used')
-            const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
-            const ledLive = g.id === 'ledboard' && !!ledBanner // 게재 중
-            const isTheme = g.id.startsWith('theme-')
-            const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
-            return (
-              <div key={g.id} className="store-card inv-card">
-                {g.count > 1 && <span className="inv-count">{g.count}</span>}
-                <StoreItemImage id={g.id} emoji={g.emoji} className="store-card-img" />
-                <span className="store-card-name">{g.name}</span>
-                {isTheme ? (
-                  <button type="button"
-                    className={`btn btn-sm inv-use-btn ${themeApplied ? 'inv-applied-btn' : 'btn-primary'}`}
-                    onClick={() => useItem(g)}>
-                    {themeApplied ? '적용 중' : '적용하기'}
+        invSections.map((sec) => (
+          <section key={sec.key} className="inv-section">
+            <div className="inv-section-head">
+              <span className="inv-section-title">{sec.label}</span>
+              <span className="inv-section-count">{sec.items.length}종</span>
+            </div>
+            <div className="inv-grid">
+              {sec.items.map((g) => {
+                const hasActive = g.rows.some((r) => r.status === 'active')
+                const equipped = (g.id === 'couple-ring' || g.id === 'friend-ring') && g.rows.some((r) => r.status === 'used')
+                const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
+                const ledLive = g.id === 'ledboard' && !!ledBanner
+                const isTheme = g.id.startsWith('theme-')
+                const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
+                // 시안: 상태 뱃지 + 카드 전체 클릭(기존 동작 유지)
+                let badge = null, onClick = () => useItem(g), actionable = true
+                if (isTheme) badge = themeApplied ? '적용 중' : null
+                else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
+                else if (hasActive) badge = null
+                else if (pending) { badge = '수락 대기'; actionable = false }
+                else if (equipped) { badge = '장착 중'; actionable = false }
+                return (
+                  <button key={g.id} type="button" className={`inv-card2 ${actionable ? '' : 'is-static'}`}
+                    onClick={actionable ? onClick : undefined}>
+                    <span className="inv-thumb" style={{ background: imgBgOf(g.id) }}>
+                      <StoreItemImage id={g.id} emoji={g.emoji} className="inv-thumb-img" />
+                      {g.count > 1 && <span className="inv-badge-count">×{g.count}</span>}
+                      {badge && <span className="inv-badge-state">{badge}</span>}
+                    </span>
+                    <span className="inv-name">{g.name}</span>
                   </button>
-                ) : ledLive ? (
-                  <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => setLedEditOpen(true)}>
-                    사용 중
-                  </button>
-                ) : hasActive ? (
-                  <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => useItem(g)}>
-                    사용하기
-                  </button>
-                ) : pending ? (
-                  <span className="inv-equipped inv-pending">수락 대기 중</span>
-                ) : equipped ? (
-                  <span className="inv-equipped">장착 중</span>
-                ) : (
-                  <button type="button" className="btn btn-primary btn-sm inv-use-btn" onClick={() => useItem(g)}>
-                    사용하기
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          </section>
+        ))
       )}
 
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
