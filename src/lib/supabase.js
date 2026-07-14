@@ -18,16 +18,19 @@ if (!url || !anonKey) {
 function timeoutFetch(input, init = {}, attempt = 0) {
   const method = (init.method || 'GET').toUpperCase()
   const isRead = method === 'GET' || method === 'HEAD'
-  const limit = isRead ? 10000 : 30000
+  // 첫 시도는 짧게(재개 직후 stale 연결을 빨리 버리고 새 연결로 재시도) → 재시도는 넉넉히.
+  const limit = isRead ? (attempt === 0 ? 4500 : 12000) : 30000
   const ctrl = new AbortController()
   if (init.signal) {
     if (init.signal.aborted) ctrl.abort()
     else init.signal.addEventListener('abort', () => ctrl.abort(), { once: true })
   }
-  // 중요: iOS PWA(WebKit)는 프리즈→재개 시 중단된 fetch 를 abort() 해도 promise 를
-  // reject 하지 않고 그대로 매달아 둔다(dangling). 그러면 요청이 영영 settle 되지 않아
-  // 페이지 로딩이 무한히 돈다. → abort 에만 의존하지 않고, '거부하는 타임아웃 promise'
-  // 와 race 시켜 밑단 fetch 가 끝나지 않아도 반환 promise 는 반드시 settle 되게 한다.
+  // 중요 1: iOS PWA(WebKit)는 프리즈→재개 시 중단된 fetch 를 abort() 해도 promise 를
+  //   reject 하지 않고 그대로 매달아 둔다(dangling). → '거부하는 타임아웃 promise' 와 race.
+  // 중요 2: fetch() 는 '헤더'만 오면 resolve 된다. 재개 직후 stale 연결은 헤더는 오지만
+  //   '바디 스트림'이 멈추는 경우가 있는데, supabase-js 가 뒤에서 res.json()/text() 로
+  //   바디를 읽을 때 여기서 영영 멈춘다(타임아웃 밖). → 바디까지 이 안에서 읽어(arrayBuffer)
+  //   타임아웃 race 에 포함시키고, 버퍼링한 새 Response 를 돌려준다. 그래야 요청이 반드시 settle.
   let timer
   const timeout = new Promise((_, reject) => {
     timer = setTimeout(() => {
@@ -35,7 +38,16 @@ function timeoutFetch(input, init = {}, attempt = 0) {
       reject(new DOMException('Request timeout', 'AbortError'))
     }, limit)
   })
-  return Promise.race([fetch(input, { ...init, signal: ctrl.signal }), timeout])
+  const buffered = (async () => {
+    const res = await fetch(input, { ...init, signal: ctrl.signal })
+    const nullBody = res.status === 204 || res.status === 205 || res.status === 304
+    const buf = nullBody ? null : await res.arrayBuffer()
+    const headers = new Headers(res.headers)
+    headers.delete('content-encoding'); headers.delete('content-length')
+    return new Response(buf, { status: res.status, statusText: res.statusText, headers })
+  })()
+  buffered.catch(() => { /* 타임아웃이 이겼을 때 늦은 거부로 인한 unhandledrejection 방지 */ })
+  return Promise.race([buffered, timeout])
     .catch((err) => {
       // 호출자가 직접 취소한 경우는 재시도하지 않음
       if (init.signal && init.signal.aborted) throw err
