@@ -46,6 +46,16 @@ function FilterIcon() {
   )
 }
 
+function CubeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  )
+}
+
 function InviteIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -128,6 +138,8 @@ export default function Layout() {
   const [headerInvite, setHeaderInvite] = useState(null)
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
+  // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
+  const [storePremium, setStorePremium] = useState(false)
   // 전역 음악 플레이어(페이지 이동/모달 닫아도 재생 유지)
   const playerRef = useRef(null)
   const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false })
@@ -253,9 +265,9 @@ export default function Layout() {
   // - 그 외(하단이 흰색 탭바): body 흰색
   const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
-    document.body.style.background = isGroupView ? 'var(--bg)' : 'var(--surface)'
+    document.body.style.background = storePremium ? '#0d0a22' : (isGroupView ? 'var(--bg)' : 'var(--surface)')
     return () => { document.body.style.background = '' }
-  }, [isGroupView])
+  }, [isGroupView, storePremium])
 
   // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
   // → 하단 입력창이 키보드 위로 올라오고, 본문은 그 영역 안에 맞춰진다.
@@ -512,7 +524,7 @@ export default function Layout() {
       </header>
     )
   } else if (storeMatch) {
-    // 상점: 좌측 "깜냥이 상점" 제목, 우측 보유 츄르 알약(표시용)
+    // 상점: 좌측 "깜냥이 상점" 제목, 우측 보유 츄르 알약 + 인벤토리 버튼
     topbar = (
       <header className="topbar">
         <span className="topbar-heading topbar-title-lg">깜냥이 상점</span>
@@ -520,6 +532,7 @@ export default function Layout() {
           <span className="coin-pill-paw" aria-hidden="true">🐾</span>
           <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
         </span>
+        <Link to="/inventory" className="btn btn-ghost btn-sm icon-btn store-inv-btn" aria-label="인벤토리" title="인벤토리"><CubeIcon /></Link>
       </header>
     )
   } else if (inventoryMatch) {
@@ -573,7 +586,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''}`} ref={shellRef}>
       {topbar}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
@@ -583,7 +596,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, refreshCoin, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setStorePremium, refreshCoin, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

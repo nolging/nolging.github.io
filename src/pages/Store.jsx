@@ -32,13 +32,6 @@ const PawIcon = ({ className }) => (
     <path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" />
   </svg>
 )
-const CubeIcon = () => (
-  <svg width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-    <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
-  </svg>
-)
-
 // 프리미엄 배경 반짝임 별
 const STARS = [
   { l: '11%', t: '9%', s: 3, c: '#fff', d: 2.6, dl: 0 }, { l: '26%', t: '5%', s: 2, c: '#dcd3ff', d: 3.4, dl: .6 },
@@ -50,7 +43,7 @@ const STARS = [
 ]
 
 export default function Store() {
-  const { refreshCoin } = useOutletContext()
+  const { refreshCoin, setStorePremium } = useOutletContext()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [items, setItems] = useState([])
@@ -82,6 +75,13 @@ export default function Store() {
     listCoupleGroups(user.id).then((g) => setHasCouple((g || []).length > 0)).catch(() => {})
     listFriendGroups().then((g) => setHasFriend((g || []).length > 0)).catch(() => {})
   }, [user?.id])
+
+  // 프리미엄 탭이 켜지면 앱 전체를 다크 테마로 (Layout 이 상단바·하단탭까지 반영)
+  useEffect(() => {
+    const active = premiumView && (hasCouple || hasFriend)
+    setStorePremium?.(active)
+    return () => setStorePremium?.(false)
+  }, [premiumView, hasCouple, hasFriend, setStorePremium])
 
   const loadCounts = useCallback(async () => {
     if (!user?.id) return
@@ -153,17 +153,16 @@ export default function Store() {
 
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
-      <div className="st-toolbar">
-        {hasPremium ? (
+      {hasPremium && (
+        <div className="st-toolbar">
           <div className="st-seg" role="tablist">
             <button type="button" role="tab" aria-selected={!premiumView}
               className={!premiumView ? 'active' : ''} onClick={() => setPremiumView(false)}>일반 상점</button>
             <button type="button" role="tab" aria-selected={premiumView}
               className={premiumView ? 'active' : ''} onClick={() => setPremiumView(true)}>프리미엄 상점</button>
           </div>
-        ) : <span className="st-seg-spacer" />}
-        <button type="button" className="st-inv-btn" onClick={() => navigate('/inventory')} aria-label="인벤토리" title="인벤토리"><CubeIcon /></button>
-      </div>
+        </div>
+      )}
 
       {inPremium && (
         <div className="st-prem-banner">

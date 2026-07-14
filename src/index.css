@@ -1560,7 +1560,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 
 /* ============ 상점 시안 리디자인 (st-*) ============ */
 .store-page { position: relative; }
-.store-page.is-premium { background: radial-gradient(120% 80% at 50% -10%, #2a2547 0%, #14122a 58%, #0e0c1d 100%); }
+.store-page.is-premium { background: radial-gradient(125% 80% at 50% -5%, #2f2860 0%, #1a1540 48%, #0d0a22 100%); }
 @keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
 .st-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .st-stars span { position: absolute; border-radius: 50%; animation: st-twinkle 3s ease-in-out infinite; }
@@ -1576,10 +1576,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-inv-btn { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
   background: rgba(127,120,160,.16); color: #191722; display: inline-flex; align-items: center; justify-content: center; }
 .st-inv-btn:active { transform: scale(.94); }
-.store-page.is-premium .st-seg { background: rgba(255,255,255,.1); }
-.store-page.is-premium .st-seg button { color: rgba(244,242,253,.6); }
-.store-page.is-premium .st-seg button.active { background: #fff; color: #191722; }
-.store-page.is-premium .st-inv-btn { background: rgba(255,255,255,.12); color: #efecfb; }
+.store-page.is-premium .st-seg { background: rgba(255,255,255,.07); }
+.store-page.is-premium .st-seg button { color: rgba(244,242,253,.55); }
+.store-page.is-premium .st-seg button.active { background: linear-gradient(135deg,#f0c968,#c99b34); color: #2a2140; box-shadow: 0 3px 12px rgba(233,196,106,.4); }
 
 /* 프리미엄 환영 배너 */
 .st-prem-banner { display: flex; align-items: center; gap: 10px; border-radius: 16px; padding: 13px 16px;
@@ -1652,6 +1651,18 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-done-t { margin-top: 15px; font-size: 19px; font-weight: 800; color: #191722; }
 .st-done-s { margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #8b8798; }
 .st-done .st-btn-text { margin-top: 9px; }
+
+/* 프리미엄 상점: 앱 전체(상단바·하단탭)까지 다크 테마 */
+.app-shell.premium-shop { background: #0d0a22; }
+.premium-shop .topbar { background: #17132f; }
+.premium-shop .topbar-heading { color: #f4f2fd; }
+.premium-shop .topbar .icon-btn.store-inv-btn { background: rgba(255,255,255,.12); color: #efecfb; }
+.premium-shop .topbar .icon-btn.store-inv-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+.premium-shop .coin-pill { background: #7363e8; color: #fff; }
+.premium-shop .content { background: transparent; }
+.premium-shop .bottomnav { background: #1b1740; border-top: 1px solid rgba(255,255,255,.1); box-shadow: 0 -6px 24px rgba(6,4,20,.5); }
+.premium-shop .bottomnav a { color: rgba(233,230,250,.45); }
+.premium-shop .bottomnav a.active { color: #c3b6ff; }
 
 /* 냥피또 스크래치 복권 */
 .scratch-modal { display: flex; flex-direction: column; gap: 14px; }

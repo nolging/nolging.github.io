@@ -302,7 +302,7 @@ export default function Notes() {
                         {friend && <span className="note-tag note-tag-friend">🤝 우정 링</span>}
                         {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
-                        {link && <span className="note-tag note-tag-link">🔗 링크</span>}
+                        {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
                         {video && <span className="note-tag note-tag-video">📹 영상</span>}
                         {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
@@ -346,7 +346,7 @@ export default function Notes() {
                     {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                     {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
                     {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
-                    {link && <span className="note-tag note-tag-link">🔗 링크</span>}
+                    {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
                     {video && <span className="note-tag note-tag-video">📹 영상</span>}
                     {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
                     {p.name} <span className="note-card-rel">{p.label}</span>

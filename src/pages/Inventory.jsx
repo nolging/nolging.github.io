@@ -494,7 +494,7 @@ function LinkModal({ open, onClose, onDone }) {
 
   return (
     <>
-      <Modal open={open && !pickOpen} onClose={onClose} title="링크">
+      <Modal open={open && !pickOpen} onClose={onClose} title="선물 상자">
         <div className="couple-modal">
           {error && <div className="alert alert-error">{error}</div>}
           <p className="couple-hint">버튼에 표시할 텍스트와 연결할 링크를 입력하면, 받는 사람에게는 링크가 걸린 버튼만 보여요.</p>
