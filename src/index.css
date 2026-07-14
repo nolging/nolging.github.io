@@ -1558,6 +1558,101 @@ button.mlist-row:hover { background: #f6f5fa; }
 .store-seg-btn.active { background: #fff; color: #191722; box-shadow: 0 1px 3px rgba(25,23,34,.12); }
 .store-seg-btn.active:last-child { color: #7363e8; }
 
+/* ============ 상점 시안 리디자인 (st-*) ============ */
+.store-page { position: relative; }
+.store-page.is-premium { background: radial-gradient(120% 80% at 50% -10%, #2a2547 0%, #14122a 58%, #0e0c1d 100%); }
+@keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
+.st-stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.st-stars span { position: absolute; border-radius: 50%; animation: st-twinkle 3s ease-in-out infinite; }
+.store-page > *:not(.st-stars) { position: relative; z-index: 1; }
+
+/* 툴바: 세그먼트 + 인벤토리 버튼 */
+.st-toolbar { display: flex; align-items: center; gap: 10px; }
+.st-seg { flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
+.st-seg button { flex: 1; border: none; background: none; cursor: pointer; border-radius: 999px; padding: 10px 0;
+  font-size: 13px; font-weight: 700; color: #8b8798; transition: color .15s; }
+.st-seg button.active { background: #fff; color: #191722; box-shadow: 0 1px 3px rgba(25,23,34,.12); }
+.st-seg-spacer { flex: 1; }
+.st-inv-btn { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(127,120,160,.16); color: #191722; display: inline-flex; align-items: center; justify-content: center; }
+.st-inv-btn:active { transform: scale(.94); }
+.store-page.is-premium .st-seg { background: rgba(255,255,255,.1); }
+.store-page.is-premium .st-seg button { color: rgba(244,242,253,.6); }
+.store-page.is-premium .st-seg button.active { background: #fff; color: #191722; }
+.store-page.is-premium .st-inv-btn { background: rgba(255,255,255,.12); color: #efecfb; }
+
+/* 프리미엄 환영 배너 */
+.st-prem-banner { display: flex; align-items: center; gap: 10px; border-radius: 16px; padding: 13px 16px;
+  background: linear-gradient(135deg, rgba(240,201,104,.16), rgba(123,99,232,.14)); box-shadow: inset 0 0 0 1px rgba(240,201,104,.3); }
+.st-prem-star { font-size: 18px; color: #f0c968; animation: ni-glow 2.4s ease-in-out infinite; }
+@keyframes ni-glow { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+.st-prem-t { font-size: 12.5px; font-weight: 800; color: #f0c968; }
+.st-prem-s { margin-top: 1px; font-size: 11px; color: rgba(244,242,253,.66); }
+
+/* 섹션 + 카드 그리드 */
+.st-section { display: flex; flex-direction: column; gap: 12px; }
+.st-section-title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #191722; }
+.store-page.is-premium .st-section-title { color: #efecfb; }
+.st-coming { border-radius: 18px; border: 1.5px dashed rgba(244,242,253,.28); padding: 26px 16px; text-align: center;
+  color: rgba(244,242,253,.6); font-size: 12.5px; font-weight: 600; }
+.st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.st-card { background: #fff; border: none; border-radius: 18px; padding: 9px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(25,23,34,.05); display: flex; flex-direction: column; text-align: left; transition: transform .12s; }
+.st-card:active { transform: scale(.97); }
+.st-card-thumb { aspect-ratio: 1 / 1; border-radius: 13px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.st-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
+.st-card-img img.store-img { width: 64%; height: 64%; object-fit: contain; }
+.st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
+.st-paw { width: 12px; height: 12px; flex-shrink: 0; }
+.st-paw-lg { width: 16px; height: 16px; flex-shrink: 0; }
+.st-card-prem { background: #26223f; box-shadow: 0 6px 20px rgba(10,8,30,.45); }
+.st-card-prem .st-card-name { color: #efecfb; }
+.st-card-prem .st-card-price { color: #f0c968; }
+
+/* 상세 모달 */
+.st-modal { max-width: 336px; border-radius: 26px; }
+.st-detail { display: flex; flex-direction: column; }
+.st-x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: #f3f3f5; color: #8b8798; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
+.st-x:active { transform: scale(.94); }
+.st-detail-top { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.st-detail-thumb { width: 96px; height: 96px; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 48px; overflow: hidden; }
+.st-detail-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; line-height: 1; }
+.st-detail-img img.store-img { width: 66%; height: 66%; object-fit: contain; }
+.st-owned { margin-top: 13px; display: inline-flex; align-items: center; gap: 5px; background: #f3f3f5; border-radius: 999px; padding: 4px 11px; font-size: 11px; font-weight: 700; color: #8b8798; }
+.st-detail-name { margin-top: 9px; font-size: 19px; font-weight: 800; letter-spacing: -.4px; color: #191722; }
+.st-detail-desc { margin-top: 7px; font-size: 13px; line-height: 1.6; color: #8b8798; white-space: pre-line; }
+.st-notice { margin-top: 14px; font-size: 13px; border-radius: 10px; padding: 9px 12px; }
+.st-notice.is-err { color: #b91c1c; background: #fdecec; }
+.st-detail-priceRow { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; }
+.st-price-big { display: flex; align-items: center; gap: 4px; font-size: 18px; font-weight: 800; color: #7363e8; }
+.st-stepper { display: flex; align-items: center; border: 1.5px solid #efeef4; border-radius: 12px; overflow: hidden; }
+.st-stepper button { width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: #191722; font-size: 18px; font-weight: 700; }
+.st-stepper button:disabled { opacity: .35; cursor: default; }
+.st-stepper span { min-width: 38px; text-align: center; font-size: 15px; font-weight: 800; color: #191722; }
+.st-total { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; background: #f7f6fa; border-radius: 14px; padding: 12px 15px; }
+.st-total-l { font-size: 12.5px; font-weight: 700; color: #8b8798; }
+.st-total-v { display: flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 800; color: #191722; }
+.st-total-v .st-paw { color: #191722; }
+.st-detail-actions { margin-top: 14px; display: flex; gap: 9px; }
+.st-btn-ghost, .st-btn-buy { height: 50px; border-radius: 15px; font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+.st-btn-ghost { flex: 1; border: 1.5px solid #e4e2ea; background: #fff; color: #191722; }
+.st-btn-ghost:active { transform: scale(.98); }
+.st-btn-buy { flex: 1.25; border: none; background: #7363e8; color: #fff; }
+.st-btn-buy:active { transform: scale(.98); }
+.st-btn-buy:disabled, .st-btn-ghost:disabled { opacity: .5; cursor: default; transform: none; }
+.st-btn-block { width: 100%; flex: none; margin-top: 20px; }
+.st-btn-text { margin-top: 9px; width: 100%; height: 44px; border: none; background: transparent; color: #8b8798; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+/* 구매/선물 완료 */
+.st-done { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.st-done-ico { width: 64px; height: 64px; border-radius: 50%; background: #e8f4ec; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+.st-done.is-gift .st-done-ico { background: linear-gradient(150deg, #8b7cf4, #6250e0); }
+.st-done-t { margin-top: 15px; font-size: 19px; font-weight: 800; color: #191722; }
+.st-done-s { margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #8b8798; }
+.st-done .st-btn-text { margin-top: 9px; }
+
 /* 냥피또 스크래치 복권 */
 .scratch-modal { display: flex; flex-direction: column; gap: 14px; }
 .scratch-loading { display: flex; justify-content: center; padding: 40px 0; }
