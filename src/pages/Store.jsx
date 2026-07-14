@@ -32,6 +32,17 @@ export default function Store() {
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
+  const [scrolled, setScrolled] = useState(false) // 스크롤 시 sticky 탭에 그라데이션 페이드
+
+  // 본문 스크롤 여부 감지 → 탭 하단 페이드 on/off
+  useEffect(() => {
+    const sc = document.querySelector('.content')
+    if (!sc) return
+    const onScroll = () => setScrolled(sc.scrollTop > 4)
+    sc.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => sc.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     let on = true
@@ -116,7 +127,7 @@ export default function Store() {
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
       {hasPremium && (
-        <div className="st-toolbar">
+        <div className={`st-toolbar ${scrolled ? 'is-scrolled' : ''}`}>
           <div className="st-seg" role="tablist">
             <button type="button" role="tab" aria-selected={!premiumView}
               className={!premiumView ? 'active' : ''} onClick={() => setPremiumView(false)}>일반 상점</button>

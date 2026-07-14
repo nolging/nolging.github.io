@@ -1571,13 +1571,19 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-toolbar {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 10px;
-  /* 가로만 풀블리드(배경이 전체폭). 세로는 top:0 로 상단바에 딱 붙어 고정 → 스크롤 카드가 위로 새지 않음 */
   margin: 0 calc(-1 * var(--pad-x, 20px)) -8px;
   padding: 10px var(--pad-x, 20px) 0;
-  background: var(--bg);
+  background: transparent;             /* 평상시 완전 투명 */
+  --st-fade: var(--bg);                /* 스크롤 페이드 색(일반=페이지색) */
 }
-/* 프리미엄: 배경 띠 없이 완전 투명(별 배경이 그대로 이어지게) */
-.premium-shop .st-toolbar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* 스크롤 시에만 나타나는 그라데이션 페이드(위=불투명 → 아래=투명). 카드가 자연스럽게 사라짐 */
+.st-toolbar::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 26px);
+  z-index: -1; pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  background: linear-gradient(to bottom, var(--st-fade) 0, var(--st-fade) 60%, transparent 100%);
+}
+.st-toolbar.is-scrolled::after { opacity: 1; }
+.premium-shop .st-toolbar { --st-fade: #241d4a; }
 .st-seg { flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
 .st-seg button { flex: 1; border: none; background: none; cursor: pointer; border-radius: 999px; padding: 10px 0;
   font-size: 13px; font-weight: 700; color: #8b8798; transition: color .15s; }
