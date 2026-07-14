@@ -90,10 +90,14 @@ export default function Notes() {
     }
   }, [fetchNotes])
 
-  // 다시 시도(스피너 표시)
+  // 다시 시도: 8초 내 안 되면(재개 후 Supabase 클라이언트 인증 고착 등으로 조회가
+  // fetch 단계에 도달하지 못하고 멈춘 상태) 새로고침으로 클린 복구한다.
   const retryLoad = useCallback(() => {
     setLoading(true); setError('')
-    fetchNotes().catch((err) => setError(err.message || '쪽지를 불러오지 못했어요.')).finally(() => setLoading(false))
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('stuck')), 8000))
+    Promise.race([fetchNotes(), timeout])
+      .then(() => { setError(''); setLoading(false) })
+      .catch(() => { try { window.location.reload() } catch { setLoading(false) } })
   }, [fetchNotes])
 
   // 당겨서 새로고침: 전체 스피너 없이 목록만 갱신
