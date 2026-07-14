@@ -52,32 +52,54 @@ export default function Notes() {
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
   const [busy, setBusy] = useState(false)
 
-  async function load() {
+  const fetchNotes = useCallback(async () => {
     if (!user?.id) return
     const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
-    setReceived(r)
-    setSent(s)
+    setReceived(r); setSent(s)
+  }, [user?.id])
+  // 액션(수령 등) 후 목록만 갱신
+  async function load() {
+    try { await fetchNotes() } catch (err) { setError(err.message) }
   }
 
+  // 최초 로드 — 스피너가 무한히 돌지 않도록 15초 안전장치 포함.
   useEffect(() => {
     if (!user?.id) return
     let on = true
-    ;(async () => {
-      try { if (on) await load() }
-      catch (err) { if (on) setError(err.message) }
-      finally { if (on) setLoading(false) }
-    })()
-    return () => { on = false }
-  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    setLoading(true)
+    const guard = setTimeout(() => {
+      if (on) { setError((e) => e || '네트워크가 불안정해요. 아래 다시 시도를 눌러 주세요.'); setLoading(false) }
+    }, 15000)
+    fetchNotes()
+      .then(() => { if (on) setError('') })
+      .catch((err) => { if (on) setError(err.message || '쪽지를 불러오지 못했어요.') })
+      .finally(() => { if (on) { clearTimeout(guard); setLoading(false) } })
+    return () => { on = false; clearTimeout(guard) }
+  }, [user?.id, fetchNotes])
+
+  // 백그라운드에서 돌아오면(재개) 조용히 다시 불러오기 — stale/무한 로딩 방지.
+  useEffect(() => {
+    const onResume = () => { if (document.visibilityState === 'visible') fetchNotes().catch(() => {}) }
+    document.addEventListener('visibilitychange', onResume)
+    window.addEventListener('focus', onResume)
+    window.addEventListener('pageshow', onResume)
+    return () => {
+      document.removeEventListener('visibilitychange', onResume)
+      window.removeEventListener('focus', onResume)
+      window.removeEventListener('pageshow', onResume)
+    }
+  }, [fetchNotes])
+
+  // 다시 시도(스피너 표시)
+  const retryLoad = useCallback(() => {
+    setLoading(true); setError('')
+    fetchNotes().catch((err) => setError(err.message || '쪽지를 불러오지 못했어요.')).finally(() => setLoading(false))
+  }, [fetchNotes])
 
   // 당겨서 새로고침: 전체 스피너 없이 목록만 갱신
   const refresh = useCallback(async () => {
-    if (!user?.id) return
-    try {
-      const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
-      setReceived(r); setSent(s)
-    } catch (err) { setError(err.message) }
-  }, [user?.id])
+    try { await fetchNotes() } catch (err) { setError(err.message) }
+  }, [fetchNotes])
   useEffect(() => {
     setRefreshHandler(() => refresh)
     return () => setRefreshHandler(() => null)
@@ -226,7 +248,14 @@ export default function Notes() {
 
   return (
     <div className="page notes-page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error">
+          {error}
+          <button type="button" className="btn btn-sm picker-retry" onClick={retryLoad} disabled={loading}>
+            {loading ? '불러오는 중…' : '다시 시도'}
+          </button>
+        </div>
+      )}
 
       <div className="tabs" ref={tabsRef}>
         <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>

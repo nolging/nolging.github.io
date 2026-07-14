@@ -106,6 +106,7 @@ export function AuthProvider({ children }) {
         const { data, error } = await supabase.auth.getSession()
         clearTimeout(hard)
         if (error) { reload(); return }
+        setSession(data.session)                  // 재개 후 세션/유저 상태 최신화(누락 시 stale)
         await loadProfile(data.session?.user?.id) // 프로필/권한 최신화
         recovering = false
       } catch {
