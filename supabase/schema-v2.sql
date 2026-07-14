@@ -1987,6 +1987,24 @@ grant execute on function public.is_couple_group(uuid) to authenticated;
 --  초대 코드로 그룹 입장 (커플 그룹은 신규 입장 차단)
 --  schema.sql 의 join_group 를 대체(커플 그룹 차단 규칙 추가).
 -- =============================================================
+
+-- 이미 우정 링이 적용된 그룹에 새로 가입하면, 그 멤버 인벤토리에도
+-- 장착(used) 우정 링을 자동 지급(중복 방지). 우정 그룹이 아니면 아무것도 안 함.
+create or replace function public.grant_friend_ring_on_join(p_group_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return; end if;
+  if public.is_friend_group(p_group_id)
+     and not exists (select 1 from public.user_items
+                     where user_id = auth.uid() and item_id = 'friend-ring'
+                       and status = 'used' and group_id = p_group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', p_group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.grant_friend_ring_on_join(uuid) to authenticated;
+
 create or replace function public.join_group(p_code text)
 returns public.groups language plpgsql security definer set search_path = public as $$
 declare g public.groups;
@@ -2002,6 +2020,7 @@ begin
   insert into public.group_members(group_id, user_id, role)
     values (g.id, auth.uid(), 'member')
     on conflict (group_id, user_id) do nothing;
+  perform public.grant_friend_ring_on_join(g.id); -- 우정 그룹이면 장착 우정 링 자동 지급
   return g;
 end;
 $$;
@@ -2030,6 +2049,7 @@ begin
         show_contact     = excluded.show_contact,
         show_birthdate   = excluded.show_birthdate,
         show_ott         = excluded.show_ott;
+  perform public.grant_friend_ring_on_join(g.id); -- 우정 그룹이면 장착 우정 링 자동 지급
   return g;
 end;
 $$;
