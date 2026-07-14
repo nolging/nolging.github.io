@@ -1572,13 +1572,12 @@ button.mlist-row:hover { background: #f6f5fa; }
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 10px;
   /* 가로만 풀블리드(배경이 전체폭). 세로는 top:0 로 상단바에 딱 붙어 고정 → 스크롤 카드가 위로 새지 않음 */
-  margin: 0 calc(-1 * var(--pad-x, 20px));
-  padding: 12px var(--pad-x, 20px);
+  margin: 0 calc(-1 * var(--pad-x, 20px)) -8px;
+  padding: 10px var(--pad-x, 20px) 0;
   background: var(--bg);
 }
-.premium-shop .st-toolbar {
-  background: rgba(24,19,56,.6); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-}
+/* 프리미엄: 배경 띠 없이 완전 투명(별 배경이 그대로 이어지게) */
+.premium-shop .st-toolbar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .st-seg { flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
 .st-seg button { flex: 1; border: none; background: none; cursor: pointer; border-radius: 999px; padding: 10px 0;
   font-size: 13px; font-weight: 700; color: #8b8798; transition: color .15s; }
