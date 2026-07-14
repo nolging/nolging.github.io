@@ -1561,7 +1561,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* ============ 상점 시안 리디자인 (st-*) ============ */
 .store-page { position: relative; }
 /* 상점: 최상단에서 아래로 당길 때 rubber-band 로 sticky 탭이 내려오지 않도록 오버스크롤 차단 */
-.app-shell.store-view .content { overscroll-behavior: none; }
+.app-shell.store-view .content { overscroll-behavior: none; padding-top: 0; }
+/* content 상단 패딩을 없애 sticky 탭을 상단바에 딱 붙임(틈 제거).
+   탭이 없는 경우(비프리미엄)엔 첫 섹션에 상단 여백을 준다. */
+.store-view .store-page > *:first-child:not(.st-toolbar) { margin-top: var(--pad-y, 16px); }
 @keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
 
 /* 툴바(세그먼트 토글): 스크롤해도 상단에 고정(sticky) — 스크롤 콘텐츠를 가리도록 배경 풀블리드 */
