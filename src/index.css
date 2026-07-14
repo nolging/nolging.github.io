@@ -1893,6 +1893,37 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 .video-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
+/* ===== 비디오 테이프: 레트로 브라운관(CRT) TV ===== */
+.crt { position: relative; width: 100%; max-width: 300px; margin: 6px auto 2px; }
+.crt-antenna { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 20px; }
+.crt-antenna span { display: block; width: 2px; height: 26px; background: #8b8072; border-radius: 2px; transform-origin: bottom; position: relative; }
+.crt-antenna span:first-child { transform: rotate(-19deg); }
+.crt-antenna span:last-child { transform: rotate(19deg); }
+.crt-antenna span::after { content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: #8b8072; }
+.crt-body { position: relative; z-index: 1; display: flex; gap: 12px; background: #e6dccb; border-radius: 18px; padding: 14px; box-shadow: 0 12px 30px rgba(25,23,34,.22), inset 0 0 0 1px rgba(0,0,0,.05); }
+.crt-screen-frame { flex: 1; min-width: 0; background: #171512; border-radius: 12px; padding: 10px; }
+.crt-screen { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px / 14px; overflow: hidden; cursor: pointer; box-shadow: inset 0 0 24px rgba(0,0,0,.7); background: #000; }
+.crt-yt { position: absolute; inset: -2px; pointer-events: none; }
+.crt-yt iframe { width: 100%; height: 100%; border: 0; }
+.crt-scan { position: absolute; inset: 0; background: repeating-linear-gradient(rgba(0,0,0,.16) 0 1px, rgba(0,0,0,0) 1px 3px); pointer-events: none; z-index: 2; }
+.crt-sweep { position: absolute; left: 0; right: 0; height: 16px; background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,0)); animation: crt-line 2.6s linear infinite; pointer-events: none; z-index: 3; }
+.crt-vig { position: absolute; inset: 0; box-shadow: inset 0 0 40px rgba(0,0,0,.5); border-radius: 10px / 14px; pointer-events: none; z-index: 3; animation: crt-flicker 5.5s steps(2, jump-none) infinite; }
+.crt-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 4; pointer-events: none; }
+.crt-dark { position: absolute; inset: 0; background: #050505; z-index: 5; }
+@keyframes crt-line { 0% { transform: translateY(-100%); } 100% { transform: translateY(1400%); } }
+@keyframes crt-flicker { 0%,100% { opacity: 1; } 50% { opacity: .93; } }
+.crt-panel { width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 11px; padding-top: 4px; }
+.crt-brand { font-size: 8px; font-weight: 800; color: #a48f5f; letter-spacing: .1em; }
+.crt-ch { display: flex; align-items: center; gap: 5px; font-size: 8.5px; color: #5c5348; font-weight: 700; }
+.crt-led { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 6px currentColor; transition: background .2s; }
+.crt-knob { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 38% 35%, #fbf5ea, #c9bda6); box-shadow: inset 0 0 0 2px #b3a88f, 0 2px 4px rgba(0,0,0,.2); position: relative; }
+.crt-knob-lg { width: 38px; height: 38px; }
+.crt-knob i { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 2.5px; height: 11px; border-radius: 2px; background: #5c5348; }
+.crt-power { font-family: inherit; width: 40px; height: 28px; border-radius: 7px; border: none; background: linear-gradient(#c0472f, #a63a26); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 4px rgba(0,0,0,.2); }
+.crt-power:active { transform: translateY(1px); }
+.crt-feet { display: flex; justify-content: center; gap: 200px; margin-top: -2px; }
+.crt-feet span { width: 20px; height: 10px; background: #d3c8b4; border-radius: 0 0 6px 6px; }
+
 /* ---- 도트 LED 전광판 마퀴 ---- */
 .led-board {
   position: relative; overflow: hidden; height: 46px; border-radius: 12px;
