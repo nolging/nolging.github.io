@@ -185,9 +185,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
-  padding: 0 24px; height: 58px;
+  padding: env(safe-area-inset-top) 24px 0; height: calc(58px + env(safe-area-inset-top));
+  box-sizing: border-box;
   background: var(--bg); border-bottom: none; z-index: 10;
 }
+/* iOS 홈앱: 상태바/다이나믹 아일랜드 영역(흰 글자)이 보이도록 상단만 아주 옅게 어둡게(페이드).
+   프리미엄(다크)은 이미 어두워 제외. env 안전영역이 있을 때만 보임. */
+.app-shell::before {
+  content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top);
+  background: linear-gradient(to bottom, rgba(20,18,34,.32), rgba(20,18,34,.05));
+  pointer-events: none; z-index: 100;
+}
+.app-shell.premium-shop::before { display: none; }
 .topbar-heading { font-weight: 700; font-size: 1.05rem; color: var(--text); }
 /* 헤더의 원형 아이콘 버튼 (시안) */
 .topbar .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--canvas); color: var(--text); padding: 0; flex-shrink: 0; }
@@ -2274,7 +2283,7 @@ button.mlist-row:hover { background: #f6f5fa; }
   .content { --pad-y: 16px; --pad-x: 20px; }
   .topbar {
     gap: 10px;
-    padding: 0 14px; height: 54px;
+    padding: env(safe-area-inset-top) 14px 0; height: calc(54px + env(safe-area-inset-top));
   }
   .brand .brand-word { font-size: 1.05rem; }
   .topnav { display: none; }          /* 모바일: 메뉴는 하단 내비게이션으로 이동 */

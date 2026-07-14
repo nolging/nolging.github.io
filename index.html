@@ -2,8 +2,9 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <!-- iOS 상태바/다이나믹 아일랜드 영역 색을 상단바와 맞춤(런타임에 페이지별로 갱신) -->
+    <!-- viewport-fit=cover: 콘텐츠가 상태바/다이나믹 아일랜드 뒤까지 확장(안전영역 env 활성) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <!-- Android/Chrome 용(런타임에 페이지별 갱신). iOS 는 아래 status-bar-style 사용 -->
     <meta name="theme-color" content="#fdfcfe" />
 
     <!-- PWA: 홈 화면에 추가하면 주소창 없이 전체화면(standalone)으로 실행 -->
@@ -15,7 +16,8 @@
     <!-- iOS(Safari)용: 홈 화면 실행 시 주소창/브라우저 UI 숨김 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent: 콘텐츠가 상태바/다이나믹 아일랜드 뒤로 확장돼 앱 색이 위까지 이어짐 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Nolging" />
 
     <!-- 웹폰트: 페이퍼로지는 self-host (src/index.css @font-face, public/fonts) -->
