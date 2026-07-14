@@ -126,6 +126,8 @@ export default function Layout() {
   const [headerFilter, setHeaderFilter] = useState(null)
   // 페이지가 상단바 초대 버튼을 등록할 수 있게 (그룹 상세)
   const [headerInvite, setHeaderInvite] = useState(null)
+  // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
+  const [headerTitle, setHeaderTitle] = useState(null)
   // 전역 음악 플레이어(페이지 이동/모달 닫아도 재생 유지)
   const playerRef = useRef(null)
   const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false })
@@ -308,7 +310,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">그림판</span>
+        <span className="topbar-heading">낙서장</span>
       </header>
     )
   } else if (touchMatch) {
@@ -356,10 +358,11 @@ export default function Layout() {
     )
   } else if (membersMatch) {
     // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 상세/대시보드 등), 제목 "멤버"
+    // (커플 그룹은 페이지가 제목을 "데이트"로 등록)
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">멤버</span>
+        <span className="topbar-heading">{headerTitle || '멤버'}</span>
       </header>
     )
   } else if (taskNewMatch) {
@@ -576,7 +579,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, refreshCoin, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, refreshCoin, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

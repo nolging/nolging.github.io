@@ -2403,6 +2403,65 @@ button.mlist-row:hover { background: #f6f5fa; }
   justify-content: center; font-size: 23px; }
 .cs-act-t { font-size: 14px; font-weight: 700; color: #191722; }
 
+/* ============ 데이트(커플 공간) — 시안 13a ============ */
+.csx-page { display: flex; flex-direction: column; gap: 22px; padding-top: 8px; }
+/* 히어로 + 하트(콕!) */
+.csx-hero { display: flex; align-items: flex-start; justify-content: center; gap: 8px; }
+.csx-face { flex: 0 0 130px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: none; border: none; padding: 0; cursor: pointer; }
+.csx-face:disabled { cursor: default; opacity: .85; }
+.csx-face-name { max-width: 100%; font-size: 14.5px; font-weight: 700; color: #191722;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csx-heart { position: relative; margin-top: 30px; width: 44px; height: 44px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; border: none; background: none; cursor: pointer;
+  filter: drop-shadow(0 8px 18px rgba(236,106,143,.5)); animation: csx-beat 1.8s ease-in-out infinite; }
+.csx-heart:active { transform: scale(.85); }
+@keyframes csx-beat { 0%,100% { transform: scale(1); } 12% { transform: scale(1.16); } 24% { transform: scale(1); } 36% { transform: scale(1.1); } 48% { transform: scale(1); } }
+.csx-heart-p { position: absolute; font-size: 15px; pointer-events: none; animation: csx-rise .95s ease-out forwards; }
+.csx-hp1 { top: -4px; left: -10px; }
+.csx-hp2 { top: -8px; left: 16px; font-size: 12px; animation-delay: .12s; opacity: 0; }
+.csx-hp3 { top: -2px; left: 34px; font-size: 17px; animation-delay: .24s; opacity: 0; }
+@keyframes csx-rise { 0% { transform: translateY(0) scale(.7); opacity: 0; } 18% { opacity: 1; } 100% { transform: translateY(-70px) scale(1.15); opacity: 0; } }
+/* D-day */
+.csx-dday { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: -4px; }
+.csx-days { font-size: 48px; font-weight: 800; letter-spacing: -2px; color: #191722; line-height: 1; }
+.csx-days span { font-size: 26px; letter-spacing: -1px; font-weight: 800; }
+.csx-anniv-pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: none;
+  border-radius: 999px; padding: 9px 16px; font-size: 12.5px; font-weight: 600; color: #8b8798; cursor: pointer;
+  box-shadow: inset 0 0 0 1px #f3e6e9; }
+.csx-anniv-pill:active { transform: scale(.97); }
+/* 다음 기념일 */
+.csx-mile { background: #fff; border-radius: 20px; padding: 16px 18px; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
+.csx-mile-top { display: flex; align-items: center; gap: 8px; }
+.csx-mile-label { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #8b8798; }
+.csx-mile-label b { font-size: 15px; font-weight: 800; color: #191722; margin-left: 3px; }
+.csx-mile-d { background: #fde8ee; color: #d4577a; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 5px 11px; flex-shrink: 0; }
+.csx-mile-bar { margin-top: 12px; height: 7px; border-radius: 999px; background: #f6e7ea; overflow: hidden; }
+.csx-mile-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#f89ab2,#ec6a8f); }
+.csx-mile-date { margin-top: 9px; font-size: 12px; color: #b0a3a8; }
+/* 놀이 존 (가로 스크롤) */
+.csx-zone { display: flex; flex-direction: column; }
+.csx-zone-title { font-size: 16px; font-weight: 800; letter-spacing: -.4px; color: #191722; }
+.csx-scroll { margin-top: 13px; display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 8px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.csx-scroll::-webkit-scrollbar { display: none; }
+.csx-card { flex: 0 0 auto; width: 106px; height: 106px; background: #fff; border: none; border-radius: 22px;
+  padding: 13px; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start;
+  text-align: left; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
+.csx-card:active { transform: scale(.97); }
+.csx-card-soft, .csx-card-soft:active { cursor: default; transform: none; }
+.csx-card-ico { width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.csx-card-t { margin-top: auto; font-size: 14px; font-weight: 700; color: #191722; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.csx-card-s { margin-top: 1px; font-size: 10.5px; color: #8b8798; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 기념일 수정 모달 */
+.csx-anniv-modal { display: flex; flex-direction: column; gap: 12px; }
+.csx-anniv-hint { font-size: 13px; color: #6f6a80; line-height: 1.5; margin: 0; }
+.csx-anniv-input { width: 100%; border: 1.5px solid #ece9f3; border-radius: 12px; padding: 12px 14px;
+  font-size: 15px; background: #f4f3f7; color: #191722; box-sizing: border-box; }
+.csx-anniv-reset { color: #8b8798; background: #f4f3f7; }
+
 /* 커플 그룹 카드 우측 상단 "D+숫자" (알약 없이 회색 텍스트, 그룹 설명과 동일) */
 .tile-anniv { position: absolute; top: 12px; right: 14px; z-index: 3;
   color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: -.2px; }

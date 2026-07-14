@@ -1,15 +1,19 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary } from '../lib/api'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
+import Modal from '../components/Modal'
 
+function parseYMD(s) {
+  const [y, mo, d] = String(s).split('-').map(Number)
+  if (!y || !mo || !d) return null
+  return new Date(y, mo - 1, d)
+}
 // 기념일부터 오늘까지 "며칠째" (기념일이 1일차)
 function daysSince(dateStr) {
-  if (!dateStr) return null
-  const [y, mo, d] = String(dateStr).split('-').map(Number)
-  if (!y || !mo || !d) return null
-  const start = new Date(y, mo - 1, d)
+  const start = parseYMD(dateStr)
+  if (!start) return null
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   return Math.floor((today - start) / 86400000) + 1
@@ -17,6 +21,18 @@ function daysSince(dateStr) {
 function annivLabel(s) {
   const [y, mo, d] = String(s).split('-')
   return `${y}.${Number(mo)}.${Number(d)}`
+}
+
+// 멍냥꽁냥 / 미니 게임 존의 가로 스크롤 카드
+function PlayCard({ emoji, bg, title, sub, onClick }) {
+  return (
+    <button type="button" className={`csx-card ${onClick ? '' : 'csx-card-soft'}`}
+      onClick={onClick} aria-disabled={!onClick}>
+      <span className="csx-card-ico" style={{ background: bg }}>{emoji}</span>
+      <span className="csx-card-t">{title}</span>
+      <span className="csx-card-s">{sub}</span>
+    </button>
+  )
 }
 
 function OwnerBadge() {
@@ -44,6 +60,7 @@ function birthLabel(s) {
 export default function GroupMembers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
+  const { setHeaderTitle } = useOutletContext()
   const [members, setMembers] = useState([])
   const [group, setGroup] = useState(null)
   const [couple, setCouple] = useState(false)
@@ -52,7 +69,12 @@ export default function GroupMembers() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [regenBusy, setRegenBusy] = useState(false)
-  const [anniv, setAnniv] = useState('')       // 기념일 (YYYY-MM-DD)
+  const [anniv, setAnniv] = useState('')       // 명시적으로 설정한 기념일 (YYYY-MM-DD)
+  const [claimDate, setClaimDate] = useState('') // 기념일 미설정 시 기본값 = 커플 링 수령일
+  const [annivOpen, setAnnivOpen] = useState(false) // 기념일 수정 모달
+  const [annivDraft, setAnnivDraft] = useState('')
+  const [annivBusy, setAnnivBusy] = useState(false)
+  const [burst, setBurst] = useState(false)    // 하트 콕! 애니메이션
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -66,15 +88,39 @@ export default function GroupMembers() {
         isFriendGroup(groupId).catch(() => false),
       ])
       setMembers(cards); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
+      if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
 
-  async function saveAnniv(e) {
-    const v = e.target.value
-    setAnniv(v); setError('')
-    try { await setGroupAnniversary(groupId, v || null) }
-    catch (err) { setError(err.message) }
+  // 커플 그룹이면 상단바 제목을 "데이트"로 (그 외엔 기본 "멤버")
+  useEffect(() => {
+    setHeaderTitle?.(couple ? '데이트' : null)
+    return () => setHeaderTitle?.(null)
+  }, [couple, setHeaderTitle])
+
+  function popHeart() {
+    setBurst(true); clearTimeout(popHeart._t)
+    popHeart._t = setTimeout(() => setBurst(false), 1000)
+  }
+  function openAnnivEdit(effAnniv) {
+    setAnnivDraft(effAnniv || '')
+    setAnnivOpen(true)
+  }
+  async function saveAnnivModal() {
+    setAnnivBusy(true); setError('')
+    try {
+      await setGroupAnniversary(groupId, annivDraft || null)
+      setAnniv(annivDraft || '')
+      setAnnivOpen(false)
+    } catch (err) { setError(err.message) } finally { setAnnivBusy(false) }
+  }
+  async function resetAnnivToClaim() {
+    setAnnivBusy(true); setError('')
+    try {
+      await setGroupAnniversary(groupId, null)
+      setAnniv(''); setAnnivOpen(false)
+    } catch (err) { setError(err.message) } finally { setAnnivBusy(false) }
   }
 
   function copyCode() {
@@ -102,78 +148,116 @@ export default function GroupMembers() {
 
   if (loading) return <div className="page"><div className="spinner" /></div>
 
-  // ---- 커플 그룹: 커플 공간 ----
+  // ---- 커플 그룹: 데이트(커플 공간) ----
   if (couple) {
     const meC = members.find((m) => m.is_self) || members[0]
     const partner = members.find((m) => !m.is_self) || members[1] || null
-    const days = daysSince(anniv)
     const today = new Date()
     const maxDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    const person = (m, sub) => (
-      <button type="button" className="cs-person"
+    // 명시적 기념일 없으면 커플 링 수령일을 기본값으로
+    const effAnniv = anniv || claimDate || ''
+    const days = daysSince(effAnniv)
+    const start = parseYMD(effAnniv)
+    // 다음 100일 단위 기념일
+    let mile = null, mileLeft = null, mileDateLabel = null, pct = 0
+    if (days != null && start) {
+      mile = (Math.floor(days / 100) + 1) * 100
+      mileLeft = mile - days
+      const mileD = new Date(start.getTime() + (mile - 1) * 86400000)
+      mileDateLabel = `${mileD.getMonth() + 1}월 ${mileD.getDate()}일`
+      pct = Math.max(3, Math.min(100, Math.round(((days - (mile - 100)) / 100) * 100)))
+    }
+    const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
+    const face = (m, sub) => (
+      <button type="button" className="csx-face"
         onClick={() => m && navigate(`/groups/${groupId}/members/${m.user_id}`)} disabled={!m}>
-        <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={96} />
-        <span className="cs-person-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
+        <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={104} />
+        <span className="csx-face-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
       </button>
     )
+
     return (
-      <div className="page cs-page">
+      <div className="page csx-page">
         {error && <div className="alert alert-error">{error}</div>}
 
-        <div className="cs-pair">
-          {person(meC, 'me')}
-          <span className="cs-heart" aria-hidden="true">♥</span>
-          {person(partner, 'partner')}
+        {/* 커플 히어로 + 하트(콕!) */}
+        <div className="csx-hero">
+          {face(meC, 'me')}
+          <button type="button" className="csx-heart" onClick={popHeart} aria-label="콕!" title="콕!">
+            <svg width="38" viewBox="0 0 24 24" fill="#ec6a8f" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+            {burst && (
+              <>
+                <span className="csx-heart-p csx-hp1">💗</span>
+                <span className="csx-heart-p csx-hp2">💘</span>
+                <span className="csx-heart-p csx-hp3">💖</span>
+              </>
+            )}
+          </button>
+          {face(partner, 'partner')}
         </div>
 
-        <div className="cs-anniv">
-          {days != null ? (
-            <>
-              <div className="cs-anniv-label">우리 함께한 지</div>
-              <div className="cs-anniv-days">{days.toLocaleString('ko-KR')}<span>일</span></div>
-              <div className="cs-anniv-date">{annivLabel(anniv)}부터</div>
-            </>
-          ) : (
-            <div className="cs-anniv-empty">기념일을 설정하면 며칠째인지 세어 드려요</div>
-          )}
-          <label className="cs-anniv-edit">
-            <span className="cs-anniv-edit-l">기념일</span>
-            <input type="date" value={anniv || ''} max={maxDate} onChange={saveAnniv} />
-          </label>
+        {/* D-day + 기념일 알약(클릭 시 수정) */}
+        <div className="csx-dday">
+          <div className="csx-days">{days != null ? days.toLocaleString('ko-KR') : '—'}<span>&nbsp;일</span></div>
+          <button type="button" className="csx-anniv-pill" onClick={() => openAnnivEdit(effAnniv)}>
+            {effAnniv ? `${annivLabel(effAnniv)} ~ing` : '기념일 설정하기'}
+          </button>
         </div>
 
-        <div className="cs-actions">
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
-              <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
-            </span>
-            <span className="cs-act-t">그림판</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/touch`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#fde8ef' }}>💋</span>
-            <span className="cs-act-t">우심뽀까</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
-            <span className="cs-act-t">퍼즐</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/catchmind`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#fdeee6' }}>🎨</span>
-            <span className="cs-act-t">캐치마인드</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/omok`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#efe7d8' }}>⚫</span>
-            <span className="cs-act-t">오목</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
-            <span className="cs-act-t">다빈치코드</span>
-          </button>
-          <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/rps`, { state: { from: 'members' } })}>
-            <span className="cs-act-ico" style={{ background: '#e9e4f7' }}>✊</span>
-            <span className="cs-act-t">가위바위보</span>
-          </button>
+        {/* 다음 기념일 카드 */}
+        {mile != null && (
+          <div className="csx-mile">
+            <div className="csx-mile-top">
+              <div className="csx-mile-label">다음 기념일 <b>{mile}일</b></div>
+              <span className="csx-mile-d">D-{mileLeft}</span>
+            </div>
+            <div className="csx-mile-bar"><div className="csx-mile-fill" style={{ width: `${pct}%` }} /></div>
+            <div className="csx-mile-date">{mileDateLabel}에 {mile}일이 돼요</div>
+          </div>
+        )}
+
+        {/* 멍냥꽁냥 */}
+        <div className="csx-zone">
+          <div className="csx-zone-title">멍냥꽁냥</div>
+          <div className="csx-scroll">
+            <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={() => go('touch')} />
+            <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
+            <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="메뉴 준비 중" />
+            <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />
+          </div>
         </div>
+
+        {/* 미니 게임 */}
+        <div className="csx-zone">
+          <div className="csx-zone-title">미니 게임</div>
+          <div className="csx-scroll">
+            <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={() => go('catchmind')} />
+            <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="숫자 추리 한판" onClick={() => go('davinci')} />
+            <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={() => go('puzzle')} />
+            <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={() => go('rps')} />
+            <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={() => go('omok')} />
+          </div>
+        </div>
+
+        {/* 기념일 수정 모달 */}
+        <Modal open={annivOpen} onClose={() => setAnnivOpen(false)} title="기념일">
+          <div className="csx-anniv-modal">
+            <p className="csx-anniv-hint">
+              사귀기 시작한 날을 골라 주세요. 설정하지 않으면 커플 링을 수령한 날부터 세어요.
+            </p>
+            <input type="date" className="csx-anniv-input" value={annivDraft || ''} max={maxDate}
+              onChange={(e) => setAnnivDraft(e.target.value)} />
+            <button type="button" className="btn btn-primary btn-block" onClick={saveAnnivModal}
+              disabled={annivBusy || !annivDraft}>
+              {annivBusy ? '저장 중…' : '저장'}
+            </button>
+            {anniv && (
+              <button type="button" className="btn btn-block csx-anniv-reset" onClick={resetAnnivToClaim} disabled={annivBusy}>
+                커플 링 수령일로 되돌리기
+              </button>
+            )}
+          </div>
+        </Modal>
       </div>
     )
   }
@@ -241,7 +325,7 @@ export default function GroupMembers() {
               <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
                 <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
               </span>
-              <span className="cs-act-t">그림판</span>
+              <span className="cs-act-t">낙서장</span>
             </button>
             <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`, { state: { from: 'members' } })}>
               <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>

@@ -188,6 +188,13 @@ export async function setGroupAnniversary(groupId, date) {
   }
 }
 
+// 커플 공간: 기념일 미입력 시 기본값(커플 링 수령일). 미배포/실패 시 null.
+export async function coupleRingClaimedAt(groupId) {
+  const { data, error } = await supabase.rpc('couple_ring_claimed_at', { p_group_id: groupId })
+  if (error) return null
+  return data || null
+}
+
 // ---- 함께 그리기 (프리미엄 그룹 공용 캔버스) --------------------
 // 저장된 스트로크 로드 (재진입 시 이어 그리기). 테이블 미배포면 빈 배열.
 export async function listDrawingStrokes(groupId) {

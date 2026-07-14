@@ -523,6 +523,20 @@ end;
 $$;
 grant execute on function public.set_group_anniversary(uuid, date) to authenticated;
 
+-- 커플 공간: 기념일을 따로 입력하지 않았을 때의 기본값 = 커플 링을 수령(장착)한 날짜.
+-- (양쪽 멤버의 used 커플 링 중 가장 이른 used_at 의 날짜) — security definer 로 RLS 우회.
+create or replace function public.couple_ring_claimed_at(p_group_id uuid)
+returns date language plpgsql security definer set search_path = public as $$
+declare d date;
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return null; end if;
+  select date(min(used_at)) into d from public.user_items
+   where item_id = 'couple-ring' and status = 'used' and group_id = p_group_id and used_at is not null;
+  return d;
+end;
+$$;
+grant execute on function public.couple_ring_claimed_at(uuid) to authenticated;
+
 -- ---- tasks: 위시리스트(놀깅) 유형 -----------------------------
 -- OTT/독서/영화/게임/운동/기타 등. 일반 태스크는 null.
 alter table public.tasks add column if not exists category text;
