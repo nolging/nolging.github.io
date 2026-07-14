@@ -1566,8 +1566,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-toolbar {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 10px;
-  margin: calc(-1 * var(--pad-y, 16px)) calc(-1 * var(--pad-x, 20px)) 0;
-  padding: var(--pad-y, 16px) var(--pad-x, 20px) 10px;
+  /* 가로만 풀블리드(배경이 전체폭). 세로는 top:0 로 상단바에 딱 붙어 고정 → 스크롤 카드가 위로 새지 않음 */
+  margin: 0 calc(-1 * var(--pad-x, 20px));
+  padding: 12px var(--pad-x, 20px);
   background: var(--bg);
 }
 .premium-shop .st-toolbar {
