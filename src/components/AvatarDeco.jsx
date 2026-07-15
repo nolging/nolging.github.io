@@ -51,8 +51,8 @@ function WolfEars() {
   // 귀 크기를 조금 축소(꼭지 -32 → -24, 폭도 소폭 축소)
   const ear = (
     <>
-      <path d="M17 32 C11 9 16 -19 27 -24 C36 -9 43 12 45 30 C36 34 24 35 17 32 Z" fill="#726c7a" stroke="#726c7a" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M25 28 C21 11 25 -11 31 -16 C37 -4 41 12 42 26 C35 29 29 29 25 28 Z" fill="#cfc9d6" />
+      <path d="M17 32 C11 11 16 -12 27 -16 C36 -4 43 13 45 30 C36 34 24 35 17 32 Z" fill="#726c7a" stroke="#726c7a" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M25 28 C21 12 25 -6 31 -10 C37 0 41 13 42 26 C35 29 29 29 25 28 Z" fill="#cfc9d6" />
     </>
   )
   return (
