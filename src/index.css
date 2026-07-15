@@ -2687,6 +2687,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .tk-greet { display: flex; align-items: flex-end; justify-content: flex-end; gap: 9px; flex-shrink: 0;
   padding: 0 16px 0 10px; margin-bottom: 0; position: relative; z-index: 1; }
 .tk-cat { display: block; flex-shrink: 0; filter: drop-shadow(0 3px 5px rgba(25,23,34,.12)); }
+/* 좌측 상단 "부르기" 버튼 (상대에게 푸시 알림) */
+.tk-call { align-self: center; margin-right: auto; display: inline-flex; align-items: center; gap: 5px;
+  border: none; cursor: pointer; background: #fff; color: #e0518a; font-weight: 700; font-size: 13px;
+  border-radius: 999px; padding: 8px 15px; box-shadow: 0 3px 12px rgba(224,81,138,.2); transition: transform .1s ease; }
+.tk-call:active { transform: scale(.96); }
+.tk-call:disabled { opacity: .6; cursor: default; }
 /* 닿는 중 고양이 눈 조금 더 빠르게 깜빡 */
 .tk-cat-excited .login-cat-eye { animation-duration: 1.5s; }
 .tk-bubble { position: relative; margin-bottom: 10px; background: #fff; border-radius: 16px; padding: 9px 14px;

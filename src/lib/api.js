@@ -1002,6 +1002,17 @@ export async function pokeMember(groupId, targetUserId) {
   }
 }
 
+// 우심뽀까 부르기: 상대에게 "입술 내밀고 기다려요" 푸시 알림 전송.
+export async function summonToTouch(groupId, targetUserId) {
+  const { error } = await supabase.rpc('summon_to_touch', { p_group_id: groupId, p_target: targetUserId })
+  if (error) {
+    if (error.code === 'PGRST202' || /summon_to_touch/.test(error.message || '')) {
+      throw new Error('부르기 기능이 아직 DB에 설정되지 않았습니다. (summon_to_touch 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
 // 우정 링 사용: 2명 이상 그룹에 즉시 적용 + 전원에게 쪽지/알림.
 export async function useFriendRing({ groupId, message }) {
   const { error } = await supabase.rpc('use_friend_ring', { p_group_id: groupId, p_message: message ?? null })

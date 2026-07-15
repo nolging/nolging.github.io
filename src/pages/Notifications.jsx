@@ -31,6 +31,7 @@ const ICONS = {
   link: '🔗',
   video: '📹',
   poke: '👉',
+  touch_call: '💋',
 }
 
 export default function Notifications() {

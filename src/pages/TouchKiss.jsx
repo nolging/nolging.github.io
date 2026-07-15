@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getMyGroupMember } from '../lib/api'
+import { getMyGroupMember, getGroupMemberMap, summonToTouch } from '../lib/api'
 import PeekCat from '../components/PeekCat'
 import Avatar from '../components/Avatar'
 
@@ -35,7 +35,35 @@ export default function TouchKiss() {
   const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
   const [excited, setExcited] = useState(false) // 닿는 중(고양이 눈 빠르게 깜빡)
   const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
+  const [partner, setPartner] = useState(null) // 부를 상대 {uid, name}
+  const [callState, setCallState] = useState('idle') // idle | sending | done
   const meRef = useRef(me); meRef.current = me
+
+  // 그룹의 상대 멤버(부르기 대상) 확정
+  useEffect(() => {
+    if (!groupId || !uid) return
+    let on = true
+    getGroupMemberMap(groupId).then((map) => {
+      if (!on) return
+      const other = Object.entries(map).find(([id]) => id !== uid)
+      if (other) setPartner({ uid: other[0], name: other[1].name })
+    }).catch(() => {})
+    return () => { on = false }
+  }, [groupId, uid])
+
+  async function summon() {
+    if (!partner || callState === 'sending') return
+    if (!window.confirm(`${partner.name} 님을 부를까요?`)) return
+    setCallState('sending')
+    try {
+      await summonToTouch(groupId, partner.uid)
+      setCallState('done')
+      setTimeout(() => setCallState('idle'), 2500)
+    } catch (e) {
+      setCallState('idle')
+      alert(e.message || '부르기에 실패했어요.')
+    }
+  }
 
   // ---- 실시간 채널 ----
   useEffect(() => {
@@ -154,6 +182,11 @@ export default function TouchKiss() {
   return (
     <div className="page tk-page">
       <div className="tk-greet">
+        {partner && (
+          <button type="button" className="tk-call" onClick={summon} disabled={callState === 'sending'}>
+            {callState === 'done' ? '불렀어요!' : <><span aria-hidden="true">💋</span> 부르기</>}
+          </button>
+        )}
         <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
         <PeekCat className={`tk-cat ${excited ? 'tk-cat-excited' : ''}`} sparkle="heart" width={72} />
       </div>

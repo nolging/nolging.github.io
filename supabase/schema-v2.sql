@@ -2313,6 +2313,33 @@ end;
 $$;
 grant execute on function public.poke_member(uuid, uuid) to authenticated;
 
+-- 우심뽀까 "부르기": 상대에게 입술 내밀고 기다린다는 푸시 알림 전송.
+--   제목 = "{내 닉네임} 님이 입술 내밀고 기다리고 있어요!", 내용 = "ㅡ 3ㅡ"
+create or replace function public.summon_to_touch(p_group_id uuid, p_target uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_name text;
+begin
+  if not (public.is_couple_group(p_group_id) or public.is_friend_group(p_group_id)) then
+    raise exception '프리미엄 그룹에서만 사용할 수 있어요.';
+  end if;
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 사용할 수 있어요.';
+  end if;
+  if p_target = auth.uid() then
+    raise exception '자기 자신은 부를 수 없어요.';
+  end if;
+  if not public.is_group_member(p_group_id, p_target) then
+    raise exception '대상이 그룹 멤버가 아니에요.';
+  end if;
+  v_name := public.notif_member_name(p_group_id, auth.uid());
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    values (p_target, auth.uid(), 'touch_call',
+      coalesce(nullif(v_name, ''), '누군가') || ' 님이 입술 내밀고 기다리고 있어요!',
+      'ㅡ 3ㅡ', p_group_id);
+end;
+$$;
+grant execute on function public.summon_to_touch(uuid, uuid) to authenticated;
+
 -- =============================================================
 --  냥피또 (스크래치 복권) — 결과는 서버가 결정(조작 방지).
 --  활성 냥피또 1개 소모 + 가중 상품표로 랜덤 츄르 당첨(0=꽝) → 원장 적립.
