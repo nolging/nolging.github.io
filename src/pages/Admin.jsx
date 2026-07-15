@@ -83,7 +83,9 @@ export default function Admin() {
     e.preventDefault(); setError(''); setNotice(''); setItemBusy(true)
     try {
       const { premium, tier } = kindToFlags(itemForm.kind)
-      await adminUpsertStoreItem({ ...itemForm, premium, tier })
+      // 줄바꿈: 실제 개행 + 예전 방식으로 입력한 리터럴 '\n' 도 실제 개행으로 변환
+      const description = (itemForm.description || '').replace(/\r\n/g, '\n').replace(/\\n/g, '\n')
+      await adminUpsertStoreItem({ ...itemForm, description, premium, tier })
       setNotice(`상점 아이템 '${itemForm.name}'을(를) 저장했습니다.`)
       setItemForm(EMPTY_ITEM); setEditingItem(false)
       await loadItems()
@@ -239,7 +241,8 @@ export default function Admin() {
               </select></label>
           </div>
           <label className="field"><span>설명</span>
-            <input value={itemForm.description} onChange={setItemField('description')} placeholder="상세 설명 (줄바꿈은 \n)" /></label>
+            <textarea rows={3} value={itemForm.description} onChange={setItemField('description')}
+              placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></label>
           <div className="row-gap" style={{ flexWrap: 'wrap' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5 }}>
               <input type="checkbox" checked={itemForm.giftOnly} onChange={setItemField('giftOnly')} /> 선물 전용(구매 불가)</label>
