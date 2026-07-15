@@ -348,9 +348,11 @@ export default function NoteCompose() {
               const max = owned[id] || 0
               const reason = giftReason(id)
               const disabled = !!reason
+              // 미선택 카드(수량 0)를 탭하면 수량 1로 선택
+              const tapToSelect = !disabled && q === 0
               return (
-                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''}`}
-                  onClick={disabled ? () => setGiftNotice(reason) : undefined}>
+                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${tapToSelect ? 'is-tap' : ''}`}
+                  onClick={disabled ? () => setGiftNotice(reason) : tapToSelect ? () => { setGiftNotice(''); setDraft(id, 1) } : undefined}>
                   <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>{metaOf(id).emoji}
                     <span className="nc-icard-badge">×{max}</span>
                   </span>
@@ -358,7 +360,7 @@ export default function NoteCompose() {
                   {disabled ? (
                     <div className="nc-gcard-locked">프리미엄</div>
                   ) : (
-                    <div className="nc-step">
+                    <div className="nc-step" onClick={(e) => e.stopPropagation()}>
                       <button type="button" className="nc-step-b" disabled={q <= 0} onClick={() => { setGiftNotice(''); setDraft(id, q - 1) }}>−</button>
                       <span className="nc-step-v">{q}</span>
                       <button type="button" className="nc-step-b" disabled={q >= max} onClick={() => { setGiftNotice(''); setDraft(id, q + 1) }}>+</button>
