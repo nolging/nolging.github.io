@@ -37,6 +37,7 @@ export default function Inventory() {
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
   const [telescopeOpen, setTelescopeOpen] = useState(false)
+  const [eraserOpen, setEraserOpen] = useState(false)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
@@ -108,6 +109,7 @@ export default function Inventory() {
     else if (g.id === 'bluray') setBlurayOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'telescope') setTelescopeOpen(true)
+    else if (g.id === 'eraser') setEraserOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
@@ -179,6 +181,14 @@ export default function Inventory() {
           <p className="tele-guide-label">사용 방법</p>
           <p className="tele-guide-text">흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.</p>
           <button type="button" className="btn btn-primary btn-block" onClick={() => setTelescopeOpen(false)}>확인</button>
+        </div>
+      </Modal>
+
+      <Modal open={eraserOpen} onClose={() => setEraserOpen(false)} title="지우개">
+        <div className="couple-modal">
+          <p className="tele-guide-label">사용 방법</p>
+          <p className="tele-guide-text">쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.</p>
+          <button type="button" className="btn btn-primary btn-block" onClick={() => setEraserOpen(false)}>확인</button>
         </div>
       </Modal>
 
