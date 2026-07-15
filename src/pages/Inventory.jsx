@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
@@ -273,51 +273,73 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
 
 // ---- 냥피또: 스크래치 복권 ----
 function ScratchModal({ open, onClose, onDone, refreshCoin }) {
-  const [phase, setPhase] = useState('loading') // loading | ready | error
-  const [prize, setPrize] = useState(0)
+  const [prize, setPrize] = useState(null)      // null=아직 미확정(긁기/확인 전)
   const [revealed, setRevealed] = useState(false)
+  const [committed, setCommitted] = useState(false) // 실제 사용됨(긁기 시작 또는 결과 확인)
+  const [forceReveal, setForceReveal] = useState(false)
   const [error, setError] = useState('')
+  const rollingRef = useRef(false)
 
   useEffect(() => {
-    if (!open) return
-    setPhase('loading'); setPrize(0); setRevealed(false); setError('')
-    let on = true
-    scratchNyangpito()
-      .then((p) => { if (on) { setPrize(p); setPhase('ready') } })
-      .catch((e) => { if (on) { setError(e.message); setPhase('error') } })
-    return () => { on = false }
+    if (open) { setPrize(null); setRevealed(false); setCommitted(false); setForceReveal(false); setError(''); rollingRef.current = false }
   }, [open])
+
+  // 실제 사용: 냥피또 1개 소모 + 당첨 계산(서버). 최초 1회만.
+  const roll = useCallback(async () => {
+    if (rollingRef.current) return
+    rollingRef.current = true
+    setCommitted(true)
+    try {
+      const p = await scratchNyangpito()
+      setPrize(p)
+    } catch (e) {
+      setError(e.message)
+    }
+  }, [])
 
   async function finish() {
     try { await onDone() } catch { /* noop */ }
     refreshCoin?.()
     onClose()
   }
+  // 배경 클릭 등으로 닫기: 사용했으면 정리(갱신 후 닫기), 안 했으면 그냥 닫기(미사용)
+  function handleClose() { if (committed) finish(); else onClose() }
+  // 결과 확인 버튼: 아직 안 긁었으면 사용+공개, 이미 공개면 닫기
+  async function confirmBtn() {
+    if (!revealed) { await roll(); setForceReveal(true); return }
+    await finish()
+  }
 
-  const win = prize > 0
+  const known = prize != null
+  const win = known && prize > 0
 
   return (
-    <Modal open={open} onClose={phase === 'ready' ? finish : onClose} title="냥피또">
+    <Modal open={open} onClose={handleClose} title="냥피또">
       <div className="scratch-modal">
-        {phase === 'error' ? (
+        {error ? (
           <>
             <div className="alert alert-error">{error}</div>
-            <button type="button" className="btn btn-primary btn-block" onClick={onClose}>닫기</button>
+            <button type="button" className="btn btn-primary btn-block" onClick={handleClose}>닫기</button>
           </>
-        ) : phase === 'loading' ? (
-          <div className="scratch-loading"><div className="spinner" /></div>
         ) : (
           <>
             <p className="scratch-guide">동전으로 긁듯이 카드를 문질러 보세요</p>
-            <ScratchCard onReveal={() => setRevealed(true)}>
-              <div className={`scratch-result ${win ? '' : 'lose'}`}>
-                <span className="scratch-emoji">{win ? '🍬' : '🐾'}</span>
-                <span className="scratch-label">{win ? '축하해요! 츄르 당첨' : '아쉬워요… 다음 기회에'}</span>
-                <span className="scratch-amt">{win ? `+${prize}` : '꽝'}</span>
-              </div>
+            <ScratchCard onStart={roll} onReveal={() => setRevealed(true)} reveal={forceReveal}>
+              {known ? (
+                <div className={`scratch-result ${win ? '' : 'lose'}`}>
+                  <span className="scratch-emoji">{win ? '🍬' : '🐾'}</span>
+                  <span className="scratch-label">{win ? '축하해요! 츄르 당첨' : '아쉬워요… 다음 기회에'}</span>
+                  <span className="scratch-amt">{win ? `+${prize}` : '꽝'}</span>
+                </div>
+              ) : (
+                <div className="scratch-result">
+                  <span className="scratch-emoji">🐾</span>
+                  <span className="scratch-label">긁는 중…</span>
+                </div>
+              )}
             </ScratchCard>
-            <button type="button" className={`btn btn-block ${revealed ? 'btn-primary' : ''}`} onClick={finish}>
-              {revealed ? (win ? `${prize}츄르 받기` : '확인') : '건너뛰고 확인'}
+            <button type="button" className={`btn btn-block ${revealed ? 'btn-primary' : ''}`} onClick={confirmBtn}>
+              {revealed ? (win ? `${prize}츄르 받기` : '확인') : '결과 확인'}
             </button>
           </>
         )}

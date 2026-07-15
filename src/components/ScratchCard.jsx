@@ -2,14 +2,25 @@ import { useEffect, useRef } from 'react'
 
 // 동전으로 긁는 스크래치 카드. children(당첨 내용) 위를 은박 커버로 덮고,
 // 문지른 자리를 지워 드러냄. revealAt(기본 55%) 이상 긁으면 나머지 자동 공개.
-export default function ScratchCard({ height = 172, onReveal, revealAt = 0.55, coverText = '긁어서 확인하기', children }) {
+export default function ScratchCard({ height = 172, onReveal, onStart, reveal = false, revealAt = 0.55, coverText = '긁어서 확인하기', children }) {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const revealedRef = useRef(false)
   const drawingRef = useRef(false)
+  const startedRef = useRef(false)
   const lastRef = useRef(null)
   const onRevealRef = useRef(onReveal)
   onRevealRef.current = onReveal
+  const onStartRef = useRef(onStart)
+  onStartRef.current = onStart
+
+  // 외부에서 reveal=true 로 강제 공개(버튼으로 "결과 확인")
+  useEffect(() => {
+    if (!reveal || revealedRef.current) return
+    revealedRef.current = true
+    canvasRef.current?.classList.add('gone')
+    onRevealRef.current?.()
+  }, [reveal])
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -63,7 +74,11 @@ export default function ScratchCard({ height = 172, onReveal, revealAt = 0.55, c
         onRevealRef.current?.()
       }
     }
-    function down(e) { if (revealedRef.current) return; drawingRef.current = true; lastRef.current = null; scratch(pos(e)); e.preventDefault() }
+    function down(e) {
+      if (revealedRef.current) return
+      if (!startedRef.current) { startedRef.current = true; onStartRef.current?.() }  // 첫 긁기 = 사용 확정
+      drawingRef.current = true; lastRef.current = null; scratch(pos(e)); e.preventDefault()
+    }
     function move(e) { if (!drawingRef.current || revealedRef.current) return; scratch(pos(e)); check(); e.preventDefault() }
     function up() { if (drawingRef.current) { drawingRef.current = false; check() } }
 
