@@ -11,7 +11,8 @@ import { listMyGroups } from '../lib/api'
 // 추가 옵션:
 //  - excludeGroupIds: 선택 목록에서 제외할 그룹(예: 이미 커플/우정 링 적용된 그룹)
 //  - mode: 'friend' 면 그룹 단위 선택(멤버 선택 없음). onPick 에 groupWide/members 포함
-export default function RecipientPicker({ open, onClose, onPick, title = '받는 사람', excludeGroupIds = [], mode = null }) {
+// includeGroupIds: 지정(배열)되면 그 그룹만 노출(예: 프리미엄 선물 대상 그룹). null 이면 제한 없음.
+export default function RecipientPicker({ open, onClose, onPick, title = '받는 사람', excludeGroupIds = [], includeGroupIds = null, mode = null }) {
   const { user } = useAuth()
   const myId = user?.id
   const [groups, setGroups] = useState([])
@@ -55,11 +56,13 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
   // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만. (+ 제외 목록 필터)
   const isFriendMode = mode === 'friend'
   const exclude = useMemo(() => new Set(excludeGroupIds || []), [excludeGroupIds])
+  const include = useMemo(() => (includeGroupIds == null ? null : new Set(includeGroupIds)), [includeGroupIds])
   const eligibleGroups = useMemo(() => groups.filter((g) => {
     if (exclude.has(g.id)) return false
+    if (include && !include.has(g.id)) return false
     const ms = g.group_members || []
     return ms.some((m) => m.user_id === myId) && ms.some((m) => m.user_id !== myId)
-  }), [groups, myId, exclude])
+  }), [groups, myId, exclude, include])
 
   // 그룹 선택 시: 나 외 멤버가 한 명뿐이면 자동 선택(추가 클릭 없이 '선택'만 누르면 됨),
   // 여러 명이면 초기화해 직접 고르게 한다. (eligibleGroups 정의 이후에 두어 TDZ 방지)

@@ -54,6 +54,7 @@ export default function NoteCompose() {
   const [linkFor, setLinkFor] = useState(null)    // media itemId for URL modal
   const [linkUrl, setLinkUrl] = useState('')
   const [giftDraft, setGiftDraft] = useState({})  // { id: qty }
+  const [giftNotice, setGiftNotice] = useState('') // 비활성 프리미엄 아이템 클릭 시 안내
 
   const [owned, setOwned] = useState({})          // { id: count(active) }
   const [store, setStore] = useState({})          // { id: { name, emoji, premium, tier } }
@@ -136,7 +137,7 @@ export default function NoteCompose() {
   const giftDisabled = !!useItem
   function openGiftSheet() {
     if (giftDisabled) return
-    const d = {}; gifts.forEach((g) => { d[g.id] = g.qty }); setGiftDraft(d); setSheet('gift')
+    const d = {}; gifts.forEach((g) => { d[g.id] = g.qty }); setGiftDraft(d); setGiftNotice(''); setSheet('gift')
   }
   function setDraft(id, q) {
     setGiftDraft((prev) => { const d = { ...prev }; if (q <= 0) delete d[id]; else d[id] = q; return d })
@@ -147,23 +148,37 @@ export default function NoteCompose() {
     setSheet(null)
   }
 
-  // 선물 가능한 보유 아이템:
-  //  - 소원권(wish): 선물받아 수신자가 정해진 아이템이라 재선물 불가 → 제외
-  //  - 프리미엄 아이템: 프리미엄 회원(커플/우정)에게만. 티어에 맞는 그룹의 상대에게만.
-  const giftableIds = useMemo(() => Object.keys(owned).filter((id) => {
-    if (owned[id] <= 0) return false
-    if (id === 'wish') return false
+  // 선물 목록: 보유 아이템(소원권 제외). 프리미엄도 일단 노출하되, 받는 사람이
+  // 정해졌고 대상이 아니면 비활성. (받는 사람 미선택이면 허용 → 이후 그룹으로 필터)
+  const giftItemsList = useMemo(
+    () => Object.keys(owned).filter((id) => owned[id] > 0 && id !== 'wish'),
+    [owned],
+  )
+  const giftReason = useCallback((id) => {
     const info = store[id]
-    if (info?.premium) {
-      if (!recipient || recipient.groupWide) return false
-      const inCouple = coupleGroups.includes(recipient.groupId)
-      const inFriend = friendGroups.includes(recipient.groupId)
-      if (info.tier === 'couple') return inCouple
-      if (info.tier === 'friend') return inFriend
-      return inCouple || inFriend
+    if (!info?.premium) return null
+    if (!recipient) return null                 // 미선택: 일단 허용
+    if (recipient.groupWide) return '단체(우정 링) 대상에게는 선물할 수 없어요.'
+    const inCouple = coupleGroups.includes(recipient.groupId)
+    const inFriend = friendGroups.includes(recipient.groupId)
+    if (info.tier === 'couple') return inCouple ? null : '커플끼리만 선물 가능'
+    if (info.tier === 'friend') return inFriend ? null : '우정 링을 나눠 낀 친구에게만 선물 가능'
+    return (inCouple || inFriend) ? null : '프리미엄 회원에게만 선물 가능'
+  }, [store, recipient, coupleGroups, friendGroups])
+
+  // 담은 프리미엄 선물에 맞춰 받는 사람 후보 그룹 제한(모든 프리미엄 조건 교집합)
+  const giftIncludeGroups = useMemo(() => {
+    let set = null
+    for (const g of gifts) {
+      const info = store[g.id]
+      if (!info?.premium) continue
+      const allowed = info.tier === 'couple' ? coupleGroups
+        : info.tier === 'friend' ? friendGroups : [...coupleGroups, ...friendGroups]
+      const a = new Set(allowed)
+      set = set === null ? a : new Set([...set].filter((x) => a.has(x)))
     }
-    return true
-  }), [owned, store, recipient, coupleGroups, friendGroups])
+    return set === null ? null : [...set]
+  }, [gifts, store, coupleGroups, friendGroups])
   // 사용 시트 섹션(보유분만)
   const useSections = USE_SECTIONS
     .map((s) => ({ label: s.label, ids: s.ids.filter((id) => (owned[id] || 0) > 0) }))
@@ -323,24 +338,32 @@ export default function NoteCompose() {
       <BottomSheet open={sheet === 'gift'} onClose={() => setSheet(null)}>
         <h3 className="nc-sheet-title">선물할 아이템</h3>
         <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
-        {giftableIds.length === 0 ? (
+        {giftNotice && <div className="nc-gift-notice">{giftNotice}</div>}
+        {giftItemsList.length === 0 ? (
           <div className="nc-sheet-empty">선물할 수 있는 아이템이 없어요.</div>
         ) : (
           <div className="nc-grid nc-grid-gift">
-            {giftableIds.map((id) => {
+            {giftItemsList.map((id) => {
               const q = giftDraft[id] || 0
               const max = owned[id] || 0
+              const reason = giftReason(id)
+              const disabled = !!reason
               return (
-                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''}`}>
+                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''}`}
+                  onClick={disabled ? () => setGiftNotice(reason) : undefined}>
                   <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>{metaOf(id).emoji}
                     <span className="nc-icard-badge">×{max}</span>
                   </span>
                   <span className="nc-icard-name">{metaOf(id).name}</span>
-                  <div className="nc-step">
-                    <button type="button" className="nc-step-b" disabled={q <= 0} onClick={() => setDraft(id, q - 1)}>−</button>
-                    <span className="nc-step-v">{q}</span>
-                    <button type="button" className="nc-step-b" disabled={q >= max} onClick={() => setDraft(id, q + 1)}>+</button>
-                  </div>
+                  {disabled ? (
+                    <div className="nc-gcard-locked">프리미엄</div>
+                  ) : (
+                    <div className="nc-step">
+                      <button type="button" className="nc-step-b" disabled={q <= 0} onClick={() => { setGiftNotice(''); setDraft(id, q - 1) }}>−</button>
+                      <span className="nc-step-v">{q}</span>
+                      <button type="button" className="nc-step-b" disabled={q >= max} onClick={() => { setGiftNotice(''); setDraft(id, q + 1) }}>+</button>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -370,6 +393,7 @@ export default function NoteCompose() {
 
       <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handlePick}
         excludeGroupIds={pickerExclude} mode={pickerMode}
+        includeGroupIds={RINGS.includes(useItem?.id) ? null : giftIncludeGroups}
         title={pickerMode === 'friend' ? '우정 링 보낼 그룹' : RINGS.includes(useItem?.id) ? '커플 링 보낼 사람' : '받는 사람'} />
     </div>
   )
