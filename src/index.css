@@ -181,9 +181,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
-/* iOS standalone(cover)에서 height:100% 가 하단 안전영역을 뺀 높이로 잡혀 하단에
-   빈 영역이 생기던 문제 → top/bottom 을 물리 화면 양 끝(0)에 고정해 꽉 채운다 */
-.app-shell { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* iOS standalone(홈화면 앱)에서는 viewport-fit=cover 여도 position:fixed 가
+   '안전영역' 아래 끝에 갇혀(하단 인디케이터 영역만큼 위) 탭/시트가 떠 보인다.
+   → bottom 을 안전영역만큼(-env) 더 내려 물리 화면 맨 아래까지 확장한다. */
+.app-shell { position: fixed; top: 0; left: 0; right: 0; bottom: calc(-1 * env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -1329,7 +1330,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 
 /* ---- 하단 시트 (초대 등) ---- */
-.sheet-root { position: fixed; inset: 0; z-index: 50; }
+/* 하단 시트도 안전영역에 갇히지 않게 물리 화면 맨 아래까지 확장 (app-shell 과 동일) */
+.sheet-root { position: fixed; top: 0; left: 0; right: 0; bottom: calc(-1 * env(safe-area-inset-bottom)); z-index: 50; }
 .sheet-backdrop { position: absolute; inset: 0; background: rgba(20, 22, 40, 0); transition: background .28s ease; }
 .sheet-root.shown .sheet-backdrop { background: rgba(20, 22, 40, .38); }
 .sheet {
