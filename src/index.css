@@ -2648,9 +2648,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .draw-bbtn:active { transform: scale(.95); }
 .draw-bprev { width: 24px; height: 6px; border-radius: 3px; flex-shrink: 0; }
 .bp-pen { background: currentColor; }
-.bp-crayon { background: currentColor; opacity: .8; height: 8px; border-radius: 3px;
-  -webkit-mask-image: repeating-linear-gradient(63deg, #000 0 2px, rgba(0,0,0,.35) 2px 4px);
-  mask-image: repeating-linear-gradient(63deg, #000 0 2px, rgba(0,0,0,.35) 2px 4px); }
+.bp-crayon { background: currentColor; opacity: .82; height: 9px; border-radius: 3px;
+  -webkit-mask-image: repeating-linear-gradient(58deg, #000 0 1.4px, transparent 1.4px 3px),
+    repeating-linear-gradient(122deg, #000 0 1.4px, transparent 1.4px 3px);
+  mask-image: repeating-linear-gradient(58deg, #000 0 1.4px, transparent 1.4px 3px),
+    repeating-linear-gradient(122deg, #000 0 1.4px, transparent 1.4px 3px); }
 .bp-highlighter { background: currentColor; opacity: .45; height: 10px; border-radius: 2px; }
 .bp-neon { background: currentColor; box-shadow: 0 0 5px 1px currentColor; }
 .bp-dashed { background-image: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 9px); }

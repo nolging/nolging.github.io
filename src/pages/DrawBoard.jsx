@@ -17,14 +17,21 @@ const BRUSHES = [
   { id: 'neon', label: '네온' },
   { id: 'dashed', label: '점선' },
 ]
-// 반투명/발광/질감 브러쉬는 획을 한 번에 그려야 이음매(끊김)가 안 생김 → 증분 대신 전체 리드로우
-const SMOOTH = new Set(['highlighter', 'neon', 'crayon'])
+// 반투명/발광 브러쉬는 획을 한 번에 그려야 이음매(끊김)가 안 생김 → 증분 대신 전체 리드로우
+const SMOOTH = new Set(['highlighter', 'neon'])
 const BG = '#ffffff'
 
-// 정규화 좌표 폴리라인을 (선택적 오프셋과 함께) 한 번에 stroke
-function strokePolyline(ctx, p, W, H, start, ox = 0, oy = 0) {
-  ctx.beginPath(); ctx.moveTo(p[start - 1][0] * W + ox, p[start - 1][1] * H + oy)
-  for (let i = start; i < p.length; i++) ctx.lineTo(p[i][0] * W + ox, p[i][1] * H + oy)
+// 좌표 기반 결정적 난수(0~1). 같은 위치 = 항상 같은 값 → 리드로우/피어 렌더가 흔들리지 않음(크레파스 알갱이용)
+function hash2(x, y, k) {
+  let h = (Math.round(x) * 374761393 + Math.round(y) * 668265263 + k * 2246822519) >>> 0
+  h = ((h ^ (h >>> 13)) * 1274126177) >>> 0
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295
+}
+
+// 정규화 좌표 폴리라인을 한 번에 stroke
+function strokePolyline(ctx, p, W, H, start) {
+  ctx.beginPath(); ctx.moveTo(p[start - 1][0] * W, p[start - 1][1] * H)
+  for (let i = start; i < p.length; i++) ctx.lineTo(p[i][0] * W, p[i][1] * H)
   ctx.stroke()
 }
 
@@ -38,20 +45,32 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
   ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'
 
-  // 크레용: 옅은 획을 살짝 어긋나게 여러 겹 → 왁스 질감
+  // 크레용(크레파스): 브러쉬 폭 안에 작은 알갱이를 흩뿌려 종이 결 같은 거친 왁스 질감
   if (b === 'crayon') {
-    const off = Math.max(0.6, lw * 0.17)
-    const passes = [[0, 0, 0.5, 1], [off, -off, 0.3, 0.82], [-off, off, 0.3, 0.86], [off * 0.6, off * 0.9, 0.22, 0.7]]
-    if (p.length === 1) {
-      for (const [ox, oy, a, wf] of passes) {
-        ctx.globalAlpha = a
-        ctx.beginPath(); ctx.arc(p[0][0] * W + ox, p[0][1] * H + oy, (lw * wf) / 2, 0, Math.PI * 2); ctx.fill()
+    const R = lw / 2
+    const step = Math.max(1.1, lw * 0.42)   // 알갱이 샘플 간격(작을수록 촘촘)
+    const stamp = (px, py) => {
+      for (let g = 0; g < 3; g++) {
+        const a1 = hash2(px, py, g * 3 + 1)
+        const a2 = hash2(px, py, g * 3 + 2)
+        const a3 = hash2(px, py, g * 3 + 3)
+        if (a3 < 0.18) continue               // 일부는 비워 종이 결(빈틈) 표현
+        const ang = a1 * 6.2832
+        const rad = Math.sqrt(a2) * R          // 원판 균일 분포
+        const dr = Math.max(0.5, lw * 0.17 * (0.55 + a3))
+        ctx.globalAlpha = 0.28 + a3 * 0.4
+        ctx.beginPath(); ctx.arc(px + Math.cos(ang) * rad, py + Math.sin(ang) * rad, dr, 0, 6.2832); ctx.fill()
       }
-      ctx.restore(); return
     }
-    for (const [ox, oy, a, wf] of passes) {
-      ctx.globalAlpha = a; ctx.lineWidth = lw * wf
-      strokePolyline(ctx, p, W, H, 1, ox, oy)
+    if (p.length === 1) { stamp(p[0][0] * W, p[0][1] * H); ctx.restore(); return }
+    const start = Math.max(1, fromIdx)
+    let prevx = p[start - 1][0] * W, prevy = p[start - 1][1] * H
+    for (let i = start; i < p.length; i++) {
+      const x = p[i][0] * W, y = p[i][1] * H
+      const dx = x - prevx, dy = y - prevy, dist = Math.hypot(dx, dy)
+      const n = Math.max(1, Math.floor(dist / step))
+      for (let j = 1; j <= n; j++) { const t = j / n; stamp(prevx + dx * t, prevy + dy * t) }
+      prevx = x; prevy = y
     }
     ctx.restore(); return
   }
