@@ -8,21 +8,35 @@ import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDr
 const COLORS = ['#191722', '#e5484d', '#f5860a', '#f5c211', '#4a9d6a', '#3b82f6', '#7363e8', '#ec4899', '#ffffff']
 // 펜 굵기 = 캔버스 너비 대비 비율(화면 크기 달라도 동일 비율로 렌더)
 const WIDTHS = [0.008, 0.016, 0.028, 0.046]
+// 브러쉬 종류(그린 뒤 실시간/저장에 stroke.b 로 함께 기록 → 피어도 동일하게 렌더)
+const BRUSHES = [
+  { id: 'pen', label: '펜' },
+  { id: 'highlighter', label: '형광펜' },
+  { id: 'neon', label: '네온' },
+  { id: 'dashed', label: '점선' },
+]
 const BG = '#ffffff'
 
 function paintStroke(ctx, s, W, H, fromIdx = 0) {
   const p = s.p
   if (!p || !p.length) return
+  const b = s.b || 'pen'
+  const lw = Math.max(0.5, s.w * W)
+  ctx.save()
   ctx.strokeStyle = s.c; ctx.fillStyle = s.c
-  ctx.lineWidth = Math.max(0.5, s.w * W)
+  ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'
+  if (b === 'highlighter') { ctx.globalAlpha = 0.32; ctx.lineWidth = lw * 1.7; ctx.lineCap = 'butt' }
+  else if (b === 'neon') { ctx.shadowColor = s.c; ctx.shadowBlur = Math.max(4, lw * 1.4) }
+  else if (b === 'dashed') { ctx.setLineDash([Math.max(1, lw * 0.15), lw * 1.5 + 2]) }
   if (p.length === 1) {
-    ctx.beginPath(); ctx.arc(p[0][0] * W, p[0][1] * H, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); return
+    ctx.beginPath(); ctx.arc(p[0][0] * W, p[0][1] * H, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return
   }
   const start = Math.max(1, fromIdx)
   ctx.beginPath(); ctx.moveTo(p[start - 1][0] * W, p[start - 1][1] * H)
   for (let i = start; i < p.length; i++) ctx.lineTo(p[i][0] * W, p[i][1] * H)
   ctx.stroke()
+  ctx.restore()
 }
 
 export default function DrawBoard() {
@@ -46,9 +60,12 @@ export default function DrawBoard() {
 
   const [color, setColor] = useState('#191722')
   const [width, setWidth] = useState(WIDTHS[1])
+  const [brush, setBrush] = useState('pen')
   const colorRef = useRef(color); colorRef.current = color
   const widthRef = useRef(width); widthRef.current = width
+  const brushRef = useRef(brush); brushRef.current = brush
 
+  const [canvasW, setCanvasW] = useState(0)   // 실제 캔버스 표시 너비(굵기 미리보기 = 실제 굵기)
   const [peers, setPeers] = useState(1)
   const [busy, setBusy] = useState(false)
 
@@ -78,6 +95,7 @@ export default function DrawBoard() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctxRef.current = ctx
     sizeRef.current = { w: rect.width, h: rect.height }
+    setCanvasW(rect.width)
     redrawAll()
   }, [redrawAll])
 
@@ -100,10 +118,10 @@ export default function DrawBoard() {
       if (idsRef.current.has(pl.id)) return
       let s = liveRef.current.get(pl.id)
       const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
-      if (!s) { s = { id: pl.id, c: pl.c, w: pl.w, p: [] }; liveRef.current.set(pl.id, s) }
+      if (!s) { s = { id: pl.id, c: pl.c, w: pl.w, b: pl.b, p: [] }; liveRef.current.set(pl.id, s) }
       const from = s.p.length
       if (pl.p && pl.p.length) { for (const q of pl.p) s.p.push(q); if (ctx) paintStroke(ctx, s, W, H, from) }
-      if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, p: s.p }) }
+      if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
     })
     ch.on('broadcast', { event: 'remove' }, ({ payload: pl }) => {
       const i = committedRef.current.findIndex((x) => x.id === pl.id)
@@ -123,7 +141,7 @@ export default function DrawBoard() {
       try { await ch.track({ uid, name: profile?.login_id || '' }) } catch { /* noop */ }
       try {
         const rows = await listDrawingStrokes(groupId)
-        for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, p: r.stroke.p })
+        for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, b: r.stroke.b, p: r.stroke.p })
         redrawAll()
       } catch { /* noop */ }
     })
@@ -137,7 +155,7 @@ export default function DrawBoard() {
     if (!cur) return
     const pts = bufRef.current; bufRef.current = []
     if (!pts.length && !end) return
-    chanRef.current?.send({ type: 'broadcast', event: 'seg', payload: { id: cur.id, uid, c: cur.c, w: cur.w, p: pts, end: !!end } })
+    chanRef.current?.send({ type: 'broadcast', event: 'seg', payload: { id: cur.id, uid, c: cur.c, w: cur.w, b: cur.b, p: pts, end: !!end } })
   }, [uid])
 
   // ---- 포인터 입력 ----
@@ -151,7 +169,7 @@ export default function DrawBoard() {
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
     e.currentTarget.setPointerCapture?.(e.pointerId)
     const p0 = pos(e)
-    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, p: [p0] }
+    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
@@ -177,8 +195,8 @@ export default function DrawBoard() {
     drawing.current = null
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
     flush(true)
-    addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, p: cur.p })
-    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, p: cur.p }) } catch { /* noop */ }
+    addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
+    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
   }
 
   // ---- 되돌리기 / 지우기 ----
@@ -221,14 +239,27 @@ export default function DrawBoard() {
               style={{ background: c }} onClick={() => setColor(c)} />
           ))}
         </div>
+        <div className="draw-brushes">
+          {BRUSHES.map((b) => (
+            <button key={b.id} type="button" aria-label={`브러쉬 ${b.label}`}
+              className={`draw-bbtn ${brush === b.id ? 'on' : ''}`} onClick={() => setBrush(b.id)}>
+              <span className={`draw-bprev bp-${b.id}`}
+                style={{ color: color === '#ffffff' ? '#c9c6d6' : color }} />
+              {b.label}
+            </button>
+          ))}
+        </div>
         <div className="draw-row">
           <div className="draw-widths">
-            {WIDTHS.map((w) => (
-              <button key={w} type="button" aria-label={`굵기 ${w}`}
-                className={`draw-wbtn ${width === w ? 'on' : ''}`} onClick={() => setWidth(w)}>
-                <span style={{ width: Math.max(4, w * 150), height: Math.max(4, w * 150), background: color === '#ffffff' ? '#c9c6d6' : color }} />
-              </button>
-            ))}
+            {WIDTHS.map((w) => {
+              const d = Math.max(4, Math.round(w * (canvasW || 340)))
+              return (
+                <button key={w} type="button" aria-label={`굵기 ${w}`}
+                  className={`draw-wbtn ${width === w ? 'on' : ''}`} onClick={() => setWidth(w)}>
+                  <span style={{ width: d, height: d, background: color === '#ffffff' ? '#c9c6d6' : color }} />
+                </button>
+              )
+            })}
           </div>
           <div className="draw-actions">
             <button type="button" className="draw-act" onClick={undo} aria-label="되돌리기" title="되돌리기">
