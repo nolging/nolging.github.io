@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
+import { decoSlot } from '../components/AvatarDeco'
 import RecipientPicker from '../components/RecipientPicker'
 import ScratchCard from '../components/ScratchCard'
 import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco } from '../lib/api'
@@ -49,7 +50,7 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0 }
+    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, desc: s.desc || '' }
     setMeta(m)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -118,7 +119,7 @@ export default function Inventory() {
     }
     else if (g.id.startsWith('deco-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
-      setDecoItem({ id: g.id, name: g.name, appliedGroupId: appliedRow?.group_id || null })
+      setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '', appliedGroupId: appliedRow?.group_id || null })
     }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
@@ -171,6 +172,7 @@ export default function Inventory() {
                       <StoreItemImage id={g.id} emoji={g.emoji} className="inv-thumb-img" />
                       {showCount && <span className="inv-badge-count">×{countShown}</span>}
                       {badge && <span className="inv-badge-state">{badge}</span>}
+                      {decoSlot(g.id) && <span className="deco-slot-badge">{decoSlot(g.id) === 'head' ? '머리' : '얼굴'}</span>}
                     </span>
                     <span className="inv-name">{g.name}</span>
                   </button>
@@ -260,6 +262,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     <Modal open={open} onClose={onClose} title={item?.name || '아바타 꾸미기'}>
       <div className="couple-modal">
         {error && <div className="alert alert-error">{error}</div>}
+        {item?.desc && <p className="deco-desc">{item.desc}</p>}
         <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그 그룹의 내 아바타가 꾸며져요. 머리 장식(새싹·귀)은 하나만, 얼굴 장식과는 함께 적용돼요.</p>
 
         {applied && (

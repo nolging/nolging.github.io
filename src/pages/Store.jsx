@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
 import StoreItemImage from '../components/StoreItemImage'
+import { decoSlot } from '../components/AvatarDeco'
 import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
 
@@ -162,6 +163,7 @@ export default function Store() {
                   <button key={item.id} type="button" className={`st-card ${item.premium ? 'st-card-prem' : ''}`} onClick={() => open(item)}>
                     <span className="st-card-thumb" style={{ background: imgBgOf(item.id, item.premium) }}>
                       <StoreItemImage id={item.id} emoji={item.emoji} className="st-card-img" />
+                      {decoSlot(item.id) && <span className="deco-slot-badge">{decoSlot(item.id) === 'head' ? '머리' : '얼굴'}</span>}
                     </span>
                     <span className="st-card-name">{item.name}</span>
                     <span className="st-card-price"><PawIcon className="st-paw" />{num(item.price)}</span>

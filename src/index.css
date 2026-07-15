@@ -1637,7 +1637,12 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-card { background: #fff; border: none; border-radius: 18px; padding: 9px; cursor: pointer;
   box-shadow: 0 4px 16px rgba(25,23,34,.05); display: flex; flex-direction: column; text-align: left; transition: transform .12s; }
 .st-card:active { transform: scale(.97); }
-.st-card-thumb { aspect-ratio: 1 / 1; border-radius: 13px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.st-card-thumb { position: relative; aspect-ratio: 1 / 1; border-radius: 13px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* 아바타 꾸미기: 머리/얼굴 전용 배지 (상점·인벤토리 공용) */
+.deco-slot-badge { position: absolute; bottom: 6px; left: 6px; z-index: 4;
+  background: rgba(25,23,34,.6); color: #fff; border-radius: 999px; padding: 2px 8px;
+  font-size: 9px; font-weight: 700; letter-spacing: .5px; }
+.deco-desc { white-space: pre-line; font-size: 13px; line-height: 1.55; color: #6f6a80; text-align: center; margin: 0 0 2px; }
 .st-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
 .st-card-img img.store-img { width: 82%; height: 82%; object-fit: contain; }
 /* 하트 뿅뿅 테마: 썸네일 영역에 실제 테마 효과(하트 솟아오름) */
