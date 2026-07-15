@@ -67,9 +67,9 @@ function Anger() {
   // 💢: 아바타 우측 상단에 둥근 곡선 호 네 개(회전 대칭). 둥근 부분이 안쪽(중심)을 향함. 살짝 커졌다 작아졌다(빠르게).
   const arc = 'M1.8 -5.8 Q2.6 -2.6 5.8 -1.8'
   return (
-    <g transform="translate(77 19)">
+    <g transform="translate(81 18)">
       <g className="avd-anger">
-        <g stroke="#e5484d" strokeWidth="2" strokeLinecap="round" fill="none">
+        <g stroke="#e5484d" strokeWidth="1.5" strokeLinecap="round" fill="none">
           <path d={arc} />
           <path d={arc} transform="rotate(90)" />
           <path d={arc} transform="rotate(180)" />
@@ -114,7 +114,7 @@ const PREVIEW_VB = {
   'deco-jaguar': '8 -24 84 58',
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
-  'deco-anger': '68 11 18 18',
+  'deco-anger': '72 9 18 18',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
