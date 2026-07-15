@@ -43,7 +43,7 @@ returns table(
   id uuid, group_id uuid, sender_id uuid, recipient_id uuid,
   sender_name text, recipient_name text, sender_avatar text, recipient_avatar text,
   body text, kind text, is_read boolean, created_at timestamptz,
-  item_id text, item_name text, claimed boolean, rejected boolean, media_url text, anonymous boolean
+  item_id text, item_name text, claimed boolean, rejected boolean, media_url text, anonymous boolean, qty integer
 ) language sql security definer set search_path = public stable as $$
   select
     n.id, n.group_id,
@@ -54,7 +54,7 @@ returns table(
     case when n.anonymous then null else n.sender_avatar end,
     n.recipient_avatar,
     n.body, n.kind, n.is_read, n.created_at,
-    n.item_id, n.item_name, n.claimed, n.rejected, n.media_url, n.anonymous
+    n.item_id, n.item_name, n.claimed, n.rejected, n.media_url, n.anonymous, coalesce(n.qty, 1)
   from public.notes n
   where n.recipient_id = auth.uid()
   order by n.created_at desc;
