@@ -11,18 +11,19 @@ export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.inc
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
 
 function Sprout() {
-  // 줄기는 이파리 갈라지는 지점(-3)까지만 → 이파리 위로 튀어나오지 않음. 전체 크기도 축소.
+  // 줄기는 이파리 붙는 지점(1)까지만 + butt 캡 → 이파리 위로 튀어나오지 않음. 이파리도 더 작게.
+  // 반짝임은 이파리 바깥(좌·우)으로 빼서 겹치지 않게.
   return (
     <g className="avd-sway">
-      <path d="M50 9 C51.4 4 51.4 0 50 -3" stroke="#5aa06a" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-      <g transform="rotate(-30 50 -2)">
-        <path d="M50 -2 C42 -2 35 -9 31 -18 C41 -21 49 -13 50 -2 Z" fill="#6bbd85" />
+      <path d="M50 9 C51.2 5 51.2 2 50 1" stroke="#5aa06a" strokeWidth="2.2" strokeLinecap="butt" fill="none" />
+      <g transform="rotate(-28 50 1)">
+        <path d="M50 1 C43 1 37 -5 34 -13 C42 -15 49 -8 50 1 Z" fill="#6bbd85" />
       </g>
-      <g transform="rotate(30 50 -2)">
-        <path d="M50 -2 C58 -2 65 -9 69 -18 C59 -21 51 -13 50 -2 Z" fill="#7ec994" />
+      <g transform="rotate(28 50 1)">
+        <path d="M50 1 C57 1 63 -5 66 -13 C58 -15 51 -8 50 1 Z" fill="#7ec994" />
       </g>
-      <path className="avd-spark" d="M32 -15 l.9 2.6 l2.6 .9 l-2.6 .9 l-.9 2.6 l-.9 -2.6 l-2.6 -.9 l2.6 -.9 z" fill="#ffcb54" />
-      <path className="avd-spark avd-spark-2" d="M68 -13 l.8 2.3 l2.3 .8 l-2.3 .8 l-.8 2.3 l-.8 -2.3 l-2.3 -.8 l2.3 -.8 z" fill="#ffcb54" />
+      <path className="avd-spark" d="M25 -13 l.9 2.6 l2.6 .9 l-2.6 .9 l-.9 2.6 l-.9 -2.6 l-2.6 -.9 l2.6 -.9 z" fill="#ffcb54" />
+      <path className="avd-spark avd-spark-2" d="M75 -11 l.8 2.3 l2.3 .8 l-2.3 .8 l-.8 2.3 l-.8 -2.3 l-2.3 -.8 l2.3 -.8 z" fill="#ffcb54" />
     </g>
   )
 }
