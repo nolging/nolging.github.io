@@ -680,15 +680,20 @@ export async function deleteNotification(id) {
 // notes 테이블/RPC 미배포(42P01/PGRST202) 시 조회는 빈 배열로 폴백.
 
 export async function listReceivedNotes(userId) {
-  const { data, error } = await supabase
-    .from('notes').select('*')
-    .eq('recipient_id', userId)
-    .order('created_at', { ascending: false })
-  if (error) {
-    if (error.code === '42P01') return []
-    throw error
+  // 익명 쪽지는 발신자 정보를 가려 주는 전용 RPC 로 조회(완전 익명).
+  const { data, error } = await supabase.rpc('list_received_notes')
+  if (!error) return data ?? []
+  // RPC 미배포(구버전) 시 기존 직접 조회로 폴백
+  if (error.code === 'PGRST202' || /list_received_notes/.test(error.message || '')) {
+    const { data: d2, error: e2 } = await supabase
+      .from('notes').select('*')
+      .eq('recipient_id', userId)
+      .order('created_at', { ascending: false })
+    if (e2) { if (e2.code === '42P01') return []; throw e2 }
+    return d2 ?? []
   }
-  return data ?? []
+  if (error.code === '42P01') return []
+  throw error
 }
 
 export async function listSentNotes(userId) {
@@ -703,10 +708,11 @@ export async function listSentNotes(userId) {
   return data ?? []
 }
 
-export async function sendNote({ groupId, recipientId, body }) {
-  const { data, error } = await supabase.rpc('send_note', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_body: body,
-  })
+export async function sendNote({ groupId, recipientId, body, anonymous = false }) {
+  // p_anonymous 는 익명일 때만 전달(구버전 RPC 와 호환 유지)
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_body: body }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('send_note', params)
   if (error) {
     if (error.code === 'PGRST202' || /send_note/.test(error.message || '')) {
       throw new Error('쪽지 기능이 아직 DB에 설정되지 않았습니다. (send_note 함수를 먼저 적용해 주세요)')
@@ -784,10 +790,10 @@ export async function useWish({ fromUserId, wish }) {
 }
 
 // 카세트 테이프: 음악 링크와 메시지를 상대 쪽지함으로. 카세트 1개 소모.
-export async function useCassette({ groupId, recipientId, message, url }) {
-  const { data, error } = await supabase.rpc('use_cassette', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
-  })
+export async function useCassette({ groupId, recipientId, message, url, anonymous = false }) {
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('use_cassette', params)
   if (error) {
     if (error.code === 'PGRST202' || /use_cassette/.test(error.message || '')) {
       throw new Error('카세트 테이프 기능이 아직 DB에 설정되지 않았습니다. (use_cassette 함수를 먼저 적용해 주세요)')
@@ -798,10 +804,10 @@ export async function useCassette({ groupId, recipientId, message, url }) {
 }
 
 // 링크: 클릭 가능한 링크와 메시지를 상대 쪽지함으로. 링크 1개 소모.
-export async function useLink({ groupId, recipientId, message, url, label }) {
-  const { data, error } = await supabase.rpc('use_link', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url, p_label: label ?? '',
-  })
+export async function useLink({ groupId, recipientId, message, url, label, anonymous = false }) {
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url, p_label: label ?? '' }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('use_link', params)
   if (error) {
     if (error.code === 'PGRST202' || /use_link/.test(error.message || '')) {
       throw new Error('링크 기능이 아직 DB에 설정되지 않았습니다. (use_link 함수를 먼저 적용해 주세요)')
@@ -812,10 +818,10 @@ export async function useLink({ groupId, recipientId, message, url, label }) {
 }
 
 // 비디오 테이프: 영상 링크와 메시지를 상대 쪽지함으로. 비디오 1개 소모.
-export async function useVideo({ groupId, recipientId, message, url }) {
-  const { data, error } = await supabase.rpc('use_video', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
-  })
+export async function useVideo({ groupId, recipientId, message, url, anonymous = false }) {
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('use_video', params)
   if (error) {
     if (error.code === 'PGRST202' || /use_video/.test(error.message || '')) {
       throw new Error('비디오 테이프 기능이 아직 DB에 설정되지 않았습니다. (use_video 함수를 먼저 적용해 주세요)')
@@ -826,10 +832,10 @@ export async function useVideo({ groupId, recipientId, message, url }) {
 }
 
 // 블루레이: 영상 링크와 메시지를 상대 쪽지함으로. 블루레이 1개 소모.
-export async function useBluray({ groupId, recipientId, message, url }) {
-  const { data, error } = await supabase.rpc('use_bluray', {
-    p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url,
-  })
+export async function useBluray({ groupId, recipientId, message, url, anonymous = false }) {
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_url: url }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('use_bluray', params)
   if (error) {
     if (error.code === 'PGRST202' || /use_bluray/.test(error.message || '')) {
       throw new Error('블루레이 기능이 아직 DB에 설정되지 않았습니다. (use_bluray 함수를 먼저 적용해 주세요)')
@@ -1036,6 +1042,47 @@ export async function giftItem(itemId, groupId, recipientId, qty = 1) {
     throw error
   }
   return Number(data) || 0
+}
+
+// 쪽지에서 아이템 선물: 내 인벤토리에서 아이템을 꺼내 상대 쪽지함으로(수령 시 상대 인벤토리로).
+// gift_item(츄르로 구매해 선물)과 달리 보유 아이템을 소모한다.
+export async function giftOwnedItem(itemId, groupId, recipientId, qty = 1, { message = null, anonymous = false } = {}) {
+  const { error } = await supabase.rpc('gift_owned_item', {
+    p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId, p_qty: qty, p_message: message, p_anonymous: anonymous,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /gift_owned_item/.test(error.message || '')) {
+      throw new Error('아이템 선물 기능이 아직 DB에 설정되지 않았습니다. (gift_owned_item 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
+// 쪽지 작성: 사용 아이템/선물/익명을 한 번에 처리하는 오케스트레이터.
+//  useItem: null | { id, url }  (id: couple-ring|friend-ring|cassette|video|bluray|link)
+//  gifts:   [{ id, qty }]       (내 보유 아이템)
+//  anonymous: 지우개(익명). 커플/우정 링은 익명 불가.
+export async function sendComposedNote({ groupId, recipientId, body, anonymous = false, useItem = null, gifts = [] }) {
+  const msg = (body || '').trim()
+  if (useItem) {
+    const { id, url } = useItem
+    if (id === 'couple-ring') return useCoupleRing({ groupId, recipientId, message: msg })
+    if (id === 'friend-ring') return useFriendRing({ groupId, message: msg })
+    if (id === 'cassette') return useCassette({ groupId, recipientId, message: msg, url, anonymous })
+    if (id === 'video') return useVideo({ groupId, recipientId, message: msg, url, anonymous })
+    if (id === 'bluray') return useBluray({ groupId, recipientId, message: msg, url, anonymous })
+    if (id === 'link') return useLink({ groupId, recipientId, message: msg, url, anonymous })
+    throw new Error('사용할 수 없는 아이템이에요.')
+  }
+  if (gifts && gifts.length > 0) {
+    for (let i = 0; i < gifts.length; i++) {
+      const g = gifts[i]
+      // 메시지는 첫 선물에만 붙여 중복 방지
+      await giftOwnedItem(g.id, groupId, recipientId, g.qty, { message: i === 0 ? (msg || null) : null, anonymous })
+    }
+    return
+  }
+  return sendNote({ groupId, recipientId, body: msg, anonymous })
 }
 
 // 쪽지 상태 조회(알림 클릭 시 이동 목적지 결정용). 없으면 null.

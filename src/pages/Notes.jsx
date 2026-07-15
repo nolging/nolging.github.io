@@ -394,7 +394,7 @@ export default function Notes() {
                     {busy ? '수령 중…' : '수령하기'}
                   </button>
                 )
-              ) : !wish && !couple && !friend && !gift && mine ? (
+              ) : !wish && !couple && !friend && !gift && mine && !open.anonymous ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
                   답장하기
                 </button>

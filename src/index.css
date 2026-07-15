@@ -2264,6 +2264,112 @@ button.mlist-row:hover { background: #f6f5fa; }
 .note-pick-actions { display: flex; gap: 10px; margin-top: 4px; }
 .note-pick-actions .btn { flex: 1; min-height: 44px; }
 
+/* ===== 쪽지 쓰기 (시안) ===== */
+.nc-page { display: flex; flex-direction: column; gap: 13px; padding-bottom: 132px; }
+.nc-label { font-size: 13px; font-weight: 800; color: #7363e8; flex-shrink: 0; }
+.nc-placeholder { color: #b0b0b8; font-size: 13.5px; font-weight: 600; }
+.nc-to {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  border: 1.5px solid #e8e6ef; border-radius: 999px; padding: 11px 18px; background: #fff; cursor: pointer;
+}
+.nc-to:hover { border-color: #d7d3e6; }
+.nc-to-val { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #191722; }
+.nc-to .nc-chev { flex-shrink: 0; }
+.nc-body-wrap { position: relative; }
+.nc-body {
+  width: 100%; height: 130px; border: 1.5px solid #efeef4; border-radius: 16px; box-sizing: border-box;
+  padding: 13px 13px 30px; font: inherit; font-size: 14px; line-height: 1.5; color: #191722; resize: none; outline: none;
+}
+.nc-body:focus { border-color: #7363e8; }
+.nc-count { position: absolute; right: 13px; bottom: 11px; font-size: 11px; color: #b0b0b8; font-variant-numeric: tabular-nums; }
+
+/* 첨부칩 (사용 아이템 / 선물) */
+.nc-chip {
+  position: relative; display: flex; align-items: center; gap: 11px;
+  background: #f3f2f7; border-radius: 14px; padding: 11px 14px; box-shadow: inset 0 0 0 1.5px #e6e3ef;
+}
+.nc-chip.is-gift { background: #eeebfe; box-shadow: inset 0 0 0 1.5px #ddd6f7; }
+.nc-chip-x {
+  position: absolute; top: 9px; right: 9px; width: 22px; height: 22px; border-radius: 50%; border: none;
+  background: rgba(25,23,34,.09); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #8b8798;
+}
+.nc-chip.is-gift .nc-chip-x { background: rgba(115,99,232,.14); color: #7363e8; }
+.nc-chip-ico { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.nc-chip-txt { min-width: 0; flex: 1; }
+.nc-chip-name { font-size: 13px; font-weight: 800; color: #191722; }
+.nc-chip-qty { color: #7363e8; }
+.nc-chip-hint { margin-top: 1px; font-size: 11px; color: #8b8798; }
+.nc-chip-hint.is-gift { color: #7363e8; }
+
+/* From. */
+.nc-from { display: flex; align-items: center; gap: 11px; background: #f7f6fa; border-radius: 999px; padding: 10px 18px; }
+.nc-from.is-anon { background: #f4f3f7; }
+.nc-from.is-empty { background: transparent; border: 1.5px dashed #e2e0ea; }
+.nc-from-txt { min-width: 0; flex: 1; }
+.nc-from-name { font-size: 14px; font-weight: 800; color: #191722; }
+.nc-from.is-anon .nc-from-name { color: #6b6777; }
+.nc-from-sub { margin-top: 1px; font-size: 11px; color: #a8a4b2; }
+.nc-from-ava { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; }
+.nc-anon-ava { background: #dedbe6; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; color: #8b8798; }
+.nc-restore { border: none; background: none; font-size: 11.5px; font-weight: 700; color: #7363e8; cursor: pointer; flex-shrink: 0; }
+
+/* 하단 액션 바 (스크롤에도 고정) */
+.nc-actions {
+  position: sticky; bottom: 0; margin: 6px calc(-1 * var(--pad-x, 20px)) 0;
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(rgba(253,252,254,0), #fdfcfe 26%);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.nc-action-row { display: flex; gap: 9px; }
+.nc-act-btn {
+  flex: 1; height: 46px; border: 1.5px solid #e4e2ea; border-radius: 999px; background: #fff; color: #191722;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.nc-act-btn:hover { background: #f7f7fa; }
+.nc-act-btn.is-disabled { color: #c8c5d2; border-color: #edecf1; cursor: default; background: #fff; }
+.nc-send {
+  width: 100%; height: 52px; border: none; border-radius: 999px; background: #7363e8; color: #fff;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.nc-send:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; }
+
+/* 시트 공통(그리드/카드) */
+.nc-sheet-title { font-size: 17px; font-weight: 800; color: #191722; margin: 0; text-align: left; }
+.nc-sheet-sub { margin: 3px 0 0; font-size: 12px; color: #8b8798; }
+.nc-sheet-empty { padding: 28px 0; text-align: center; color: #a8a4b2; font-size: 13.5px; }
+.nc-sheet-sec { margin-top: 14px; }
+.nc-sheet-sec-t { font-size: 13px; font-weight: 800; color: #191722; margin-bottom: 10px; }
+.nc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.nc-grid-gift { margin-top: 16px; max-height: 300px; overflow-y: auto; }
+.nc-icard {
+  background: #fff; border: none; border-radius: 16px; padding: 11px; box-sizing: border-box; text-align: center;
+  box-shadow: 0 4px 14px rgba(25,23,34,.06); cursor: pointer;
+}
+.nc-icard:not(:disabled):active { transform: scale(.97); }
+.nc-icard-img { position: relative; display: flex; height: 56px; border-radius: 12px; align-items: center; justify-content: center; font-size: 26px; }
+.nc-icard-badge { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff; border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
+.nc-icard-name { display: block; margin-top: 8px; font-size: 12px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-gcard { background: #fff; border-radius: 16px; padding: 11px 11px 10px; box-sizing: border-box; text-align: center; box-shadow: inset 0 0 0 0 transparent, 0 4px 14px rgba(25,23,34,.06); }
+.nc-gcard.is-picked { box-shadow: inset 0 0 0 2px #7363e8, 0 4px 14px rgba(25,23,34,.06); }
+.nc-step { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.nc-step-b { width: 26px; height: 26px; border-radius: 8px; border: none; background: #f3f3f5; color: #cfccd8; font-size: 15px; font-weight: 800; cursor: pointer; }
+.nc-step-b:not(:disabled) { background: #eeebfe; color: #7363e8; }
+.nc-step-v { font-size: 14px; font-weight: 800; color: #191722; min-width: 16px; }
+.nc-sheet-confirm {
+  margin-top: 16px; width: 100%; height: 50px; border: none; border-radius: 15px; background: #7363e8; color: #fff;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.nc-sheet-confirm:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; }
+
+/* 미디어 URL 입력 모달 */
+.nc-link-head { display: flex; align-items: center; gap: 11px; }
+.nc-link-ico { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 23px; flex-shrink: 0; }
+.nc-link-name { font-size: 17px; font-weight: 800; color: #191722; }
+.nc-link-sub { margin-top: 1px; font-size: 11.5px; color: #8b8798; }
+.nc-link-input { margin-top: 16px; display: flex; align-items: center; gap: 8px; border: 1.5px solid #efeef4; border-radius: 14px; padding: 12px 14px; box-sizing: border-box; }
+.nc-link-input:focus-within { border-color: #7363e8; }
+.nc-link-input input { flex: 1; border: none; outline: none; background: transparent; font: inherit; font-size: 13.5px; color: #191722; padding: 0; min-width: 0; }
+
 /* ---- 반응형: 태블릿 ---- */
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }
