@@ -2337,11 +2337,12 @@ button.mlist-row:hover { background: #f6f5fa; }
 .nc-sheet-title { font-size: 17px; font-weight: 800; color: #191722; margin: 0; text-align: left; }
 .nc-sheet-sub { margin: 3px 0 0; font-size: 12px; color: #8b8798; }
 .nc-sheet-empty { padding: 28px 0; text-align: center; color: #a8a4b2; font-size: 13.5px; }
-.nc-sheet-scroll { max-height: 56vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+/* 스크롤 영역이 카드 그림자를 자르지 않도록 안쪽 여백 확보(음수 마진으로 정렬 유지) */
+.nc-sheet-scroll { max-height: 56vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px 16px; margin: 0 -16px; }
 .nc-sheet-sec { margin-top: 14px; }
 .nc-sheet-sec-t { font-size: 13px; font-weight: 800; color: #191722; margin-bottom: 10px; }
 .nc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.nc-grid-gift { margin-top: 16px; max-height: 300px; overflow-y: auto; }
+.nc-grid-gift { margin: 8px -16px 0; padding: 8px 16px 16px; max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .nc-icard {
   background: #fff; border: none; border-radius: 16px; padding: 11px; box-sizing: border-box; text-align: center;
   box-shadow: 0 4px 14px rgba(25,23,34,.06); cursor: pointer;
