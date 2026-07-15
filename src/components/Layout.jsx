@@ -5,6 +5,7 @@ import { taskTerms } from '../lib/constants'
 import { unreadNotificationCount, getMyCoinBalance } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
+import DebugSafeArea from './DebugSafeArea'
 import MiniPlayer from './MiniPlayer'
 import BlurayPlayer from './BlurayPlayer'
 
@@ -634,6 +635,7 @@ export default function Layout() {
       {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}
       <div id="app-bottom" className="app-bottom" />
       <PushPrompt />
+      <DebugSafeArea />
     </div>
   )
 }
