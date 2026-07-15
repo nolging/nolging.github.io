@@ -15,16 +15,18 @@ function Sprout() {
   // 반짝임은 이파리 바깥(좌·우)으로 빼서 겹치지 않게.
   return (
     <g className="avd-sway">
-      <path d="M50 13 C51.4 8 51.3 3 50 1" stroke="#5aa06a" strokeWidth="2.2" strokeLinecap="butt" fill="none" />
-      <g transform="rotate(-28 50 1)">
-        <path d="M50 1 C43 1 37 -5 34 -13 C42 -15 49 -8 50 1 Z" fill="#6bbd85" />
+      <g transform="translate(0,-4)">
+        <path d="M50 13 C51.4 8 51.3 3 50 1" stroke="#5aa06a" strokeWidth="2.2" strokeLinecap="butt" fill="none" />
+        <g transform="rotate(-28 50 1)">
+          <path d="M50 1 C43 1 37 -5 34 -13 C42 -15 49 -8 50 1 Z" fill="#6bbd85" />
+        </g>
+        <g transform="rotate(28 50 1)">
+          <path d="M50 1 C57 1 63 -5 66 -13 C58 -15 51 -8 50 1 Z" fill="#7ec994" />
+        </g>
+        <path className="avd-spark" d="M25 -13 l.9 2.6 l2.6 .9 l-2.6 .9 l-.9 2.6 l-.9 -2.6 l-2.6 -.9 l2.6 -.9 z" fill="#ffcb54" />
+        <path className="avd-spark avd-spark-2" d="M75 -11 l.8 2.3 l2.3 .8 l-2.3 .8 l-.8 2.3 l-.8 -2.3 l-2.3 -.8 l2.3 -.8 z" fill="#ffcb54" />
+        <path className="avd-spark avd-spark-3" d="M57 -18 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" fill="#ffcb54" />
       </g>
-      <g transform="rotate(28 50 1)">
-        <path d="M50 1 C57 1 63 -5 66 -13 C58 -15 51 -8 50 1 Z" fill="#7ec994" />
-      </g>
-      <path className="avd-spark" d="M25 -13 l.9 2.6 l2.6 .9 l-2.6 .9 l-.9 2.6 l-.9 -2.6 l-2.6 -.9 l2.6 -.9 z" fill="#ffcb54" />
-      <path className="avd-spark avd-spark-2" d="M75 -11 l.8 2.3 l2.3 .8 l-2.3 .8 l-.8 2.3 l-.8 -2.3 l-2.3 -.8 l2.3 -.8 z" fill="#ffcb54" />
-      <path className="avd-spark avd-spark-3" d="M57 -18 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" fill="#ffcb54" />
     </g>
   )
 }
@@ -62,7 +64,17 @@ function WolfEars() {
 }
 
 function Blush() {
-  // 양 볼 간격을 더 넓히고(cx 20/80), 그라데이션 범위도 키움(rx/ry ↑)
+  // 양 볼: 넓은 홍조 + 시안처럼 가는 빗금(///)
+  const cheek = (cx, rot) => (
+    <g transform={`rotate(${rot} ${cx} 64)`}>
+      <ellipse cx={cx} cy="64" rx="16" ry="10.5" fill="url(#avdBlush)" />
+      <g stroke="#e0688f" strokeWidth="1.4" strokeLinecap="round" fill="none">
+        <line x1={cx - 6} y1="67" x2={cx - 2} y2="60" />
+        <line x1={cx - 2} y1="68" x2={cx + 2} y2="61" />
+        <line x1={cx + 2} y1="67" x2={cx + 6} y2="60" />
+      </g>
+    </g>
+  )
   return (
     <g className="avd-blush">
       <defs>
@@ -72,8 +84,8 @@ function Blush() {
           <stop offset="100%" stopColor="#f58aaf" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <ellipse cx="19" cy="64" rx="16" ry="10.5" fill="url(#avdBlush)" transform="rotate(-8 19 64)" />
-      <ellipse cx="81" cy="64" rx="16" ry="10.5" fill="url(#avdBlush)" transform="rotate(8 81 64)" />
+      {cheek(19, -8)}
+      {cheek(81, 8)}
     </g>
   )
 }
