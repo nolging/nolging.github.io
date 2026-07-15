@@ -397,20 +397,23 @@ export default function Notes() {
           const video = open.kind === 'video'
           const bluray = open.kind === 'bluray'
           const mine = open.recipient_id === user?.id
+          const tagInfo = wish ? ['🌟 소원', 'note-tag']
+            : couple ? [open.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
+              : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
+                : gift ? ['📦 아이템', 'note-tag note-tag-gift']
+                  : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
+                    : link ? ['🎁 선물 상자', 'note-tag note-tag-link']
+                      : video ? ['📹 영상', 'note-tag note-tag-video']
+                        : bluray ? ['💿 영상', 'note-tag note-tag-video']
+                          : null
           return (
             <div className="note-view">
               <div className="note-view-head">
                 <Avatar src={p.avatar} name={p.name} size={44} deco={peerDeco(p)} />
                 <div className="note-view-who">
                   <span className="note-view-peer">
-                    {wish && <span className="note-tag">🌟 소원</span>}
-                    {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
-                    {gift && <span className="note-tag note-tag-gift">📦 아이템</span>}
-                    {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
-                    {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
-                    {video && <span className="note-tag note-tag-video">📹 영상</span>}
-                    {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
-                    {p.name} <span className="note-card-rel">{p.label}</span>
+                    <span className="note-view-name">{p.name} <span className="note-card-rel">{p.label}</span></span>
+                    {tagInfo && <span className={`${tagInfo[1]} note-view-tag`}>{tagInfo[0]}</span>}
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
                 </div>

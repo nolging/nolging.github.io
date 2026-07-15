@@ -1993,7 +1993,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-view-head { display: flex; align-items: center; gap: 12px; }
 .note-view-head .avatar { flex-shrink: 0; }
 .note-view-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.note-view-peer { font-weight: 700; font-size: 15px; color: var(--text); }
+.note-view-peer { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--text); }
+.note-view-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-view-tag { flex-shrink: 0; margin-right: 0; }
 .note-view-date { font-size: 12px; color: var(--muted); }
 .note-view-body {
   margin: 0; font-size: 15px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word;
