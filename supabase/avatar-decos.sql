@@ -10,10 +10,10 @@ alter table public.store_items add column if not exists admin_only boolean not n
 
 -- 아이템 등록 (프리미엄 상점 · 아바타 꾸미기 카테고리는 id 접두사 deco- 로 분류)
 insert into public.store_items (id, name, price, emoji, description, premium, tier, admin_only, sort_order, is_active) values
-  ('deco-sprout', '자라나는 새싹',        20, '🌱', '머리 위로 새싹이 뿅',                                              true, null, true, 30, true),
-  ('deco-jaguar', '고양이인데 재규어인 척', 30, '🐆', E'놀라지 마세요\n재규어 같아 보이지만 사실 고양이예요',              true, null, true, 31, true),
-  ('deco-wolf',   '강아지인데 늑대인 척',  30, '🐺', E'늑대인 척하지만 사실 강아지예요\n본인은 정말 늑대인 줄 알아요',    true, null, true, 32, true),
-  ('deco-blush',  '부힛부힛',             20, '☺️', '부힛부힛 사rrrrr',                                               true, null, true, 33, true)
+  ('deco-sprout', '자라나는 새싹', 20, '🌱', '머리 위로 새싹이 뿅',                                              true, null, true, 30, true),
+  ('deco-jaguar', '재규어인 척',   30, '🐆', E'놀라지 마세요\n재규어 같아 보이지만 사실 고양이예요',              true, null, true, 31, true),
+  ('deco-wolf',   '늑대인 척',     30, '🐺', E'늑대인 척하지만 사실 강아지예요\n본인은 정말 늑대인 줄 알아요',    true, null, true, 32, true),
+  ('deco-blush',  '부힛부힛',       20, '☺️', '부힛부힛 사rrrrr',                                               true, null, true, 33, true)
 on conflict (id) do update set
   name = excluded.name, price = excluded.price, emoji = excluded.emoji, description = excluded.description,
   premium = excluded.premium, tier = excluded.tier, admin_only = excluded.admin_only,

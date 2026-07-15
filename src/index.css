@@ -1163,10 +1163,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .invite-box .btn { flex-shrink: 0; height: 46px; padding: 0 20px; }
 .member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .member-list li { display: flex; align-items: center; gap: 10px; }
-.avatar { position: relative; width: 34px; height: 34px; border-radius: 50%; background: #9aa0ac; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; overflow: visible; vertical-align: middle; }
+.avatar { position: relative; isolation: isolate; width: 34px; height: 34px; border-radius: 50%; background: #9aa0ac; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; overflow: visible; vertical-align: middle; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+/* 얼굴(사진/이니셜) 불투명 원 — 뒤 레이어(귀)의 아랫부분을 가려 자연스럽게 아바타에 물림 */
+.avatar-face { position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; background: inherit; }
 /* ---- 아바타 꾸미기 데코 오버레이 ---- */
-.avatar-deco, .mem-av-wrap > .avatar-deco { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.avatar-deco { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
+.avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
 .avd-twitch-l { animation: avd-twitch 4.6s ease-in-out .2s infinite; transform-box: fill-box; transform-origin: bottom center; }
 .avd-twitch-r { animation: avd-twitch 4.6s ease-in-out 1.7s infinite; transform-box: fill-box; transform-origin: bottom center; }
@@ -1638,10 +1643,11 @@ button.mlist-row:hover { background: #f6f5fa; }
 .store-hearts { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 /* 일부 아이템(커플/우정 링, 에어팟/버즈)은 조금 더 크게 */
 img.store-img.store-img-lg { transform: scale(1.16); }
-/* 아바타 꾸미기 미리보기: 빈 아바타 원 위에 데코 */
+/* 아바타 꾸미기 미리보기: 빈 아바타 원 위/뒤에 데코 */
 .store-deco { position: relative; width: 100%; height: 100%; display: block; }
 .store-deco-av { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%);
-  width: 52%; aspect-ratio: 1 / 1; border-radius: 50%;
+  width: 52%; aspect-ratio: 1 / 1; isolation: isolate; }
+.store-deco-circle { position: absolute; inset: 0; border-radius: 50%;
   background: radial-gradient(120% 120% at 50% 32%, #f6f5fb, #e7e4f0); }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }

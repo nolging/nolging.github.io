@@ -1,12 +1,14 @@
-// 아바타 꾸미기 데코레이션 오버레이. 아바타 원(지름=size) 위에 겹쳐 그리며,
-// SVG viewBox(0~100)로 그려 아바타 크기에 항상 비율이 맞는다.
-//  - head: deco-sprout(새싹) | deco-jaguar(까만 고양이 귀) | deco-wolf(강아지 귀)  → 머리 위, 하나만
-//  - face: deco-blush(양 볼 홍조)                                                  → 얼굴
+// 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
+//  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)  → 하나만
+//  - face: deco-blush(양 볼 홍조·앞)
+// 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
+// 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
 export const DECO_FACE = ['deco-blush']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
+const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
 
 function Sprout() {
   return (
@@ -25,31 +27,31 @@ function Sprout() {
 }
 
 function CatEars() {
+  const ear = (
+    <>
+      <polygon points="12,30 27,-30 45,28" fill="#24222b" stroke="#24222b" strokeWidth="4" strokeLinejoin="round" />
+      <polygon points="22,22 28,-11 35,20" fill="#f2a9c2" />
+    </>
+  )
   return (
     <>
-      <g className="avd-twitch-l">
-        <polygon points="16,9 27,-31 45,5" fill="#24222b" stroke="#24222b" strokeWidth="4" strokeLinejoin="round" />
-        <polygon points="24,4 28,-15 38,2" fill="#f2a9c2" />
-      </g>
-      <g className="avd-twitch-r">
-        <polygon points="55,5 73,-31 84,9" fill="#24222b" stroke="#24222b" strokeWidth="4" strokeLinejoin="round" />
-        <polygon points="62,2 72,-15 76,4" fill="#f2a9c2" />
-      </g>
+      <g className="avd-twitch-l">{ear}</g>
+      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
     </>
   )
 }
 
 function WolfEars() {
+  const ear = (
+    <>
+      <path d="M12 32 C5 6 11 -26 26 -32 C37 -14 45 12 47 30 C37 35 22 36 12 32 Z" fill="#726c7a" stroke="#726c7a" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M22 28 C18 8 22 -16 29 -22 C37 -8 42 12 43 26 C35 30 27 30 22 28 Z" fill="#cfc9d6" />
+    </>
+  )
   return (
     <>
-      <g className="avd-twitch-l">
-        <path d="M14 11 C7 -8 12 -29 24 -33 C35 -19 43 1 45 9 C35 13 22 13 14 11 Z" fill="#726c7a" stroke="#726c7a" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M22 7 C18 -5 21 -20 28 -24 C35 -12 40 2 40 6 C33 9 27 9 22 7 Z" fill="#cfc9d6" />
-      </g>
-      <g className="avd-twitch-r">
-        <path d="M86 11 C93 -8 88 -29 76 -33 C65 -19 57 1 55 9 C65 13 78 13 86 11 Z" fill="#726c7a" stroke="#726c7a" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M78 7 C82 -5 79 -20 72 -24 C65 -12 60 2 60 6 C67 9 73 9 78 7 Z" fill="#cfc9d6" />
-      </g>
+      <g className="avd-twitch-l">{ear}</g>
+      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
     </>
   )
 }
@@ -70,14 +72,24 @@ function Blush() {
   )
 }
 
-export default function AvatarDeco({ head, face }) {
-  if (!head && !face) return null
+// layer: 'back'(귀 — 아바타 뒤) | 'front'(새싹·홍조 — 아바타 앞)
+export default function AvatarDeco({ head, face, layer = 'front' }) {
+  if (layer === 'back') {
+    if (!isEars(head)) return null
+    return (
+      <svg className="avatar-deco avatar-deco-back" viewBox="0 0 100 100" width="100%" height="100%"
+        preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        {head === 'deco-jaguar' && <CatEars />}
+        {head === 'deco-wolf' && <WolfEars />}
+      </svg>
+    )
+  }
+  const hasFront = head === 'deco-sprout' || face === 'deco-blush'
+  if (!hasFront) return null
   return (
-    <svg className="avatar-deco" viewBox="0 0 100 100" width="100%" height="100%"
+    <svg className="avatar-deco avatar-deco-front" viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {head === 'deco-sprout' && <Sprout />}
-      {head === 'deco-jaguar' && <CatEars />}
-      {head === 'deco-wolf' && <WolfEars />}
       {face === 'deco-blush' && <Blush />}
     </svg>
   )

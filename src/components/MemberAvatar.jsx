@@ -38,9 +38,10 @@ export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0
       })()
   if (!deco || (!deco.head && !deco.face)) return inner
   return (
-    <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0 }}>
+    <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0, isolation: 'isolate' }}>
+      <AvatarDeco head={deco.head} face={deco.face} layer="back" />
       {inner}
-      <AvatarDeco head={deco.head} face={deco.face} />
+      <AvatarDeco head={deco.head} face={deco.face} layer="front" />
     </span>
   )
 }

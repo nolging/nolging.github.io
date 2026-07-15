@@ -19,13 +19,17 @@ export default function StoreItemImage({ id, emoji, className }) {
     )
   }
 
-  // 아바타 꾸미기: 빈 아바타 위에 실제 데코를 얹어 미리보기
+  // 아바타 꾸미기: 빈 아바타 원 위/뒤에 실제 데코를 얹어 미리보기
   if (String(id).startsWith('deco-')) {
     const slot = decoSlot(id)
+    const head = slot === 'head' ? id : undefined
+    const face = slot === 'face' ? id : undefined
     return (
       <span className={`${className} store-deco`} aria-hidden="true">
         <span className="store-deco-av">
-          <AvatarDeco head={slot === 'head' ? id : undefined} face={slot === 'face' ? id : undefined} />
+          <AvatarDeco head={head} face={face} layer="back" />
+          <span className="store-deco-circle" />
+          <AvatarDeco head={head} face={face} layer="front" />
         </span>
       </span>
     )
