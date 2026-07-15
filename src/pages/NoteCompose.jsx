@@ -56,8 +56,10 @@ export default function NoteCompose() {
   const [giftDraft, setGiftDraft] = useState({})  // { id: qty }
 
   const [owned, setOwned] = useState({})          // { id: count(active) }
-  const [names, setNames] = useState({})          // { id: { name, emoji } } (from store)
-  const [ringExclude, setRingExclude] = useState([]) // 이미 커플/우정 링 적용된 그룹 id (링 사용 시 제외)
+  const [store, setStore] = useState({})          // { id: { name, emoji, premium, tier } }
+  const [coupleGroups, setCoupleGroups] = useState([]) // 내 커플 그룹 id
+  const [friendGroups, setFriendGroups] = useState([]) // 내 우정 그룹 id
+  const ringExclude = useMemo(() => [...new Set([...coupleGroups, ...friendGroups])], [coupleGroups, friendGroups])
 
   // 보유 아이템 수 + 아이템 이름/이모지 로드
   useEffect(() => {
@@ -72,12 +74,12 @@ export default function NoteCompose() {
     listStoreItems().then((rows) => {
       if (!on) return
       const m = {}
-      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji }
-      setNames(m)
+      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null }
+      setStore(m)
     }).catch(() => {})
-    // 링 사용 시 제외할 그룹(이미 커플/우정 링 적용)
+    // 링 사용 시 제외할 그룹 + 프리미엄 선물 대상 판별용(커플/우정 그룹)
     Promise.all([listCoupleGroups(user.id).catch(() => []), listFriendGroups().catch(() => [])])
-      .then(([c, f]) => { if (on) setRingExclude([...new Set([...(c || []), ...(f || [])])]) })
+      .then(([c, f]) => { if (on) { setCoupleGroups(c || []); setFriendGroups(f || []) } })
     return () => { on = false }
   }, [user?.id])
 
@@ -85,10 +87,10 @@ export default function NoteCompose() {
   const pickerExclude = RINGS.includes(useItem?.id) ? ringExclude : []
 
   const metaOf = useCallback((id) => ({
-    name: USE_META[id]?.name || names[id]?.name || id,
-    emoji: USE_META[id]?.emoji || names[id]?.emoji || '🎁',
+    name: USE_META[id]?.name || store[id]?.name || id,
+    emoji: USE_META[id]?.emoji || store[id]?.emoji || '🎁',
     bg: imgBgOf(id),
-  }), [names])
+  }), [store])
 
   function handlePick(r) {
     if (r.groupWide) {
@@ -145,8 +147,23 @@ export default function NoteCompose() {
     setSheet(null)
   }
 
-  // 선물 가능한 보유 아이템(active > 0)
-  const giftableIds = useMemo(() => Object.keys(owned).filter((id) => owned[id] > 0), [owned])
+  // 선물 가능한 보유 아이템:
+  //  - 소원권(wish): 선물받아 수신자가 정해진 아이템이라 재선물 불가 → 제외
+  //  - 프리미엄 아이템: 프리미엄 회원(커플/우정)에게만. 티어에 맞는 그룹의 상대에게만.
+  const giftableIds = useMemo(() => Object.keys(owned).filter((id) => {
+    if (owned[id] <= 0) return false
+    if (id === 'wish') return false
+    const info = store[id]
+    if (info?.premium) {
+      if (!recipient || recipient.groupWide) return false
+      const inCouple = coupleGroups.includes(recipient.groupId)
+      const inFriend = friendGroups.includes(recipient.groupId)
+      if (info.tier === 'couple') return inCouple
+      if (info.tier === 'friend') return inFriend
+      return inCouple || inFriend
+    }
+    return true
+  }), [owned, store, recipient, coupleGroups, friendGroups])
   // 사용 시트 섹션(보유분만)
   const useSections = USE_SECTIONS
     .map((s) => ({ label: s.label, ids: s.ids.filter((id) => (owned[id] || 0) > 0) }))
@@ -276,6 +293,7 @@ export default function NoteCompose() {
       <BottomSheet open={sheet === 'use'} onClose={() => setSheet(null)}>
         <h3 className="nc-sheet-title">쪽지에 사용할 아이템</h3>
         <p className="nc-sheet-sub">내 인벤토리에 있는 쪽지 강화 아이템이에요</p>
+        <div className="nc-sheet-scroll">
         {useSections.length === 0 ? (
           <div className="nc-sheet-empty">사용할 수 있는 아이템이 없어요.</div>
         ) : useSections.map((sec) => (
@@ -298,6 +316,7 @@ export default function NoteCompose() {
             </div>
           </div>
         ))}
+        </div>
       </BottomSheet>
 
       {/* 선물 아이템 시트 */}

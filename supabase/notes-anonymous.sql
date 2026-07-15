@@ -232,6 +232,23 @@ begin
   if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 선물할 수 없습니다.'; end if;
   if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
 
+  -- 소원권: 선물받아 수신자가 정해진 아이템 → 재선물 불가
+  if p_item_id = 'wish' then raise exception '선물받은 소원권은 다시 선물할 수 없어요.'; end if;
+
+  -- 프리미엄 아이템은 프리미엄 회원(티어별 커플/우정)에게만 선물 가능
+  if coalesce(it.premium, false) then
+    if it.tier = 'couple' then
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring' and status = 'used') then
+        raise exception '커플 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    elsif it.tier = 'friend' then
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'friend-ring' and status = 'used') then
+        raise exception '우정 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    else
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id in ('couple-ring','friend-ring') and status = 'used') then
+        raise exception '프리미엄 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    end if;
+  end if;
+
   -- 소모할 보유 아이템(active) 선택
   select array_agg(id) into v_ids from (
     select id from public.user_items

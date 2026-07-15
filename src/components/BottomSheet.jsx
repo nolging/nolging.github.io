@@ -7,6 +7,7 @@ export default function BottomSheet({ open, onClose, children }) {
   const [shown, setShown] = useState(false)
   const [dragY, setDragY] = useState(0)
   const startY = useRef(null)
+  const sheetEl = useRef(null)
 
   useEffect(() => {
     let raf, timer
@@ -22,9 +23,24 @@ export default function BottomSheet({ open, onClose, children }) {
     return () => { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer) }
   }, [open])
 
+  // 내부 스크롤 영역(overflow-y:auto/scroll 이고 더 스크롤할 내용이 있는 요소) 탐색
+  function scrollableAncestor(node) {
+    let el = node
+    while (el && el !== sheetEl.current) {
+      if (el.scrollHeight > el.clientHeight + 1) {
+        const oy = getComputedStyle(el).overflowY
+        if (oy === 'auto' || oy === 'scroll') return el
+      }
+      el = el.parentElement
+    }
+    return null
+  }
   function onTouchStart(e) { startY.current = e.touches[0].clientY }
   function onTouchMove(e) {
     if (startY.current == null) return
+    // 목록을 스크롤 중(맨 위가 아님)이면 시트는 드래그하지 않고 스크롤만
+    const sc = scrollableAncestor(e.target)
+    if (sc && sc.scrollTop > 0) { startY.current = e.touches[0].clientY; if (dragY) setDragY(0); return }
     const dy = e.touches[0].clientY - startY.current
     setDragY(dy > 0 ? dy : 0)
   }
@@ -42,6 +58,7 @@ export default function BottomSheet({ open, onClose, children }) {
     <div className={`sheet-root ${shown ? 'shown' : ''}`}>
       <div className="sheet-backdrop" onClick={onClose} />
       <div
+        ref={sheetEl}
         className={`sheet ${dragY ? 'dragging' : ''}`}
         style={dragY ? { transform: `translateY(${dragY}px)` } : undefined}
         onTouchStart={onTouchStart}
