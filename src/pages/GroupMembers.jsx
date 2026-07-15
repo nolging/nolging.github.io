@@ -164,7 +164,7 @@ export default function GroupMembers() {
       mile = (Math.floor(days / 100) + 1) * 100
       mileLeft = mile - days
       const mileD = new Date(start.getTime() + (mile - 1) * 86400000)
-      mileDateLabel = `${mileD.getMonth() + 1}월 ${mileD.getDate()}일`
+      mileDateLabel = `${mileD.getMonth() + 1} 월 ${mileD.getDate()} 일`
       pct = Math.max(3, Math.min(100, Math.round(((days - (mile - 100)) / 100) * 100)))
     }
     const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
@@ -208,11 +208,11 @@ export default function GroupMembers() {
         {mile != null && (
           <div className="csx-mile">
             <div className="csx-mile-top">
-              <div className="csx-mile-label">다음 기념일 <b>{mile}일</b></div>
+              <div className="csx-mile-label">다음 기념일 <b>{mile} 일</b></div>
               <span className="csx-mile-d">D-{mileLeft}</span>
             </div>
             <div className="csx-mile-bar"><div className="csx-mile-fill" style={{ width: `${pct}%` }} /></div>
-            <div className="csx-mile-date">{mileDateLabel}에 {mile}일이 돼요</div>
+            <div className="csx-mile-date">{mileDateLabel}에 {mile} 일이 돼요</div>
           </div>
         )}
 

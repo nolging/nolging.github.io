@@ -2774,8 +2774,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* 놀이 존 (가로 스크롤) */
 .csx-zone { display: flex; flex-direction: column; }
 .csx-zone-title { font-size: 16px; font-weight: 800; letter-spacing: -.4px; color: #191722; }
-.csx-scroll { margin-top: 13px; display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 8px;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+/* 가로 스크롤이 카드 그림자를 자르지 않도록 안쪽 여백 확보(음수 마진으로 정렬 유지, 좌우 풀블리드) */
+.csx-scroll { margin: 7px calc(-1 * var(--pad-x, 20px)) -8px; display: flex; gap: 12px; overflow-x: auto;
+  padding: 6px var(--pad-x, 20px) 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .csx-scroll::-webkit-scrollbar { display: none; }
 .csx-card { flex: 0 0 auto; width: 106px; height: 106px; background: #fff; border: none; border-radius: 22px;
   padding: 13px; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start;
