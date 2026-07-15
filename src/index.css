@@ -1651,7 +1651,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 img.store-img.store-img-lg { transform: scale(1.16); }
 /* 프로필 꾸미기 미리보기: 원 없이 꾸미기 아이템만 크게 */
 .store-deco { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-.deco-preview { width: 84%; height: 84%; overflow: visible; }
+.deco-preview { width: 84%; height: 84%; overflow: hidden; }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .st-paw { width: 12px; height: 12px; flex-shrink: 0; }

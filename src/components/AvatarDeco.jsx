@@ -90,21 +90,25 @@ function Blush() {
   )
 }
 
-// 상점/인벤토리 미리보기: 아바타 원 없이 꾸미기 아이템만 꽉 채워 보여줌(가려지던 아랫부분까지 전부).
+// 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
+// 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
-  'deco-sprout': '18 -25 64 40',
+  'deco-sprout': '18 -27 64 44',
   'deco-jaguar': '8 -24 84 58',
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
 }
+const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB[id] || '0 0 100 100'
+  const circle = EAR_CIRCLE[id]
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
+      {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
 }
