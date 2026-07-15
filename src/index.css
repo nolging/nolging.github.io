@@ -1178,6 +1178,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .avd-blush { animation: avd-blush 3s ease-in-out infinite; }
 .avd-spark { animation: avd-spark 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .avd-spark-2 { animation-duration: 1.9s; animation-delay: .2s; }
+.avd-spark-3 { animation-duration: 1.5s; animation-delay: .45s; }
 @keyframes avd-sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 @keyframes avd-twitch { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-9deg); } 92% { transform: rotate(5deg); } 96% { transform: rotate(-2deg); } }
 @keyframes avd-blush { 0%, 100% { opacity: .82; } 50% { opacity: 1; } }
