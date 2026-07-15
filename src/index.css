@@ -2623,21 +2623,22 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-draw-btn:active { transform: scale(.94); }
 
 .draw-page { height: 100%; display: flex; flex-direction: column; gap: 12px; }
-/* 접속 중 멤버 아바타 (우심뽀까와 동일하게 겹쳐서 표현) */
-.draw-peers { align-self: center; flex-shrink: 0; }
-.draw-members { display: flex; align-items: center; }
+/* 접속 중 멤버 아바타 (낙서 영역 안쪽 좌측 상단·겹침) */
+.draw-members { position: absolute; top: 12px; left: 12px; z-index: 5; pointer-events: none;
+  display: flex; align-items: center; }
 .draw-members .avatar { border: 2px solid #fff; box-sizing: content-box; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
 .draw-members .avatar + .avatar { margin-left: -11px; }
 .draw-more { display: inline-flex; align-items: center; justify-content: center; height: 30px; min-width: 30px;
   padding: 0 8px; margin-left: -11px; border-radius: 999px; background: #efedf5; border: 2px solid #fff;
   box-sizing: content-box; font-size: 12px; font-weight: 700; color: #6f6a80; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
 /* 낙서 영역: 주변 요소(참여 표시·도구)를 방해하지 않는 선에서 남는 공간을 꽉 채움 */
-.draw-wrap { flex: 1; min-height: 0; display: flex; align-items: stretch; justify-content: center; }
+.draw-wrap { position: relative; flex: 1; min-height: 0; display: flex; align-items: stretch; justify-content: center; }
 .draw-canvas { width: 100%; max-width: 620px; height: 100%; display: block;
   background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.06); touch-action: none; cursor: crosshair; }
 .draw-tools { flex-shrink: 0; display: flex; flex-direction: column; gap: 11px;
   padding: 13px 16px; background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
-.draw-colors { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+/* 색상: 9개가 한 줄에 들어가도록 크기 축소 + 줄바꿈 방지 */
+.draw-colors { display: flex; flex-wrap: nowrap; gap: 3px; justify-content: space-between; }
 /* 브러쉬 종류 선택 */
 .draw-brushes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .draw-bbtn { display: inline-flex; align-items: center; gap: 7px; border: none; cursor: pointer;
@@ -2650,7 +2651,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .bp-highlighter { background: currentColor; opacity: .45; height: 10px; border-radius: 2px; }
 .bp-neon { background: currentColor; box-shadow: 0 0 5px 1px currentColor; }
 .bp-dashed { background-image: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 9px); }
-.draw-sw { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; padding: 0;
+.draw-sw { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; border: none; cursor: pointer; padding: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); transition: transform .1s ease; }
 .draw-sw.is-white { box-shadow: inset 0 0 0 1.5px #d7d4e0; }
 .draw-sw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #47444f; }

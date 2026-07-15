@@ -230,18 +230,15 @@ export default function DrawBoard() {
 
   return (
     <div className="page draw-page">
-      <div className="draw-peers">
+      <div className="draw-wrap" ref={wrapRef}>
+        <canvas ref={canvasRef} className="draw-canvas"
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         <div className="draw-members">
           {(members.length ? members : [{ uid: 'me', name: '', avatar: null }]).slice(0, 5).map((m) => (
             <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
           ))}
           {members.length > 5 && <span className="draw-more">+{members.length - 5}</span>}
         </div>
-      </div>
-
-      <div className="draw-wrap" ref={wrapRef}>
-        <canvas ref={canvasRef} className="draw-canvas"
-          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
       </div>
 
       <div className="draw-tools">
