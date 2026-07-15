@@ -1731,6 +1731,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 콘텐츠만 하트 위로 (FAB·고스트 등 fixed 요소는 건드리지 않음) */
 .gd-themed > .gd-sticky-head, .gd-themed > .tab-pane { position: relative; z-index: 1; }
 .theme-hearts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+/* 그룹 상세: 하트를 화면 전체 오버레이로 띄워 상단바 '앞'으로 쭉 솟아오르게.
+   (topbar z-index:10 위, 하단 플로팅 탭 z-index:20 아래) */
+.theme-hearts.gd-hearts-over { position: fixed; inset: 0; z-index: 15; }
 .theme-heart {
   position: absolute; top: 108%; opacity: 0; line-height: 1;
   animation-name: heart-rise; animation-timing-function: linear; animation-iteration-count: infinite;

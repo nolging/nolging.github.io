@@ -373,7 +373,7 @@ export default function GroupDetail() {
   return (
     <div className={`page gd-page ${group.deco_theme === 'heart' ? 'gd-themed' : ''}`}
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
-      {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} />}
+      {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">
