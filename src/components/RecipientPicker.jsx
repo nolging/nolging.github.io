@@ -8,7 +8,10 @@ import { listMyGroups } from '../lib/api'
 //   { groupId, groupName, userId, name, avatar, myName, myAvatar }
 // - 그룹 목록: 내가 가입돼 있고 나 이외 멤버가 있는 그룹만
 // - 멤버 목록: 아바타 + 닉네임 (탭해서 선택)
-export default function RecipientPicker({ open, onClose, onPick, title = '받는 사람' }) {
+// 추가 옵션:
+//  - excludeGroupIds: 선택 목록에서 제외할 그룹(예: 이미 커플/우정 링 적용된 그룹)
+//  - mode: 'friend' 면 그룹 단위 선택(멤버 선택 없음). onPick 에 groupWide/members 포함
+export default function RecipientPicker({ open, onClose, onPick, title = '받는 사람', excludeGroupIds = [], mode = null }) {
   const { user } = useAuth()
   const myId = user?.id
   const [groups, setGroups] = useState([])
@@ -49,11 +52,14 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
 
   const memberName = (m) => m.display_nickname || '멤버'   // 아이디는 타인에게 노출 안 함
 
-  // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만
+  // 내가 가입돼 있고, 나 이외 멤버가 존재하는 그룹만. (+ 제외 목록 필터)
+  const isFriendMode = mode === 'friend'
+  const exclude = useMemo(() => new Set(excludeGroupIds || []), [excludeGroupIds])
   const eligibleGroups = useMemo(() => groups.filter((g) => {
+    if (exclude.has(g.id)) return false
     const ms = g.group_members || []
     return ms.some((m) => m.user_id === myId) && ms.some((m) => m.user_id !== myId)
-  }), [groups, myId])
+  }), [groups, myId, exclude])
 
   // 그룹 선택 시: 나 외 멤버가 한 명뿐이면 자동 선택(추가 클릭 없이 '선택'만 누르면 됨),
   // 여러 명이면 초기화해 직접 고르게 한다. (eligibleGroups 정의 이후에 두어 TDZ 방지)
@@ -77,17 +83,25 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
   const myMember = members.find((m) => m.user_id === myId)
 
   function confirm() {
-    const m = others.find((x) => x.user_id === memberId)
-    if (!group || !m) return
-    onPick({
+    if (!group) return
+    const common = {
       groupId: group.id,
       groupName: group.name,
-      userId: m.user_id,
-      name: memberName(m),
-      avatar: m.avatar_url || null,
       myName: myMember ? memberName(myMember) : '',
       myAvatar: myMember?.avatar_url || null,
-    })
+    }
+    if (isFriendMode) {
+      // 그룹 단위: 멤버 전원(나 제외) 정보 전달
+      onPick({
+        ...common,
+        groupWide: true,
+        members: others.map((m) => ({ userId: m.user_id, name: memberName(m), avatar: m.avatar_url || null })),
+      })
+      return
+    }
+    const m = others.find((x) => x.user_id === memberId)
+    if (!m) return
+    onPick({ ...common, userId: m.user_id, name: memberName(m), avatar: m.avatar_url || null })
   }
 
   return (
@@ -112,7 +126,16 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
           </select>
         </label>
 
-        {groupId && (
+        {groupId && isFriendMode && (
+          <div className="field">
+            <span>받는 사람</span>
+            <div className="picker-friend-note">
+              그룹 전체({others.length}명)에게 우정 링 쪽지를 보내요.
+            </div>
+          </div>
+        )}
+
+        {groupId && !isFriendMode && (
           <div className="field">
             <span>멤버</span>
             <div className="picker-members">
@@ -133,7 +156,7 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
 
         <div className="note-pick-actions">
           <button type="button" className="btn" onClick={onClose}>취소</button>
-          <button type="button" className="btn btn-primary" onClick={confirm} disabled={!groupId || !memberId}>
+          <button type="button" className="btn btn-primary" onClick={confirm} disabled={!groupId || (!isFriendMode && !memberId)}>
             선택
           </button>
         </div>

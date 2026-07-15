@@ -5,7 +5,7 @@ import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import { useAuth } from '../context/AuthContext'
-import { sendComposedNote, listInventory, listStoreItems } from '../lib/api'
+import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { imgBgOf } from '../lib/storeMeta'
 
 const MAX = 150
@@ -57,6 +57,7 @@ export default function NoteCompose() {
 
   const [owned, setOwned] = useState({})          // { id: count(active) }
   const [names, setNames] = useState({})          // { id: { name, emoji } } (from store)
+  const [ringExclude, setRingExclude] = useState([]) // 이미 커플/우정 링 적용된 그룹 id (링 사용 시 제외)
 
   // 보유 아이템 수 + 아이템 이름/이모지 로드
   useEffect(() => {
@@ -74,8 +75,14 @@ export default function NoteCompose() {
       for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji }
       setNames(m)
     }).catch(() => {})
+    // 링 사용 시 제외할 그룹(이미 커플/우정 링 적용)
+    Promise.all([listCoupleGroups(user.id).catch(() => []), listFriendGroups().catch(() => [])])
+      .then(([c, f]) => { if (on) setRingExclude([...new Set([...(c || []), ...(f || [])])]) })
     return () => { on = false }
   }, [user?.id])
+
+  const pickerMode = useItem?.id === 'friend-ring' ? 'friend' : null
+  const pickerExclude = RINGS.includes(useItem?.id) ? ringExclude : []
 
   const metaOf = useCallback((id) => ({
     name: USE_META[id]?.name || names[id]?.name || id,
@@ -84,7 +91,11 @@ export default function NoteCompose() {
   }), [names])
 
   function handlePick(r) {
-    setRecipient({ groupId: r.groupId, groupName: r.groupName, userId: r.userId, name: r.name, avatar: r.avatar })
+    if (r.groupWide) {
+      setRecipient({ groupId: r.groupId, groupName: r.groupName, groupWide: true, members: r.members || [] })
+    } else {
+      setRecipient({ groupId: r.groupId, groupName: r.groupName, userId: r.userId, name: r.name, avatar: r.avatar })
+    }
     setMe({ name: r.myName, avatar: r.myAvatar })
     setPickOpen(false)
   }
@@ -99,10 +110,19 @@ export default function NoteCompose() {
   }, [useItem, anonymous, gifts])
 
   function pickUse(id) {
-    if (useDisabled(id)) return
+    const active = id === 'eraser' ? anonymous : useItem?.id === id
+    if (active || useDisabled(id)) return   // 이미 "사용 중"이면 무시(칩 X로 해제)
     if (id === 'eraser') { setAnonymous(true); setSheet(null); return }
-    if (RINGS.includes(id)) { setUseItem({ id }); setSheet(null); return }
+    if (RINGS.includes(id)) {
+      // 링은 대상 그룹 제약이 있어 받는 사람을 다시 고르게 한다(필터/그룹단위 반영)
+      setUseItem({ id }); setSheet(null); setRecipient(null); setPickOpen(true); return
+    }
     setLinkFor(id); setLinkUrl(''); setSheet(null)   // 미디어 → URL 입력
+  }
+  function clearUseItem() {
+    // 우정 링(그룹단위 수신) 해제 시 받는 사람도 초기화
+    if (recipient?.groupWide) setRecipient(null)
+    setUseItem(null)
   }
   function confirmLink() {
     if (!linkUrl.trim()) return
@@ -145,7 +165,12 @@ export default function NoteCompose() {
     } catch (err) { setError(err.message); setSending(false) }
   }
 
-  const canSend = !!recipient && !sending
+  // 전송 가능: 받는 사람 필수 + (본문/사용아이템/선물 중 하나 이상) + 미디어면 URL 완비
+  const mediaNeedsUrl = useItem && MEDIA.includes(useItem.id) && !useItem.url
+  const hasContent = !!body.trim() || !!useItem || gifts.length > 0
+  const canSend = !!recipient && hasContent && !mediaNeedsUrl && !sending
+
+  const isActive = (id) => (id === 'eraser' ? anonymous : useItem?.id === id)
 
   return (
     <div className="page nc-page">
@@ -155,7 +180,23 @@ export default function NoteCompose() {
       <button type="button" className="nc-to" onClick={() => { setError(''); setPickOpen(true) }}>
         <span className="nc-label">To.</span>
         {recipient ? (
-          <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={30} />{recipient.name}</span>
+          recipient.groupWide ? (
+            <span className="nc-to-val">
+              <span className="nc-ava-stack">
+                {(recipient.members || []).slice(0, 3).map((m, i) => (
+                  <span key={m.userId} className="nc-ava-stack-i" style={{ zIndex: 3 - i }}>
+                    <Avatar src={m.avatar} name={m.name} size={26} />
+                  </span>
+                ))}
+                {(recipient.members || []).length > 3 && (
+                  <span className="nc-ava-stack-more">+{recipient.members.length - 3}</span>
+                )}
+              </span>
+              {recipient.groupName}
+            </span>
+          ) : (
+            <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={30} />{recipient.name}</span>
+          )
         ) : (
           <span className="nc-placeholder">받는 사람을 선택하세요</span>
         )}
@@ -172,7 +213,7 @@ export default function NoteCompose() {
       {/* 사용 아이템 첨부칩 */}
       {useItem && (
         <div className="nc-chip">
-          <button type="button" className="nc-chip-x" onClick={() => setUseItem(null)} aria-label="첨부 제거">
+          <button type="button" className="nc-chip-x" onClick={clearUseItem} aria-label="첨부 제거">
             <svg width="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
           <span className="nc-chip-ico" style={{ background: metaOf(useItem.id).bg }}>{metaOf(useItem.id).emoji}</span>
@@ -242,11 +283,13 @@ export default function NoteCompose() {
             <div className="nc-sheet-sec-t">{sec.label}</div>
             <div className="nc-grid">
               {sec.ids.map((id) => {
+                const active = isActive(id)
                 const dis = useDisabled(id)
                 return (
-                  <button key={id} type="button" className="nc-icard" disabled={dis} style={{ opacity: dis ? 0.38 : 1 }} onClick={() => pickUse(id)}>
+                  <button key={id} type="button" className={`nc-icard ${active ? 'is-active' : ''}`} disabled={dis}
+                    style={{ opacity: dis && !active ? 0.38 : 1 }} onClick={() => pickUse(id)}>
                     <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>{metaOf(id).emoji}
-                      <span className="nc-icard-badge">×{owned[id] || 0}</span>
+                      {active ? <span className="nc-icard-using">사용 중</span> : <span className="nc-icard-badge">×{owned[id] || 0}</span>}
                     </span>
                     <span className="nc-icard-name">{metaOf(id).name}</span>
                   </button>
@@ -306,7 +349,9 @@ export default function NoteCompose() {
         )}
       </Modal>
 
-      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handlePick} />
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handlePick}
+        excludeGroupIds={pickerExclude} mode={pickerMode}
+        title={pickerMode === 'friend' ? '우정 링 보낼 그룹' : RINGS.includes(useItem?.id) ? '커플 링 보낼 사람' : '받는 사람'} />
     </div>
   )
 }
