@@ -136,25 +136,32 @@ export default function Inventory() {
             </div>
             <div className="inv-grid">
               {sec.items.map((g) => {
-                const hasActive = g.rows.some((r) => r.status === 'active')
+                const activeCount = g.rows.filter((r) => r.status === 'active').length
+                const hasActive = activeCount > 0
                 const equipped = (g.id === 'couple-ring' || g.id === 'friend-ring') && g.rows.some((r) => r.status === 'used')
                 const pending = g.id === 'couple-ring' && g.rows.some((r) => r.status === 'pending')
                 const ledLive = g.id === 'ledboard' && !!ledBanner
                 const isTheme = g.id.startsWith('theme-')
                 const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
-                // 시안: 상태 뱃지 + 카드 전체 클릭(기존 동작 유지)
+                // 시안: 상태 뱃지(좌) + 개수(우) + 카드 전체 클릭
                 let badge = null, onClick = () => useItem(g), actionable = true
+                let countShown = g.count, showCount = g.count > 1
                 if (isTheme) badge = themeApplied ? '적용 중' : null
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
-                else if (hasActive) badge = null
+                else if (equipped) {
+                  // 장착 중이어도 미사용(active) 스페어가 있으면 "장착 중" 뱃지 + ×(남은 개수),
+                  // 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능
+                  badge = '장착 중'; actionable = activeCount > 0
+                  countShown = activeCount; showCount = activeCount >= 1
+                }
                 else if (pending) { badge = '수락 대기'; actionable = false }
-                else if (equipped) { badge = '장착 중'; actionable = false }
+                else if (hasActive) badge = null
                 return (
                   <button key={g.id} type="button" className={`inv-card2 ${actionable ? '' : 'is-static'}`}
                     onClick={actionable ? onClick : undefined}>
                     <span className="inv-thumb" style={{ background: imgBgOf(g.id) }}>
                       <StoreItemImage id={g.id} emoji={g.emoji} className="inv-thumb-img" />
-                      {g.count > 1 && <span className="inv-badge-count">×{g.count}</span>}
+                      {showCount && <span className="inv-badge-count">×{countShown}</span>}
                       {badge && <span className="inv-badge-state">{badge}</span>}
                     </span>
                     <span className="inv-name">{g.name}</span>
