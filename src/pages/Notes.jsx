@@ -7,7 +7,7 @@ import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap } from '../lib/api'
 
 function NoteFabIcon() {
   return (
@@ -51,11 +51,15 @@ export default function Notes() {
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
   const [busy, setBusy] = useState(false)
+  const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
 
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
     const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
     setReceived(r); setSent(s)
+    const gids = [...new Set([...r, ...s].map((n) => n.group_id).filter(Boolean))]
+    Promise.all(gids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+      .then((pairs) => setDecosByGroup(Object.fromEntries(pairs))).catch(() => {})
   }, [user?.id])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
@@ -266,8 +270,9 @@ export default function Notes() {
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
   const peer = (n) => tab === 'received'
-    ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄' }
-    : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게' }
+    ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
+    : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게', userId: n.recipient_id, groupId: n.group_id }
+  const peerDeco = (p) => (p.groupId && p.userId ? decosByGroup[p.groupId]?.[p.userId] : undefined)
 
   return (
     <div className="page notes-page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
@@ -316,7 +321,7 @@ export default function Notes() {
             return (
               <li key={n.id}>
                 <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
-                  <Avatar src={p.avatar} name={p.name} size={40} />
+                  <Avatar src={p.avatar} name={p.name} size={40} deco={peerDeco(p)} />
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
@@ -363,7 +368,7 @@ export default function Notes() {
           return (
             <div className="note-view">
               <div className="note-view-head">
-                <Avatar src={p.avatar} name={p.name} size={44} />
+                <Avatar src={p.avatar} name={p.name} size={44} deco={peerDeco(p)} />
                 <div className="note-view-who">
                   <span className="note-view-peer">
                     {wish && <span className="note-tag">🌟 소원</span>}

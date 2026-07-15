@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
-import { listMyAppointments, listGroupMembersBrief, listMyGroups } from '../lib/api'
+import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap } from '../lib/api'
 import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
@@ -84,6 +84,7 @@ export default function SchedulePage() {
   const navigate = useNavigate()
   const [appts, setAppts] = useState([])
   const [memberMap, setMemberMap] = useState({})
+  const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [myGroups, setMyGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -156,6 +157,9 @@ export default function SchedulePage() {
         const [a, gs] = await Promise.all([listMyAppointments(), listMyGroups()])
         setAppts(a); setMyGroups(gs); setGroupFilter(gs.map((g) => g.id)) // 기본=전체 그룹 체크
         setMemberMap(await listGroupMembersBrief(a.map((x) => x.group_id)))
+        const gids = [...new Set(a.map((x) => x.group_id).filter(Boolean))]
+        Promise.all(gids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+          .then((pairs) => setDecosByGroup(Object.fromEntries(pairs))).catch(() => {})
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }
     })()
@@ -163,7 +167,10 @@ export default function SchedulePage() {
 
   // 약속의 참여자 표시정보 (그룹 내 아바타/닉네임)
   const partsOf = (a) => (a.task_participants || [])
-    .map((p) => memberMap[`${a.group_id}:${p.user_id}`]).filter(Boolean)
+    .map((p) => {
+      const m = memberMap[`${a.group_id}:${p.user_id}`]
+      return m ? { ...m, user_id: p.user_id, group_id: a.group_id } : null
+    }).filter(Boolean)
 
   // 유형 필터 + 제목 검색 적용 (달력 점·목록에 공통)
   const query = q.trim().toLowerCase()
@@ -270,7 +277,7 @@ export default function SchedulePage() {
         </span>
         {parts.length > 0 && (
           <span className={`cal-appt-avs task-parts ${parts.length > 1 ? 'multi' : ''}`}>
-            {parts.slice(0, 3).map((m, i) => <Avatar key={i} src={m.avatar} name={m.name} size={26} />)}
+            {parts.slice(0, 3).map((m, i) => <Avatar key={i} src={m.avatar} name={m.name} size={26} deco={decosByGroup[m.group_id]?.[m.user_id]} />)}
             {extra > 0 && <span className="task-parts-more">+{extra}</span>}
           </span>
         )}
