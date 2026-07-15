@@ -181,7 +181,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
-.app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+/* iOS standalone(cover)에서 height:100% 가 하단 안전영역을 뺀 높이로 잡혀 하단에
+   빈 영역이 생기던 문제 → top/bottom 을 물리 화면 양 끝(0)에 고정해 꽉 채운다 */
+.app-shell { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -1333,7 +1335,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: var(--kb-inset, 0px);
   background: var(--surface); border-radius: 18px 18px 0 0;
-  padding: 10px 22px calc(40px + env(safe-area-inset-bottom));
+  padding: 10px 22px 28px;
   box-shadow: 0 -8px 30px rgba(20, 22, 40, .18);
   transform: translateY(100%); transition: transform .28s cubic-bezier(.2, .8, .2, 1);
   max-width: 560px; margin: 0 auto;
