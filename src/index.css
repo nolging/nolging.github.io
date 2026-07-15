@@ -2006,15 +2006,16 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   border-radius: 999px; padding: 1px 8px; margin-right: 4px; white-space: nowrap;
 }
 /* 본문 줄 우측에 고정되는 타입 배지 (수령 플래그 자리) */
-.note-card-tag { flex-shrink: 0; margin-right: 0; padding: 3px 9px; }
+/* inline-flex: transform-origin(중심)·translateY 가 올바르게 적용되도록(인라인이면 축이 쏠림/튐 안 보임) */
+.note-card-tag { display: inline-flex; align-items: center; flex-shrink: 0; margin-right: 0; padding: 3px 9px; }
 /* 수령 대기 중이면 배지가 시소처럼 흔들리며 위아래로 통통 튐 */
-.note-tag-wobble { transform-origin: center; animation: note-tag-wobble 0.7s ease-in-out infinite; }
+.note-tag-wobble { transform-origin: center center; animation: note-tag-wobble 0.7s ease-in-out infinite; }
 @keyframes note-tag-wobble {
-  0%   { transform: translateY(0)     rotate(-6deg); }
-  25%  { transform: translateY(-2.5px) rotate(6deg); }
-  50%  { transform: translateY(0)     rotate(-6deg); }
-  75%  { transform: translateY(-2.5px) rotate(6deg); }
-  100% { transform: translateY(0)     rotate(-6deg); }
+  0%   { transform: translateY(0)    rotate(-6deg); }
+  25%  { transform: translateY(-4px) rotate(6deg); }
+  50%  { transform: translateY(0)    rotate(-6deg); }
+  75%  { transform: translateY(-4px) rotate(6deg); }
+  100% { transform: translateY(0)    rotate(-6deg); }
 }
 @media (prefers-reduced-motion: reduce) { .note-tag-wobble { animation: none; } }
 .note-card.note-wish { background: linear-gradient(135deg, #f3eeff, #fbeffb); box-shadow: 0 2px 12px rgba(109, 81, 224, .16); }
