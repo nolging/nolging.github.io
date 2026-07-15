@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
-  regenerateInviteCode, isFriendGroup, getGroupDecoMap,
+  regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt,
 } from '../lib/api'
+import { isAnnivToday } from '../lib/anniv'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
@@ -14,6 +15,7 @@ import MemberAvatarBtn from '../components/MemberAvatarBtn'
 import MemberStack from '../components/MemberStack'
 import GroupBadge from '../components/GroupBadge'
 import ThemeHearts from '../components/ThemeHearts'
+import Fireworks from '../components/Fireworks'
 import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
@@ -70,6 +72,7 @@ export default function GroupDetail() {
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
   const [isCouple, setIsCouple] = useState(false) // 커플 그룹(적용된 커플 링)
+  const [claimDate, setClaimDate] = useState('')  // 커플 링 수령일(기념일 미설정 시 기본값)
   const [isFriend, setIsFriend] = useState(false) // 우정 그룹(적용된 우정 링)
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
@@ -256,6 +259,12 @@ export default function GroupDetail() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
+  // 커플 그룹: 명시적 기념일 없으면 커플 링 수령일을 기념일 기본값으로
+  useEffect(() => {
+    if (isCouple && !group?.anniversary) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
+  }, [isCouple, group?.anniversary, groupId])
+  const annivToday = isCouple && isAnnivToday(group?.anniversary || claimDate)
+
   // 하트 뿅뿅 테마: 상단바~콘텐츠 배경을 은은한 분홍빛으로 (페이지 벗어나면 원복)
   useEffect(() => {
     const themed = group?.deco_theme === 'heart'
@@ -380,6 +389,7 @@ export default function GroupDetail() {
     <div className={`page gd-page ${group.deco_theme === 'heart' ? 'gd-themed' : ''}`}
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
+      {annivToday && <Fireworks className="fw-over" />}
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">

@@ -1778,6 +1778,38 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .theme-heart { animation: none; opacity: 0; } }
 
+/* 커플 기념일 폭죽 오버레이 (상단바 앞, 하단 탭 아래) */
+.fireworks { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.fireworks.fw-over { position: fixed; inset: 0; z-index: 15; }
+.fw { position: absolute; width: 0; height: 0; }
+.fw-spark {
+  position: absolute; left: 0; top: 0; width: 7px; height: 7px; margin: -3.5px;
+  border-radius: 50%; opacity: 0;
+  transform: rotate(var(--a)) translateY(0) scale(1);
+  animation: fw-spark 3.4s ease-out infinite; animation-delay: inherit;
+  box-shadow: 0 0 7px currentColor; will-change: transform, opacity;
+}
+/* 각 불꽃이 자기 각도(--a) 방향으로 뻗어 나가며 사그라든다 */
+@keyframes fw-spark {
+  0%   { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(1); }
+  6%   { opacity: 1; }
+  10%  { transform: rotate(var(--a)) translateY(calc(var(--dist) * -0.15)) scale(1.05); }
+  55%  { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--dist) * -1)) scale(.35); }
+}
+/* 터질 때 중앙에서 번쩍이는 섬광 */
+.fw::before {
+  content: ''; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 70%);
+  opacity: 0; animation: fw-flash 3.4s ease-out infinite; animation-delay: inherit;
+}
+@keyframes fw-flash {
+  0%, 100% { opacity: 0; transform: scale(.3); }
+  4% { opacity: .9; transform: scale(1); }
+  16% { opacity: 0; transform: scale(1.4); }
+}
+@media (prefers-reduced-motion: reduce) { .fw, .fw-spark, .fw::before { animation: none; opacity: 0; } }
+
 /* 하트 뿅뿅 테마: 상단바~콘텐츠를 하나의 은은한 분홍 그라데이션으로(자연스럽게 이어짐) */
 .app-shell.gd-bg-heart { background: linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%); }
 .app-shell.gd-bg-heart .topbar,

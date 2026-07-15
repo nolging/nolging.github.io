@@ -4,6 +4,8 @@ import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInvi
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
+import Fireworks from '../components/Fireworks'
+import { isAnnivToday } from '../lib/anniv'
 
 function parseYMD(s) {
   const [y, mo, d] = String(s).split('-').map(Number)
@@ -180,6 +182,7 @@ export default function GroupMembers() {
 
     return (
       <div className="page csx-page">
+        {isAnnivToday(effAnniv) && <Fireworks className="fw-over" />}
         {error && <div className="alert alert-error">{error}</div>}
 
         {/* 커플 히어로 + 하트(콕!) */}
