@@ -345,6 +345,16 @@ export default function Notes() {
             const bluray = n.kind === 'bluray'
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
+            // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
+            const tagInfo = wish ? ['🌟 소원', 'note-tag']
+              : couple ? ['💍 커플 링', 'note-tag note-tag-couple']
+                : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
+                  : gift ? ['📦 아이템', 'note-tag note-tag-gift']
+                    : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
+                      : link ? ['🎁 선물 상자', 'note-tag note-tag-link']
+                        : video ? ['📹 영상', 'note-tag note-tag-video']
+                          : bluray ? ['💿 영상', 'note-tag note-tag-video']
+                            : null
             return (
               <li key={n.id}>
                 <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
@@ -352,21 +362,13 @@ export default function Notes() {
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
-                        {wish && <span className="note-tag">🌟 소원</span>}
-                        {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
-                        {friend && <span className="note-tag note-tag-friend">🤝 우정 링</span>}
-                        {gift && <span className="note-tag note-tag-gift">📦 아이템</span>}
-                        {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
-                        {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
-                        {video && <span className="note-tag note-tag-video">📹 영상</span>}
-                        {bluray && <span className="note-tag note-tag-video">💿 영상</span>}
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
                     </div>
                     <div className="note-card-bodyrow">
                       <p className="note-card-body">{n.body}</p>
-                      {needClaim && <span className="note-claim-flag">수령하기</span>}
+                      {tagInfo && <span className={`${tagInfo[1]} note-card-tag ${needClaim ? 'note-tag-wobble' : ''}`}>{tagInfo[0]}</span>}
                       {couple && n.rejected && <span className="note-claim-flag note-claim-flag-off">거절함</span>}
                     </div>
                   </div>
