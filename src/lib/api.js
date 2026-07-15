@@ -1163,14 +1163,58 @@ export async function sendComposedNote({ groupId, recipientId, body, anonymous =
     throw new Error('사용할 수 없는 아이템이에요.')
   }
   if (gifts && gifts.length > 0) {
-    for (let i = 0; i < gifts.length; i++) {
-      const g = gifts[i]
-      // 메시지는 첫 선물에만 붙여 중복 방지
-      await giftOwnedItem(g.id, groupId, recipientId, g.qty, { message: i === 0 ? (msg || null) : null, anonymous })
-    }
-    return
+    // 여러 종류의 아이템을 쪽지 하나로 동봉해 전송
+    return sendGiftNote({ groupId, recipientId, message: msg, anonymous, gifts })
   }
   return sendNote({ groupId, recipientId, body: msg, anonymous })
+}
+
+// 여러 아이템을 쪽지 하나로 선물(동봉). gifts=[{id, qty}]
+export async function sendGiftNote({ groupId, recipientId, message = '', anonymous = false, gifts = [] }) {
+  const p_gifts = (gifts || []).map((g) => ({ item_id: g.id, qty: g.qty || 1 }))
+  const { data, error } = await supabase.rpc('send_gift_note', {
+    p_group_id: groupId, p_recipient_id: recipientId, p_message: message || null, p_anonymous: !!anonymous, p_gifts,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /send_gift_note/.test(error.message || '')) {
+      throw new Error('아이템 동봉 기능이 아직 DB에 설정되지 않았습니다. (send_gift_note 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
+// 쪽지 동봉 아이템 목록 조회 → { [noteId]: [{item_id, item_name, qty, claimed}] }
+export async function listNoteItems(noteIds) {
+  const ids = [...new Set((noteIds || []).filter(Boolean))]
+  if (ids.length === 0) return {}
+  const { data, error } = await supabase
+    .from('note_items').select('note_id, item_id, item_name, qty, claimed').in('note_id', ids)
+    .order('created_at', { ascending: true })
+  if (error) { if (error.code === '42P01') return {}; throw error }
+  const map = {}
+  for (const r of data ?? []) (map[r.note_id] = map[r.note_id] || []).push(r)
+  return map
+}
+
+// 개별/일괄 수령
+export async function claimGiftItem(noteId, itemId) {
+  const { error } = await supabase.rpc('claim_gift_item', { p_note_id: noteId, p_item_id: itemId })
+  if (error) {
+    if (error.code === 'PGRST202' || /claim_gift_item/.test(error.message || '')) {
+      throw new Error('선물 수령 기능이 아직 DB에 설정되지 않았습니다. (claim_gift_item 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+export async function claimGiftNoteAll(noteId) {
+  const { error } = await supabase.rpc('claim_gift_note', { p_note_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /claim_gift_note/.test(error.message || '')) {
+      throw new Error('선물 수령 기능이 아직 DB에 설정되지 않았습니다. (claim_gift_note 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
 }
 
 // 쪽지 상태 조회(알림 클릭 시 이동 목적지 결정용). 없으면 null.

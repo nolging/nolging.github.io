@@ -266,7 +266,7 @@ export default function NoteCompose() {
           <span className="nc-chip-ico" style={{ background: metaOf(g.id).bg }}><StoreItemImage id={g.id} emoji={metaOf(g.id).emoji} className="nc-img" /></span>
           <div className="nc-chip-txt">
             <div className="nc-chip-name">{metaOf(g.id).name} <span className="nc-chip-qty">×{g.qty}</span></div>
-            <div className="nc-chip-hint is-gift">🎁 선물 첨부됨</div>
+            <div className="nc-chip-hint is-gift">📦 아이템 포장됨</div>
           </div>
         </div>
       ))}

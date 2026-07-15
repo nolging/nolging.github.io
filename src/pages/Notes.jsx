@@ -7,7 +7,9 @@ import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap } from '../lib/api'
+import StoreItemImage from '../components/StoreItemImage'
+import { imgBgOf } from '../lib/storeMeta'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll } from '../lib/api'
 
 function NoteFabIcon() {
   return (
@@ -52,6 +54,7 @@ export default function Notes() {
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
+  const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
 
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
@@ -60,6 +63,8 @@ export default function Notes() {
     const gids = [...new Set([...r, ...s].map((n) => n.group_id).filter(Boolean))]
     Promise.all(gids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
       .then((pairs) => setDecosByGroup(Object.fromEntries(pairs))).catch(() => {})
+    const giftIds = [...r, ...s].filter((n) => n.kind === 'gift').map((n) => n.id)
+    try { setNoteItems(await listNoteItems(giftIds)) } catch { /* noop */ }
   }, [user?.id])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
@@ -146,13 +151,35 @@ export default function Notes() {
     finally { setBusy(false) }
   }
 
-  // 선물 수령: 내 인벤토리에 아이템이 들어옴(거절 없음)
-  async function acceptGift(n) {
+  // 쪽지에 동봉된 아이템 목록. note_items 있으면 그걸, 없으면(구버전) 쪽지 단일 아이템으로.
+  const giftItemsOf = (n) => {
+    if (!n) return []
+    const rows = noteItems[n.id]
+    if (rows && rows.length) return rows
+    if (n.item_id) return [{ item_id: n.item_id, item_name: n.item_name, qty: n.qty || 1, claimed: !!n.claimed, _legacy: true }]
+    return []
+  }
+
+  // 개별 수령
+  async function claimOne(n, it) {
     setBusy(true); setError('')
     try {
-      await claimGift(n.id)
+      if (it._legacy) await claimGift(n.id)
+      else await claimGiftItem(n.id, it.item_id)
       await load()
-      setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
+      setOpen((o) => (o && o.id === n.id ? { ...o, ...(it._legacy ? { claimed: true, is_read: true } : {}) } : o))
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
+  }
+
+  // 일괄 수령
+  async function claimAll(n) {
+    setBusy(true); setError('')
+    try {
+      if (noteItems[n.id]?.length) await claimGiftNoteAll(n.id)
+      else await claimGift(n.id)
+      await load()
+      setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true } : o))
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
   }
@@ -328,7 +355,7 @@ export default function Notes() {
                         {wish && <span className="note-tag">🌟 소원</span>}
                         {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
                         {friend && <span className="note-tag note-tag-friend">🤝 우정 링</span>}
-                        {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
+                        {gift && <span className="note-tag note-tag-gift">📦 아이템</span>}
                         {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                         {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
                         {video && <span className="note-tag note-tag-video">📹 영상</span>}
@@ -373,7 +400,7 @@ export default function Notes() {
                   <span className="note-view-peer">
                     {wish && <span className="note-tag">🌟 소원</span>}
                     {couple && <span className="note-tag note-tag-couple">💍 커플 링</span>}
-                    {gift && <span className="note-tag note-tag-gift">🎁 선물</span>}
+                    {gift && <span className="note-tag note-tag-gift">📦 아이템</span>}
                     {cassette && <span className="note-tag note-tag-cassette">🎵 음악</span>}
                     {link && <span className="note-tag note-tag-link">🎁 선물 상자</span>}
                     {video && <span className="note-tag note-tag-video">📹 영상</span>}
@@ -392,6 +419,34 @@ export default function Notes() {
                   {open.item_name || '링크 열기'}
                 </a>
               )}
+              {gift && (() => {
+                const gItems = giftItemsOf(open)
+                if (!gItems.length) return null
+                const anyUnclaimed = gItems.some((it) => !it.claimed)
+                return (
+                  <div className="note-gifts">
+                    <div className="note-gifts-head">
+                      <span className="note-gifts-label">동봉된 아이템</span>
+                      {mine && gItems.length > 1 && anyUnclaimed && (
+                        <button type="button" className="note-gift-all" onClick={() => claimAll(open)} disabled={busy}>일괄 수령</button>
+                      )}
+                    </div>
+                    <ul className="note-gift-list">
+                      {gItems.map((it) => (
+                        <li key={it.item_id} className="note-gift-row">
+                          <span className="note-gift-thumb" style={{ background: imgBgOf(it.item_id) }}>
+                            <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
+                          </span>
+                          <span className="note-gift-name">{it.item_name}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
+                          {mine && (it.claimed
+                            ? <span className="note-gift-done">수령 완료</span>
+                            : <button type="button" className="note-gift-claim" onClick={() => claimOne(open, it)} disabled={busy}>수령하기</button>)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })()}
               {couple && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 💍</button>
@@ -415,14 +470,12 @@ export default function Notes() {
                     {busy ? '수령 중…' : '수령하기'}
                   </button>
                 )
-              ) : gift && mine ? (
-                open.claimed ? (
-                  <button type="button" className="btn btn-block" disabled>수령 완료 🎁</button>
-                ) : (
-                  <button type="button" className="btn btn-primary btn-block" onClick={() => acceptGift(open)} disabled={busy}>
-                    {busy ? '수령 중…' : '수령하기'}
+              ) : gift ? (
+                mine && !open.anonymous ? (
+                  <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
+                    답장하기
                   </button>
-                )
+                ) : null
               ) : !wish && !couple && !friend && !gift && mine && !open.anonymous ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>
                   답장하기
