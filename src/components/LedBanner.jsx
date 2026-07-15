@@ -20,9 +20,12 @@ export default function LedBanner({ text, color = 'amber', className = '' }) {
       const ow = one.offsetWidth || 1
       const copies = Math.max(2, Math.ceil(bw / ow) + 1) // 한 벌이 보드보다 넓도록 여유 있게
       const dur = Math.max(8, (ow * copies) / 55)          // 55px/s 로 일정한 속도
-      setTrack({ copies, dur })
+      // 값이 실제로 바뀔 때만 갱신 → 크기 재측정이 스크롤을 리셋(중간에 뚝)하지 않게.
+      setTrack((prev) => (prev.copies === copies && Math.abs(prev.dur - dur) < 0.5 ? prev : { copies, dur }))
     }
     measure()
+    // 글꼴 로드 후 폭이 바뀔 수 있어 한 번 더(정확한 속도/반복 수)
+    if (document.fonts?.ready) document.fonts.ready.then(measure).catch(() => {})
     const ro = new ResizeObserver(measure)
     ro.observe(board)
     return () => ro.disconnect()
