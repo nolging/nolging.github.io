@@ -159,7 +159,15 @@ export default function Notes() {
   const TABS = ['received', 'sent']
   const activeIdx = TABS.indexOf(tab)
   const tabsRef = useRef(null)
-  const paneRef = useRef(null)
+  const wrapRef = useRef(null)      // 고정 탭 래퍼(높이 측정 → 스크롤 영역 상단 여백)
+  const paneRef = useRef(null)      // 실제 스크롤 영역(.notes-scroll)
+  const [tabH, setTabH] = useState(56)
+  useLayoutEffect(() => {
+    const measure = () => { if (wrapRef.current) setTabH(wrapRef.current.offsetHeight) }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
   const swipeRef = useRef(null)
   const suppressClickRef = useRef(false)
   const [tabGeo, setTabGeo] = useState([])
@@ -272,8 +280,9 @@ export default function Notes() {
         </div>
       )}
 
-      <div className="notes-body" ref={paneRef}>
-      <div className={`notes-tabs-wrap ${scrolled ? 'is-scrolled' : ''}`}>
+      <div className="notes-body">
+      {/* 고정 탭(스크롤/당김에 영향받지 않음) */}
+      <div className={`notes-tabs-wrap ${scrolled ? 'is-scrolled' : ''}`} ref={wrapRef}>
         <div className="tabs" ref={tabsRef}>
           <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
             받은 쪽지함
@@ -284,6 +293,8 @@ export default function Notes() {
           <span className="tab-underline" style={underlineStyle} />
         </div>
       </div>
+      {/* 탭 아래 실제 스크롤 영역(당겨서 새로고침도 이 영역만) */}
+      <div className="notes-scroll" ref={paneRef} style={{ paddingTop: tabH }}>
       {loading ? (
         <div className="spinner" />
       ) : list.length === 0 ? (
@@ -333,6 +344,7 @@ export default function Notes() {
           })}
         </ul>
       )}
+      </div>
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}

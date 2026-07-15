@@ -1576,12 +1576,15 @@ button.mlist-row:hover { background: #f6f5fa; }
   padding: 10px var(--pad-x, 20px) 0;
   background: transparent;             /* 평상시 완전 투명 */
   --st-fade: var(--bg);                /* 스크롤 페이드 색(일반=페이지색) */
+  /* sticky 요소를 별도 합성 레이어로 승격 → 빠른 관성 스크롤 시 리페인트 지연(카드 비침) 완화 */
+  will-change: transform;
 }
-/* 스크롤 시에만 나타나는 그라데이션 페이드(위=불투명 → 아래=투명). 카드가 자연스럽게 사라짐 */
+/* 스크롤 시에만 나타나는 그라데이션 페이드(위=불투명 → 아래=투명). 카드가 자연스럽게 사라짐.
+   탭 영역은 충분히 불투명(솔리드 80%)하게 덮어 빠른 스크롤에도 비침 최소화. */
 .st-toolbar::after {
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 26px);
-  z-index: -1; pointer-events: none; opacity: 0; transition: opacity .18s ease;
-  background: linear-gradient(to bottom, var(--st-fade) 0, var(--st-fade) 60%, transparent 100%);
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 24px);
+  z-index: -1; pointer-events: none; opacity: 0; transition: opacity .12s ease;
+  background: linear-gradient(to bottom, var(--st-fade) 0, var(--st-fade) 80%, transparent 100%);
 }
 .st-toolbar.is-scrolled::after { opacity: 1; }
 .premium-shop .st-toolbar { --st-fade: #241d4a; }
@@ -1928,25 +1931,26 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 
 /* 쪽지 페이지: 목록이 짧아도 하단 빈 영역에서 스와이프가 먹히도록 페이지·본문이 높이를 채움 */
-/* 쪽지: 탭은 스크롤 영역 상단에 sticky, 목록이 탭 뒤로 지나가며 페이드(상점과 동일) */
+/* 쪽지: 탭은 항상 상단 고정(스크롤/당김 영향 없음), 목록만 탭 아래에서 스크롤되며
+   탭 뒤로 지나가고 페이드 처리(상점과 동일). 당겨서 새로고침도 목록 영역만 움직임. */
 .notes-page { height: 100%; }
-.notes-body {
-  flex: 1 1 auto; min-height: 0;
-  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  margin: 0 calc(-1 * var(--pad-x)); padding: 0 var(--pad-x);
+.notes-body { position: relative; flex: 1 1 auto; min-height: 0; margin: 0 calc(-1 * var(--pad-x)); }
+/* 실제 스크롤 영역: 탭 아래에서 스크롤. 상단 여백(padding-top)은 탭 높이만큼(인라인). */
+.notes-scroll {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 var(--pad-x);
 }
-/* 상단 탭 래퍼: 스크롤해도 상단 고정. 스크롤 시 탭 영역을 불투명 배경으로 덮고
-   아래로 그라데이션 페이드가 나타나 카드가 탭 뒤에서 자연스럽게 사라짐(상점과 동일).
-   실제 탭(.tabs)은 자식이라 페이드 위에 그려져 회색 알약 트랙 모양이 유지됨. */
-.notes-body .notes-tabs-wrap {
-  position: sticky; top: 0; z-index: 5; margin-bottom: 12px;
+/* 고정 탭 래퍼: 스크롤 영역 위에 겹쳐 고정. 페이드로 카드가 탭 뒤에서 사라짐.
+   페이드는 좌우 풀블리드(카드 그림자까지 덮음). 실제 탭(.tabs)은 자식이라 페이드 위에. */
+.notes-tabs-wrap {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 8px var(--pad-x) 0;
 }
-.notes-body .notes-tabs-wrap::after {
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 22px);
+.notes-tabs-wrap::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 18px);
   z-index: -1; pointer-events: none; opacity: 0; transition: opacity .12s ease;
-  background: linear-gradient(to bottom, var(--bg) 0, var(--bg) 68%, transparent 100%);
+  background: linear-gradient(to bottom, var(--bg) 0, var(--bg) 74%, transparent 100%);
 }
-.notes-body .notes-tabs-wrap.is-scrolled::after { opacity: 1; }
+.notes-tabs-wrap.is-scrolled::after { opacity: 1; }
 
 /* ---- 쪽지 보기(모달) ---- */
 .note-view { display: flex; flex-direction: column; gap: 14px; }
@@ -2039,7 +2043,7 @@ button.mlist-row:hover { background: #f6f5fa; }
   display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 0;
 }
 /* 미니 플레이어가 목록 맨 아래 항목을 가리지 않게 여백 */
-.app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-body { padding-bottom: 60px; }
+.app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-scroll { padding-bottom: 60px; }
 
 /* ---- 링크 쪽지 ---- */
 .note-tag-link { color: #5578d0; background: rgba(85, 120, 208, .14); }
@@ -2440,6 +2444,8 @@ button.mlist-row:hover { background: #f6f5fa; }
      내부 스크롤러 자체에 탭 높이만큼 하단 여백을 줘 마지막 항목이 가려지지 않게. */
   .app-shell.has-nav .content:has(> .notes-page),
   .app-shell.has-nav .content:has(> .sched-page) { padding-bottom: 0; }
+  /* 쪽지: 상단 여백 제거(고정 탭 래퍼가 자체 상단 여백 제공) */
+  .app-shell.has-nav .content:has(> .notes-page) { padding-top: 0; }
   .app-shell.has-nav .cal-scroll { padding-bottom: 92px; }
   .app-shell.has-nav .note-list { padding-bottom: 92px; }
   .bottomnav a {
