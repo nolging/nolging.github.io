@@ -165,6 +165,17 @@ export default function Notes() {
   const [tabGeo, setTabGeo] = useState([])
   const [paneW, setPaneW] = useState(0)
   const [gesture, setGesture] = useState(null) // { x, active }
+  const [scrolled, setScrolled] = useState(false) // 스크롤 시 상단 탭 뒤 페이드 on
+
+  // 본문 스크롤 감지 → 상단 탭 아래 그라데이션 페이드(카드가 탭 뒤로 자연스럽게 사라짐)
+  useEffect(() => {
+    const sc = paneRef.current
+    if (!sc) return
+    const onScroll = () => setScrolled(sc.scrollTop > 4)
+    sc.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => sc.removeEventListener('scroll', onScroll)
+  }, [tab, loading])
 
   // 탭 버튼 실제 위치/폭 측정(패딩 안쪽에 딱 맞는 알약을 위해)
   useLayoutEffect(() => {
@@ -261,7 +272,8 @@ export default function Notes() {
         </div>
       )}
 
-      <div className="tabs" ref={tabsRef}>
+      <div className="notes-body" ref={paneRef}>
+      <div className={`tabs notes-tabs ${scrolled ? 'is-scrolled' : ''}`} ref={tabsRef}>
         <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
           받은 쪽지함
         </button>
@@ -270,8 +282,6 @@ export default function Notes() {
         </button>
         <span className="tab-underline" style={underlineStyle} />
       </div>
-
-      <div className="notes-body" ref={paneRef}>
       {loading ? (
         <div className="spinner" />
       ) : list.length === 0 ? (

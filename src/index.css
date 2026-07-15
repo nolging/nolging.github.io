@@ -1928,13 +1928,23 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 
 /* 쪽지 페이지: 목록이 짧아도 하단 빈 영역에서 스와이프가 먹히도록 페이지·본문이 높이를 채움 */
-/* 쪽지: 탭은 상단 고정, 아래 목록(.notes-body)만 스크롤/당김 */
+/* 쪽지: 탭은 스크롤 영역 상단에 sticky, 목록이 탭 뒤로 지나가며 페이드(상점과 동일) */
 .notes-page { height: 100%; }
 .notes-body {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   margin: 0 calc(-1 * var(--pad-x)); padding: 0 var(--pad-x);
 }
+/* 상단 탭: 스크롤해도 상단 고정. 스크롤 시 아래로 그라데이션 페이드가 나타나 카드가 자연스럽게 사라짐 */
+.notes-body .notes-tabs {
+  position: sticky; top: 0; z-index: 5; margin-bottom: 12px;
+}
+.notes-body .notes-tabs::after {
+  content: ''; position: absolute; left: calc(-1 * var(--pad-x)); right: calc(-1 * var(--pad-x)); top: 100%;
+  height: 26px; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  background: linear-gradient(to bottom, var(--bg) 0, var(--bg) 45%, transparent 100%);
+}
+.notes-body .notes-tabs.is-scrolled::after { opacity: 1; }
 
 /* ---- 쪽지 보기(모달) ---- */
 .note-view { display: flex; flex-direction: column; gap: 14px; }
