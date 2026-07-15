@@ -2265,7 +2265,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .note-pick-actions .btn { flex: 1; min-height: 44px; }
 
 /* ===== 쪽지 쓰기 (시안) ===== */
-.nc-page { display: flex; flex-direction: column; gap: 13px; padding-bottom: 132px; }
+.nc-page { display: flex; flex-direction: column; gap: 13px; padding-bottom: 8px; }
 .nc-label { font-size: 13px; font-weight: 800; color: #7363e8; flex-shrink: 0; }
 .nc-placeholder { color: #b0b0b8; font-size: 13.5px; font-weight: 600; }
 .nc-to {
@@ -2277,7 +2277,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .nc-to .nc-chev { flex-shrink: 0; }
 .nc-body-wrap { position: relative; }
 .nc-body {
-  width: 100%; height: 130px; border: 1.5px solid #efeef4; border-radius: 16px; box-sizing: border-box;
+  width: 100%; height: 210px; border: 1.5px solid #efeef4; border-radius: 16px; box-sizing: border-box;
   padding: 13px 13px 30px; font: inherit; font-size: 14px; line-height: 1.5; color: #191722; resize: none; outline: none;
 }
 .nc-body:focus { border-color: #7363e8; }
@@ -2313,11 +2313,11 @@ button.mlist-row:hover { background: #f6f5fa; }
 .nc-anon-ava { background: #dedbe6; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; color: #8b8798; }
 .nc-restore { border: none; background: none; font-size: 11.5px; font-weight: 700; color: #7363e8; cursor: pointer; flex-shrink: 0; }
 
-/* 하단 액션 바 (스크롤에도 고정) */
+/* 하단 액션 바 — 일반 흐름(정적)에 둬 키보드가 올라와도 따라 올라오지 않게 한다
+   (sticky 로 두면 키보드 위로 붙어 올라와 위 칸들을 가림) */
 .nc-actions {
-  position: sticky; bottom: 0; margin: 6px calc(-1 * var(--pad-x, 20px)) 0;
-  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
-  background: linear-gradient(rgba(253,252,254,0), #fdfcfe 26%);
+  margin: 8px calc(-1 * var(--pad-x, 20px)) 0;
+  padding: 14px 20px calc(8px + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 10px;
 }
 .nc-action-row { display: flex; gap: 9px; }
