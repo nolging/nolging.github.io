@@ -182,9 +182,9 @@ export default function TouchKiss() {
   return (
     <div className="page tk-page">
       <div className="tk-greet">
-        {partner && (
+        {partner && !members.some((m) => m.uid === partner.uid) && (
           <button type="button" className="tk-call" onClick={summon} disabled={callState === 'sending'}>
-            {callState === 'done' ? '불렀어요!' : <><span aria-hidden="true">💋</span> 부르기</>}
+            {callState === 'done' ? '불렀어요!' : '부르기'}
           </button>
         )}
         <div className="tk-bubble">{peerCount > 1 ? '입술을 맞대 보세요 //' : '지금은 혼자 있어요'}</div>
