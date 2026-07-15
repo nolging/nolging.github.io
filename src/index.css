@@ -2635,14 +2635,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .draw-wrap { position: relative; flex: 1; min-height: 0; padding-top: 10px;
   display: flex; align-items: stretch; justify-content: center; }
 .draw-canvas { width: 100%; max-width: 620px; height: 100%; display: block;
-  background: #fff; border-radius: 5px 5px 20px 20px; box-shadow: 0 5px 16px rgba(25,23,34,.08);
+  background: #fff; border-radius: 5px; box-shadow: 0 5px 16px rgba(25,23,34,.08);
   touch-action: none; cursor: crosshair; }
 /* 상단 스프링 제본(코일이 종이 윗변을 물고 있는 모양) */
 .draw-spring { position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 620px; height: 20px; z-index: 6; pointer-events: none;
   display: flex; justify-content: space-evenly; align-items: flex-start; padding: 0 22px; box-sizing: border-box; }
-.draw-spring::after { content: ''; position: absolute; top: 15px; left: 12px; right: 12px; height: 9px;
-  border-radius: 5px; background: linear-gradient(180deg, rgba(25,23,34,.12), transparent); }
 .draw-coil { width: 9px; height: 20px; border-radius: 5px;
   background: linear-gradient(180deg, #edeef4 0%, #c4c4d1 45%, #9a9aa9 100%);
   box-shadow: 0 1px 2px rgba(25,23,34,.3), inset 0 -3px 3px rgba(0,0,0,.14), inset 0 2px 2px rgba(255,255,255,.75); }
