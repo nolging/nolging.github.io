@@ -38,6 +38,7 @@ create policy notes_select on public.notes
   using ( sender_id = auth.uid() or (recipient_id = auth.uid() and anonymous = false) );
 
 -- 받은 쪽지 목록: 익명이면 발신자 정보 가림
+drop function if exists public.list_received_notes();
 create or replace function public.list_received_notes()
 returns table(
   id uuid, group_id uuid, sender_id uuid, recipient_id uuid,
