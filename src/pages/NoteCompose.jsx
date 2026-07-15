@@ -4,6 +4,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
+import StoreItemImage from '../components/StoreItemImage'
 import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { imgBgOf } from '../lib/storeMeta'
@@ -248,7 +249,7 @@ export default function NoteCompose() {
           <button type="button" className="nc-chip-x" onClick={clearUseItem} aria-label="첨부 제거">
             <svg width="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
-          <span className="nc-chip-ico" style={{ background: metaOf(useItem.id).bg }}>{metaOf(useItem.id).emoji}</span>
+          <span className="nc-chip-ico" style={{ background: metaOf(useItem.id).bg }}><StoreItemImage id={useItem.id} emoji={metaOf(useItem.id).emoji} className="nc-img" /></span>
           <div className="nc-chip-txt">
             <div className="nc-chip-name">{metaOf(useItem.id).name}</div>
             <div className="nc-chip-hint">{RINGS.includes(useItem.id) ? `✨ ${USE_META[useItem.id].useLabel} 포함` : '📎 첨부됨'}</div>
@@ -262,7 +263,7 @@ export default function NoteCompose() {
           <button type="button" className="nc-chip-x" onClick={() => setGifts(gifts.filter((x) => x.id !== g.id))} aria-label="선물 제거">
             <svg width="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
-          <span className="nc-chip-ico" style={{ background: metaOf(g.id).bg }}>{metaOf(g.id).emoji}</span>
+          <span className="nc-chip-ico" style={{ background: metaOf(g.id).bg }}><StoreItemImage id={g.id} emoji={metaOf(g.id).emoji} className="nc-img" /></span>
           <div className="nc-chip-txt">
             <div className="nc-chip-name">{metaOf(g.id).name} <span className="nc-chip-qty">×{g.qty}</span></div>
             <div className="nc-chip-hint is-gift">🎁 선물 첨부됨</div>
@@ -275,7 +276,7 @@ export default function NoteCompose() {
         <div className="nc-from is-anon">
           <span className="nc-label">From.</span>
           <span className="nc-from-ava nc-anon-ava">?</span>
-          <div className="nc-from-txt"><div className="nc-from-name">익명</div><div className="nc-from-sub">🧽 지우개로 보내는 사람을 숨겼어요</div></div>
+          <div className="nc-from-txt"><div className="nc-from-name">익명</div><div className="nc-from-sub">지우개로 내 이름을 지웠어요</div></div>
           <button type="button" className="nc-restore" onClick={() => setAnonymous(false)}>되돌리기</button>
         </div>
       ) : me.name ? (
@@ -321,7 +322,8 @@ export default function NoteCompose() {
                 return (
                   <button key={id} type="button" className={`nc-icard ${active ? 'is-active' : ''}`} disabled={dis}
                     style={{ opacity: dis && !active ? 0.38 : 1 }} onClick={() => pickUse(id)}>
-                    <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>{metaOf(id).emoji}
+                    <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
+                      <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
                       {active ? <span className="nc-icard-using">사용 중</span> : <span className="nc-icard-badge">×{owned[id] || 0}</span>}
                     </span>
                     <span className="nc-icard-name">{metaOf(id).name}</span>
@@ -353,7 +355,8 @@ export default function NoteCompose() {
               return (
                 <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${tapToSelect ? 'is-tap' : ''}`}
                   onClick={disabled ? () => setGiftNotice(reason) : tapToSelect ? () => { setGiftNotice(''); setDraft(id, 1) } : undefined}>
-                  <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>{metaOf(id).emoji}
+                  <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
+                    <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
                     <span className="nc-icard-badge">×{max}</span>
                   </span>
                   <span className="nc-icard-name">{metaOf(id).name}</span>
@@ -381,7 +384,7 @@ export default function NoteCompose() {
         {linkFor && (
           <div className="nc-link">
             <div className="nc-link-head">
-              <span className="nc-link-ico" style={{ background: metaOf(linkFor).bg }}>{metaOf(linkFor).emoji}</span>
+              <span className="nc-link-ico" style={{ background: metaOf(linkFor).bg }}><StoreItemImage id={linkFor} emoji={metaOf(linkFor).emoji} className="nc-img" /></span>
               <div><div className="nc-link-name">{metaOf(linkFor).name}</div><div className="nc-link-sub">전달하고 싶은 링크를 입력해 주세요</div></div>
             </div>
             <div className="nc-link-input">
