@@ -1999,13 +1999,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-view-date { font-size: 12px; color: var(--muted); }
 .note-view-body {
   margin: 0; font-size: 15px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word;
-  background: rgba(255, 255, 255, .5); border-radius: 12px; padding: 16px 18px;
+  background: rgba(255, 255, 255, .8); border-radius: 12px; padding: 16px 18px;
   /* 테두리 경계가 사방으로 점점 옅어지게(가장자리 페더) → 뒤 모달 색과 어우러짐 */
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent),
-                      linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 3px, #000 calc(100% - 3px), transparent),
+                      linear-gradient(to bottom, transparent, #000 3px, #000 calc(100% - 3px), transparent);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent),
-              linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 3px, #000 calc(100% - 3px), transparent),
+              linear-gradient(to bottom, transparent, #000 3px, #000 calc(100% - 3px), transparent);
   mask-composite: intersect;
 }
 
@@ -2027,7 +2027,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @media (prefers-reduced-motion: reduce) { .note-tag-bounce, .note-tag-seesaw { animation: none; } }
 .note-card.note-wish { background: linear-gradient(135deg, #f3eeff, #fbeffb); box-shadow: 0 2px 12px rgba(109, 81, 224, .16); }
 .modal-card.modal-wish { background: linear-gradient(160deg, #f5f0ff, #fbf0fa); }
-.modal-wish .note-view-body { background: rgba(255,255,255,.5); }
+.modal-wish .note-view-body { background: rgba(255,255,255,.8); }
 
 /* ---- 커플링 쪽지 ---- */
 .note-tag-couple { color: #cf5e88; background: rgba(207, 94, 136, .14); }
@@ -2037,7 +2037,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-tag-friend { color: #1f9e8b; background: rgba(31, 158, 139, .14); }
 .note-card.note-friend { position: relative; background: linear-gradient(135deg, #e7f8f2, #eefaf5); box-shadow: 0 2px 12px rgba(31, 158, 139, .14); }
 .modal-card.modal-friend { background: linear-gradient(160deg, #e7f8f2, #f2fbf7); }
-.modal-friend .note-view-body { background: rgba(255,255,255,.5); }
+.modal-friend .note-view-body { background: rgba(255,255,255,.8); }
 /* 본문 줄의 우측 고정 배지(플로우 안 → 어떤 상황에도 잘리지 않고 항상 보임) */
 .note-claim-flag {
   flex-shrink: 0; font-size: 10.5px; font-weight: 700; color: #fff;
@@ -2045,7 +2045,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 .note-claim-flag.note-claim-flag-off { background: var(--muted); }
 .modal-card.modal-couple { background: linear-gradient(160deg, #fdeef6, #f5f0ff); }
-.modal-couple .note-view-body { background: rgba(255,255,255,.5); }
+.modal-couple .note-view-body { background: rgba(255,255,255,.8); }
 /* 커플 링 수령/거절 버튼 */
 .couple-actions { display: flex; gap: 10px; }
 .couple-actions .btn { flex: 1; }
@@ -2055,12 +2055,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-tag-gift { color: #d98a4e; background: rgba(217, 138, 78, .14); }
 .note-card.note-gift { background: linear-gradient(135deg, #fdf1e6, #fdf7ee); box-shadow: 0 2px 12px rgba(217, 138, 78, .14); position: relative; }
 .modal-card.modal-gift { background: linear-gradient(160deg, #fdf1e6, #fdf7ee); }
-.modal-gift .note-view-body { background: rgba(255,255,255,.5); }
+.modal-gift .note-view-body { background: rgba(255,255,255,.8); }
 
 /* ---- 카세트 테이프(음악) 쪽지 ---- */
 .note-tag-cassette { color: #4a9d6a; background: rgba(74, 157, 106, .14); }
 .modal-card.modal-cassette { background: linear-gradient(160deg, #eaf6ee, #f3f9f5); }
-.modal-cassette .note-view-body { background: rgba(255,255,255,.5); }
+.modal-cassette .note-view-body { background: rgba(255,255,255,.8); }
 .cassette-change { margin-left: auto; flex-shrink: 0; }
 
 /* 유튜브 오디오 플레이어(영상 숨김 → 소리만) */
@@ -2104,7 +2104,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* ---- 링크 쪽지 ---- */
 .note-tag-link { color: #5578d0; background: rgba(85, 120, 208, .14); }
 .modal-card.modal-link { background: linear-gradient(160deg, #eef2fb, #f5f8fd); }
-.modal-link .note-view-body { background: rgba(255,255,255,.5); }
+.modal-link .note-view-body { background: rgba(255,255,255,.8); }
 .note-linkbtn {
   display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
   background: linear-gradient(135deg, #6a8dea, #5578d0); color: #fff;
@@ -2140,7 +2140,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 .note-tag-video { color: #c0524a; background: rgba(192, 82, 74, .14); }
 .modal-card.modal-video { background: linear-gradient(160deg, #fdeeee, #fdf5f4); }
-.modal-video .note-view-body { background: rgba(255,255,255,.5); }
+.modal-video .note-view-body { background: rgba(255,255,255,.8); }
 .video-player {
   position: relative; width: 100%; aspect-ratio: 16 / 9;
   border-radius: 12px; overflow: hidden; background: #000;
