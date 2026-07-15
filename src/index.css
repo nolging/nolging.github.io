@@ -181,10 +181,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
-/* black-translucent 로 뷰포트(innerHeight)가 물리 화면보다 상단 인셋(env top)만큼
-   짧아지는 이 기기 특성 보정: 높이에 env(top) 를 더해 물리 화면 전체를 채운다.
-   (일반 브라우저/비-standalone 은 env=0 → height:100% 와 동일) */
-.app-shell { position: fixed; top: 0; left: 0; right: 0; height: calc(100% + env(safe-area-inset-top)); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -644,7 +641,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 태스크 ---- */
 /* 하단 여백: 마지막 카드가 위시 작성 버튼(FAB) 뒤에 가려지지 않도록 */
-.task-list { list-style: none; margin: 0; padding: 0 0 calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+.task-list { list-style: none; margin: 0; padding: 0 0 84px; display: flex; flex-direction: column; gap: 10px; }
 /* 스와이프: 액션 버튼은 배경(뒤)에 고정, 카드가 그림자째 좌로 슬라이드하며 드러냄 */
 .task-swipe { position: relative; }
 .task-swipe-actions {
@@ -1326,7 +1323,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .fab:active { transform: scale(.94); }
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px) {
-  .fab-above-nav { bottom: calc(94px + env(safe-area-inset-bottom)); }
+  .fab-above-nav { bottom: 94px; }
 }
 
 /* ---- 하단 시트 (초대 등) ---- */
@@ -1336,7 +1333,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: var(--kb-inset, 0px);
   background: var(--surface); border-radius: 18px 18px 0 0;
-  padding: 10px 22px calc(28px + env(safe-area-inset-bottom));
+  padding: 10px 22px 28px;
   box-shadow: 0 -8px 30px rgba(20, 22, 40, .18);
   transform: translateY(100%); transition: transform .28s cubic-bezier(.2, .8, .2, 1);
   max-width: 560px; margin: 0 auto;
@@ -1909,7 +1906,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 
 /* ---- 쪽지 목록 ---- */
-.note-list { list-style: none; margin: 0; padding: 0 0 calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+.note-list { list-style: none; margin: 0; padding: 0 0 84px; display: flex; flex-direction: column; gap: 10px; }
 .note-card {
   position: relative; display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left;
   background: var(--surface); border: none; border-radius: var(--radius); box-shadow: var(--card-shadow);
@@ -2015,10 +2012,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* ---- 전역 미니 플레이어(페이지 이동해도 재생 유지). 버튼만 노출 ---- */
 .mini-hosts { position: absolute; width: 1px; height: 1px; left: -9999px; top: 0; overflow: hidden; opacity: 0; pointer-events: none; }
 .mini-player {
-  position: absolute; z-index: 25; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+  position: absolute; z-index: 25; left: 16px; bottom: 16px;
   width: 45px; height: 45px;
 }
-.app-shell.has-nav .mini-player { bottom: calc(96px + env(safe-area-inset-bottom)); }
+.app-shell.has-nav .mini-player { bottom: 96px; }
 .mini-play {
   width: 45px; height: 45px; border-radius: 50%; border: none; cursor: pointer;
   background: #9aa0ac; color: #fff; display: flex; align-items: center; justify-content: center;
@@ -2290,12 +2287,12 @@ button.mlist-row:hover { background: #f6f5fa; }
   /* 플로팅 알약형 하단 탭바 (시안) */
   .bottomnav {
     display: flex; position: absolute; z-index: 20;
-    left: 16px; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom));
+    left: 16px; right: 16px; bottom: 14px;
     height: 62px; background: #fff; border: 1px solid #efeff2; border-radius: 999px;
     box-shadow: 0 10px 30px rgba(25, 23, 34, .12);
   }
   /* 플로팅 바가 콘텐츠를 가리지 않게 하단 여백 확보 */
-  .app-shell.has-nav .content { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .app-shell.has-nav .content { padding-bottom: 92px; }
   .bottomnav a {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 2px; padding: 0; color: #b0b0b8; font-weight: 600; font-size: 10px;
@@ -2306,7 +2303,7 @@ button.mlist-row:hover { background: #f6f5fa; }
   /* 플로팅(아일랜드) 탭 뒤로 지나가는 콘텐츠를 자연스럽게 뿌옇게(블러+페이드) */
   .app-shell.has-nav::after {
     content: ''; position: absolute; left: 0; right: 0; bottom: 0; z-index: 15;
-    height: calc(73px + env(safe-area-inset-bottom));
+    height: 73px;
     background: rgba(255, 255, 255, .5);
     -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
     -webkit-mask: linear-gradient(to top, #000 40%, transparent);

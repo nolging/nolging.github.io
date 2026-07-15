@@ -2,8 +2,7 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <!-- viewport-fit=cover: 안전영역 env 활성 (상단 아일랜드 색 확장용) -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <!-- Android/Chrome 용(런타임에 페이지별 갱신). iOS 는 아래 status-bar-style 사용 -->
     <meta name="theme-color" content="#fdfcfe" />
 
@@ -16,9 +15,9 @@
     <!-- iOS(Safari)용: 홈 화면 실행 시 주소창/브라우저 UI 숨김 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <!-- black-translucent: 콘텐츠가 상태바/아일랜드 뒤로 확장돼 앱 색이 위까지 이어짐.
-         (하단 뷰포트 부족분은 .app-shell 높이 calc(100% + env(top)) 로 보정) -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- default: 상태바를 iOS 가 그림(뷰포트=안전영역). black-translucent 는 이 기기에서
+         뷰포트가 물리 화면보다 62px 짧아져 하단에 닿지 않는 여백을 만들어 사용하지 않음 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Nolging" />
 
     <!-- 웹폰트: 페이퍼로지는 self-host (src/index.css @font-face, public/fonts) -->
