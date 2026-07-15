@@ -99,7 +99,8 @@ export default function ScheduleAppointment() {
         const d = new Date(t.scheduled_at)
         setDateOn(true); setDate(dateStr(d))
         setTimeOn(t.scheduled_time_set !== false); setTime(timeStr(d))
-      } else if (t.status === 'accepted') {
+      } else if (t.status !== 'open') {
+        // 날짜 없이 올린 약속·추억 → 날짜 토글 꺼진 상태로 진입
         setDateOn(false)
       }
       if (t.repeat_rule) {

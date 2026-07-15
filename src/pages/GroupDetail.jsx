@@ -224,8 +224,9 @@ export default function GroupDetail() {
         isFriendGroup(groupId).catch(() => false),
       ])
       setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc); setIsCouple(couple); setIsFriend(friend)
-      const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
-      setPartsByTask(await listParticipantsByTasks(scheduledIds))
+      // 참여자는 약속(accepted)·추억(done) 모두 로드 (날짜 없는 추억도 포함)
+      const partIds = t.filter((x) => x.status !== 'open').map((x) => x.id)
+      setPartsByTask(await listParticipantsByTasks(partIds))
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
@@ -239,8 +240,9 @@ export default function GroupDetail() {
         getGroup(groupId), listMemberCards(groupId), listTasks(groupId), listCommentCounts(groupId),
       ])
       setGroup(g); setMembers(m); setTasks(t); setCommentCounts(cc)
-      const scheduledIds = t.filter((x) => x.scheduled_at).map((x) => x.id)
-      setPartsByTask(await listParticipantsByTasks(scheduledIds))
+      // 참여자는 약속(accepted)·추억(done) 모두 로드 (날짜 없는 추억도 포함)
+      const partIds = t.filter((x) => x.status !== 'open').map((x) => x.id)
+      setPartsByTask(await listParticipantsByTasks(partIds))
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) }
@@ -515,8 +517,8 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
   const showParts = parts.length > 0
   const extra = parts.length - 3
 
-  // 약속(일정이 잡힌) 카드는 상세와 동일한 동작(수정/약속취소/삭제)
-  const isScheduled = !!task.scheduled_at
+  // 약속·추억 카드는 상세와 동일한 동작(수정/약속취소/삭제). 날짜 유무가 아니라 상태로 판단.
+  const isScheduled = task.status !== 'open'
   const isCreator = task.created_by === meId
   const isParticipant = isCreator || parts.includes(meId)
   const canAct = isScheduled ? (isParticipant || isAdmin) : canManage
@@ -524,7 +526,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
   const mediaLine = mediaCardLine(task.category, task.media_info)
   // 약속/추억(scheduled) 카드는 댓글 수를 약속 정보(🗓) 라인에, 그 외(open)는 foot 에
   const ccOnAppt = !!task.scheduled_at
-  const showFoot = mediaLine || (task.assignee_id && !showParts) || !ccOnAppt
+  const showFoot = mediaLine || !ccOnAppt
 
   // 스와이프 시 오른쪽에 뜨는 원형 액션들 (기존 ⋮ 메뉴 대체)
   const actions = []
@@ -644,12 +646,6 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
           <div className="task-foot">
             {task.description && <span className="task-cmt">{task.description}</span>}
             {mediaLine && <span className="task-media-line">{mediaLine}</span>}
-            {task.assignee_id && !showParts && (
-              <span className="task-person">
-                <MemberAvatarBtn groupId={groupId} userId={task.assignee_id} src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />
-                담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}
-              </span>
-            )}
             <div className="task-foot-right">
               {!ccOnAppt && <span className="task-cc">댓글 {commentCount}</span>}
             </div>

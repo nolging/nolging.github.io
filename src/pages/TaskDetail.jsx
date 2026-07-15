@@ -458,7 +458,8 @@ export default function TaskDetail() {
   if (!task) return null
 
   const mine = task.assignee_id === profile.id
-  const isScheduled = !!task.scheduled_at
+  // 약속·추억은 날짜 유무가 아니라 상태로 판단(날짜 없는 추억도 참여자·메뉴가 정상 표시되게)
+  const isScheduled = task.status !== 'open'
   const isCreator = task.created_by === profile.id
   const isParticipant = isCreator || participants.includes(profile.id)
   const extra = participants.length - 3
@@ -609,7 +610,7 @@ export default function TaskDetail() {
 
       {/* 약속 정보(상세 정보 카드 아래) + 완료/리뷰 버튼을 같은 줄에 */}
       <div className="td-actions">
-        {isScheduled ? (
+        {task.scheduled_at && (
           <div className="td-appt appt-when">
             <CalendarIcon className="appt-cal" size={15} />
             <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
@@ -622,10 +623,6 @@ export default function TaskDetail() {
               <span className="appt-bell" aria-label="미리 알림" title={`미리 알림 · ${remindLabel(task.remind_min)}`}>⏰</span>
             )}
           </div>
-        ) : (
-          task.assignee_id && (
-            <span className="task-person"><MemberAvatarBtn groupId={groupId} userId={task.assignee_id} src={avatarOf(task.assignee_id)} name={nameOf(task.assignee_id)} size={18} />담당 {nameOf(task.assignee_id)}{mine ? ' (나)' : ''}</span>
-          )
         )}
         <div className="task-actions">
           {task.status === 'open' && <button className="btn btn-sm btn-primary" onClick={acceptOrSchedule}>{terms.accept}</button>}
