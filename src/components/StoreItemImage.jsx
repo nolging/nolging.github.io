@@ -18,11 +18,13 @@ export default function StoreItemImage({ id, emoji, className }) {
     )
   }
 
+  // 일부 아이템은 이미지를 조금 더 크게(커플/우정 링, 에어팟/버즈)
+  const lg = ['couple-ring', 'friend-ring', 'airpods', 'buds'].includes(imgId)
   return (
     <span className={className} aria-hidden="true">
       {failed
         ? emoji
-        : <img className="store-img" src={`/store/${imgId}.svg`} alt="" onError={() => setFailed(true)} />}
+        : <img className={`store-img${lg ? ' store-img-lg' : ''}`} src={`/store/${imgId}.svg`} alt="" onError={() => setFailed(true)} />}
     </span>
   )
 }

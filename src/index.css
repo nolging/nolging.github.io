@@ -1622,7 +1622,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
 .st-card-img img.store-img { width: 82%; height: 82%; object-fit: contain; }
 /* 하트 뿅뿅 테마: 썸네일 영역에 실제 테마 효과(하트 솟아오름) */
-.store-hearts { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; }
+.store-hearts { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
+/* 일부 아이템(커플/우정 링, 에어팟/버즈)은 조금 더 크게 */
+img.store-img.store-img-lg { transform: scale(1.16); }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .st-paw { width: 12px; height: 12px; flex-shrink: 0; }
@@ -1881,9 +1883,9 @@ button.mlist-row:hover { background: #f6f5fa; }
   display: flex; align-items: center; justify-content: center; }
 .inv-thumb-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 31px; line-height: 1; }
 .inv-thumb-img img.store-img { width: 74%; height: 74%; object-fit: contain; }
-.inv-badge-count { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff;
+.inv-badge-count { position: absolute; top: 6px; right: 6px; z-index: 3; background: rgba(25,23,34,.72); color: #fff;
   border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
-.inv-badge-state { position: absolute; top: 6px; left: 6px; background: #7363e8; color: #fff;
+.inv-badge-state { position: absolute; top: 6px; left: 6px; z-index: 3; background: #7363e8; color: #fff;
   border-radius: 999px; padding: 2px 7px; font-size: 9px; font-weight: 700; }
 .inv-name { margin-top: 9px; font-size: 12px; font-weight: 700; color: #191722;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
