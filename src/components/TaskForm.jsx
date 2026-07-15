@@ -47,7 +47,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
     if (!title.trim()) { setNameErr('제목을 입력해 주세요.'); return }
     let schedule = null
     if (scheduled) {
-      if (sched.dateOn && !sched.date) { setError('날짜를 설정해 주세요.'); return }
+      // 날짜·시간을 체크하지 않아도 약속/추억으로 등록 가능(일정 없이 저장)
       const ids = members.length >= 2 ? sched.participants : members.map((m) => m.user_id)
       if (members.length >= 2 && ids.length === 0) { setError('참여자를 한 명 이상 선택해 주세요.'); return }
       schedule = { ...buildSchedulePayload(sched), participantIds: ids }

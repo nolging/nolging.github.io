@@ -175,8 +175,8 @@ export default function ScheduleAppointment() {
         await updateTaskMedia(taskId, mediaInfo)
       }
       let scheduledAt = null, timeSet = false
-      if (dateOn) {
-        if (!date) { setError('날짜를 설정해 주세요.'); setSaving(false); return }
+      // 날짜를 체크하지 않으면 일정 없이 저장(약속/추억 등록 가능)
+      if (dateOn && date) {
         scheduledAt = new Date(`${date}T${timeOn ? time : '00:00'}`).toISOString()
         timeSet = timeOn
       }
