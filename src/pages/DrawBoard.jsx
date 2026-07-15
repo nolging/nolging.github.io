@@ -12,11 +12,21 @@ const WIDTHS = [0.008, 0.016, 0.028, 0.046]
 // 브러쉬 종류(그린 뒤 실시간/저장에 stroke.b 로 함께 기록 → 피어도 동일하게 렌더)
 const BRUSHES = [
   { id: 'pen', label: '펜' },
+  { id: 'crayon', label: '크레용' },
   { id: 'highlighter', label: '형광펜' },
   { id: 'neon', label: '네온' },
   { id: 'dashed', label: '점선' },
 ]
+// 반투명/발광/질감 브러쉬는 획을 한 번에 그려야 이음매(끊김)가 안 생김 → 증분 대신 전체 리드로우
+const SMOOTH = new Set(['highlighter', 'neon', 'crayon'])
 const BG = '#ffffff'
+
+// 정규화 좌표 폴리라인을 (선택적 오프셋과 함께) 한 번에 stroke
+function strokePolyline(ctx, p, W, H, start, ox = 0, oy = 0) {
+  ctx.beginPath(); ctx.moveTo(p[start - 1][0] * W + ox, p[start - 1][1] * H + oy)
+  for (let i = start; i < p.length; i++) ctx.lineTo(p[i][0] * W + ox, p[i][1] * H + oy)
+  ctx.stroke()
+}
 
 function paintStroke(ctx, s, W, H, fromIdx = 0) {
   const p = s.p
@@ -27,16 +37,35 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
   ctx.strokeStyle = s.c; ctx.fillStyle = s.c
   ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'
-  if (b === 'highlighter') { ctx.globalAlpha = 0.32; ctx.lineWidth = lw * 1.7; ctx.lineCap = 'butt' }
-  else if (b === 'neon') { ctx.shadowColor = s.c; ctx.shadowBlur = Math.max(4, lw * 1.4) }
+
+  // 크레용: 옅은 획을 살짝 어긋나게 여러 겹 → 왁스 질감
+  if (b === 'crayon') {
+    const off = Math.max(0.6, lw * 0.17)
+    const passes = [[0, 0, 0.5, 1], [off, -off, 0.3, 0.82], [-off, off, 0.3, 0.86], [off * 0.6, off * 0.9, 0.22, 0.7]]
+    if (p.length === 1) {
+      for (const [ox, oy, a, wf] of passes) {
+        ctx.globalAlpha = a
+        ctx.beginPath(); ctx.arc(p[0][0] * W + ox, p[0][1] * H + oy, (lw * wf) / 2, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.restore(); return
+    }
+    for (const [ox, oy, a, wf] of passes) {
+      ctx.globalAlpha = a; ctx.lineWidth = lw * wf
+      strokePolyline(ctx, p, W, H, 1, ox, oy)
+    }
+    ctx.restore(); return
+  }
+
+  if (b === 'highlighter') { ctx.globalAlpha = 0.3; ctx.lineWidth = lw * 1.7 }
+  else if (b === 'neon') { ctx.shadowColor = s.c; ctx.shadowBlur = Math.max(6, lw * 1.6) }
   else if (b === 'dashed') { ctx.setLineDash([Math.max(1, lw * 0.15), lw * 1.5 + 2]) }
+
   if (p.length === 1) {
     ctx.beginPath(); ctx.arc(p[0][0] * W, p[0][1] * H, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return
   }
-  const start = Math.max(1, fromIdx)
-  ctx.beginPath(); ctx.moveTo(p[start - 1][0] * W, p[start - 1][1] * H)
-  for (let i = start; i < p.length; i++) ctx.lineTo(p[i][0] * W, p[i][1] * H)
-  ctx.stroke()
+  // 매끄러운 브러쉬은 항상 처음부터(한 획), 펜/점선은 증분(fromIdx)으로 빠르게
+  const start = SMOOTH.has(b) ? 1 : Math.max(1, fromIdx)
+  strokePolyline(ctx, p, W, H, start)
   ctx.restore()
 }
 
@@ -77,6 +106,7 @@ export default function DrawBoard() {
     ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H)
     for (const s of committedRef.current) paintStroke(ctx, s, W, H)
     for (const s of liveRef.current.values()) paintStroke(ctx, s, W, H)
+    if (drawing.current) paintStroke(ctx, drawing.current, W, H)  // 내 진행 중 획(전체 리드로우 시)
   }, [])
 
   const addCommitted = useCallback((s) => {
@@ -121,7 +151,10 @@ export default function DrawBoard() {
       const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
       if (!s) { s = { id: pl.id, c: pl.c, w: pl.w, b: pl.b, p: [] }; liveRef.current.set(pl.id, s) }
       const from = s.p.length
-      if (pl.p && pl.p.length) { for (const q of pl.p) s.p.push(q); if (ctx) paintStroke(ctx, s, W, H, from) }
+      if (pl.p && pl.p.length) {
+        for (const q of pl.p) s.p.push(q)
+        if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else paintStroke(ctx, s, W, H, from) }
+      }
       if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
     })
     ch.on('broadcast', { event: 'remove' }, ({ payload: pl }) => {
@@ -189,14 +222,17 @@ export default function DrawBoard() {
     const cur = drawing.current; if (!cur) return
     const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
+    const smooth = SMOOTH.has(cur.b)
+    let added = false
     for (const ev of (events.length ? events : [e])) {
       const p = pos(ev)
       const last = cur.p[cur.p.length - 1]
       if (last && last[0] === p[0] && last[1] === p[1]) continue
       const from = cur.p.length
-      cur.p.push(p); bufRef.current.push(p)
-      if (ctx) paintStroke(ctx, cur, W, H, from)
+      cur.p.push(p); bufRef.current.push(p); added = true
+      if (ctx && !smooth) paintStroke(ctx, cur, W, H, from)  // 펜/점선: 증분
     }
+    if (added && smooth) redrawAll()  // 형광펜/네온/크레용: 한 획으로 전체 리드로우(끊김 방지)
     if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
   }
   async function onUp() {
