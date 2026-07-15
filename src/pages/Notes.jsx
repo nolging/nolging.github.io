@@ -433,8 +433,8 @@ export default function Notes() {
                     </div>
                     <ul className="note-gift-list">
                       {gItems.map((it) => (
-                        <li key={it.item_id} className="note-gift-row" style={{ background: imgBgOf(it.item_id) }}>
-                          <span className="note-gift-thumb">
+                        <li key={it.item_id} className="note-gift-row">
+                          <span className="note-gift-thumb" style={{ background: imgBgOf(it.item_id) }}>
                             <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
                           </span>
                           <span className="note-gift-name">{it.item_name}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
