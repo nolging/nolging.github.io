@@ -259,7 +259,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={item?.name || '아바타 꾸미기'}>
+    <Modal open={open} onClose={onClose} title={item?.name || '프로필 꾸미기'}>
       <div className="couple-modal">
         {error && <div className="alert alert-error">{error}</div>}
         {item?.desc && <p className="deco-desc">{item.desc}</p>}

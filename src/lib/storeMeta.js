@@ -1,6 +1,6 @@
 // 상점/인벤토리 공용: 아이템 카테고리 분류 + 썸네일 배경색(시안 파스텔)
 
-export const CAT = { special: '스페셜', feature: '기능 강화', avatar: '아바타 꾸미기', theme: '테마', etc: '기타' }
+export const CAT = { special: '스페셜', feature: '기능 강화', avatar: '프로필 꾸미기', theme: '테마', etc: '기타' }
 export const CAT_ORDER = ['special', 'feature', 'avatar', 'theme', 'etc']
 
 export function catOf(id) {

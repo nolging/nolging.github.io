@@ -90,6 +90,25 @@ function Blush() {
   )
 }
 
+// 상점/인벤토리 미리보기: 아바타 원 없이 꾸미기 아이템만 꽉 채워 보여줌(가려지던 아랫부분까지 전부).
+const PREVIEW_VB = {
+  'deco-sprout': '18 -25 64 40',
+  'deco-jaguar': '8 -24 84 58',
+  'deco-wolf': '12 -20 76 56',
+  'deco-blush': '2 51 96 28',
+}
+export function DecoPreview({ id }) {
+  const vb = PREVIEW_VB[id] || '0 0 100 100'
+  return (
+    <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      {id === 'deco-sprout' && <Sprout />}
+      {id === 'deco-jaguar' && <CatEars />}
+      {id === 'deco-wolf' && <WolfEars />}
+      {id === 'deco-blush' && <Blush />}
+    </svg>
+  )
+}
+
 // layer: 'back'(귀 — 아바타 뒤) | 'front'(새싹·홍조 — 아바타 앞)
 export default function AvatarDeco({ head, face, layer = 'front' }) {
   if (layer === 'back') {
