@@ -347,7 +347,7 @@ export default function Notes() {
             const hasFlag = needClaim || (couple && n.rejected)
             // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
             const tagInfo = wish ? ['🌟 소원', 'note-tag']
-              : couple ? [n.rejected ? '💍 거절됨' : '💍 커플 링', 'note-tag note-tag-couple']
+              : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
                 : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
                   : gift ? ['📦 아이템', 'note-tag note-tag-gift']
                     : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
