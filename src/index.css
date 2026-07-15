@@ -181,13 +181,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
-/* iOS 홈화면 앱: position:fixed + overflow:hidden 조합은 '안전영역'으로 클램프돼
-   콘텐츠가 물리 화면 하단까지 못 미치고 흰 여백이 남았음(하단 시트는 overflow 가
-   없어 정상 확장됐던 게 결정적 단서). → overflow:hidden 을 제거하고 bottom:-env 로
-   박스를 물리 화면 맨 아래까지 확장한다. 문서 스크롤은 body overflow:hidden 이,
-   본문 스크롤은 .content(overflow-y:auto) 가 담당하므로 셸엔 overflow 불필요.
-   배경(--bg)은 이중 안전장치. (프리미엄/하트 등은 아래 .app-shell.* 가 덮어씀) */
-.app-shell { position: fixed; top: 0; left: 0; right: 0; bottom: calc(-1 * env(safe-area-inset-bottom)); background: var(--bg); display: flex; flex-direction: column; }
+.app-shell { position: fixed; top: 0; left: 0; right: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
@@ -1333,9 +1327,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 
 /* ---- 하단 시트 (초대 등) ---- */
-/* 하단 시트: iOS 홈화면 앱에서 fixed 가 안전영역에 갇히므로 bottom 을 -env 로 내려
-   물리 화면 맨 아래까지 확장 (이 기기에서 실측으로 동작 확인된 방식) */
-.sheet-root { position: fixed; top: 0; left: 0; right: 0; bottom: calc(-1 * env(safe-area-inset-bottom)); z-index: 50; }
+.sheet-root { position: fixed; inset: 0; z-index: 50; }
 .sheet-backdrop { position: absolute; inset: 0; background: rgba(20, 22, 40, 0); transition: background .28s ease; }
 .sheet-root.shown .sheet-backdrop { background: rgba(20, 22, 40, .38); }
 .sheet {
