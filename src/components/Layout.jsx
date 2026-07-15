@@ -37,6 +37,16 @@ function BackIcon() {
   )
 }
 
+function SaveIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  )
+}
+
 function FilterIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -146,6 +156,8 @@ export default function Layout() {
   const [headerFilter, setHeaderFilter] = useState(null)
   // 페이지가 상단바 초대 버튼을 등록할 수 있게 (그룹 상세)
   const [headerInvite, setHeaderInvite] = useState(null)
+  // 페이지가 상단바 저장 버튼을 등록할 수 있게 (낙서장 → 이미지 저장)
+  const [headerSave, setHeaderSave] = useState(null)
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -342,6 +354,10 @@ export default function Layout() {
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">낙서장</span>
+        {headerSave && (
+          <button type="button" onClick={() => headerSave()} className="btn btn-ghost btn-sm icon-btn push-right"
+            aria-label="갤러리에 저장" title="갤러리에 저장"><SaveIcon /></button>
+        )}
       </header>
     )
   } else if (touchMatch) {
@@ -618,7 +634,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setStorePremium, refreshCoin, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setStorePremium, refreshCoin, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

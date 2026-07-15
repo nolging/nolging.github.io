@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDrawing, getMyGroupMember } from '../lib/api'
@@ -12,7 +12,6 @@ const WIDTHS = [0.008, 0.016, 0.028, 0.046]
 // 브러쉬 종류(그린 뒤 실시간/저장에 stroke.b 로 함께 기록 → 피어도 동일하게 렌더)
 const BRUSHES = [
   { id: 'pen', label: '펜' },
-  { id: 'crayon', label: '크레용' },
   { id: 'highlighter', label: '형광펜' },
   { id: 'neon', label: '네온' },
   { id: 'dashed', label: '점선' },
@@ -20,13 +19,6 @@ const BRUSHES = [
 // 반투명/발광 브러쉬는 획을 한 번에 그려야 이음매(끊김)가 안 생김 → 증분 대신 전체 리드로우
 const SMOOTH = new Set(['highlighter', 'neon'])
 const BG = '#ffffff'
-
-// 좌표 기반 결정적 난수(0~1). 같은 위치 = 항상 같은 값 → 리드로우/피어 렌더가 흔들리지 않음(크레파스 알갱이용)
-function hash2(x, y, k) {
-  let h = (Math.round(x) * 374761393 + Math.round(y) * 668265263 + k * 2246822519) >>> 0
-  h = ((h ^ (h >>> 13)) * 1274126177) >>> 0
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967295
-}
 
 // 정규화 좌표 폴리라인을 한 번에 stroke
 function strokePolyline(ctx, p, W, H, start) {
@@ -45,36 +37,6 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
   ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'
 
-  // 크레용(크레파스): 브러쉬 폭 안에 작은 알갱이를 흩뿌려 종이 결 같은 거친 왁스 질감
-  if (b === 'crayon') {
-    const R = lw / 2
-    const step = Math.max(1.1, lw * 0.42)   // 알갱이 샘플 간격(작을수록 촘촘)
-    const stamp = (px, py) => {
-      for (let g = 0; g < 3; g++) {
-        const a1 = hash2(px, py, g * 3 + 1)
-        const a2 = hash2(px, py, g * 3 + 2)
-        const a3 = hash2(px, py, g * 3 + 3)
-        if (a3 < 0.18) continue               // 일부는 비워 종이 결(빈틈) 표현
-        const ang = a1 * 6.2832
-        const rad = Math.sqrt(a2) * R          // 원판 균일 분포
-        const dr = Math.max(0.5, lw * 0.17 * (0.55 + a3))
-        ctx.globalAlpha = 0.28 + a3 * 0.4
-        ctx.beginPath(); ctx.arc(px + Math.cos(ang) * rad, py + Math.sin(ang) * rad, dr, 0, 6.2832); ctx.fill()
-      }
-    }
-    if (p.length === 1) { stamp(p[0][0] * W, p[0][1] * H); ctx.restore(); return }
-    const start = Math.max(1, fromIdx)
-    let prevx = p[start - 1][0] * W, prevy = p[start - 1][1] * H
-    for (let i = start; i < p.length; i++) {
-      const x = p[i][0] * W, y = p[i][1] * H
-      const dx = x - prevx, dy = y - prevy, dist = Math.hypot(dx, dy)
-      const n = Math.max(1, Math.floor(dist / step))
-      for (let j = 1; j <= n; j++) { const t = j / n; stamp(prevx + dx * t, prevy + dy * t) }
-      prevx = x; prevy = y
-    }
-    ctx.restore(); return
-  }
-
   if (b === 'highlighter') { ctx.globalAlpha = 0.3; ctx.lineWidth = lw * 1.7 }
   else if (b === 'neon') { ctx.shadowColor = s.c; ctx.shadowBlur = Math.max(6, lw * 1.6) }
   else if (b === 'dashed') { ctx.setLineDash([Math.max(1, lw * 0.15), lw * 1.5 + 2]) }
@@ -90,6 +52,7 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
 
 export default function DrawBoard() {
   const { groupId } = useParams()
+  const { setHeaderSave } = useOutletContext() || {}
   const { profile } = useAuth()
   const uid = profile?.id
 
@@ -283,11 +246,40 @@ export default function DrawBoard() {
     try { await clearGroupDrawing(groupId) } catch { /* noop */ } finally { setBusy(false) }
   }
 
+  // ---- 이미지로 저장 (서버 X, 내 기기 갤러리/사진에 저장) ----
+  const saveImage = useCallback(async () => {
+    const cv = canvasRef.current; if (!cv) return
+    let blob = null
+    try { blob = await new Promise((res) => cv.toBlob(res, 'image/png')) } catch { blob = null }
+    if (!blob) return
+    const t = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    const name = `nolging-낙서-${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}-${pad(t.getHours())}${pad(t.getMinutes())}.png`
+    const file = new File([blob], name, { type: 'image/png' })
+    // 모바일: 공유 시트로 "이미지 저장"(사진/갤러리) 지원 → 실패/미지원 시 다운로드 폴백
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return } catch (e) { if (e?.name === 'AbortError') return }
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = name
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1500)
+  }, [])
+
+  // 상단바 우측 저장 버튼에 핸들러 등록
+  useEffect(() => {
+    setHeaderSave?.(() => saveImage)
+    return () => setHeaderSave?.(null)
+  }, [setHeaderSave, saveImage])
+
   return (
     <div className="page draw-page">
       <div className="draw-wrap" ref={wrapRef}>
         <canvas ref={canvasRef} className="draw-canvas"
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
+        <div className="draw-spring" aria-hidden="true">
+          {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
+        </div>
         <div className="draw-members">
           {(members.length ? members : [{ uid: 'me', name: '', avatar: null }]).slice(0, 5).map((m) => (
             <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
@@ -310,7 +302,6 @@ export default function DrawBoard() {
               className={`draw-bbtn ${brush === b.id ? 'on' : ''}`} onClick={() => setBrush(b.id)}>
               <span className={`draw-bprev bp-${b.id}`}
                 style={{ color: color === '#ffffff' ? '#c9c6d6' : color }} />
-              {b.label}
             </button>
           ))}
         </div>
