@@ -273,14 +273,16 @@ export default function Notes() {
       )}
 
       <div className="notes-body" ref={paneRef}>
-      <div className={`tabs notes-tabs ${scrolled ? 'is-scrolled' : ''}`} ref={tabsRef}>
-        <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
-          받은 쪽지함
-        </button>
-        <button type="button" className={`tab ${tab === 'sent' ? 'active' : ''}`} onClick={() => setTab('sent')}>
-          보낸 쪽지함
-        </button>
-        <span className="tab-underline" style={underlineStyle} />
+      <div className={`notes-tabs-wrap ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="tabs" ref={tabsRef}>
+          <button type="button" className={`tab ${tab === 'received' ? 'active' : ''}`} onClick={() => setTab('received')}>
+            받은 쪽지함
+          </button>
+          <button type="button" className={`tab ${tab === 'sent' ? 'active' : ''}`} onClick={() => setTab('sent')}>
+            보낸 쪽지함
+          </button>
+          <span className="tab-underline" style={underlineStyle} />
+        </div>
       </div>
       {loading ? (
         <div className="spinner" />
