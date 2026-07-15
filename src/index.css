@@ -1620,7 +1620,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-card:active { transform: scale(.97); }
 .st-card-thumb { aspect-ratio: 1 / 1; border-radius: 13px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .st-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
-.st-card-img img.store-img { width: 64%; height: 64%; object-fit: contain; }
+.st-card-img img.store-img { width: 82%; height: 82%; object-fit: contain; }
+/* 하트 뿅뿅 테마: 썸네일 영역에 실제 테마 효과(하트 솟아오름) */
+.store-hearts { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .st-paw { width: 12px; height: 12px; flex-shrink: 0; }
@@ -1638,7 +1640,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .st-detail-top { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .st-detail-thumb { width: 96px; height: 96px; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 48px; overflow: hidden; }
 .st-detail-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; line-height: 1; }
-.st-detail-img img.store-img { width: 66%; height: 66%; object-fit: contain; }
+.st-detail-img img.store-img { width: 82%; height: 82%; object-fit: contain; }
 .st-owned { margin-top: 13px; display: inline-flex; align-items: center; gap: 5px; background: #f3f3f5; border-radius: 999px; padding: 4px 11px; font-size: 11px; font-weight: 700; color: #8b8798; }
 .st-detail-name { margin-top: 9px; font-size: 19px; font-weight: 800; letter-spacing: -.4px; color: #191722; }
 .st-detail-desc { margin-top: 7px; font-size: 13px; line-height: 1.6; color: #8b8798; white-space: pre-line; }
@@ -1878,7 +1880,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .inv-thumb { position: relative; height: 82px; border-radius: 14px; overflow: hidden;
   display: flex; align-items: center; justify-content: center; }
 .inv-thumb-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 31px; line-height: 1; }
-.inv-thumb-img img.store-img { width: 58%; height: 58%; object-fit: contain; }
+.inv-thumb-img img.store-img { width: 74%; height: 74%; object-fit: contain; }
 .inv-badge-count { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff;
   border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
 .inv-badge-state { position: absolute; top: 6px; left: 6px; background: #7363e8; color: #fff;
@@ -2367,9 +2369,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .nc-icard-img { position: relative; display: flex; height: 56px; border-radius: 12px; align-items: center; justify-content: center; font-size: 26px; }
 /* 상점 이미지 사용(이모지 폴백은 부모 font-size 로 중앙 표시) */
 .nc-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-.nc-icard-img .nc-img img.store-img { width: 60%; height: 60%; object-fit: contain; }
+.nc-icard-img .nc-img img.store-img { width: 76%; height: 76%; object-fit: contain; }
 .nc-chip-ico .nc-img img.store-img { width: 74%; height: 74%; object-fit: contain; }
-.nc-link-ico .nc-img img.store-img { width: 66%; height: 66%; object-fit: contain; }
+.nc-link-ico .nc-img img.store-img { width: 80%; height: 80%; object-fit: contain; }
 .nc-icard-badge { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff; border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
 .nc-icard-name { display: block; margin-top: 8px; font-size: 12px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nc-gcard { background: #fff; border-radius: 16px; padding: 11px 11px 10px; box-sizing: border-box; text-align: center; box-shadow: inset 0 0 0 0 transparent, 0 4px 14px rgba(25,23,34,.06); }
