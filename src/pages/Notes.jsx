@@ -294,7 +294,7 @@ export default function Notes() {
         </div>
       </div>
       {/* 탭 아래 실제 스크롤 영역(당겨서 새로고침도 이 영역만) */}
-      <div className="notes-scroll" ref={paneRef} style={{ paddingTop: tabH }}>
+      <div className="notes-scroll" ref={paneRef} style={{ paddingTop: tabH + 14 }}>
       {loading ? (
         <div className="spinner" />
       ) : list.length === 0 ? (
