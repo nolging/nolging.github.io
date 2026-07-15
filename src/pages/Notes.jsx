@@ -368,7 +368,11 @@ export default function Notes() {
                     </div>
                     <div className="note-card-bodyrow">
                       <p className="note-card-body">{n.body}</p>
-                      {tagInfo && <span className={`${tagInfo[1]} note-card-tag ${needClaim ? 'note-tag-wobble' : ''}`}>{tagInfo[0]}</span>}
+                      {tagInfo && (
+                        <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
+                          <span className={`${tagInfo[1]} note-tag-pill ${needClaim ? 'note-tag-seesaw' : ''}`}>{tagInfo[0]}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>

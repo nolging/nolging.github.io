@@ -2007,16 +2007,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 /* 본문 줄 우측에 고정되는 타입 배지 (수령 플래그 자리) */
 /* inline-flex: transform-origin(중심)·translateY 가 올바르게 적용되도록(인라인이면 축이 쏠림/튐 안 보임) */
-.note-card-tag { display: inline-block; line-height: 1; flex-shrink: 0; margin-right: 0; padding: 4px 9px; }
-/* 수령 대기 중이면 배지가 시소처럼 흔들리며 위아래로 통통 튐.
-   inline-block + line-height:1 + 명시적 50% 50% 로 회전축을 정확히 가운데에. */
-.note-tag-wobble { transform-origin: 50% 50%; will-change: transform; animation: note-tag-wobble 0.7s ease-in-out infinite; }
-@keyframes note-tag-wobble {
-  0%   { transform: translateY(1px)  rotate(-6deg); }
-  50%  { transform: translateY(-6px) rotate(6deg); }
-  100% { transform: translateY(1px)  rotate(-6deg); }
-}
-@media (prefers-reduced-motion: reduce) { .note-tag-wobble { animation: none; } }
+/* 바깥 래퍼는 위아래 통통(순수 translateY), 안쪽 알약은 시소 회전(순수 rotate) — 두 축을 분리해
+   합성 transform/축 쏠림 문제를 피한다. */
+.note-card-tag { display: inline-block; flex-shrink: 0; }
+.note-tag-pill { display: inline-block; line-height: 1; margin-right: 0; padding: 4px 9px; }
+.note-tag-bounce { animation: note-tag-bounce 0.5s ease-in-out infinite; }
+.note-tag-seesaw { transform-origin: 50% 50%; animation: note-tag-seesaw 0.7s ease-in-out infinite; }
+@keyframes note-tag-bounce { 0%, 100% { transform: translateY(1px); } 50% { transform: translateY(-5px); } }
+@keyframes note-tag-seesaw { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .note-tag-bounce, .note-tag-seesaw { animation: none; } }
 .note-card.note-wish { background: linear-gradient(135deg, #f3eeff, #fbeffb); box-shadow: 0 2px 12px rgba(109, 81, 224, .16); }
 .modal-card.modal-wish { background: linear-gradient(160deg, #f5f0ff, #fbf0fa); }
 .modal-wish .note-view-body { background: #fff; }
