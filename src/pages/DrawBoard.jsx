@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDrawing } from '../lib/api'
+import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDrawing, getMyGroupMember } from '../lib/api'
+import Avatar from '../components/Avatar'
 
 // 펜 색상(각자 선택). 흰색은 지우개(배경색으로 덧칠)
 const COLORS = ['#191722', '#e5484d', '#f5860a', '#f5c211', '#4a9d6a', '#3b82f6', '#7363e8', '#ec4899', '#ffffff']
@@ -66,7 +67,7 @@ export default function DrawBoard() {
   const brushRef = useRef(brush); brushRef.current = brush
 
   const [canvasW, setCanvasW] = useState(0)   // 실제 캔버스 표시 너비(굵기 미리보기 = 실제 굵기)
-  const [peers, setPeers] = useState(1)
+  const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
   const [busy, setBusy] = useState(false)
 
   // ---- 렌더 ----
@@ -133,12 +134,20 @@ export default function DrawBoard() {
       committedRef.current = []; idsRef.current = new Set(); liveRef.current.clear(); redrawAll()
     })
     ch.on('presence', { event: 'sync' }, () => {
-      setPeers(Math.max(1, Object.keys(ch.presenceState()).length))
+      const st = ch.presenceState()
+      const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
+      setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
     })
 
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
-      try { await ch.track({ uid, name: profile?.login_id || '' }) } catch { /* noop */ }
+      // 아이디(login_id)는 절대 브로드캐스트하지 않음 — 그룹 표시명/아바타만 track
+      let meta = { uid, name: '', avatar: null }
+      try {
+        const m = await getMyGroupMember(groupId, uid)
+        if (m) meta = { uid, name: m.display_nickname || '', avatar: m.avatar_url || null }
+      } catch { /* noop */ }
+      try { await ch.track(meta) } catch { /* noop */ }
       try {
         const rows = await listDrawingStrokes(groupId)
         for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, b: r.stroke.b, p: r.stroke.p })
@@ -147,7 +156,7 @@ export default function DrawBoard() {
     })
 
     return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, profile?.login_id, addCommitted, redrawAll])
+  }, [groupId, uid, addCommitted, redrawAll])
 
   // ---- 전송 버퍼 flush ----
   const flush = useCallback((end) => {
@@ -222,8 +231,12 @@ export default function DrawBoard() {
   return (
     <div className="page draw-page">
       <div className="draw-peers">
-        <span className="draw-dot" aria-hidden="true" />
-        {peers > 1 ? `${peers}명이 함께 그리는 중` : '나 혼자 그리는 중'}
+        <div className="draw-members">
+          {(members.length ? members : [{ uid: 'me', name: '', avatar: null }]).slice(0, 5).map((m) => (
+            <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
+          ))}
+          {members.length > 5 && <span className="draw-more">+{members.length - 5}</span>}
+        </div>
       </div>
 
       <div className="draw-wrap" ref={wrapRef}>
