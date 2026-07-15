@@ -5,7 +5,7 @@
 // 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
-export const DECO_FACE = ['deco-blush']
+export const DECO_FACE = ['deco-blush', 'deco-anger']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
@@ -63,6 +63,23 @@ function WolfEars() {
   )
 }
 
+function Anger() {
+  // 💢: 아바타 우측 상단에 네 개의 꺾인 핏줄. 살짝 커졌다 작아졌다(빠르게).
+  const arm = 'M3 -11 L11 -11 L11 -3'
+  return (
+    <g transform="translate(76 20)">
+      <g className="avd-anger">
+        <g stroke="#e5484d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d={arm} />
+          <path d={arm} transform="rotate(90)" />
+          <path d={arm} transform="rotate(180)" />
+          <path d={arm} transform="rotate(270)" />
+        </g>
+      </g>
+    </g>
+  )
+}
+
 function Blush() {
   // 양 볼: 넓은 홍조 + 시안처럼 가는 빗금(///)
   const cheek = (cx, rot) => (
@@ -97,6 +114,7 @@ const PREVIEW_VB = {
   'deco-jaguar': '8 -24 84 58',
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
+  'deco-anger': '59 3 34 34',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
@@ -108,6 +126,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
+      {id === 'deco-anger' && <Anger />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -125,13 +144,14 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
       </svg>
     )
   }
-  const hasFront = head === 'deco-sprout' || face === 'deco-blush'
+  const hasFront = head === 'deco-sprout' || face === 'deco-blush' || face === 'deco-anger'
   if (!hasFront) return null
   return (
     <svg className="avatar-deco avatar-deco-front" viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {head === 'deco-sprout' && <Sprout />}
       {face === 'deco-blush' && <Blush />}
+      {face === 'deco-anger' && <Anger />}
     </svg>
   )
 }

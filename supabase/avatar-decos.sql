@@ -13,16 +13,17 @@ insert into public.store_items (id, name, price, emoji, description, premium, ti
   ('deco-sprout', '자라나는 새싹', 20, '🌱', '머리 위로 새싹이 뿅',                                              true, null, false, 30, true),
   ('deco-jaguar', '재규어인 척',   30, '🐆', E'놀라지 마세요\n재규어 같아 보이지만 사실 고양이예요',              true, null, false, 31, true),
   ('deco-wolf',   '늑대인 척',     30, '🐺', E'늑대인 척하지만 사실 강아지예요\n본인은 정말 늑대인 줄 알아요',    true, null, false, 32, true),
-  ('deco-blush',  '부힛부힛',       20, '☺️', '부힛부힛 사rrrrr',                                               true, null, false, 33, true)
+  ('deco-blush',  '부힛부힛',       20, '☺️', '부힛부힛 사rrrrr',                                               true, null, false, 33, true),
+  ('deco-anger',  '빠직',           20, '💢', '심기 불편',                                                     true, null, false, 34, true)
 on conflict (id) do update set
   name = excluded.name, price = excluded.price, emoji = excluded.emoji, description = excluded.description,
   premium = excluded.premium, tier = excluded.tier, admin_only = excluded.admin_only,
   sort_order = excluded.sort_order, is_active = excluded.is_active;
 
--- 슬롯 구분: 얼굴(blush) 외 deco-* 는 머리 슬롯
+-- 슬롯 구분: 얼굴(blush·anger) 외 deco-* 는 머리 슬롯
 create or replace function public.deco_slot(p_item_id text)
 returns text language sql immutable as $$
-  select case when p_item_id = 'deco-blush' then 'face'
+  select case when p_item_id in ('deco-blush', 'deco-anger') then 'face'
               when p_item_id like 'deco-%' then 'head' else null end;
 $$;
 
