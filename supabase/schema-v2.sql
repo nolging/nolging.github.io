@@ -1388,6 +1388,7 @@ alter table public.notes add column if not exists item_name        text;   -- �
 alter table public.notes add column if not exists claimed          boolean not null default false;
 alter table public.notes add column if not exists rejected         boolean not null default false;
 alter table public.notes add column if not exists media_url        text;   -- 카세트 테이프: 음악 링크(유튜브/사운드클라우드)
+alter table public.notes add column if not exists qty              integer not null default 1;  -- 선물 수량(여러 개를 쪽지 하나에 묶어 보낼 때)
 create index if not exists idx_notes_recipient on public.notes(recipient_id, created_at desc);
 create index if not exists idx_notes_sender    on public.notes(sender_id, created_at desc);
 alter table public.notes enable row level security;
@@ -1661,15 +1662,16 @@ begin
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
     values (auth.uid(), -v_total, it.name || ' 선물' || case when v_qty > 1 then ' ×' || v_qty else '' end, 'gift');
-  -- 수량만큼 선물 기록 + 쪽지 전송(각각 수령해야 인벤토리에 들어감). 알림은 한 번만.
+  -- 수량만큼 선물 기록(item_gifts 원장) + 쪽지는 1개로 묶어 전송(qty 에 수량 저장, 수령 시 한 번에 인벤토리로).
   for i in 1..v_qty loop
     insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
       values (p_group_id, auth.uid(), p_recipient_id, p_item_id, it.name, v_sender, v_recipient);
-    insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected)
-      values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av, it.name, 'gift', it.id, it.name, false, false)
-      returning id into v_note_id;
   end loop;
-  -- 받는 사람에게 알림(→ Database Webhook → 푸시). 마지막 쪽지에 연결.
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, qty, claimed, rejected)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av,
+            it.name || case when v_qty > 1 then ' ×' || v_qty else '' end, 'gift', it.id, it.name, v_qty, false, false)
+    returning id into v_note_id;
+  -- 받는 사람에게 알림(→ Database Webhook → 푸시). 묶음 쪽지에 연결.
   insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
     values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요',
             it.name || case when v_qty > 1 then ' ' || v_qty || '개' else '' end || ' · 쪽지함에서 수령하세요', p_group_id, v_note_id);
@@ -1682,7 +1684,7 @@ grant execute on function public.gift_item(text, uuid, uuid, integer) to authent
 -- 선물 수령: 쪽지(kind=gift)를 claimed 처리 + 내 인벤토리에 아이템 생성. 거절은 없음.
 create or replace function public.claim_gift(p_note_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare n public.notes; v_name text;
+declare n public.notes; v_name text; v_qty integer; i integer;
 begin
   select * into n from public.notes where id = p_note_id;
   if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'gift' then
@@ -1692,8 +1694,12 @@ begin
   update public.notes set claimed = true, is_read = true where id = n.id;
 
   v_name := coalesce(n.item_name, (select name from public.store_items where id = n.item_id), '선물');
-  insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status)
-    values (auth.uid(), n.item_id, v_name, 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'active');
+  v_qty := greatest(1, coalesce(n.qty, 1));
+  -- 묶음 쪽지 하나로 수량만큼 인벤토리에 넣어 줌
+  for i in 1..v_qty loop
+    insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status)
+      values (auth.uid(), n.item_id, v_name, 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'active');
+  end loop;
 end;
 $$;
 grant execute on function public.claim_gift(uuid) to authenticated;
