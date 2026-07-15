@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="spFoil" x1="60" y1="52" x2="98" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E6F1FA"></stop><stop offset="1" stop-color="#A9C4DE"></stop>
+    </linearGradient>
+    <filter id="spBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"></feGaussianBlur></filter>
+  </defs>
+  <g transform="rotate(-4 64 64)">
+    <rect x="22" y="30" width="84" height="68" rx="8" fill="#F1F8FD"></rect>
+    <path d="M22 38 Q22 30 30 30 L98 30 Q106 30 106 38 L106 46 L22 46 Z" fill="#5AA6DE"></path>
+    <rect x="30" y="36" width="34" height="4.5" rx="2.25" fill="#FFFFFF" fill-opacity="0.9"></rect>
+    <circle cx="92.016" cy="37.388" r="0.9299999999999999" fill="#EAF4FC"></circle><circle cx="93.442" cy="36.52" r="0.992" fill="#EAF4FC"></circle><circle cx="94.992" cy="36.706" r="0.992" fill="#EAF4FC"></circle><circle cx="96.232" cy="37.946" r="0.868" fill="#EAF4FC"></circle><ellipse cx="94" cy="40.116" rx="2.232" ry="1.922" fill="#EAF4FC"></ellipse>
+    <circle cx="39.2" cy="67.1" r="2.25" fill="#4E9AD4"></circle><circle cx="42.65" cy="65" r="2.4000000000000004" fill="#4E9AD4"></circle><circle cx="46.4" cy="65.45" r="2.4000000000000004" fill="#4E9AD4"></circle><circle cx="49.4" cy="68.45" r="2.0999999999999996" fill="#4E9AD4"></circle><ellipse cx="44" cy="73.7" rx="5.4" ry="4.65" fill="#4E9AD4"></ellipse>
+    <text x="44" y="94" text-anchor="middle" font-family="Georgia, serif" font-size="8" font-weight="700" fill="#3E7EB4">WIN</text>
+    <path d="M64 52 C60 60 68 66 62 74 C58 80 66 83 64 86 L93 86 Q98 86 98 81 L98 57 Q98 52 93 52 Z" fill="url(#spFoil)"></path>
+    <line x1="70" y1="58" x2="90" y2="62" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.6" stroke-linecap="round"></line>
+    <line x1="68" y1="66" x2="92" y2="70" stroke="#89A9C4" stroke-opacity="0.5" stroke-width="1.4" stroke-linecap="round"></line>
+    <line x1="70" y1="74" x2="88" y2="79" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round"></line>
+    <rect x="66" y="55" width="26" height="4" rx="2" fill="#FFFFFF" fill-opacity="0.3" filter="url(#spBlur)"></rect>
+    <circle cx="92" cy="90" r="11" fill="#CDD6DF"></circle>
+    <circle cx="92" cy="90" r="11" fill="none" stroke="#94A1B0" stroke-width="1.5"></circle>
+    <circle cx="92" cy="90" r="7.5" fill="none" stroke="#AEB9C6" stroke-width="1.2"></circle>
+    <text x="92" y="94" text-anchor="middle" font-family="Georgia, serif" font-size="10" font-weight="700" fill="#647285">₩</text>
+    <ellipse cx="88" cy="86" rx="3.5" ry="2" fill="#F2F5F8" fill-opacity="0.85" transform="rotate(-35 88 86)"></ellipse>
+  </g>
+</svg>

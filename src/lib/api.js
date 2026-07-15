@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { itemName } from './storeMeta'
 
 // 프로필에서 일반 조회 가능한 컬럼(민감정보 contact/birthdate 제외)
 const PROFILE_COLS = 'id, nickname, role, status, created_at'
@@ -738,13 +739,13 @@ export async function listStoreItems() {
         .select('id, name, price, emoji, description, gift_only')
         .eq('is_active', true).order('sort_order', { ascending: true })
       if (e2) { if (e2.code === '42P01') return []; throw e2 }
-      return (d2 ?? []).map((r, i) => ({ id: r.id, name: r.name, price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null, sortOrder: i }))
+      return (d2 ?? []).map((r, i) => ({ id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null, sortOrder: i }))
     }
     if (error.code === '42P01') return []
     throw error
   }
   return (data ?? []).map((r) => ({
-    id: r.id, name: r.name, price: r.price, emoji: r.emoji,
+    id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji,
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
     sortOrder: r.sort_order ?? 0,
   }))

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bdCase" x1="30" y1="18" x2="78" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3A4256"></stop><stop offset="1" stop-color="#1C2130"></stop>
+    </linearGradient>
+    <radialGradient id="bdDisc" cx="0.4" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#CFEBFF"></stop><stop offset="0.5" stop-color="#8FB8E8"></stop><stop offset="1" stop-color="#C9A0E8"></stop>
+    </radialGradient>
+    <filter id="bdBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6"></feGaussianBlur></filter>
+  </defs>
+  <g transform="translate(6,0)">
+  <g transform="rotate(-9 46 60)">
+    <rect x="22" y="18" width="48" height="86" rx="8" fill="url(#bdCase)"></rect>
+    <rect x="27" y="23" width="38" height="76" rx="4" fill="#12151F"></rect>
+    <text x="46" y="40" text-anchor="middle" font-family="&#39;Arial Narrow&#39;, Arial, sans-serif" font-size="7.5" font-weight="700" letter-spacing="0.5" fill="#7FC7F5">BLU-RAY</text>
+    <text x="46" y="47.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="3.4" letter-spacing="1.8" fill="#5A7FA8">DISC</text>
+    <rect x="26" y="22" width="18" height="4" rx="2" fill="#FFFFFF" fill-opacity="0.16" filter="url(#bdBlur)"></rect>
+  </g>
+  <ellipse cx="68" cy="94" rx="31" ry="7" fill="#2A2F3B" fill-opacity="0.16" filter="url(#bdBlur)"></ellipse>
+  <circle cx="68" cy="80" r="32" fill="url(#bdDisc)"></circle>
+  <circle cx="68" cy="80" r="32" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="0.8"></circle>
+  <circle cx="68" cy="80" r="9.5" fill="#12151F"></circle>
+  <circle cx="68" cy="80" r="4" fill="#2A2F3E"></circle>
+  <path d="M 48 65 A 32 32 0 0 1 84 58" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.6" stroke-linecap="round" fill="none"></path>
+  <path d="M 92 68 A 32 32 0 0 1 96 84" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round" fill="none"></path>
+  </g>
+</svg>

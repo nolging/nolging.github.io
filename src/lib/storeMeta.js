@@ -17,3 +17,20 @@ const IMG_BG = {
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'theme-heart': '#3a2b52',
 }
 export const imgBgOf = (id, premium) => IMG_BG[id] || (premium ? '#2f2a49' : '#f3f2f7')
+
+// iOS 여부(아이패드 포함). 카세트 아이템의 이름/아이콘을 플랫폼별로 다르게 노출하기 위함.
+export const IS_IOS = typeof navigator !== 'undefined' && (
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+)
+
+// 카세트 테이프: iOS → "콩나물 한 가닥"(에어팟 아이콘), 그 외 → "콩 한 쪽"(버즈 아이콘).
+// 기능(음악 링크)은 동일. id 는 'cassette' 그대로 유지하고 표시만 바꾼다.
+export function itemImgId(id) {
+  if (id === 'cassette') return IS_IOS ? 'airpods' : 'buds'
+  return id
+}
+export function itemName(id, fallback) {
+  if (id === 'cassette') return IS_IOS ? '콩나물 한 가닥' : '콩 한 쪽'
+  return fallback
+}

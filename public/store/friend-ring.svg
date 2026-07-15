@@ -1,17 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="frSil" x1="30" y1="38" x2="62" y2="82" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F3F6FA"></stop><stop offset="1" stop-color="#AEB9C6"></stop>
+    <linearGradient id="frSil" x1="24" y1="36" x2="104" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3F6FA"></stop><stop offset="0.55" stop-color="#D5DCE5"></stop><stop offset="1" stop-color="#A9B4C2"></stop>
     </linearGradient>
-    <linearGradient id="frRose" x1="66" y1="48" x2="98" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F2BA93"></stop><stop offset="1" stop-color="#C97545"></stop>
-    </linearGradient>
+    <filter id="frBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"></feGaussianBlur></filter>
   </defs>
   <circle cx="46" cy="58" r="22" stroke="url(#frSil)" stroke-width="10"></circle>
-  <circle cx="82" cy="68" r="22" stroke="url(#frRose)" stroke-width="10"></circle>
-  <path d="M 61.6 42.4 A 22 22 0 0 1 67.25 63.7" stroke="url(#frSil)" stroke-width="10"></path>
-  <path d="M 32 46 A 22 22 0 0 1 44 36.2" stroke="#FFFFFF" stroke-width="3" stroke-opacity="0.75" stroke-linecap="round"></path>
-  <path d="M 68 56.5 A 22 22 0 0 1 80 46.2" stroke="#FFE3CE" stroke-width="3" stroke-opacity="0.8" stroke-linecap="round"></path>
-  <path transform="translate(43.4 77.5) scale(1.3)" d="M2 4 C2 4 0 2.6 0 1.4 C0 0.4 0.8 0 1.5 0 C1.9 0 2 0.3 2 0.3 C2 0.3 2.1 0 2.5 0 C3.2 0 4 0.4 4 1.4 C4 2.6 2 4 2 4 Z" fill="#8E99A6"></path>
-  <path transform="translate(79.4 87.5) scale(1.3)" d="M2 4 C2 4 0 2.6 0 1.4 C0 0.4 0.8 0 1.5 0 C1.9 0 2 0.3 2 0.3 C2 0.3 2.1 0 2.5 0 C3.2 0 4 0.4 4 1.4 C4 2.6 2 4 2 4 Z" fill="#AC5F32"></path>
+  <ellipse cx="63" cy="61" rx="10" ry="8" fill="#3F4855" fill-opacity="0.20" filter="url(#frBlur)"></ellipse>
+  <circle cx="82" cy="68" r="22" stroke="url(#frSil)" stroke-width="10"></circle>
+  <path d="M 30 50 A 22 22 0 0 1 42 37" stroke="#FFFFFF" stroke-width="3" stroke-opacity="0.8" stroke-linecap="round"></path>
+  <path d="M 66 60 A 22 22 0 0 1 78 47" stroke="#FFFFFF" stroke-width="3" stroke-opacity="0.8" stroke-linecap="round"></path>
+  <polygon transform="translate(46 80) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#6E7A88"></polygon>
+  <polygon transform="translate(82 90) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#6E7A88"></polygon>
 </svg>

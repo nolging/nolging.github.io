@@ -7,7 +7,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
-import { imgBgOf } from '../lib/storeMeta'
+import { imgBgOf, itemName } from '../lib/storeMeta'
 
 const MAX = 150
 
@@ -89,7 +89,7 @@ export default function NoteCompose() {
   const pickerExclude = RINGS.includes(useItem?.id) ? ringExclude : []
 
   const metaOf = useCallback((id) => ({
-    name: USE_META[id]?.name || store[id]?.name || id,
+    name: itemName(id, USE_META[id]?.name || store[id]?.name || id),
     emoji: USE_META[id]?.emoji || store[id]?.emoji || '🎁',
     bg: imgBgOf(id),
   }), [store])

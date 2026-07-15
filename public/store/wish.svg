@@ -1,30 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="tkA" x1="16" y1="37" x2="100" y2="95" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFB25E"></stop><stop offset="1" stop-color="#EF6F1A"></stop>
+    <linearGradient id="gtGold" x1="18" y1="40" x2="110" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FCE59A"></stop><stop offset="0.5" stop-color="#F1C64B"></stop><stop offset="1" stop-color="#D2A11D"></stop>
     </linearGradient>
-    <linearGradient id="tkB" x1="24" y1="32" x2="100" y2="84" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F8ECD2"></stop><stop offset="1" stop-color="#E2CB9B"></stop>
-    </linearGradient>
-    <mask id="tkNotch" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
-      <rect width="128" height="128" fill="#fff"></rect>
-      <circle cx="86" cy="37" r="5.5" fill="#000"></circle>
-      <circle cx="86" cy="91" r="5.5" fill="#000"></circle>
+    <mask id="wtEdge" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect x="14" y="36" width="100" height="58" fill="#fff"></rect>
+      <circle cx="18" cy="47.00" r="3" fill="#000"></circle><circle cx="110" cy="47.00" r="3" fill="#000"></circle><circle cx="18" cy="53.00" r="3" fill="#000"></circle><circle cx="110" cy="53.00" r="3" fill="#000"></circle><circle cx="18" cy="59.00" r="3" fill="#000"></circle><circle cx="110" cy="59.00" r="3" fill="#000"></circle><circle cx="18" cy="65.00" r="3" fill="#000"></circle><circle cx="110" cy="65.00" r="3" fill="#000"></circle><circle cx="18" cy="71.00" r="3" fill="#000"></circle><circle cx="110" cy="71.00" r="3" fill="#000"></circle><circle cx="18" cy="77.00" r="3" fill="#000"></circle><circle cx="110" cy="77.00" r="3" fill="#000"></circle><circle cx="18" cy="83.00" r="3" fill="#000"></circle><circle cx="110" cy="83.00" r="3" fill="#000"></circle>
     </mask>
-    <filter id="tkBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"></feGaussianBlur></filter>
   </defs>
-  <g transform="rotate(4 64 64)">
-    <rect x="24" y="32" width="92" height="52" rx="9" fill="url(#tkB)"></rect>
+  <g transform="rotate(-5 64 64)">
+    <g mask="url(#wtEdge)">
+      <rect x="18" y="40" width="92" height="50" rx="7" fill="url(#gtGold)"></rect>
+    </g>
+    <rect x="26" y="47" width="76" height="36" rx="4" fill="none" stroke="#9C6E16" stroke-width="1.6"></rect>
+    <rect x="28.5" y="49.5" width="71" height="31" rx="3" fill="none" stroke="#B4881F" stroke-width="0.8" stroke-opacity="0.7"></rect>
+    <circle cx="31" cy="52" r="1.5" fill="#9C6E16"></circle><circle cx="97" cy="52" r="1.5" fill="#9C6E16"></circle>
+    <circle cx="31" cy="78" r="1.5" fill="#9C6E16"></circle><circle cx="97" cy="78" r="1.5" fill="#9C6E16"></circle>
+    <text x="64" y="62" text-anchor="middle" font-family="Georgia, &#39;Times New Roman&#39;, serif" font-size="11" font-weight="700" letter-spacing="3" fill="#7A5410">WISH</text>
+    <text x="64" y="76" text-anchor="middle" font-family="Georgia, &#39;Times New Roman&#39;, serif" font-size="11" font-weight="700" letter-spacing="1.5" fill="#7A5410">TICKET</text>
+    <polygon transform="translate(35 65) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#8A6410"></polygon><polygon transform="translate(93 65) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#8A6410"></polygon>
+    <polygon points="52,46 66,46 44,84 30,84" fill="#FFFFFF" fill-opacity="0.16"></polygon>
   </g>
-  <g transform="rotate(-9 64 64)">
-    <rect x="16" y="37" width="96" height="54" rx="9" fill="url(#tkA)" mask="url(#tkNotch)"></rect>
-    <line x1="86" y1="45" x2="86" y2="83" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round" stroke-dasharray="1.5 5"></line>
-    <rect x="25" y="46" width="52" height="36" rx="5" fill="#FFF6E8"></rect>
-    <polygon transform="translate(40 64)" points="0,-8 2,-2.75 7.61,-2.47 3.23,1.05 4.7,6.47 0,3.4 -4.7,6.47 -3.23,1.05 -7.61,-2.47 -2,-2.75" fill="#F2801E"></polygon>
-    <line x1="54" y1="58.5" x2="68" y2="58.5" stroke="#EDCB9C" stroke-width="3.5" stroke-linecap="round"></line>
-    <line x1="54" y1="69.5" x2="64" y2="69.5" stroke="#EDCB9C" stroke-width="3.5" stroke-linecap="round"></line>
-    <polygon transform="translate(99 64) scale(0.62)" points="0,-8 2,-2.75 7.61,-2.47 3.23,1.05 4.7,6.47 0,3.4 -4.7,6.47 -3.23,1.05 -7.61,-2.47 -2,-2.75" fill="#FFFFFF" fill-opacity="0.9"></polygon>
-    <rect x="20" y="40" width="88" height="5" rx="2.5" fill="#FFFFFF" fill-opacity="0.35" filter="url(#tkBlur)"></rect>
-    <rect x="20" y="84" width="88" height="5" rx="2.5" fill="#7A3708" fill-opacity="0.16" filter="url(#tkBlur)"></rect>
-  </g>
+  <path d="M100 20 L101.7 25 L106.7 26.7 L101.7 28.4 L100 33.4 L98.3 28.4 L93.3 26.7 L98.3 25 Z" fill="#F7D27E"></path>
+  <circle cx="90" cy="16" r="1.7" fill="#F9DE95"></circle>
 </svg>

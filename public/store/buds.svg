@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bzCaseBody" x1="64" y1="24" x2="64" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DCCCEF"></stop><stop offset="1" stop-color="#BFA9E0"></stop>
+    </linearGradient>
+    <radialGradient id="bzBudDark" cx="0.4" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#DAC6EB"></stop><stop offset="0.55" stop-color="#B187D0"></stop><stop offset="1" stop-color="#7E52AB"></stop>
+    </radialGradient>
+    <radialGradient id="bzBud" cx="0.4" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#EFDCF4"></stop><stop offset="0.55" stop-color="#CBA8E2"></stop><stop offset="1" stop-color="#9B6FC4"></stop>
+    </radialGradient>
+    <filter id="bzBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.2"></feGaussianBlur></filter>
+  </defs>
+  <rect x="42" y="24" width="44" height="44" rx="15" fill="url(#bzCaseBody)"></rect>
+  <ellipse cx="54" cy="32" rx="6" ry="3.5" fill="#FFFFFF" fill-opacity="0.4" filter="url(#bzBlur)"></ellipse>
+  <g transform="rotate(15 82 78)">
+    <ellipse cx="82" cy="76" rx="14.5" ry="16.5" fill="url(#bzBudDark)"></ellipse>
+    <ellipse cx="82" cy="72" rx="7.7" ry="8.6" fill="#2B2F3A"></ellipse>
+    <ellipse cx="82" cy="72" rx="4.2" ry="4.6" fill="#4A4E5C"></ellipse>
+    <circle cx="82" cy="87" r="2.2" fill="#FFFFFF" fill-opacity="0.6"></circle>
+    <ellipse cx="77.5" cy="68.5" rx="3" ry="2.3" fill="#FFFFFF" fill-opacity="0.55" filter="url(#bzBlur)"></ellipse>
+  </g>
+  <g transform="translate(-2 -7) rotate(-15 46 80) translate(46 80) scale(1.62) translate(-46 -80)">
+    <ellipse cx="46" cy="76" rx="16" ry="18" fill="url(#bzBud)"></ellipse>
+    <ellipse cx="46" cy="72" rx="8.5" ry="9.5" fill="#2B2F3A"></ellipse>
+    <ellipse cx="46" cy="72" rx="4.6" ry="5" fill="#4A4E5C"></ellipse>
+    <circle cx="46" cy="88" r="2.4" fill="#FFFFFF" fill-opacity="0.6"></circle>
+    <ellipse cx="41" cy="68" rx="3.4" ry="2.6" fill="#FFFFFF" fill-opacity="0.55" filter="url(#bzBlur)"></ellipse>
+  </g>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="wbSphere" cx="0.38" cy="0.30" r="0.78" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#C7EAFF"></stop><stop offset="0.5" stop-color="#7CC0F0"></stop><stop offset="1" stop-color="#3B84CE"></stop>
+    </radialGradient>
+    <clipPath id="wbClip"><circle cx="64" cy="74" r="34"></circle></clipPath>
+    <filter id="wbBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter>
+  </defs>
+  <path d="M83 59 C84 53 88 50 91 48 C93 51 91 56 87 61 Z" fill="#4F98D5"></path>
+  <circle cx="91.5" cy="47" r="5.2" fill="#5AA3DD"></circle>
+  <path d="M91.5 47 L97 43 L95.5 48.5 Z" fill="#4F98D5"></path>
+  <path d="M91.5 47 L93.5 41 L96.5 44.5 Z" fill="#57A0DA"></path>
+  <path d="M88 50 Q91.5 47.5 95 49" stroke="#3E82C0" stroke-width="1" fill="none"></path>
+  <circle cx="89.4" cy="45.4" r="1.5" fill="#C6E6FF" fill-opacity="0.85"></circle>
+  <circle cx="64" cy="74" r="34" fill="url(#wbSphere)"></circle>
+  <g clip-path="url(#wbClip)">
+    <path d="M28 71 Q64 75 100 71 L100 87 Q64 91 28 87 Z" fill="#15121A"></path>
+    <path d="M31 72 Q64 76 97 72" stroke="#3A3540" stroke-width="1.4" fill="none" stroke-opacity="0.7"></path>
+  </g>
+  <ellipse cx="51" cy="59" rx="12" ry="8" fill="#FFFFFF" fill-opacity="0.5" filter="url(#wbBlur)" transform="rotate(-32 51 59)"></ellipse>
+  <circle cx="46" cy="55" r="3.4" fill="#FFFFFF" fill-opacity="0.85"></circle>
+  <rect x="42" y="70" width="44" height="18" rx="4" fill="#2B262F" stroke="#4C4653" stroke-width="1"></rect>
+  <circle cx="47" cy="69" r="2" fill="#FF5A5A"></circle>
+  <circle cx="46.4" cy="68.4" r="0.7" fill="#FFC9C9"></circle>
+  <rect x="45" y="73" width="38" height="12" rx="2" fill="#2A0A0E"></rect>
+  <text x="64" y="82.4" text-anchor="middle" font-family="&#39;Courier New&#39;, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="0.5" fill="#FF5A5A">01:59</text>
+  <path d="M104 52 L105.4 56 L109.4 57.4 L105.4 58.8 L104 62.8 L102.6 58.8 L98.6 57.4 L102.6 56 Z" fill="#8ECBF3"></path>
+  <circle cx="100" cy="34" r="1.6" fill="#A7D8F7"></circle>
+</svg>
