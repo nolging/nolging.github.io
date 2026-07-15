@@ -37,16 +37,30 @@ export function AuthProvider({ children }) {
     let mounted = true
     let settled = false
     let timer
-    // 로딩은 항상 해제되도록 보장 (한 번만)
+    const RELOAD_KEY = 'nolging-stuck-reloads'
+    // 로딩은 항상 해제되도록 보장 (한 번만). 정상 해제 시 리로드 이력 초기화.
     const settle = () => {
       if (!mounted || settled) return
       settled = true
       clearTimeout(timer)
       setLoading(false)
+      try { sessionStorage.removeItem(RELOAD_KEY) } catch { /* noop */ }
     }
-    // 장시간 백그라운드 후 재개 시 getSession(토큰 갱신 락)이 멈추면 무한 로딩이 됨 →
-    // 최대 6초 뒤 강제로 로딩 해제하여 스피너에 갇히지 않게 한다.
-    timer = setTimeout(settle, 6000)
+    // getSession(토큰 갱신 락)이 6초 내 안 끝나면 = 인증 락 고착 가능성. 이땐 스피너만
+    // 풀면 상단바/하단탭만 뜨고 페이지 쿼리가 계속 멈춰 무한 로딩이 됨. 그래서 '해제'가
+    // 아니라 '새로고침'으로 클린 회복한다. 단, 반복 새로고침 루프는 가드로 방지.
+    const stuckReload = () => {
+      if (settled) return
+      const now = Date.now()
+      let hist = []
+      try { hist = JSON.parse(sessionStorage.getItem(RELOAD_KEY) || '[]') } catch { hist = [] }
+      hist = (Array.isArray(hist) ? hist : []).filter((t) => now - t < 30000)
+      if (hist.length >= 2) { settle(); return } // 30초 내 2회 초과 → 루프 방지: 스피너만 해제
+      hist.push(now)
+      try { sessionStorage.setItem(RELOAD_KEY, JSON.stringify(hist)) } catch { /* noop */ }
+      try { window.location.reload() } catch { settle() }
+    }
+    timer = setTimeout(stuckReload, 6000)
 
     ;(async () => {
       try {
