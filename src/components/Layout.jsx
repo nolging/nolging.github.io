@@ -275,7 +275,9 @@ export default function Layout() {
   // - 그 외(하단이 흰색 탭바): body 흰색
   const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
-    document.body.style.background = storePremium ? '#0d0a22' : (isGroupView ? 'var(--bg)' : 'var(--surface)')
+    // body 배경 = 콘텐츠 캔버스(--bg)와 동일하게. iOS 홈화면 앱에서 콘텐츠가 하단까지
+    // 못 미쳐 body 가 비쳐도 흰색(#fff)이 아니라 콘텐츠와 같은 색으로 보이게 하는 안전장치
+    document.body.style.background = storePremium ? '#0d0a22' : 'var(--bg)'
     // iOS 홈화면 앱: 상태바/다이나믹 아일랜드 영역 색을 상단바 색과 맞춰 이어지게
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) meta.setAttribute('content', storePremium ? '#2c2560' : '#fdfcfe')

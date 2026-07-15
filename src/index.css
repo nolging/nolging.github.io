@@ -181,12 +181,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* ---- 앱 셸 ---- */
 /* 화면 전체를 빈틈 없이 덮어 하단 안전영역이 회색으로 비치지 않게 (fixed inset:0) */
 /* top/height 는 키보드 대응으로 JS(visualViewport)가 조정 */
-/* iOS 홈화면 앱: fixed 가 안전영역에 갇혀 하단에 흰 여백이 생긴다.
-   1) bottom:-env 로 셸 박스를 물리 화면 맨 아래까지 확장(실측 동작 확인)
-   2) 배경을 콘텐츠 캔버스(--bg)로 깔아, 플렉스 콘텐츠가 못 미치더라도
-      그 아래 여백이 흰색이 아니라 콘텐츠와 같은 색으로 보이게 한다.
+/* iOS 홈화면 앱: height:100% 가 '안전영역' 높이로 갇혀(하단 인디케이터만큼 짧게)
+   콘텐츠가 물리 화면 하단까지 못 미치고 그 아래로 흰 여백이 남았음(스크린샷 픽셀로 확인).
+   → 높이를 (안전영역높이 100%) + (하단 인셋 env) = 물리 화면 전체 높이로 명시해
+   플렉스 콘텐츠가 화면 맨 아래까지 채우게 한다. 배경도 --bg 로 깔아 이중 안전장치.
    (프리미엄/하트 등 특수 배경은 아래 .app-shell.* 규칙이 덮어씀) */
-.app-shell { position: fixed; top: 0; left: 0; right: 0; bottom: calc(-1 * env(safe-area-inset-bottom)); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.app-shell { position: fixed; top: 0; left: 0; right: 0; height: calc(100% + env(safe-area-inset-bottom)); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 .topbar {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 20px;
