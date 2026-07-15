@@ -700,6 +700,11 @@ create or replace function public.tg_notify_task_insert()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_group public.groups; v_noun text;
 begin
+  -- '약속/추억'으로 바로 등록(create_task_scheduled)한 경우엔 새 항목 알림을 보내지 않음.
+  --  → 위시(open)로 올릴 때만 상대에게 알림이 가도록.
+  if coalesce(current_setting('nolging.silent_task', true), '') = 'on' then
+    return NEW;
+  end if;
   select * into v_group from public.groups where id = NEW.group_id;
   v_noun := public.notif_noun(v_group.group_type);
   insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
@@ -965,6 +970,49 @@ begin
   return r;
 end; $$;
 grant execute on function public.schedule_task(uuid, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
+
+-- '약속/추억'으로 바로 등록: 항목 생성 + 일정/참여자 저장을 한 트랜잭션에서 처리하되,
+-- 상대에게 알림(new_task·accept)을 보내지 않는다. (위시로 올릴 때만 알림이 가도록)
+create or replace function public.create_task_scheduled(
+  p_group_id uuid, p_title text, p_description text, p_category text, p_media_info jsonb,
+  p_done boolean,
+  p_scheduled_at timestamptz, p_time_set boolean, p_repeat text, p_repeat_until date,
+  p_remind int, p_participants uuid[]
+) returns public.tasks
+language plpgsql security definer set search_path = public as $$
+declare v_task public.tasks; v_remind_at timestamptz;
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 등록할 수 있어요.';
+  end if;
+
+  -- 이 트랜잭션의 tasks INSERT 트리거가 새 항목 알림을 건너뛰게 함
+  perform set_config('nolging.silent_task', 'on', true);
+
+  if p_remind is not null and p_scheduled_at is not null then
+    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
+  end if;
+
+  insert into public.tasks(
+    group_id, title, description, category, media_info, created_by,
+    status, assignee_id, accepted_at, completed_at,
+    scheduled_at, scheduled_time_set, repeat_rule, repeat_until,
+    remind_min, remind_at, reminded)
+  values (
+    p_group_id, p_title, coalesce(p_description, ''), p_category, p_media_info, auth.uid(),
+    case when p_done then 'done' else 'accepted' end, auth.uid(), now(),
+    case when p_done then now() else null end,
+    p_scheduled_at, coalesce(p_time_set, true), p_repeat, p_repeat_until,
+    p_remind, v_remind_at, false)
+  returning * into v_task;
+
+  insert into public.task_participants(task_id, user_id)
+    select v_task.id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(p_group_id, x) on conflict do nothing;
+
+  return v_task;
+end; $$;
+grant execute on function public.create_task_scheduled(uuid, text, text, text, jsonb, boolean, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
 
 create or replace function public.reschedule_task(
   p_task_id uuid, p_scheduled_at timestamptz, p_time_set boolean,

@@ -366,6 +366,33 @@ export async function createTask({ groupId, title, description, category, media_
   return data
 }
 
+// 약속/추억으로 "바로" 등록: 상대에게 알림 없이 조용히 생성(위시로 올릴 때만 알림).
+export async function createTaskScheduled({ groupId, title, description, category, media_info, done, schedule }) {
+  const s = schedule || {}
+  const remind = s.remind === '' || s.remind === null || s.remind === undefined ? null : Number(s.remind)
+  const { data, error } = await supabase.rpc('create_task_scheduled', {
+    p_group_id: groupId,
+    p_title: title,
+    p_description: description ?? '',
+    p_category: category ?? null,
+    p_media_info: media_info ?? null,
+    p_done: !!done,
+    p_scheduled_at: s.scheduledAt ?? null,
+    p_time_set: s.timeSet ?? true,
+    p_repeat: s.repeat || null,
+    p_repeat_until: s.repeatUntil || null,
+    p_remind: remind,
+    p_participants: s.participantIds ?? [],
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /create_task_scheduled/.test(error.message || '')) {
+      throw new Error('약속/추억 바로 등록 기능이 아직 DB에 설정되지 않았습니다. (create_task_scheduled 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Array.isArray(data) ? data[0] : data
+}
+
 // 위시 유형별 정보 조회 Edge Function (OTT/영화→movie-lookup·TMDB, 독서→book-lookup·알라딘, 게임→game-lookup·RAWG)
 const LOOKUP_FN = { OTT: 'movie-lookup', '영화': 'movie-lookup', '독서': 'book-lookup', '게임': 'game-lookup' }
 
