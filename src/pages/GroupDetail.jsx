@@ -648,6 +648,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
             {mediaLine && <span className="task-media-line">{mediaLine}</span>}
             <div className="task-foot-right">
               {!ccOnAppt && <span className="task-cc">댓글 {commentCount}</span>}
+              {!ccOnAppt && task.status === 'done' && <span className="task-cc">리뷰 {reviewCount}</span>}
             </div>
           </div>
         )}
