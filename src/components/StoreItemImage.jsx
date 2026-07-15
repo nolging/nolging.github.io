@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { itemImgId } from '../lib/storeMeta'
 import ThemeHearts from './ThemeHearts'
+import AvatarDeco, { decoSlot } from './AvatarDeco'
 
 // 아이템 이미지: public/store/{id}.svg 를 우선 사용하고, 없으면 이모지로 폴백.
 // - 카세트('cassette')는 플랫폼에 따라 airpods/buds 아이콘으로 자동 매핑.
@@ -14,6 +15,18 @@ export default function StoreItemImage({ id, emoji, className }) {
     return (
       <span className={`${className} store-hearts`} aria-hidden="true">
         <ThemeHearts durScale={1.5} />
+      </span>
+    )
+  }
+
+  // 아바타 꾸미기: 빈 아바타 위에 실제 데코를 얹어 미리보기
+  if (String(id).startsWith('deco-')) {
+    const slot = decoSlot(id)
+    return (
+      <span className={`${className} store-deco`} aria-hidden="true">
+        <span className="store-deco-av">
+          <AvatarDeco head={slot === 'head' ? id : undefined} face={slot === 'face' ? id : undefined} />
+        </span>
       </span>
     )
   }

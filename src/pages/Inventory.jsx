@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import RecipientPicker from '../components/RecipientPicker'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -40,6 +40,7 @@ export default function Inventory() {
   const [eraserOpen, setEraserOpen] = useState(false)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
+  const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -115,6 +116,10 @@ export default function Inventory() {
       const appliedRow = g.rows.find((r) => r.status === 'used')
       setThemeItem({ id: g.id, name: g.name, appliedGroupId: appliedRow?.group_id || null })
     }
+    else if (g.id.startsWith('deco-')) {
+      const appliedRow = g.rows.find((r) => r.status === 'used')
+      setDecoItem({ id: g.id, name: g.name, appliedGroupId: appliedRow?.group_id || null })
+    }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -143,10 +148,13 @@ export default function Inventory() {
                 const ledLive = g.id === 'ledboard' && !!ledBanner
                 const isTheme = g.id.startsWith('theme-')
                 const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
+                const isDeco = g.id.startsWith('deco-')
+                const decoApplied = isDeco && g.rows.some((r) => r.status === 'used')
                 // 시안: 상태 뱃지(좌) + 개수(우) + 카드 전체 클릭
                 let badge = null, onClick = () => useItem(g), actionable = true
                 let countShown = g.count, showCount = g.count > 1
                 if (isTheme) badge = themeApplied ? '적용 중' : null
+                else if (isDeco) badge = decoApplied ? '장착 중' : null
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
                 else if (equipped) {
                   // 장착 중이어도 미사용(active) 스페어가 있으면 "장착 중" 뱃지 + ×(남은 개수),
@@ -203,7 +211,83 @@ export default function Inventory() {
 
       <ThemeModal open={!!themeItem} onClose={() => setThemeItem(null)} myId={user?.id}
         item={themeItem} onDone={reload} />
+
+      <DecoModal open={!!decoItem} onClose={() => setDecoItem(null)} myId={user?.id}
+        item={decoItem} onDone={reload} />
     </div>
+  )
+}
+
+// ---- 아바타 꾸미기 적용/변경/해제 (프리미엄 그룹의 내 아바타) ----
+function DecoModal({ open, onClose, myId, item, onDone }) {
+  const [groups, setGroups] = useState([])
+  const [premiumIds, setPremiumIds] = useState(new Set())
+  const [groupId, setGroupId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const applied = !!item?.appliedGroupId
+
+  useEffect(() => {
+    if (!open) return
+    setGroupId(item?.appliedGroupId || ''); setError('')
+    Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
+      .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
+      .catch((e) => setError(e.message))
+  }, [open, myId, item])
+
+  const eligible = useMemo(
+    () => groups.filter((g) => premiumIds.has(g.id) && (g.group_members || []).some((m) => m.user_id === myId)),
+    [groups, premiumIds, myId],
+  )
+  const appliedGroup = groups.find((g) => g.id === item?.appliedGroupId)
+  const target = eligible.find((g) => g.id === groupId)
+  const changed = groupId && groupId !== item?.appliedGroupId
+
+  async function apply() {
+    if (!target) { setError('그룹을 선택해 주세요.'); return }
+    setBusy(true); setError('')
+    try { await applyAvatarDeco(item.id, target.id); await onDone(); onClose() }
+    catch (e) { setError(e.message); setBusy(false) }
+  }
+  async function unapply() {
+    setBusy(true); setError('')
+    try { await unapplyAvatarDeco(item.id); await onDone(); onClose() }
+    catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={item?.name || '아바타 꾸미기'}>
+      <div className="couple-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그 그룹의 내 아바타가 꾸며져요. 머리 장식(새싹·귀)은 하나만, 얼굴 장식과는 함께 적용돼요.</p>
+
+        {applied && (
+          <div className="couple-to">
+            <span className="couple-to-label">적용 중</span>
+            <span className="couple-to-value">{appliedGroup?.name || '알 수 없는 그룹'}</span>
+          </div>
+        )}
+
+        <label className="field">
+          <span>{applied ? '적용할 그룹 변경' : '적용할 그룹'}</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{eligible.length ? '그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
+            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}{g.id === item?.appliedGroupId ? ' (현재)' : ''}</option>)}
+          </select>
+        </label>
+
+        <button type="button" className="btn btn-primary btn-block" onClick={apply}
+          disabled={busy || !target || (applied && !changed)}>
+          {busy ? '적용 중…' : applied ? '이 그룹으로 변경' : '적용하기'}
+        </button>
+        {applied && (
+          <button type="button" className="btn btn-danger btn-block" onClick={unapply} disabled={busy}>
+            장착 해제
+          </button>
+        )}
+      </div>
+    </Modal>
   )
 }
 

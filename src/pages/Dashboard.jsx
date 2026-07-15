@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { listMyGroups, unreadNotificationCount, listCoupleGroups, listFriendGroups, getMyLedBanner } from '../lib/api'
+import { listMyGroups, unreadNotificationCount, listCoupleGroups, listFriendGroups, getMyLedBanner, getGroupDecoMap } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
@@ -52,6 +52,7 @@ export default function Dashboard() {
   const [unread, setUnread] = useState(0)
   const [banner, setBanner] = useState(null) // 활성 전광판
   const [ledEditOpen, setLedEditOpen] = useState(false)
+  const [decosByGroup, setDecosByGroup] = useState({}) // 프리미엄 그룹별 { userId: {head,face} }
   const inputRef = useRef(null)
   const reloadBanner = () => getMyLedBanner().then(setBanner).catch(() => {})
 
@@ -69,6 +70,16 @@ export default function Dashboard() {
     listCoupleGroups(profile.id).then(setPremiumIds).catch(() => {})
     listFriendGroups().then(setFriendIds).catch(() => {})
   }, [profile?.id])
+
+  // 프리미엄 그룹의 아바타 데코 로드(그룹 카드에 표시)
+  useEffect(() => {
+    const ids = [...new Set([...premiumIds, ...friendIds])]
+    if (!ids.length) return
+    let on = true
+    Promise.all(ids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+      .then((pairs) => { if (on) setDecosByGroup(Object.fromEntries(pairs)) })
+    return () => { on = false }
+  }, [premiumIds, friendIds])
 
   const premiumSet = new Set(premiumIds)
   const friendSet = new Set(friendIds)
@@ -149,7 +160,7 @@ export default function Dashboard() {
                   onClick={goMembers} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goMembers(e) }}
                   aria-label="멤버 목록">
                   {members.slice(0, 2).map((m) => (
-                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
+                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} deco={decosByGroup[g.id]?.[m.user_id]} />
                   ))}
                   <span className="tile-couple-heart" aria-hidden="true">♥</span>
                 </span>
@@ -158,7 +169,7 @@ export default function Dashboard() {
                   onClick={goMembers} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goMembers(e) }}
                   aria-label="멤버 목록">
                   {members.slice(0, 3).map((m) => (
-                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} />
+                    <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname || '멤버'} size={24} deco={decosByGroup[g.id]?.[m.user_id]} />
                   ))}
                   {extra > 0 && <span className="task-parts-more">+{extra}</span>}
                 </span>

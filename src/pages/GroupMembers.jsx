@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
@@ -62,6 +62,7 @@ export default function GroupMembers() {
   const navigate = useNavigate()
   const { setHeaderTitle } = useOutletContext()
   const [members, setMembers] = useState([])
+  const [decoMap, setDecoMap] = useState({})
   const [group, setGroup] = useState(null)
   const [couple, setCouple] = useState(false)
   const [friend, setFriend] = useState(false)
@@ -81,13 +82,14 @@ export default function GroupMembers() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, c, f] = await Promise.all([
+      const [cards, g, c, f, d] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
+        getGroupDecoMap(groupId).catch(() => ({})),
       ])
-      setMembers(cards); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
+      setMembers(cards); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
       if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
@@ -171,7 +173,7 @@ export default function GroupMembers() {
     const face = (m, sub) => (
       <button type="button" className="csx-face"
         onClick={() => m && navigate(`/groups/${groupId}/members/${m.user_id}`)} disabled={!m}>
-        <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={104} />
+        <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={104} deco={m ? decoMap[m.user_id] : undefined} />
         <span className="csx-face-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
       </button>
     )
@@ -295,7 +297,7 @@ export default function GroupMembers() {
               {i > 0 && <div className="mlist-div" />}
               <button type="button" className="mlist-row"
                 onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
-                <MemberAvatar src={m.avatar_url} name={m.display_nickname} seed={m.user_id} size={46} />
+                <MemberAvatar src={m.avatar_url} name={m.display_nickname} seed={m.user_id} size={46} deco={decoMap[m.user_id]} />
                 <div className="mlist-main">
                   <div className="mlist-name">
                     <span className="mlist-nick">{m.display_nickname}</span>

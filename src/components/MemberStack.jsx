@@ -5,7 +5,7 @@ import Avatar from './Avatar'
 
 // 겹쳐진 참여자 아바타 묶음 → 클릭 시 멤버 목록 드롭다운(아바타+닉네임). 한 명 고르면 그 멤버 상세로.
 // 참여자가 1명이면 드롭다운 없이 바로 그 멤버 상세로 이동. 카드/링크 안에서도 동작(전파 차단).
-export default function MemberStack({ groupId, userIds = [], nameOf, avatarOf, size = 24, max = 3, singleName = false }) {
+export default function MemberStack({ groupId, userIds = [], nameOf, avatarOf, decoOf, size = 24, max = 3, singleName = false }) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState(null)
@@ -51,7 +51,7 @@ export default function MemberStack({ groupId, userIds = [], nameOf, avatarOf, s
       <span ref={triggerRef} className={`task-parts mstack-trigger ${ids.length > 1 ? 'multi' : ''}`}
         role="button" tabIndex={0} aria-label="참여자 보기"
         onClick={toggle} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e) }}>
-        {ids.slice(0, max).map((uid) => <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={size} />)}
+        {ids.slice(0, max).map((uid) => <Avatar key={uid} src={avatarOf(uid)} name={nameOf(uid)} size={size} deco={decoOf?.(uid)} />)}
         {extra > 0 && <span className="task-parts-more">+{extra}</span>}
         {singleName && ids.length === 1 && <span className="task-author-name">{nameOf(ids[0])}</span>}
       </span>

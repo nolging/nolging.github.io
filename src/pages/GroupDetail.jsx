@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
-  regenerateInviteCode, isFriendGroup,
+  regenerateInviteCode, isFriendGroup, getGroupDecoMap,
 } from '../lib/api'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
@@ -73,6 +73,7 @@ export default function GroupDetail() {
   const [isFriend, setIsFriend] = useState(false) // 우정 그룹(적용된 우정 링)
   const [tasks, setTasks] = useState([])
   const [partsByTask, setPartsByTask] = useState({})
+  const [decoMap, setDecoMap] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
   const [reviewCounts, setReviewCounts] = useState({}) // 추억별 리뷰 개수 { task_id: cnt }
   const [loading, setLoading] = useState(true)
@@ -213,6 +214,7 @@ export default function GroupDetail() {
     return map
   }, [members])
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
+  const decoOf = (uid) => decoMap[uid]
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -227,6 +229,7 @@ export default function GroupDetail() {
       // 참여자는 약속(accepted)·추억(done) 모두 로드 (날짜 없는 추억도 포함)
       const partIds = t.filter((x) => x.status !== 'open').map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(partIds))
+      getGroupDecoMap(groupId).then(setDecoMap).catch(() => {})
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
@@ -243,6 +246,7 @@ export default function GroupDetail() {
       // 참여자는 약속(accepted)·추억(done) 모두 로드 (날짜 없는 추억도 포함)
       const partIds = t.filter((x) => x.status !== 'open').map((x) => x.id)
       setPartsByTask(await listParticipantsByTasks(partIds))
+      getGroupDecoMap(groupId).then(setDecoMap).catch(() => {})
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     } catch (err) { setError(err.message) }
@@ -307,7 +311,7 @@ export default function GroupDetail() {
     return (
       <ul className="task-list">
         {list.map((t) => (
-          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar}
+          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar} decoOf={decoOf}
             participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
             reviewCount={reviewCounts[t.id] || 0} hasReviews={(reviewCounts[t.id] || 0) > 0}
             onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
@@ -391,7 +395,7 @@ export default function GroupDetail() {
               <button type="button" className="gd-members gd-members-couple"
                 aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
                 {members.slice(0, 2).map((m) => (
-                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} />
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} deco={decoOf(m.user_id)} />
                 ))}
                 <span className="gd-couple-heart" aria-hidden="true">♥</span>
               </button>
@@ -399,7 +403,7 @@ export default function GroupDetail() {
               <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
                 aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
                 {members.slice(0, 3).map((m) => (
-                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} />
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} deco={decoOf(m.user_id)} />
                 ))}
                 {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
               </button>
@@ -506,7 +510,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
+function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, decoOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
   const { groupId } = useParams()
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner || isAdmin
@@ -632,10 +636,10 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, parti
           </div>
           <div className="task-head-right">
             {showParts ? (
-              <MemberStack groupId={groupId} userIds={parts} nameOf={nameOf} avatarOf={avatarOf} size={24} max={3} singleName />
+              <MemberStack groupId={groupId} userIds={parts} nameOf={nameOf} avatarOf={avatarOf} decoOf={decoOf} size={24} max={3} singleName />
             ) : (
               <span className="task-author">
-                <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+                <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} deco={decoOf?.(task.created_by)} />
                 <span className="task-author-name">{nameOf(task.created_by)}</span>
               </span>
             )}

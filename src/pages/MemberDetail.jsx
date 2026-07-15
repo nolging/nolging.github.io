@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup } from '../lib/api'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
 
@@ -50,16 +50,19 @@ export default function MemberDetail() {
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [decoMap, setDecoMap] = useState({})
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, couple, friend] = await Promise.all([
+      const [cards, g, couple, friend, decos] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
+        getGroupDecoMap(groupId).catch(() => ({})),
       ])
+      setDecoMap(decos || {})
       const self = cards.find((m) => m.is_self)
       setMember(cards.find((m) => m.user_id === userId) || null)
       setIAmOwner((self || {}).role === 'owner')
@@ -111,7 +114,7 @@ export default function MemberDetail() {
     <div className="page md-page">
       {/* 프로필 */}
       <div className="md-profile">
-        <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} />
+        <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} deco={decoMap[member.user_id]} />
         <div className="md-name">{member.display_nickname}{member.is_self && <span className="md-me">나</span>}</div>
         {!member.is_self && (
           <div className="md-actions">

@@ -755,18 +755,34 @@ export async function sendNote({ groupId, recipientId, body, anonymous = false }
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only, premium, tier, sort_order')
+    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
-    // premium/tier 컬럼 미배포(42703) 시 해당 컬럼 없이 재조회
+    // admin_only 컬럼 미배포(42703) 시 → premium/tier 는 유지하고 admin_only 만 빼고 재조회
     if (error.code === '42703') {
-      const { data: d2, error: e2 } = await supabase
+      const { data: d1, error: e1 } = await supabase
         .from('store_items')
-        .select('id, name, price, emoji, description, gift_only')
+        .select('id, name, price, emoji, description, gift_only, premium, tier, sort_order')
         .eq('is_active', true).order('sort_order', { ascending: true })
-      if (e2) { if (e2.code === '42P01') return []; throw e2 }
-      return (d2 ?? []).map((r, i) => ({ id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null, sortOrder: i }))
+      if (!e1) {
+        return (d1 ?? []).map((r) => ({
+          id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji,
+          desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
+          adminOnly: false, sortOrder: r.sort_order ?? 0,
+        }))
+      }
+      // premium/tier 까지 미배포 시 최소 컬럼으로 재조회
+      if (e1.code === '42703') {
+        const { data: d2, error: e2 } = await supabase
+          .from('store_items')
+          .select('id, name, price, emoji, description, gift_only')
+          .eq('is_active', true).order('sort_order', { ascending: true })
+        if (e2) { if (e2.code === '42P01') return []; throw e2 }
+        return (d2 ?? []).map((r, i) => ({ id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji, desc: r.description, giftOnly: r.gift_only, premium: false, tier: null, adminOnly: false, sortOrder: i }))
+      }
+      if (e1.code === '42P01') return []
+      throw e1
     }
     if (error.code === '42P01') return []
     throw error
@@ -774,7 +790,7 @@ export async function listStoreItems() {
   return (data ?? []).map((r) => ({
     id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji,
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
-    sortOrder: r.sort_order ?? 0,
+    adminOnly: !!r.admin_only, sortOrder: r.sort_order ?? 0,
   }))
 }
 
@@ -796,7 +812,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used),and(item_id.like.deco-*,status.eq.used)')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
@@ -893,6 +909,38 @@ export async function unapplyGroupTheme(theme) {
     }
     throw error
   }
+}
+
+// ---- 아바타 꾸미기(deco) 적용/해제/조회 ----
+export async function applyAvatarDeco(itemId, groupId) {
+  const { error } = await supabase.rpc('apply_avatar_deco', { p_item_id: itemId, p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || /apply_avatar_deco/.test(error.message || '')) {
+      throw new Error('아바타 꾸미기 기능이 아직 DB에 설정되지 않았습니다. (apply_avatar_deco 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+export async function unapplyAvatarDeco(itemId) {
+  const { error } = await supabase.rpc('unapply_avatar_deco', { p_item_id: itemId })
+  if (error) {
+    if (error.code === 'PGRST202' || /unapply_avatar_deco/.test(error.message || '')) {
+      throw new Error('아바타 꾸미기 기능이 아직 DB에 설정되지 않았습니다. (unapply_avatar_deco 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+// 그룹 멤버들의 장착 데코 → { [userId]: { head, face } }. 미배포/실패 시 빈 객체.
+export async function getGroupDecoMap(groupId) {
+  if (!groupId) return {}
+  const { data, error } = await supabase.rpc('list_group_avatar_decos', { p_group_id: groupId })
+  if (error) return {}
+  const map = {}
+  for (const r of data ?? []) {
+    const slot = r.item_id === 'deco-blush' ? 'face' : 'head'
+    ;(map[r.user_id] = map[r.user_id] || {})[slot] = r.item_id
+  }
+  return map
 }
 
 // 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).

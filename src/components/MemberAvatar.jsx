@@ -21,16 +21,26 @@ function label(name) {
   return Array.from(s).slice(0, 2).join('') || '?'
 }
 
-export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0.35 }) {
+import AvatarDeco from './AvatarDeco'
+
+export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0.35, deco }) {
   const dim = { width: size, height: size, borderRadius: '50%', flexShrink: 0 }
-  if (src) {
-    return <span className="mem-av" style={{ ...dim, background: `#e9e9ee center/cover no-repeat url(${src})` }} aria-hidden="true" />
-  }
-  const c = memberColor(seed || name)
+  const inner = src
+    ? <span className="mem-av" style={{ ...dim, background: `#e9e9ee center/cover no-repeat url(${src})` }} aria-hidden="true" />
+    : (() => {
+        const c = memberColor(seed || name)
+        return (
+          <span className="mem-av mem-av-txt" aria-hidden="true"
+            style={{ ...dim, background: c.bg, color: c.fg, fontSize: Math.round(size * fontScale) }}>
+            {label(name)}
+          </span>
+        )
+      })()
+  if (!deco || (!deco.head && !deco.face)) return inner
   return (
-    <span className="mem-av mem-av-txt" aria-hidden="true"
-      style={{ ...dim, background: c.bg, color: c.fg, fontSize: Math.round(size * fontScale) }}>
-      {label(name)}
+    <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0 }}>
+      {inner}
+      <AvatarDeco head={deco.head} face={deco.face} />
     </span>
   )
 }

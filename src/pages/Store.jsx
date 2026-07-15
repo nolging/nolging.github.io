@@ -17,7 +17,7 @@ const PawIcon = ({ className }) => (
 )
 export default function Store() {
   const { refreshCoin, setStorePremium } = useOutletContext()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -108,6 +108,7 @@ export default function Store() {
   const inPremium = premiumView && hasPremium
 
   function qualifies(item) {
+    if (item.adminOnly && !isAdmin) return false   // 관리자 전용 아이템은 관리자에게만
     if (!item.premium) return !inPremium
     if (!inPremium) return false
     if (item.tier === 'couple') return hasCouple
@@ -116,11 +117,10 @@ export default function Store() {
   }
   const shownItems = items.filter(qualifies)
 
-  const sections = CAT_ORDER.map((key) => ({
-    key, label: CAT[key],
-    items: shownItems.filter((it) => catOf(it.id) === key),
-    comingSoon: inPremium && key === 'avatar',
-  })).filter((s) => s.items.length || s.comingSoon)
+  const sections = CAT_ORDER.map((key) => {
+    const secItems = shownItems.filter((it) => catOf(it.id) === key)
+    return { key, label: CAT[key], items: secItems, comingSoon: inPremium && key === 'avatar' && secItems.length === 0 }
+  }).filter((s) => s.items.length || s.comingSoon)
 
   return (
     <div className={`page store-page ${inPremium ? 'is-premium' : ''}`}>

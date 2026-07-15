@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
-  getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope,
+  getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
@@ -90,6 +90,7 @@ export default function TaskDetail() {
   const [task, setTask] = useState(null)
   const [members, setMembers] = useState([])
   const [participants, setParticipants] = useState([])
+  const [decoMap, setDecoMap] = useState({})
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -165,6 +166,7 @@ export default function TaskDetail() {
   }, [members])
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
   const avatarOf = (uid) => nameMap[uid]?.avatar
+  const decoOf = (uid) => decoMap[uid]
 
   // 최상위 댓글과, 각 최상위 댓글에 딸린 답글(답글의 답글까지 모두 한 단계로 평면화)
   const { roots, repliesOf } = useMemo(() => {
@@ -191,11 +193,11 @@ export default function TaskDetail() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [g, t, m, c, p] = await Promise.all([
+      const [g, t, m, c, p, d] = await Promise.all([
         getGroup(groupId), getTask(taskId), listMemberCards(groupId), listComments(taskId),
-        listTaskParticipants(taskId),
+        listTaskParticipants(taskId), getGroupDecoMap(groupId).catch(() => ({})),
       ])
-      setGroup(g); setTask(t); setMembers(m); setComments(c); setParticipants(p)
+      setGroup(g); setTask(t); setMembers(m); setComments(c); setParticipants(p); setDecoMap(d || {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId])
 
@@ -406,7 +408,7 @@ export default function TaskDetail() {
     const canDelete = c.author_id === profile.id || isOwner || isAdmin
     return (
       <div data-cid={c.id} className={`comment ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
-        <MemberAvatarBtn groupId={groupId} userId={c.author_id} src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} />
+        <MemberAvatarBtn groupId={groupId} userId={c.author_id} src={avatarOf(c.author_id)} name={nameOf(c.author_id)} size={depth > 0 ? 26 : 30} deco={decoOf(c.author_id)} />
         <div className="comment-body">
           <div className="comment-meta">
             <span className="comment-author">{nameOf(c.author_id)}</span>
@@ -521,7 +523,7 @@ export default function TaskDetail() {
         {reviews.map((rv) => (
           <li key={rv.author_id} className="review-card">
             <div className="review-card-head">
-              <MemberAvatarBtn groupId={groupId} userId={rv.author_id} src={rv.avatar_url} name={rv.nickname} size={30} />
+              <MemberAvatarBtn groupId={groupId} userId={rv.author_id} src={rv.avatar_url} name={rv.nickname} size={30} deco={decoOf(rv.author_id)} />
               <span className="review-author">{rv.nickname}</span>
               <Stars value={rv.rating} />
               {isAdmin && (
@@ -552,10 +554,10 @@ export default function TaskDetail() {
           <CategoryChip category={task.category} />
           <div className="td-head-right">
           {isScheduled && participants.length > 0 ? (
-            <MemberStack groupId={groupId} userIds={participants} nameOf={nameOf} avatarOf={avatarOf} size={26} max={3} />
+            <MemberStack groupId={groupId} userIds={participants} nameOf={nameOf} avatarOf={avatarOf} decoOf={decoOf} size={26} max={3} />
           ) : (
             <span className="task-author">
-              <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} />
+              <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} deco={decoOf(task.created_by)} />
               <span className="task-author-name">{nameOf(task.created_by)}</span>
             </span>
           )}
