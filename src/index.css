@@ -2418,6 +2418,13 @@ button.mlist-row:hover { background: #f6f5fa; }
   }
   /* 플로팅 바가 콘텐츠를 가리지 않게 하단 여백 확보 */
   .app-shell.has-nav .content { padding-bottom: 92px; }
+  /* 중첩 스크롤 페이지(쪽지·일정)는 .content 하단 여백을 없애고 내부 스크롤러가
+     화면 끝까지 차게 해, 목록이 하단 탭 뒤로 지나가며 블러 처리되게 한다(홈처럼).
+     내부 스크롤러 자체에 탭 높이만큼 하단 여백을 줘 마지막 항목이 가려지지 않게. */
+  .app-shell.has-nav .content:has(> .notes-page),
+  .app-shell.has-nav .content:has(> .sched-page) { padding-bottom: 0; }
+  .app-shell.has-nav .cal-scroll { padding-bottom: 92px; }
+  .app-shell.has-nav .note-list { padding-bottom: 92px; }
   .bottomnav a {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 2px; padding: 0; color: #b0b0b8; font-weight: 600; font-size: 10px;
