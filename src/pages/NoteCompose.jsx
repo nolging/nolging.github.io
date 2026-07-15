@@ -109,9 +109,16 @@ export default function NoteCompose() {
     const amId = useItem?.id || null
     const specialOn = amId && RINGS.includes(amId)
     if (id === 'eraser') return anonymous || specialOn
+    if (id === 'friend-ring') {
+      if ((amId && amId !== id) || anonymous || gifts.length > 0) return true
+      // 수신자가 이미 정해진 경우: 나와 커플(커플 그룹)이거나 이미 우정 링이 적용된 그룹이면 우정 링 사용 불가
+      const gid = recipient && !recipient.groupWide ? recipient.groupId : null
+      if (gid && (coupleGroups.includes(gid) || friendGroups.includes(gid))) return true
+      return false
+    }
     if (RINGS.includes(id)) return (amId && amId !== id) || anonymous || gifts.length > 0
     return (amId && amId !== id) || gifts.length > 0   // 미디어
-  }, [useItem, anonymous, gifts])
+  }, [useItem, anonymous, gifts, recipient, coupleGroups, friendGroups])
 
   function pickUse(id) {
     const active = id === 'eraser' ? anonymous : useItem?.id === id
