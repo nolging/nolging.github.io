@@ -64,16 +64,16 @@ function WolfEars() {
 }
 
 function Anger() {
-  // 💢: 아바타 우측 상단에 네 개의 꺾인 핏줄. 살짝 커졌다 작아졌다(빠르게).
-  const arm = 'M3 -11 L11 -11 L11 -3'
+  // 💢: 아바타 우측 상단에 둥근 곡선 호 "(" 네 개(회전 대칭). 살짝 커졌다 작아졌다(빠르게).
+  const arc = 'M3 -11 Q12 -12 11 -3'
   return (
     <g transform="translate(76 20)">
       <g className="avd-anger">
-        <g stroke="#e5484d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none">
-          <path d={arm} />
-          <path d={arm} transform="rotate(90)" />
-          <path d={arm} transform="rotate(180)" />
-          <path d={arm} transform="rotate(270)" />
+        <g stroke="#e5484d" strokeWidth="3" strokeLinecap="round" fill="none">
+          <path d={arc} />
+          <path d={arc} transform="rotate(90)" />
+          <path d={arc} transform="rotate(180)" />
+          <path d={arc} transform="rotate(270)" />
         </g>
       </g>
     </g>
