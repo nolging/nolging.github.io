@@ -82,9 +82,10 @@ begin
 end $$;
 
 -- 랜덤 퀘스트 메타(라벨/보상/프리미엄전용)
-create or replace function public._quest_meta(p_key text)
+drop function if exists public._quest_meta(text);
+create function public._quest_meta(p_key text)
 returns table(label text, reward int, premium_only boolean) language sql immutable as $$
-  select m.label, m.reward, m.premium_only from (values
+  select m.label::text, m.reward::int, m.premium_only::boolean from (values
     ('r_wish','위시 작성하기',2,false),
     ('r_item_note','아이템 넣어 쪽지 보내기',3,false),
     ('r_nyangpito','냥피또 긁기',2,false),
