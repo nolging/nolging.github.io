@@ -63,8 +63,6 @@ export default function ProfileEdit() {
     } catch (err) { setError(err.message); setBusy(false) }
   }
 
-  const ottCount = form.subscribed_ott.length
-
   return (
     <div className="page me-edit">
       {loading ? (
@@ -85,10 +83,7 @@ export default function ProfileEdit() {
           </div>
 
           <div className="me-field">
-            <div className="me-field-head">
-              <span className="me-field-label">구독 OTT</span>
-              <span className="me-field-note">{ottCount}개 구독 중</span>
-            </div>
+            <div className="me-field-label">구독 OTT</div>
             <div className="me-ott-list">
               {SUBSCRIBABLE_OTTS.map((o) => {
                 const on = form.subscribed_ott.includes(o.key)

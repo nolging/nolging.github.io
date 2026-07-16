@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, getMyGrade, changeMyPassword } from '../lib/api'
 import { OTT_BY_KEY } from '../lib/constants'
-import { GRADE_LABEL, GRADE_SUB, GRADE_LONG, GRADE_AVATAR } from '../lib/membership'
+import { GRADE_LABEL, GRADE_SUB } from '../lib/membership'
 
 export default function MemberInfo() {
   const { profile, logout } = useAuth()
@@ -50,7 +50,6 @@ export default function MemberInfo() {
   }
   async function handleLogout() { await logout(); navigate('/login') }
 
-  const av = GRADE_AVATAR[grade] || GRADE_AVATAR.normal
   const birth = info?.birthdate ? String(info.birthdate).slice(0, 10) : ''
   const otts = Array.isArray(info?.subscribed_ott) ? info.subscribed_ott : []
 
@@ -62,28 +61,17 @@ export default function MemberInfo() {
         <>
           {error && <div className="alert alert-error">{error}</div>}
 
-          {/* 등급 아이덴티티 카드 */}
-          <div className="mi-id-card">
-            <span className="mi-avatar" style={{ background: av.bg }}>{av.emoji}</span>
-            <div className="mi-id-main">
-              <div className="mi-id-line">
-                <span className="mi-id-name">{profile?.login_id || '—'}</span>
-                <span className={`grade-badge grade-${grade}`}>{GRADE_LABEL[grade]}</span>
-              </div>
-              <div className="mi-id-sub">{GRADE_SUB[grade]}</div>
+          {/* 등급 헤더 (아이디 + 등급 배지 + 안내 문구) */}
+          <div className="mi-head">
+            <div className="mi-head-line">
+              <span className="mi-id-name">{profile?.login_id || '—'}</span>
+              <span className={`grade-badge grade-${grade}`}>{GRADE_LABEL[grade]}</span>
             </div>
+            <div className="mi-id-sub">{GRADE_SUB[grade]}</div>
           </div>
 
           {/* 정보 카드 */}
           <div className="mi-card">
-            <div className="mi-row">
-              <span className="mi-key">회원 등급</span>
-              <span className="mi-val strong">{GRADE_LONG[grade]}</span>
-            </div>
-            <div className="mi-row">
-              <span className="mi-key">아이디</span>
-              <span className="mi-val strong">{profile?.login_id || '—'}</span>
-            </div>
             <div className="mi-row">
               <span className="mi-key">연락처</span>
               <span className="mi-val">{info?.contact || '미등록'}</span>

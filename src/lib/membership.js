@@ -3,8 +3,8 @@
 export const GRADE_LABEL = { vvip: 'VVIP', vip: 'VIP', normal: '일반' }
 
 export const GRADE_SUB = {
-  vvip: '커플 링 보유 · 최고 등급',
-  vip: '우정 링 보유 · 우대 등급',
+  vvip: '프리미엄 상점에 입장하실 수 있어요',
+  vip: '프리미엄 상점에 입장하실 수 있어요',
   normal: '링을 모으면 등급이 올라가요',
 }
 
