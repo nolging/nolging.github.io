@@ -122,7 +122,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
 }
 
 export default function MyProfile() {
-  const { profile, logout, isAdmin } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [quests, setQuests] = useState(null)
@@ -176,7 +176,6 @@ export default function MyProfile() {
     try { setQuests(await rerollSlotQuest(slot)) }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
-  async function handleLogout() { await logout(); navigate('/login') }
   const challenge = (key) => navigate(QUEST_TARGET[key] || '/', { state: { from: '/me' } })
 
   const grade = quests?.grade || 'normal'
@@ -252,10 +251,6 @@ export default function MyProfile() {
           {isAdmin && (
             <Link to="/admin" className="btn btn-block admin-entry">관리자 페이지</Link>
           )}
-
-          <div className="mp-logout">
-            <button type="button" className="mp-logout-link" onClick={handleLogout}>로그아웃</button>
-          </div>
         </>
       )}
     </div>
