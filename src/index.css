@@ -301,6 +301,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .quest-reward { font-size: 12px; font-weight: 700; color: #d98a4e; }
 .quest-claim { flex-shrink: 0; border: none; border-radius: 999px; background: #2b2833; color: #fff; font-size: 13px; font-weight: 700; padding: 8px 18px; cursor: pointer; }
 .quest-claim:disabled { opacity: .5; cursor: default; }
+.quest-challenge { flex-shrink: 0; border: none; border-radius: 999px; background: #7363e8; color: #fff; font-size: 13px; font-weight: 700; padding: 8px 18px; cursor: pointer; }
+.quest-challenge:active { filter: brightness(.95); }
 .quest-badge { flex-shrink: 0; font-size: 12px; font-weight: 700; color: #a8a4b4; }
 .quest-badge.is-done { color: #37b06a; }
 .quest-reroll { width: 100%; margin-top: 2px; border: 1px dashed var(--border); border-radius: 12px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 11px; cursor: pointer; }
@@ -317,7 +319,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .quest-slot-card .quest-reward { font-size: 12px; font-weight: 700; color: #d98a4e; }
 .quest-slot-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
-.quest-slot-foot .quest-claim { padding: 7px 16px; }
+.quest-slot-foot .quest-claim, .quest-slot-foot .quest-challenge { padding: 7px 15px; }
+.quest-slot-timer { font-size: 15px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
 .quest-slot-reroll { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; border: 1px solid var(--border); background: none; font-size: 13px; cursor: pointer; }
 .quest-slot-reroll:disabled { opacity: .5; cursor: default; }
 /* 쿨다운 카드 */

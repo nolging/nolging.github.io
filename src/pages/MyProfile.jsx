@@ -5,6 +5,13 @@ import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalanc
 
 const GRADE_LABEL = { vvip: 'VVIP', vip: 'VIP', normal: '일반' }
 
+// 퀘스트별 '도전' 이동 경로 (수행할 수 있는 페이지). 없는 키는 홈으로.
+const QUEST_TARGET = {
+  visit: '/', note: '/notes/new',
+  r_wish: '/', r_item_note: '/notes/new', r_nyangpito: '/inventory',
+  r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
+}
+
 // 쿨다운 남은시간 M:SS
 function fmtLeft(ms) {
   const s = Math.max(0, Math.ceil(ms / 1000))
@@ -33,7 +40,7 @@ function CoinCat() {
   )
 }
 
-function DailyRow({ q, busy, onClaim }) {
+function DailyRow({ q, busy, onClaim, onChallenge }) {
   return (
     <div className={`quest-row ${q.claimed ? 'is-done' : ''}`}>
       <div className="quest-info">
@@ -44,6 +51,8 @@ function DailyRow({ q, busy, onClaim }) {
         <span className="quest-badge is-done">완료</span>
       ) : q.done ? (
         <button type="button" className="quest-claim" disabled={!!busy} onClick={onClaim}>받기</button>
+      ) : onChallenge ? (
+        <button type="button" className="quest-challenge" onClick={onChallenge}>도전</button>
       ) : (
         <span className="quest-badge">진행 중</span>
       )}
@@ -51,34 +60,30 @@ function DailyRow({ q, busy, onClaim }) {
   )
 }
 
-function SlotCard({ s, now, busy, onClaim, onReroll }) {
+function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
   const cdMs = s.cooldown_until ? new Date(s.cooldown_until).getTime() - now : 0
   const cooling = cdMs > 0
   return (
     <div className={`quest-slot-card ${cooling ? 'is-cooling' : ''}`}>
-      {cooling ? (
-        <div className="quest-slot-cool">
-          <span className="quest-slot-cool-t">다음 퀘스트</span>
-          <span className="quest-slot-cool-time">{fmtLeft(cdMs)}</span>
-          <span className="quest-slot-cool-s">후 공개</span>
-        </div>
-      ) : (
-        <>
-          <div className="quest-slot-body">
-            <span className="quest-label">{s.title}</span>
-            {s.body && <span className="quest-body">{s.body}</span>}
-          </div>
-          <span className="quest-reward">+{s.reward} 츄르</span>
-          <div className="quest-slot-foot">
+      <div className="quest-slot-body">
+        <span className="quest-label">{s.title || '다음 퀘스트'}</span>
+        {s.body && <span className="quest-body">{s.body}</span>}
+      </div>
+      <span className="quest-reward">+{s.reward ?? 0} 츄르</span>
+      <div className="quest-slot-foot">
+        {cooling ? (
+          <span className="quest-slot-timer">🔒 {fmtLeft(cdMs)}</span>
+        ) : (
+          <>
             {s.done ? (
               <button type="button" className="quest-claim" disabled={!!busy} onClick={onClaim}>받기</button>
             ) : (
-              <span className="quest-badge">진행 중</span>
+              <button type="button" className="quest-challenge" onClick={onChallenge}>도전</button>
             )}
             <button type="button" className="quest-slot-reroll" disabled={!!busy} onClick={onReroll} title="1츄르로 교체">🔄</button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -139,6 +144,7 @@ export default function MyProfile() {
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
   async function handleLogout() { await logout(); navigate('/login') }
+  const challenge = (key) => navigate(QUEST_TARGET[key] || '/')
 
   const grade = quests?.grade || 'normal'
   const balance = quests?.balance
@@ -178,14 +184,15 @@ export default function MyProfile() {
             <div className="quests">
               <div className="quest-title">데일리 퀘스트</div>
               {(quests.daily || []).map((q) => (
-                <DailyRow key={q.key} q={q} busy={busy} onClaim={() => claimDaily(q.key)} />
+                <DailyRow key={q.key} q={q} busy={busy} onClaim={() => claimDaily(q.key)}
+                  onChallenge={QUEST_TARGET[q.key] ? () => challenge(q.key) : null} />
               ))}
 
               <div className="quest-title">랜덤 퀘스트</div>
               <div className="quest-slots" data-hscroll>
                 {(quests.slots || []).map((s) => (
                   <SlotCard key={s.slot} s={s} now={now} busy={busy}
-                    onClaim={() => claimSlot(s.slot)} onReroll={() => rerollSlot(s.slot)} />
+                    onClaim={() => claimSlot(s.slot)} onChallenge={() => challenge(s.key)} onReroll={() => rerollSlot(s.slot)} />
                 ))}
               </div>
             </div>

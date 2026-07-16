@@ -119,13 +119,14 @@ begin
     end if;
   end loop;
 
+  -- 쿨다운 중에도 '다음 퀘스트' 내용은 노출(진행은 available_at 이후 가능)
   select jsonb_agg(jsonb_build_object(
       'slot', s.slot,
       'cooldown_until', case when s.available_at > now() then s.available_at else null end,
-      'key',    case when s.available_at <= now() then s.quest_key else null end,
-      'title',  case when s.available_at <= now() then dq.title else null end,
-      'body',   case when s.available_at <= now() then dq.body else null end,
-      'reward', case when s.available_at <= now() then dq.reward else null end,
+      'key',    s.quest_key,
+      'title',  dq.title,
+      'body',   dq.body,
+      'reward', dq.reward,
       'done',   case when s.available_at <= now() then public._quest_done(s.quest_key, s.assigned_at) else false end
     ) order by s.slot)
     into v_slots
