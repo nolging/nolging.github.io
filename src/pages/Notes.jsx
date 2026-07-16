@@ -9,7 +9,11 @@ import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf } from '../lib/storeMeta'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote } from '../lib/api'
+
+// 물풍선 폭탄 쪽지 판별/폭발 여부
+const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
+const waterExploded = (n) => isWater(n) && !!n.opened_at && Date.now() >= new Date(n.opened_at).getTime() + n.timer_seconds * 1000
 
 function NoteFabIcon() {
   return (
@@ -55,6 +59,9 @@ export default function Notes() {
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
+  const [waterLeft, setWaterLeft] = useState(null)     // 열린 물풍선 쪽지의 남은 초
+  const [waterPopped, setWaterPopped] = useState(false) // 열린 물풍선이 터졌는지
+  const [poppedIds, setPoppedIds] = useState(() => new Set()) // 터진 걸 목격한 쪽지 id
 
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
@@ -117,6 +124,39 @@ export default function Notes() {
     setRefreshHandler(() => refresh)
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
+
+  // 물풍선 쪽지 모달: 열면 opened_at(서버) 기준으로 카운트다운 시작 → 0 이 되면 터짐
+  useEffect(() => {
+    setWaterLeft(null); setWaterPopped(false)
+    if (!open || !isWater(open) || tab !== 'received') return
+    let iv, cancelled = false
+    ;(async () => {
+      let openedAt = null, serverNow = null
+      try {
+        const r = await openWaterNote(open.id)
+        openedAt = r?.openedAt ? new Date(r.openedAt).getTime() : null
+        serverNow = r?.serverNow ? new Date(r.serverNow).getTime() : null
+      } catch { /* 서버 실패 시 로컬 기준으로 진행 */ }
+      if (cancelled) return
+      if (!openedAt) { openedAt = Date.now(); serverNow = Date.now() }
+      // 목록 카드에도 opened_at 반영(폭발 판정용)
+      setReceived((prev) => prev.map((x) => (x.id === open.id && !x.opened_at ? { ...x, opened_at: new Date(openedAt).toISOString() } : x)))
+      const elapsed = Math.max(0, ((serverNow || Date.now()) - openedAt) / 1000)
+      const deadline = Date.now() + (open.timer_seconds - elapsed) * 1000
+      const tick = () => {
+        const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+        setWaterLeft(left)
+        if (left <= 0) {
+          setWaterPopped(true)
+          setPoppedIds((s) => new Set(s).add(open.id))
+          if (iv) clearInterval(iv)
+        }
+      }
+      tick()
+      iv = setInterval(tick, 250)
+    })()
+    return () => { cancelled = true; if (iv) clearInterval(iv) }
+  }, [open, tab])
 
   // 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착되고 그룹이 프리미엄이 됨
   async function accept(n) {
@@ -345,6 +385,7 @@ export default function Notes() {
             const bluray = n.kind === 'bluray'
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
+            const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
             // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
             const tagInfo = wish ? ['🌟 소원', 'note-tag']
               : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
@@ -357,7 +398,7 @@ export default function Notes() {
                             : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${popped ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   <Avatar src={p.avatar} name={p.name} size={40} deco={peerDeco(p)} />
                   <div className="note-card-main">
                     <div className="note-card-head">
@@ -367,7 +408,8 @@ export default function Notes() {
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
                     </div>
                     <div className="note-card-bodyrow">
-                      <p className="note-card-body">{n.body}</p>
+                      <p className={`note-card-body ${popped ? 'note-water-blur' : ''}`}>{n.body}</p>
+                      {popped && <span className="note-water-card-label">물풍선 폭탄이 터졌어요</span>}
                       {tagInfo && (
                         <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
                           <span className={`${tagInfo[1]} note-tag-pill ${needClaim ? 'note-tag-seesaw' : ''}`}>{tagInfo[0]}</span>
@@ -385,7 +427,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${waterPopped && isWater(open) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -418,7 +460,19 @@ export default function Notes() {
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
                 </div>
               </div>
-              <p className="note-view-body">{open.body}</p>
+              {isWater(open) && tab === 'received' ? (
+                <>
+                  <div className={`note-water-timer ${waterPopped ? 'is-pop' : ''} ${waterLeft != null && waterLeft <= 5 && waterLeft > 0 ? 'is-blink' : ''}`}>
+                    {waterPopped ? '펑! 물풍선이 터졌어요' : `⏱ ${waterLeft != null ? waterLeft : open.timer_seconds}초`}
+                  </div>
+                  <div className="note-water-bodywrap">
+                    <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{open.body}</p>
+                    {waterPopped && <span className="note-water-overlay">물풍선 폭탄이 터졌어요</span>}
+                  </div>
+                </>
+              ) : (
+                <p className="note-view-body">{open.body}</p>
+              )}
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
               {bluray && open.media_url && <BluraySlot url={open.media_url} player={blurayPlayer} />}

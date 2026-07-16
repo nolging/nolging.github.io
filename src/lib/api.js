@@ -740,10 +740,11 @@ export async function listSentNotes(userId) {
   return data ?? []
 }
 
-export async function sendNote({ groupId, recipientId, body, anonymous = false }) {
+export async function sendNote({ groupId, recipientId, body, anonymous = false, timerSeconds = null }) {
   // p_anonymous 는 익명일 때만 전달(구버전 RPC 와 호환 유지)
   const params = { p_group_id: groupId, p_recipient_id: recipientId, p_body: body }
   if (anonymous) params.p_anonymous = true
+  if (timerSeconds) params.p_timer_seconds = timerSeconds
   const { data, error } = await supabase.rpc('send_note', params)
   if (error) {
     if (error.code === 'PGRST202' || /send_note/.test(error.message || '')) {
@@ -752,6 +753,14 @@ export async function sendNote({ groupId, recipientId, body, anonymous = false }
     throw error
   }
   return Array.isArray(data) ? data[0] : data
+}
+
+// 물풍선 쪽지: 받는 사람이 처음 열 때 opened_at 기록. { openedAt, serverNow }(ISO) 반환.
+export async function openWaterNote(noteId) {
+  const { data, error } = await supabase.rpc('open_water_note', { p_note_id: noteId })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return row ? { openedAt: row.opened_at, serverNow: row.server_now } : null
 }
 
 // ---- 상점 ----------------------------------------------------
@@ -1157,13 +1166,14 @@ export async function giftOwnedItem(itemId, groupId, recipientId, qty = 1, { mes
 export async function sendComposedNote({ groupId, recipientId, body, anonymous = false, useItem = null, gifts = [] }) {
   const msg = (body || '').trim()
   if (useItem) {
-    const { id, url } = useItem
+    const { id, url, timer } = useItem
     if (id === 'couple-ring') return useCoupleRing({ groupId, recipientId, message: msg })
     if (id === 'friend-ring') return useFriendRing({ groupId, message: msg })
     if (id === 'cassette') return useCassette({ groupId, recipientId, message: msg, url, anonymous })
     if (id === 'video') return useVideo({ groupId, recipientId, message: msg, url, anonymous })
     if (id === 'bluray') return useBluray({ groupId, recipientId, message: msg, url, anonymous })
     if (id === 'link') return useLink({ groupId, recipientId, message: msg, url, anonymous })
+    if (id === 'waterbomb') return sendNote({ groupId, recipientId, body: msg, anonymous, timerSeconds: timer })
     throw new Error('사용할 수 없는 아이템이에요.')
   }
   if (gifts && gifts.length > 0) {

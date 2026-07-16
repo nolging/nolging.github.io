@@ -15,7 +15,7 @@ export function catOf(id) {
 const IMG_BG = {
   'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
   'nyangpito': '#eaf4ec', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
-  'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52',
+  'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
   'deco-sprout': '#eaf6ee', 'deco-jaguar': '#ecebf0', 'deco-wolf': '#eceef3', 'deco-blush': '#fdeef2',
   'deco-anger': '#fdecec',
   // 하트 뿅뿅 테마: 실제 적용 시 배경(연분홍 그라데이션)과 동일하게 → 위에 하트가 솟아오름

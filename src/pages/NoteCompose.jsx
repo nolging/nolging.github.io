@@ -22,11 +22,13 @@ const USE_META = {
   video: { name: '비디오 테이프', emoji: '📹', urlHint: '유튜브 링크' },
   bluray: { name: '블루레이', emoji: '💿', urlHint: '유튜브 링크' },
   eraser: { name: '지우개', emoji: '🧽' },
+  waterbomb: { name: '물풍선 폭탄', emoji: '💧' },
 }
 const USE_SECTIONS = [
   { label: '스페셜', ids: RINGS },
-  { label: '기능 강화', ids: [...MEDIA, 'eraser'] },
+  { label: '기능 강화', ids: [...MEDIA, 'eraser', 'waterbomb'] },
 ]
+const TIMER_MIN = 10, TIMER_MAX = 120
 
 const StarIcon = () => (
   <svg width="16" viewBox="0 0 24 24" fill="none" stroke="#7363e8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.7 5.8 21 7 14.1 2 9.3 9 8.5z" /></svg>
@@ -54,6 +56,8 @@ export default function NoteCompose() {
   const [sheet, setSheet] = useState(null)        // 'use' | 'gift'
   const [linkFor, setLinkFor] = useState(null)    // media itemId for URL modal
   const [linkUrl, setLinkUrl] = useState('')
+  const [timerOpen, setTimerOpen] = useState(false) // 물풍선 타이머 설정 모달
+  const [timerVal, setTimerVal] = useState(30)      // 초
   const [giftDraft, setGiftDraft] = useState({})  // { id: qty }
   const [giftNotice, setGiftNotice] = useState('') // 비활성 프리미엄 아이템 클릭 시 안내
 
@@ -128,7 +132,12 @@ export default function NoteCompose() {
       // 링은 대상 그룹 제약이 있어 받는 사람을 다시 고르게 한다(필터/그룹단위 반영)
       setUseItem({ id }); setSheet(null); setRecipient(null); setPickOpen(true); return
     }
+    if (id === 'waterbomb') { setTimerVal(30); setTimerOpen(true); setSheet(null); return } // 타이머 설정
     setLinkFor(id); setLinkUrl(''); setSheet(null)   // 미디어 → URL 입력
+  }
+  function confirmTimer() {
+    setUseItem({ id: 'waterbomb', timer: Math.max(TIMER_MIN, Math.min(TIMER_MAX, timerVal)) })
+    setTimerOpen(false)
   }
   function clearUseItem() {
     // 우정 링(그룹단위 수신) 해제 시 받는 사람도 초기화
@@ -259,7 +268,7 @@ export default function NoteCompose() {
           <span className="nc-chip-ico" style={{ background: metaOf(useItem.id).bg }}><StoreItemImage id={useItem.id} emoji={metaOf(useItem.id).emoji} className="nc-img" /></span>
           <div className="nc-chip-txt">
             <div className="nc-chip-name">{metaOf(useItem.id).name}</div>
-            <div className="nc-chip-hint">{RINGS.includes(useItem.id) ? `✨ ${USE_META[useItem.id].useLabel} 포함` : '📎 첨부됨'}</div>
+            <div className="nc-chip-hint">{RINGS.includes(useItem.id) ? `✨ ${USE_META[useItem.id].useLabel} 포함` : useItem.id === 'waterbomb' ? `⏱ ${useItem.timer}초 후 펑!` : '📎 첨부됨'}</div>
           </div>
         </div>
       )}
@@ -401,6 +410,23 @@ export default function NoteCompose() {
             <button type="button" className="nc-sheet-confirm" disabled={!linkUrl.trim()} onClick={confirmLink}>첨부하기</button>
           </div>
         )}
+      </Modal>
+
+      {/* 물풍선 폭탄 타이머 설정 모달 */}
+      <Modal open={timerOpen} onClose={() => setTimerOpen(false)} cardClassName="nc-link-modal">
+        <div className="nc-link">
+          <div className="nc-link-head">
+            <span className="nc-link-ico" style={{ background: metaOf('waterbomb').bg }}><StoreItemImage id="waterbomb" emoji="💧" className="nc-img" /></span>
+            <div><div className="nc-link-name">물풍선 폭탄</div><div className="nc-link-sub">타이머가 0이 되면 쪽지가 젖어 다시 읽을 수 없어요</div></div>
+          </div>
+          <div className="nc-timer">
+            <div className="nc-timer-val">{timerVal}<span>초</span></div>
+            <input type="range" className="nc-timer-range" min={TIMER_MIN} max={TIMER_MAX} step={1}
+              value={timerVal} onChange={(e) => setTimerVal(Number(e.target.value))} />
+            <div className="nc-timer-ends"><span>{TIMER_MIN}초</span><span>{TIMER_MAX}초</span></div>
+          </div>
+          <button type="button" className="nc-sheet-confirm" onClick={confirmTimer}>첨부하기</button>
+        </div>
       </Modal>
 
       <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handlePick}
