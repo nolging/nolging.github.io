@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useOutletContext, useNavigate } from 'react-router-dom'
+import { useOutletContext, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
@@ -20,6 +20,7 @@ export default function Store() {
   const { refreshCoin, setStorePremium } = useOutletContext()
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -29,9 +30,9 @@ export default function Store() {
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
-  // 마지막으로 본 탭 기억(인벤토리 갔다가 "<"로 돌아오면 프리미엄 탭 복원)
+  // 새로 진입하면 일반 상점. 단, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
   const [premiumView, setPremiumView] = useState(() => {
-    try { return sessionStorage.getItem('storePremiumView') === '1' } catch { return false }
+    try { return !!location.state?.restore && sessionStorage.getItem('storePremiumView') === '1' } catch { return false }
   })
   useEffect(() => {
     try { sessionStorage.setItem('storePremiumView', premiumView ? '1' : '0') } catch { /* noop */ }

@@ -581,7 +581,7 @@ export default function Layout() {
     // 인벤토리: 좌측 뒤로(상점으로), 제목 "인벤토리"
     topbar = (
       <header className="topbar">
-        <Link to="/store" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <Link to="/store" state={{ restore: true }} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">인벤토리</span>
       </header>
     )
