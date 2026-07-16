@@ -1806,7 +1806,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .app-shell.csx-anniv-dark .topbar, .app-shell.csx-anniv-dark .content { background: transparent; }
 .app-shell.csx-anniv-dark .topbar { color: #f3f0f7; }
 .app-shell.csx-anniv-dark .topbar-heading { color: #f3f0f7; }
-.app-shell.csx-anniv-dark .topbar .icon-btn { color: #ece8f5; }
+/* 뒤로("<") 버튼: 프리미엄 상점의 인벤토리 버튼과 동일한 반투명 알약 디자인 */
+.app-shell.csx-anniv-dark .topbar .icon-btn { background: rgba(255,255,255,.12); color: #efecfb; }
+.app-shell.csx-anniv-dark .topbar .icon-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
 
 .csx-page.csx-dark { position: relative; isolation: isolate; }
 .csx-dark .csx-face-name { color: #f3f0f7; }
