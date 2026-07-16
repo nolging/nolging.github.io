@@ -420,7 +420,14 @@ export default function Notes() {
                     </div>
                     <div className="note-card-bodyrow">
                       {waterHide ? (
-                        <p className="note-card-body note-water-hidden">{popped ? '물풍선 폭탄이 터졌어요' : '꽁꽁 싸매서 내용이 보이지 않아요'}</p>
+                        popped ? (
+                          <>
+                            <p className="note-card-body note-water-blur">{n.body}</p>
+                            <span className="note-water-card-label">물풍선 폭탄이 터졌어요</span>
+                          </>
+                        ) : (
+                          <p className="note-card-body note-water-hidden">꽁꽁 싸매서 내용이 보이지 않아요</p>
+                        )
                       ) : (
                         <p className="note-card-body">{n.body}</p>
                       )}
