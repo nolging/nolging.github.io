@@ -14,6 +14,10 @@ import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, cl
 // 물풍선 폭탄 쪽지 판별/폭발 여부
 const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
 const waterExploded = (n) => isWater(n) && !!n.opened_at && Date.now() >= new Date(n.opened_at).getTime() + n.timer_seconds * 1000
+const mmss = (sec) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, sec) % 60).padStart(2, '0')}`
+const ClockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg>
+)
 
 function NoteFabIcon() {
   return (
@@ -391,6 +395,7 @@ export default function Notes() {
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
+            const waterBlue = popped || (tab === 'sent' && isWater(n)) // 옅은 파란색(보낸함 물풍선은 처음부터)
             // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
             const tagInfo = wish ? ['🌟 소원', 'note-tag']
               : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
@@ -403,7 +408,7 @@ export default function Notes() {
                             : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${n.anonymous ? 'note-anon' : ''} ${popped ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />
                   <div className="note-card-main">
                     <div className="note-card-head">
@@ -432,7 +437,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${waterPopped && isWater(open) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -464,17 +469,17 @@ export default function Notes() {
                   </span>
                   <span className="note-view-date">{formatNoteFull(open.created_at)}</span>
                 </div>
+                {isWater(open) && tab === 'received' && (
+                  <span className={`note-water-clock ${!waterPopped && waterLeft != null && waterLeft <= 5 ? 'is-blink' : ''}`}>
+                    <ClockIcon />{mmss(waterLeft != null ? waterLeft : open.timer_seconds)}
+                  </span>
+                )}
               </div>
               {isWater(open) && tab === 'received' ? (
-                <>
-                  <div className={`note-water-timer ${waterPopped ? 'is-pop' : ''} ${waterLeft != null && waterLeft <= 5 && waterLeft > 0 ? 'is-blink' : ''}`}>
-                    {waterPopped ? '펑! 물풍선이 터졌어요' : `⏱ ${waterLeft != null ? waterLeft : open.timer_seconds}초`}
-                  </div>
-                  <div className="note-water-bodywrap">
-                    <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{open.body}</p>
-                    {waterPopped && <span className="note-water-overlay">물풍선 폭탄이 터졌어요</span>}
-                  </div>
-                </>
+                <div className="note-water-bodywrap">
+                  <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{open.body}</p>
+                  {waterPopped && <span className="note-water-overlay">펑!</span>}
+                </div>
               ) : (
                 <p className="note-view-body">{open.body}</p>
               )}
