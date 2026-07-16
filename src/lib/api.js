@@ -1288,6 +1288,33 @@ export async function updateMyProfile({ contact, birthdate, subscribed_ott }) {
   return Array.isArray(data) ? data[0] : data
 }
 
+// ---- 퀘스트 (마이 페이지) ----
+// 퀘스트 상태 조회 { balance, grade, daily:[...], random:{...} }. RPC 미배포 시 null.
+export async function getQuests() {
+  const { data, error } = await supabase.rpc('get_quests')
+  if (error) {
+    if (error.code === 'PGRST202' || /get_quests/.test(error.message || '')) return null
+    throw error
+  }
+  return data
+}
+// 퀘스트 보상 수령 → 새 잔액 반환
+export async function claimQuest(key) {
+  const { data, error } = await supabase.rpc('claim_quest', { p_key: key })
+  if (error) throw error
+  return Number(data) || 0
+}
+// 랜덤 퀘스트 교체(1츄르) → 갱신된 퀘스트 상태 반환
+export async function rerollRandomQuest() {
+  const { data, error } = await supabase.rpc('reroll_random_quest')
+  if (error) throw error
+  return data
+}
+// 그룹 방문 기록(데일리 '그룹 방문' 퀘스트). 실패는 조용히 무시.
+export async function touchGroupVisit() {
+  try { await supabase.rpc('touch_group_visit') } catch { /* noop */ }
+}
+
 // 내 잔액(츄르/coin) 조회. 원장이 아직 없거나 RPC 미배포 시 0 으로 폴백.
 export async function getMyCoinBalance() {
   const { data, error } = await supabase.rpc('my_coin_balance')

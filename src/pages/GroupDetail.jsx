@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
-  regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt,
+  regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit,
 } from '../lib/api'
 import { isAnnivToday } from '../lib/anniv'
 import {
@@ -238,6 +238,9 @@ export default function GroupDetail() {
   }, [groupId])
 
   useEffect(() => { load() }, [load])
+
+  // 데일리 '그룹 방문' 퀘스트: 그룹 상세 진입 기록(그룹당 1회면 충분)
+  useEffect(() => { touchGroupVisit() }, [groupId])
 
   // 당겨서 새로고침: 전체 스피너 없이 데이터만 다시 불러옴
   const refresh = useCallback(async () => {

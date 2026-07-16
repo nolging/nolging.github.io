@@ -1,23 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getMyProfile, getMyCoinBalance } from '../lib/api'
-import { OTT_BY_KEY } from '../lib/constants'
+import { getQuests, claimQuest, rerollRandomQuest, getMyCoinBalance } from '../lib/api'
 
-// 한국 전화번호 자동 하이픈 (표시용)
-function formatPhone(value) {
-  const d = String(value || '').replace(/\D/g, '').slice(0, 11)
-  if (!d) return ''
-  if (d.startsWith('02')) {
-    if (d.length <= 2) return d
-    if (d.length <= 5) return d.replace(/(\d{2})(\d+)/, '$1-$2')
-    if (d.length <= 9) return d.replace(/(\d{2})(\d{3})(\d+)/, '$1-$2-$3')
-    return d.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3')
-  }
-  if (d.length <= 3) return d
-  if (d.length <= 7) return d.replace(/(\d{3})(\d+)/, '$1-$2')
-  if (d.length <= 10) return d.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2-$3')
-  return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')
+const GRADE_LABEL = { vvip: 'VVIP', vip: 'VIP', normal: '일반' }
+
+function Chevron({ className }) {
+  return (
+    <svg className={className} width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+  )
 }
 
 function CoinCat() {
@@ -36,41 +27,60 @@ function CoinCat() {
   )
 }
 
+function QuestRow({ q, busy, onClaim }) {
+  return (
+    <div className={`quest-row ${q.claimed ? 'is-done' : ''}`}>
+      <div className="quest-info">
+        <span className="quest-label">{q.label}</span>
+        <span className="quest-reward">+{q.reward} 츄르</span>
+      </div>
+      {q.claimed ? (
+        <span className="quest-badge is-done">완료</span>
+      ) : q.done ? (
+        <button type="button" className="quest-claim" disabled={!!busy} onClick={onClaim}>받기</button>
+      ) : (
+        <span className="quest-badge">진행 중</span>
+      )}
+    </div>
+  )
+}
+
 export default function MyProfile() {
   const { profile, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [info, setInfo] = useState({ contact: '', birthdate: '', subscribed_ott: [] })
-  const [coin, setCoin] = useState(null)
+  const [quests, setQuests] = useState(null)
+  const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const [p, b] = await Promise.all([getMyProfile(), getMyCoinBalance()])
-        if (!mounted) return
-        setInfo({
-          contact: p?.contact ? formatPhone(p.contact) : '',
-          birthdate: p?.birthdate ? String(p.birthdate).slice(0, 10) : '',
-          subscribed_ott: Array.isArray(p?.subscribed_ott) ? p.subscribed_ott : [],
-        })
-        setCoin(b)
-      } catch (err) {
-        if (mounted) setError(err.message)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
-    return () => { mounted = false }
-  }, [])
-
-  async function handleLogout() {
-    await logout()
-    navigate('/login')
+  const load = async () => {
+    try {
+      const q = await getQuests()
+      // 퀘스트 RPC 미배포 시엔 잔액만이라도 표시(카드 정상 동작)
+      if (q) setQuests(q)
+      else setQuests({ balance: await getMyCoinBalance(), grade: 'normal', daily: [], random: null })
+      setError('')
+    } catch (err) { setError(err.message) }
   }
+  useEffect(() => { load().finally(() => setLoading(false)) }, [])
 
-  const ottList = info.subscribed_ott.map((k) => OTT_BY_KEY[k]).filter(Boolean)
+  async function claim(key) {
+    if (busy) return
+    setBusy(key); setError('')
+    try { await claimQuest(key); await load() }
+    catch (err) { setError(err.message) } finally { setBusy('') }
+  }
+  async function reroll() {
+    if (busy) return
+    setBusy('reroll'); setError('')
+    try { setQuests(await rerollRandomQuest()) }
+    catch (err) { setError(err.message) } finally { setBusy('') }
+  }
+  async function handleLogout() { await logout(); navigate('/login') }
+
+  const grade = quests?.grade || 'normal'
+  const balance = quests?.balance
+  const canReroll = (balance ?? 0) >= 1
 
   return (
     <div className="page">
@@ -78,58 +88,59 @@ export default function MyProfile() {
         <div className="spinner" />
       ) : (
         <>
-        {error && <div className="alert alert-error">{error}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
-        {/* 츄르 잔액 카드 */}
-        <Link to="/me/coins" className="mp-coin" aria-label="적립·사용 내역">
-          <div className="mp-coin-amount">
-            <span className="mp-coin-num">{coin == null ? '—' : coin.toLocaleString('ko-KR')}</span>
-            <span className="mp-coin-unit">츄르</span>
-          </div>
-          <span className="mp-coin-history">
-            적립·사용 내역
-            <svg width="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
-          </span>
-          <CoinCat />
-        </Link>
-
-        {/* 내 정보 카드 */}
-        <div className="card profile-view">
-          <div className="pv-row">
-            <span className="pv-label">아이디</span>
-            <span className="pv-value">{profile?.login_id || '—'}</span>
-          </div>
-          <div className="pv-row">
-            <span className="pv-label">연락처</span>
-            <span className="pv-value">{info.contact || '—'}</span>
-          </div>
-          <div className="pv-row">
-            <span className="pv-label">생년월일</span>
-            <span className="pv-value">{info.birthdate || '—'}</span>
-          </div>
-          <div className="pv-row">
-            <span className="pv-label">구독 OTT</span>
-            <span className="pv-value">
-              {ottList.length ? (
-                <span className="pv-ott">
-                  {ottList.map((o) => (
-                    <img key={o.key} src={o.logo} alt={o.label} title={o.label} className="pv-ott-logo" />
-                  ))}
-                </span>
-              ) : '—'}
+          {/* 회원 헤더: 아이디 + 등급 + 상세/수정 이동 */}
+          <Link to="/me/edit" className="mp-head" aria-label="회원 정보 보기·수정">
+            <span className="mp-head-main">
+              <span className="mp-head-id">{profile?.login_id || '—'}</span>
+              <span className={`mp-grade mp-grade-${grade}`}>{GRADE_LABEL[grade]}</span>
             </span>
+            <Chevron className="mp-head-chev" />
+          </Link>
+
+          {/* 츄르 잔액 카드 */}
+          <Link to="/me/coins" className="mp-coin" aria-label="적립·사용 내역">
+            <div className="mp-coin-amount">
+              <span className="mp-coin-num">{balance == null ? '—' : balance.toLocaleString('ko-KR')}</span>
+              <span className="mp-coin-unit">츄르</span>
+            </div>
+            <span className="mp-coin-history">
+              적립·사용 내역
+              <svg width="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+            </span>
+            <CoinCat />
+          </Link>
+
+          {/* 퀘스트 (RPC 배포 후 노출) */}
+          {quests?.daily?.length > 0 && (
+            <div className="quests">
+              <div className="quest-title">데일리 퀘스트</div>
+              {(quests.daily || []).map((q) => (
+                <QuestRow key={q.key} q={q} busy={busy} onClaim={() => claim(q.key)} />
+              ))}
+
+              <div className="quest-title">랜덤 퀘스트</div>
+              {quests.random ? (
+                <>
+                  <QuestRow q={quests.random} busy={busy} onClaim={() => claim(quests.random.key)} />
+                  <button type="button" className="quest-reroll" onClick={reroll} disabled={busy === 'reroll' || !canReroll}>
+                    {busy === 'reroll' ? '바꾸는 중…' : '🔄 다른 퀘스트로 바꾸기 (1 츄르)'}
+                  </button>
+                </>
+              ) : (
+                <div className="quest-row"><span className="quest-label">준비 중이에요</span></div>
+              )}
+            </div>
+          )}
+
+          {isAdmin && (
+            <Link to="/admin" className="btn btn-block admin-entry">관리자 페이지</Link>
+          )}
+
+          <div className="mp-logout">
+            <button type="button" className="mp-logout-link" onClick={handleLogout}>로그아웃</button>
           </div>
-        </div>
-
-        <button type="button" className="btn mp-edit-btn" onClick={() => navigate('/me/edit')}>프로필 수정</button>
-
-        {isAdmin && (
-          <Link to="/admin" className="btn btn-block admin-entry">관리자 페이지</Link>
-        )}
-
-        <div className="mp-logout">
-          <button type="button" className="mp-logout-link" onClick={handleLogout}>로그아웃</button>
-        </div>
         </>
       )}
     </div>
