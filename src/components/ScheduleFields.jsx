@@ -28,7 +28,7 @@ function fmtTime(s) {
 // 일정 상태 기본값
 export function defaultSchedule() {
   return {
-    dateOn: true, timeOn: true, date: defaultScheduleDate(), time: defaultTime(),
+    dateOn: true, timeOn: false, date: defaultScheduleDate(), time: defaultTime(),
     repeat: 'none', cFreq: 'weekly', cInterval: 1, cWeekdays: [], untilOn: false, until: defaultScheduleDate(),
     remind: '', participants: [],
   }
