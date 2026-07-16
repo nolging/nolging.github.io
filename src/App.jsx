@@ -24,6 +24,7 @@ import GroupConfigPage from './pages/GroupConfigPage'
 import JoinGroup from './pages/JoinGroup'
 import SchedulePage from './pages/SchedulePage'
 import MyProfile from './pages/MyProfile'
+import MemberInfo from './pages/MemberInfo'
 import ProfileEdit from './pages/ProfileEdit'
 import CoinHistory from './pages/CoinHistory'
 import Notifications from './pages/Notifications'
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/notifications/settings" element={<NotificationSettings />} />
         <Route path="/me" element={<MyProfile />} />
+        <Route path="/me/info" element={<MemberInfo />} />
         <Route path="/me/edit" element={<ProfileEdit />} />
         <Route path="/me/coins" element={<CoinHistory />} />
         {/* 상점·쪽지: 모든 로그인 사용자 접근 가능 */}

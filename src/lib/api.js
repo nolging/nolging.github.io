@@ -1278,6 +1278,21 @@ export async function getMyProfile() {
   return Array.isArray(data) ? data[0] : data
 }
 
+// 내 회원 등급: 커플 링(장착)=vvip, 우정 링(장착)=vip, 그 외 normal.
+export async function getMyGrade() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.id) return 'normal'
+  const { data, error } = await supabase
+    .from('user_items')
+    .select('item_id')
+    .eq('user_id', user.id)
+    .eq('status', 'used')
+    .in('item_id', ['couple-ring', 'friend-ring'])
+  if (error) return 'normal'
+  const ids = new Set((data || []).map((r) => r.item_id))
+  return ids.has('couple-ring') ? 'vvip' : ids.has('friend-ring') ? 'vip' : 'normal'
+}
+
 export async function updateMyProfile({ contact, birthdate, subscribed_ott }) {
   const { data, error } = await supabase.rpc('update_my_profile', {
     p_contact: contact || null,

@@ -141,6 +141,7 @@ export default function Layout() {
   const notesMatch = useMatch('/notes')
   const noteNewMatch = useMatch('/notes/new')
   const meMatch = useMatch('/me')
+  const memberInfoMatch = useMatch('/me/info')
   const profileEditMatch = useMatch('/me/edit')
   const coinHistoryMatch = useMatch('/me/coins')
   const groupMatch = useMatch('/groups/:groupId')
@@ -532,12 +533,20 @@ export default function Layout() {
         <Link to={`/groups/${id}/settings/group`} className={`btn btn-ghost btn-sm icon-btn ${(headerFilter || headerInvite) ? '' : 'push-right'}`} aria-label="그룹 정보 수정" title="그룹 정보 수정"><GearIcon /></Link>
       </header>
     )
-  } else if (profileEditMatch) {
-    // 프로필 수정: 좌측 뒤로(마이 페이지로), 제목 "프로필 수정"
+  } else if (memberInfoMatch) {
+    // 회원 정보 조회: 좌측 뒤로(마이 페이지로), 제목 "회원 정보"
     topbar = (
       <header className="topbar">
         <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">프로필 수정</span>
+        <span className="topbar-heading">회원 정보</span>
+      </header>
+    )
+  } else if (profileEditMatch) {
+    // 회원 정보 수정: 좌측 뒤로(회원 정보로), 제목 "회원 정보 수정"
+    topbar = (
+      <header className="topbar">
+        <Link to="/me/info" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">회원 정보 수정</span>
       </header>
     )
   } else if (coinHistoryMatch) {
