@@ -8,6 +8,7 @@ import {
   getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
+import { resolveMentions, splitMentions } from '../lib/mentions'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
@@ -104,6 +105,10 @@ export default function TaskDetail() {
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
   const inputRef = useRef(null)
+  // @멘션 자동완성
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const mentionRange = useRef(null) // 본문에서 @토큰 위치 { start, end }
 
   // ---- 추억 리뷰 서브탭(댓글/리뷰) ----
   const [subTab, setSubTab] = useState(location.state?.openReview ? 'reviews' : 'comments')
@@ -167,6 +172,57 @@ export default function TaskDetail() {
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
   const avatarOf = (uid) => nameMap[uid]?.avatar
   const decoOf = (uid) => decoMap[uid]
+
+  // @멘션 자동완성 후보 (자기 자신 제외)
+  const mentionSuggest = useMemo(() => {
+    if (!mentionOpen) return []
+    const q = mentionQuery.toLowerCase()
+    return members
+      .filter((m) => m.user_id !== profile?.id && m.display_nickname)
+      .filter((m) => !q || m.display_nickname.toLowerCase().includes(q))
+      .slice(0, 6)
+  }, [mentionOpen, mentionQuery, members, profile?.id])
+
+  // 입력 변경 시 커서 앞 @토큰을 감지해 자동완성 열기
+  function onBodyChange(e) {
+    const val = e.target.value
+    setBody(val)
+    const pos = e.target.selectionStart ?? val.length
+    const upto = val.slice(0, pos)
+    const at = upto.lastIndexOf('@')
+    if (at >= 0) {
+      const between = upto.slice(at + 1)
+      const prev = at > 0 ? upto[at - 1] : ''
+      // @ 앞은 시작/공백/구두점, @ 뒤 토큰엔 공백·개행 없음
+      if (!/[\w가-힣]/.test(prev) && !/\s/.test(between)) {
+        mentionRange.current = { start: at, end: pos }
+        setMentionQuery(between)
+        setMentionOpen(true)
+        return
+      }
+    }
+    setMentionOpen(false)
+  }
+
+  // 후보 선택 → @닉네임 삽입
+  function pickMention(m) {
+    const r = mentionRange.current
+    const insert = `@${m.display_nickname} `
+    const before = r ? body.slice(0, r.start) : body
+    const after = r ? body.slice(r.end) : ''
+    const next = before + insert + after
+    setBody(next)
+    setMentionOpen(false)
+    requestAnimationFrame(() => {
+      const el = inputRef.current
+      if (el) { const p = (before + insert).length; el.focus(); el.setSelectionRange(p, p) }
+    })
+  }
+
+  // 댓글 본문에서 @멘션을 강조 렌더
+  const renderCommentBody = (text) =>
+    splitMentions(text, members).map((p, i) =>
+      p.mention ? <span key={i} className="mention-chip">{p.mention}</span> : <span key={i}>{p.text}</span>)
 
   // 최상위 댓글과, 각 최상위 댓글에 딸린 답글(답글의 답글까지 모두 한 단계로 평면화)
   const { roots, repliesOf } = useMemo(() => {
@@ -365,11 +421,14 @@ export default function TaskDetail() {
         targetId = editingId
         setEditingId(null)
       } else {
-        const created = await addComment({ taskId, groupId, body: body.trim(), authorId: profile.id, parentId: replyParent?.id })
+        const created = await addComment({
+          taskId, groupId, body: body.trim(), authorId: profile.id, parentId: replyParent?.id,
+          mentionedIds: resolveMentions(body.trim(), members),
+        })
         targetId = created?.id
         setReplyParent(null)
       }
-      setBody(''); await loadComments()
+      setBody(''); setMentionOpen(false); await loadComments()
       setHighlightId(targetId || null)
     } catch (err) { setError(err.message) } finally { setSending(false) }
   }
@@ -432,7 +491,7 @@ export default function TaskDetail() {
               )}
             </div>
           </div>
-          <p className="comment-text">{c.body}</p>
+          <p className="comment-text">{renderCommentBody(c.body)}</p>
         </div>
       </div>
     )
@@ -728,9 +787,21 @@ export default function TaskDetail() {
                 <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
               </div>
             )}
+            {mentionOpen && mentionSuggest.length > 0 && (
+              <div className="mention-pop" role="listbox">
+                {mentionSuggest.map((m) => (
+                  <button type="button" key={m.user_id} className="mention-opt" role="option"
+                    onMouseDown={(e) => { e.preventDefault(); pickMention(m) }}>
+                    <Avatar src={m.avatar_url} name={m.display_nickname} size={26} deco={decoOf(m.user_id)} />
+                    <span className="mention-opt-name">{m.display_nickname}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="composer-row">
-              <input ref={inputRef} value={body} onChange={(e) => setBody(e.target.value)}
-                placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
+              <input ref={inputRef} value={body} onChange={onBodyChange}
+                onKeyDown={(e) => { if (e.key === 'Escape' && mentionOpen) { e.preventDefault(); setMentionOpen(false) } }}
+                placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요 (@로 멤버 호출)'} />
               <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
             </div>
           </form>

@@ -19,6 +19,7 @@ function timeAgo(iso) {
 const ICONS = {
   reply: '↩︎',
   task_comment: '💬',
+  mention: '@',
   new_task: '📝',
   new_member: '👋',
   accept: '🙌',

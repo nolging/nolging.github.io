@@ -598,11 +598,15 @@ export async function listComments(taskId) {
   return data ?? []
 }
 
-export async function addComment({ taskId, groupId, body, authorId, parentId }) {
-  const { data, error } = await supabase
-    .from('task_comments')
-    .insert({ task_id: taskId, group_id: groupId, body, author_id: authorId, parent_id: parentId ?? null })
-    .select().single()
+export async function addComment({ taskId, groupId, body, authorId, parentId, mentionedIds }) {
+  const row = { task_id: taskId, group_id: groupId, body, author_id: authorId, parent_id: parentId ?? null }
+  if (mentionedIds && mentionedIds.length) row.mentioned_ids = mentionedIds
+  let { data, error } = await supabase.from('task_comments').insert(row).select().single()
+  // mentioned_ids 컬럼 미배포 환경에서도 댓글은 정상 등록되도록 폴백
+  if (error && (error.code === '42703' || /mentioned_ids/.test(error.message || ''))) {
+    delete row.mentioned_ids
+    ;({ data, error } = await supabase.from('task_comments').insert(row).select().single())
+  }
   if (error) throw error
   return data
 }

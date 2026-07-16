@@ -893,11 +893,26 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .app-bottom { flex: 0 0 auto; }
 .app-bottom:empty { display: none; }
 .composer {
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 8px; position: relative;
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 12px 14px calc(24px + env(safe-area-inset-bottom));
   max-width: 1080px; width: 100%; margin: 0 auto;
 }
+/* @멘션 자동완성 팝업 (입력창 위로) */
+.mention-pop {
+  position: absolute; left: 14px; right: 14px; bottom: calc(100% - 6px);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14); overflow: hidden; z-index: 30; max-height: 236px; overflow-y: auto;
+}
+.mention-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px;
+  background: none; border: none; cursor: pointer; text-align: left; font-size: 14px; color: var(--text);
+}
+.mention-opt:active, .mention-opt:hover { background: var(--surface-2, rgba(115,99,232,.08)); }
+.mention-opt + .mention-opt { border-top: 1px solid var(--border); }
+.mention-opt-name { font-weight: 600; }
+/* 본문 내 @멘션 강조 */
+.mention-chip { color: #7363e8; font-weight: 700; }
 /* 키보드가 올라오면 세이프에어리어/추가 여백이 필요 없어, 위(12px)와 같은 여백으로 */
 .app-shell.kb-open .composer { padding-bottom: 12px; }
 .composer-row { display: flex; gap: 8px; align-items: stretch; }
@@ -1129,6 +1144,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .notif-ic-gift, .notif-ic-wish, .notif-ic-reminder { background: #eeebfe; }
 .notif-ic-new_member, .notif-ic-accept { background: #e8f4ec; }
 .notif-ic-reply, .notif-ic-task_comment { background: #fdeee6; }
+.notif-ic-mention { background: #ece9fb; color: #7363e8; font-weight: 800; }
 .notif-body { flex: 1; min-width: 0; }
 .notif-line { display: flex; align-items: center; gap: 6px; }
 .notif-dot { position: absolute; top: 18px; right: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
