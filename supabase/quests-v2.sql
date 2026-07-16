@@ -9,12 +9,15 @@ create table if not exists public.quest_defs (
   id          text primary key,
   title       text not null,
   body        text not null default '',
+  emoji       text not null default '✨',    -- 마이 페이지 랜덤 퀘스트 카드 아이콘
   reward      int  not null default 1 check (reward >= 0),
   grade       text not null default 'all',   -- all | premium | vvip | vip
   active      boolean not null default true,
   sort_order  int not null default 0,
   created_at  timestamptz not null default now()
 );
+-- 기존 배포에 emoji 컬럼 추가(이미 있으면 무시)
+alter table public.quest_defs add column if not exists emoji text not null default '✨';
 alter table public.quest_defs enable row level security;
 drop policy if exists quest_defs_select on public.quest_defs;
 create policy quest_defs_select on public.quest_defs for select to authenticated using (true);
@@ -23,14 +26,14 @@ create policy quest_defs_write on public.quest_defs for all to authenticated
   using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 
 -- 기존 7종 시드
-insert into public.quest_defs (id, title, body, reward, grade, active, sort_order) values
-  ('r_wish','위시 작성하기','아무 그룹에나 위시를 하나 작성해요.',2,'all',true,1),
-  ('r_item_note','아이템 넣어 쪽지 보내기','선물 상자·카세트·비디오 등 아이템을 담아 쪽지를 보내요.',3,'all',true,2),
-  ('r_nyangpito','냥피또 긁기','냥피또를 한 번 긁어요.',2,'all',true,3),
-  ('r_buy','상점에서 아이템 구매하기','상점에서 아이템을 하나 구매해요.',2,'all',true,4),
-  ('r_spend10','10츄르 이상 사용하기','10츄르 이상을 사용해요.',3,'all',true,5),
-  ('r_game_win','게임에서 승리하기','미니 게임에서 승리해요.',3,'premium',true,6),
-  ('r_poke','콕 찌르기','상대를 콕 찔러요.',1,'premium',true,7)
+insert into public.quest_defs (id, title, body, emoji, reward, grade, active, sort_order) values
+  ('r_wish','위시 작성하기','아무 그룹에나 위시를 하나 작성해요.','⭐',2,'all',true,1),
+  ('r_item_note','아이템 넣어 쪽지 보내기','선물 상자·카세트·비디오 등 아이템을 담아 쪽지를 보내요.','💌',3,'all',true,2),
+  ('r_nyangpito','냥피또 긁기','냥피또를 한 번 긁어요.','🐾',2,'all',true,3),
+  ('r_buy','상점에서 아이템 구매하기','상점에서 아이템을 하나 구매해요.','🛍️',2,'all',true,4),
+  ('r_spend10','10츄르 이상 사용하기','10츄르 이상을 사용해요.','🪙',3,'all',true,5),
+  ('r_game_win','게임에서 승리하기','미니 게임에서 승리해요.','🎮',3,'premium',true,6),
+  ('r_poke','콕 찌르기','상대를 콕 찔러요.','👉',1,'premium',true,7)
 on conflict (id) do nothing;
 
 -- 2) 5칸 슬롯(단일 랜덤 퀘스트 폐기)
@@ -126,6 +129,7 @@ begin
       'key',    s.quest_key,
       'title',  dq.title,
       'body',   dq.body,
+      'emoji',  dq.emoji,
       'reward', dq.reward,
       'done',   case when s.available_at <= now() then public._quest_done(s.quest_key, s.assigned_at) else false end
     ) order by s.slot)

@@ -558,10 +558,11 @@ export default function Layout() {
       </header>
     )
   } else if (meMatch) {
-    // 마이 페이지: 좌측 "마이 페이지" 제목 (츄르 잔액은 페이지 내 카드로 이동)
+    // 마이 페이지: 좌측 "마이 페이지" 제목, (관리자면) 우측 관리자 페이지 링크
     topbar = (
       <header className="topbar">
         <span className="topbar-heading topbar-title-lg">마이 페이지</span>
+        {isAdmin && <Link to="/admin" className="topbar-admin">관리자</Link>}
       </header>
     )
   } else if (scheduleMatch) {
@@ -650,7 +651,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''}`} ref={shellRef}>
       {storePremium && (
         <div className="premium-backdrop" aria-hidden="true">
           {PREM_STARS.map(([l, t, s, c, d, dl], i) => (

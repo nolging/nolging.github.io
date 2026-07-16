@@ -4,7 +4,7 @@ import { adminCreateUser, adminListUsers, adminSetStatus, adminDeleteUser, admin
   adminListQuestDefs, adminUpsertQuestDef, adminDeleteQuestDef } from '../lib/api'
 import { formatCoin } from '../lib/constants'
 
-const EMPTY_QUEST = { id: '', title: '', body: '', reward: '', grade: 'all', sort_order: '', active: true }
+const EMPTY_QUEST = { id: '', title: '', body: '', emoji: '', reward: '', grade: 'all', sort_order: '', active: true }
 const QUEST_GRADES = [
   { key: 'all', label: '전체(모든 회원)' },
   { key: 'premium', label: '프리미엄(커플·우정)' },
@@ -94,7 +94,7 @@ export default function Admin() {
   useEffect(() => { loadQuests() }, [loadQuests])
   function startAddQuest() { setQuestForm(EMPTY_QUEST); setEditingQuest(false) }
   function startEditQuest(q) {
-    setQuestForm({ id: q.id, title: q.title, body: q.body || '', reward: String(q.reward), grade: q.grade, sort_order: String(q.sort_order ?? ''), active: q.active })
+    setQuestForm({ id: q.id, title: q.title, body: q.body || '', emoji: q.emoji || '', reward: String(q.reward), grade: q.grade, sort_order: String(q.sort_order ?? ''), active: q.active })
     setEditingQuest(true)
   }
   async function questAct(fn, okMsg) {
@@ -337,6 +337,8 @@ export default function Admin() {
           <label className="field"><span>내용</span>
             <textarea rows={2} value={questForm.body} onChange={setQuestField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></label>
           <div className="field-row">
+            <label className="field field-narrow"><span>이모지</span>
+              <input value={questForm.emoji} onChange={setQuestField('emoji')} placeholder="예: ⭐" maxLength={4} autoCapitalize="none" /></label>
             <label className="field field-narrow"><span>보상(츄르) *</span>
               <input type="number" inputMode="numeric" min="0" value={questForm.reward} onChange={setQuestField('reward')} placeholder="예: 2" /></label>
             <label className="field field-narrow"><span>정렬</span>
@@ -363,7 +365,7 @@ export default function Admin() {
               {questDefs.map((q) => (
                 <tr key={q.id} style={{ opacity: q.active ? 1 : .5 }}>
                   <td className="muted sm">{q.id}</td>
-                  <td>{q.title}</td>
+                  <td>{q.emoji ? `${q.emoji} ` : ''}{q.title}</td>
                   <td>+{q.reward}</td>
                   <td className="muted sm">{QUEST_GRADE_LABEL[q.grade] || q.grade}</td>
                   <td><span className={`badge ${q.active ? 'badge-done' : 'badge'}`}>{q.active ? '활성' : '비활성'}</span></td>

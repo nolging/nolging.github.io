@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, getMyGrade, changeMyPassword } from '../lib/api'
 import { OTT_BY_KEY } from '../lib/constants'
@@ -118,10 +118,10 @@ export default function MemberInfo() {
           )}
           {pwOk && <div className="alert alert-success">{pwOk}</div>}
 
-          <Link to="/me/edit" state={{ grade }} className="mi-edit-btn">
+          <button type="button" className="mi-edit-btn" onClick={() => navigate('/me/edit', { state: { grade } })}>
             <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" /></svg>
             회원 정보 수정
-          </Link>
+          </button>
 
           <div className="mp-logout">
             <button type="button" className="mp-logout-link" onClick={handleLogout}>로그아웃</button>

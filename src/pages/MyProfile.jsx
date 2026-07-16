@@ -90,6 +90,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
   const cdMs = s.cooldown_until ? new Date(s.cooldown_until).getTime() - now : 0
   const cooling = cdMs > 0
   const ic = questIcon(s.key)
+  const emoji = s.emoji || ic.emoji
   return (
     <div className={`quest-slot-card ${cooling ? 'is-cooling' : ''} ${s.done ? 'is-ready' : ''}`}>
       {!cooling && !s.done && (
@@ -103,7 +104,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
       </div>
       <div className="quest-slot-foot">
         <div className="quest-slot-meta">
-          <span className="quest-ic sm" style={{ background: ic.bg }}>{ic.emoji}</span>
+          <span className="quest-ic sm" style={{ background: ic.bg }}>{emoji}</span>
           <span className="quest-reward"><Paw size={15} />{s.reward ?? 0}</span>
         </div>
         {cooling ? (
@@ -122,7 +123,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
 }
 
 export default function MyProfile() {
-  const { profile, isAdmin } = useAuth()
+  const { profile } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [quests, setQuests] = useState(null)
@@ -246,10 +247,6 @@ export default function MyProfile() {
                 </>
               )}
             </div>
-          )}
-
-          {isAdmin && (
-            <Link to="/admin" className="btn btn-block admin-entry">관리자 페이지</Link>
           )}
         </>
       )}
