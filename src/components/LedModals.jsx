@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import LedBanner, { LED_COLORS } from './LedBanner'
+import StoreItemImage from './StoreItemImage'
+import { imgBgOf } from '../lib/storeMeta'
 import { useLedboard, editLedBanner, stopLedBanner } from '../lib/api'
 
 export const MAX_LED_TEXT = 60
@@ -37,8 +39,12 @@ export function LedboardModal({ open, onClose, onDone }) {
     catch (e) { setError(e.message); setSending(false) }
   }
   return (
-    <Modal open={open} onClose={onClose} title="전광판">
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
+        <div className="nc-link-head">
+          <span className="nc-link-ico" style={{ background: imgBgOf('ledboard') }}><StoreItemImage id="ledboard" emoji="📟" className="nc-img" /></span>
+          <div><div className="nc-link-name">전광판</div><div className="nc-link-sub">커플만 쓸 수 있는 프리미엄 전광판</div></div>
+        </div>
         {error && <div className="alert alert-error">{error}</div>}
         <p className="couple-hint">24 시간 동안 우리 커플에게만 보여요.</p>
         <LedBanner text={text || '미리보기'} color={color} />

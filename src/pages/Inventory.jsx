@@ -15,6 +15,16 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const MAX_WISH = 300
 
+// 인벤토리 모달 공용 헤더 — 좌측 정렬(이미지 + 아이템명 한 줄), 사용 아이템은 설명(1줄) 포함
+function ItemHead({ id, name, sub, emoji }) {
+  return (
+    <div className="nc-link-head">
+      <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
+      <div><div className="nc-link-name">{name}</div>{sub && <div className="nc-link-sub">{sub}</div>}</div>
+    </div>
+  )
+}
+
 export default function Inventory() {
   const { user } = useAuth()
   const { refreshCoin } = useOutletContext()
@@ -248,10 +258,10 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={item?.name || '프로필 꾸미기'}>
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
+        <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} sub={item?.desc} emoji="✨" />
         {error && <div className="alert alert-error">{error}</div>}
-        {item?.desc && <p className="deco-desc">{item.desc}</p>}
 
         {applied && (
           <div className="couple-to">
@@ -329,10 +339,10 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={item?.name || '그룹 테마'}>
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
+        <ItemHead id={item?.id} name={item?.name || '그룹 테마'} sub="프리미엄 그룹에 적용하는 꾸미기 테마" emoji="💕" />
         {error && <div className="alert alert-error">{error}</div>}
-        <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그룹 카드와 상세 화면이 꾸며져요.</p>
 
         {applied && (
           <div className="couple-to">
@@ -406,8 +416,9 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
   const win = known && prize > 0
 
   return (
-    <Modal open={open} onClose={handleClose} title="냥피또">
+    <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal">
       <div className="scratch-modal">
+        <ItemHead id="nyangpito" name="냥피또" sub="동전으로 긁으면 츄르가 쏟아질지도?" emoji="🐱" />
         {error ? (
           <>
             <div className="alert alert-error">{error}</div>
@@ -602,8 +613,9 @@ function WishModal({ open, onClose, wishRows, onUsed }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="소원권 사용">
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="wish-modal">
+        <ItemHead id="wish" name="소원권" sub="받은 소원권으로 소원을 빌어 보세요" emoji="🎫" />
         {error && <div className="alert alert-error">{error}</div>}
         <div className="wish-to">
           <span className="wish-to-label">To.</span>
@@ -682,8 +694,9 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="커플 링 나눠 끼기">
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
+        <ItemHead id="couple-ring" name="커플 링" sub="연인과 나눠 끼면 특별한 능력이 생겨요" emoji="💍" />
         {error && <div className="alert alert-error">{error}</div>}
         <p className="couple-hint">멤버가 2명인 그룹에서 함께 낄 수 있어요. 상대가 수령하면 그때 적용돼요.</p>
 
@@ -748,8 +761,9 @@ function FriendModal({ open, onClose, myId, excludeGroupIds, onDone }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="우정 링 나눠 끼기">
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
+        <ItemHead id="friend-ring" name="우정 링" sub="친구와 나눠 끼면 특별한 능력이 생겨요" emoji="🤝" />
         {error && <div className="alert alert-error">{error}</div>}
         <p className="couple-hint">멤버 2명 이상 그룹에 사용하면 바로 적용돼요. 모든 멤버에게 우정 링 쪽지가 전송돼요.</p>
 
