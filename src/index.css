@@ -2077,12 +2077,27 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ===== 물풍선 폭탄 쪽지 ===== */
 /* 작성 화면: 타이머 설정 */
-.nc-timer { margin-top: 9px; display: flex; flex-direction: column; align-items: center; }
+.nc-timer { margin-top: 12px; display: flex; flex-direction: column; align-items: center; }
 .nc-timer-val { font-size: 30px; font-weight: 800; color: #2f83c9; letter-spacing: -1px; line-height: 1; }
 .nc-timer-val span { font-size: 15px; }
-/* 기본(accent-color) 디자인 유지. 트랙을 썸 반지름만큼 좌우로 넓혀 썸이 양끝까지 이동하게 함 */
-.nc-timer-range { width: calc(100% + 16px); accent-color: #3f9bde; margin: 9px 0 0; }
-.nc-timer-ends { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 3px; }
+/* 커스텀 슬라이더: 썸(18px)을 고정 크기로 → 트랙을 썸 너비만큼 넓혀 양끝까지 이동.
+   채움(파란색)은 --pct(값 비율)로 그린다. 썸이 양끝의 오차(±썸반지름)를 정확히 덮는다. */
+.nc-timer-range {
+  -webkit-appearance: none; appearance: none;
+  width: calc(100% + 18px); margin: 12px -9px 0; height: 18px; background: transparent; cursor: pointer;
+}
+.nc-timer-range::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(to right, #3f9bde var(--pct, 0%), #e5e2ec var(--pct, 0%));
+}
+.nc-timer-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -6px;
+  border-radius: 50%; background: #fff; border: 1px solid #e2dfea; box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
+}
+.nc-timer-range::-moz-range-track { height: 6px; border-radius: 999px; background: #e5e2ec; }
+.nc-timer-range::-moz-range-progress { height: 6px; border-radius: 999px; background: #3f9bde; }
+.nc-timer-range::-moz-range-thumb { width: 18px; height: 18px; border: 1px solid #e2dfea; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .22); }
+.nc-timer-ends { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 1px; }
 .nc-link-err { margin-top: 8px; font-size: 12px; font-weight: 600; color: #e0322f; text-align: center; }
 
 /* 모달: 헤더 우측 카운트다운(시계 아이콘 + 분:초) */

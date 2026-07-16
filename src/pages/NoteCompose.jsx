@@ -432,7 +432,8 @@ export default function NoteCompose() {
           <div className="nc-timer">
             <div className="nc-timer-val">{timerVal} <span>초</span></div>
             <input type="range" className="nc-timer-range" min={TIMER_MIN} max={TIMER_MAX} step={1}
-              value={timerVal} onChange={(e) => setTimerVal(Number(e.target.value))} />
+              value={timerVal} style={{ '--pct': `${((timerVal - TIMER_MIN) / (TIMER_MAX - TIMER_MIN)) * 100}%` }}
+              onChange={(e) => setTimerVal(Number(e.target.value))} />
             <div className="nc-timer-ends"><span>{TIMER_MIN} 초</span><span>{TIMER_MAX} 초</span></div>
           </div>
           <button type="button" className="nc-sheet-confirm" onClick={confirmTimer}>세팅하기</button>
