@@ -1366,6 +1366,11 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 .fab:hover { filter: brightness(1.06); text-decoration: none; }
 .fab:active { transform: scale(.94); }
+/* 하트 뿅뿅 테마 그룹: FAB 를 어울리는 분홍 그라데이션으로 */
+.gd-themed .fab {
+  background: linear-gradient(140deg, #ff9ec0, #ef6591);
+  box-shadow: 0 10px 24px rgba(236, 106, 143, .4);
+}
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px) {
   .fab-above-nav { bottom: 94px; }
