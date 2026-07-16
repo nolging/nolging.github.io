@@ -812,7 +812,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used),and(item_id.like.deco-*,status.eq.used)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
