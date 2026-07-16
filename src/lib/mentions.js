@@ -15,19 +15,21 @@ export function resolveMentions(text, members) {
   return [...ids]
 }
 
-// 렌더용: 본문을 [{text}] 또는 [{mention}] 조각들로 분할.
+// 렌더용: 본문을 [{text}] 또는 [{mention, userId}] 조각들로 분할.
 export function splitMentions(text, members) {
-  const names = [...members].map((m) => m.display_nickname).filter(Boolean)
-    .sort((a, b) => b.length - a.length)
-  if (!text || !names.length) return [{ text: text || '' }]
-  const re = new RegExp(`@(?:${names.map(escapeRe).join('|')})(?=$|[^\\w가-힣])`, 'g')
+  const withNick = [...members].filter((m) => m.display_nickname)
+    .sort((a, b) => b.display_nickname.length - a.display_nickname.length)
+  if (!text || !withNick.length) return [{ text: text || '' }]
+  const nameToId = {}
+  for (const m of withNick) if (!(m.display_nickname in nameToId)) nameToId[m.display_nickname] = m.user_id
+  const re = new RegExp(`@(?:${withNick.map((m) => escapeRe(m.display_nickname)).join('|')})(?=$|[^\\w가-힣])`, 'g')
   const parts = []
   let last = 0, mt
   while ((mt = re.exec(text))) {
     const prev = mt.index > 0 ? text[mt.index - 1] : ''
     if (prev && BOUNDARY.test(prev)) continue // 앞 글자가 이어지면 멘션 아님
     if (mt.index > last) parts.push({ text: text.slice(last, mt.index) })
-    parts.push({ mention: mt[0] })
+    parts.push({ mention: mt[0], userId: nameToId[mt[0].slice(1)] })
     last = mt.index + mt[0].length
   }
   if (last < text.length) parts.push({ text: text.slice(last) })

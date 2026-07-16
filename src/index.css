@@ -911,8 +911,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .mention-opt:active, .mention-opt:hover { background: var(--surface-2, rgba(115,99,232,.08)); }
 .mention-opt + .mention-opt { border-top: 1px solid var(--border); }
 .mention-opt-name { font-weight: 600; }
-/* 본문 내 @멘션 강조 */
-.mention-chip { color: #7363e8; font-weight: 700; }
+/* 본문 내 @멘션 강조 (클릭 가능) */
+.mention-chip {
+  color: #7363e8; font-weight: 700; background: none; border: none; padding: 0;
+  font: inherit; cursor: pointer; display: inline;
+}
+button.mention-chip:active { opacity: .6; }
 /* 키보드가 올라오면 세이프에어리어/추가 여백이 필요 없어, 위(12px)와 같은 여백으로 */
 .app-shell.kb-open .composer { padding-bottom: 12px; }
 .composer-row { display: flex; gap: 8px; align-items: stretch; }

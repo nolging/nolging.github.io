@@ -219,10 +219,18 @@ export default function TaskDetail() {
     })
   }
 
-  // 댓글 본문에서 @멘션을 강조 렌더
+  // 댓글 본문에서 @멘션을 강조 렌더 + 클릭 시 해당 멤버 상세로 이동
   const renderCommentBody = (text) =>
-    splitMentions(text, members).map((p, i) =>
-      p.mention ? <span key={i} className="mention-chip">{p.mention}</span> : <span key={i}>{p.text}</span>)
+    splitMentions(text, members).map((p, i) => {
+      if (!p.mention) return <span key={i}>{p.text}</span>
+      if (!p.userId) return <span key={i} className="mention-chip">{p.mention}</span>
+      return (
+        <button type="button" key={i} className="mention-chip"
+          onClick={(e) => { e.stopPropagation(); navigate(`/groups/${groupId}/members/${p.userId}`, { state: { from: 'task' } }) }}>
+          {p.mention}
+        </button>
+      )
+    })
 
   // 최상위 댓글과, 각 최상위 댓글에 딸린 답글(답글의 답글까지 모두 한 단계로 평면화)
   const { roots, repliesOf } = useMemo(() => {
