@@ -2024,6 +2024,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-card-peer { font-weight: 700; font-size: 14px; color: var(--text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .note-card-rel { font-weight: 500; font-size: 12px; color: var(--muted); }
 .note-card-date { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+/* 안 읽은 쪽지: 시간 우측에 점(시간이 점 자리만큼 왼쪽으로 밀림) */
+.note-card-when { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.note-card-unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
 /* 본문 줄: [본문(줄임)] [배지(우측 고정)] — 배지가 본문과 같은 줄에 항상 보임 */
 .note-card-bodyrow { display: flex; align-items: center; gap: 8px; }
 /* 모든 쪽지 카드 본문은 한 줄만 표시(넘치면 ...). nowrap 이라 두 줄로 늘어나지 않음 */
@@ -2666,6 +2669,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   .bottomnav a svg { width: 21px; height: 21px; }
   .bottomnav a:hover { text-decoration: none; color: var(--muted); }
   .bottomnav a.active { color: var(--primary); font-weight: 700; }
+  /* 안 읽은 쪽지 점 (아이콘 우측 상단) */
+  .bottomnav a.nav-note { position: relative; }
+  .bottomnav .nav-dot {
+    position: absolute; top: 2px; left: 50%; transform: translateX(7px);
+    width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+  }
   /* 플로팅(아일랜드) 탭 뒤로 지나가는 콘텐츠를 자연스럽게 뿌옇게(블러+페이드) */
   .app-shell.has-nav::after {
     content: ''; position: absolute; left: 0; right: 0; bottom: 0; z-index: 15;

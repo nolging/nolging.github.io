@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
-import { unreadNotificationCount, getMyCoinBalance } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
 import MiniPlayer from './MiniPlayer'
@@ -96,9 +96,10 @@ const StoreIcon = () => tabSvg(<>
   <line x1="3" y1="6" x2="21" y2="6" />
   <path d="M16 10a4 4 0 0 1-8 0" />
 </>)
-// 쪽지: 말풍선 (시안)
+// 쪽지: 편지봉투
 const NoteIcon = () => tabSvg(<>
-  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  <rect x="3" y="5" width="18" height="14" rx="2" />
+  <path d="M3 7l9 6 9-6" />
 </>)
 
 // 프리미엄 상점 배경의 반짝이는 별 (앱 전체를 덮는 고정 백드롭에 렌더)
@@ -268,6 +269,16 @@ export default function Layout() {
     return () => clearInterval(iv)
   }, [])
   useEffect(() => { refreshUnread() }, [location.pathname])
+
+  // 하단 탭 '쪽지' 점: 안 읽은 받은 쪽지가 있으면 표시
+  const [noteUnread, setNoteUnread] = useState(0)
+  const refreshNoteUnread = () => unreadNoteCount(profile?.id).then(setNoteUnread).catch(() => {})
+  useEffect(() => {
+    refreshNoteUnread()
+    const iv = setInterval(refreshNoteUnread, 60000)
+    return () => clearInterval(iv)
+  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refreshNoteUnread() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
   const [coin, setCoin] = useState(null)
@@ -634,7 +645,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setStorePremium, refreshCoin, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
@@ -643,7 +654,7 @@ export default function Layout() {
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
           <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>
-          <NavLink to="/notes"><NoteIcon /><span>쪽지</span></NavLink>
+          <NavLink to="/notes" className="nav-note"><NoteIcon /><span>쪽지</span>{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</NavLink>
           <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
         </nav>
       )}

@@ -728,6 +728,22 @@ export async function listReceivedNotes(userId) {
   throw error
 }
 
+// 받은 쪽지 중 아직 확인 안 한(is_read=false) 개수
+export async function unreadNoteCount(userId) {
+  if (!userId) return 0
+  const { count, error } = await supabase
+    .from('notes').select('id', { count: 'exact', head: true })
+    .eq('recipient_id', userId).eq('is_read', false)
+  if (error) return 0
+  return count || 0
+}
+
+// 쪽지 읽음 처리(받은 사람만 — RLS: recipient_id = auth.uid())
+export async function markNoteRead(noteId) {
+  const { error } = await supabase.from('notes').update({ is_read: true }).eq('id', noteId)
+  if (error) throw error
+}
+
 export async function listSentNotes(userId) {
   const { data, error } = await supabase
     .from('notes').select('*')

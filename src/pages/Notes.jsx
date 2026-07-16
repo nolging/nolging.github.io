@@ -9,7 +9,7 @@ import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf } from '../lib/storeMeta'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead } from '../lib/api'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
 const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
@@ -23,8 +23,8 @@ function NoteFabIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3 7 9 6 9-6" />
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
     </svg>
   )
 }
@@ -53,7 +53,7 @@ export default function Notes() {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { setRefreshHandler, player, bluray: blurayPlayer } = useOutletContext()
+  const { setRefreshHandler, refreshNoteUnread, player, bluray: blurayPlayer } = useOutletContext()
   const [tab, setTab] = useState(location.state?.tab === 'sent' ? 'sent' : 'received')
   const [received, setReceived] = useState([])
   const [sent, setSent] = useState([])
@@ -311,6 +311,11 @@ export default function Notes() {
   function onCardClick(n) {
     if (suppressClickRef.current) { suppressClickRef.current = false; return }
     setOpen(n)
+    // 받은 쪽지를 열면 읽음 처리(카드 점 제거 + 하단 탭 점 갱신)
+    if (tab === 'received' && !n.is_read) {
+      setReceived((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
+      markNoteRead(n.id).then(() => refreshNoteUnread?.()).catch(() => {})
+    }
   }
 
   // 알약: 현재 탭 → 인접 탭으로 드래그 비율만큼 보간
@@ -416,7 +421,10 @@ export default function Notes() {
                       <span className="note-card-peer">
                         {p.name} <span className="note-card-rel">{p.label}</span>
                       </span>
-                      <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
+                      <span className="note-card-when">
+                        <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
+                        {tab === 'received' && !n.is_read && <span className="note-card-unread-dot" aria-label="안 읽음" />}
+                      </span>
                     </div>
                     <div className="note-card-bodyrow">
                       {waterHide ? (
