@@ -69,8 +69,8 @@ export default function ScheduleAppointment() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const [dateOn, setDateOn] = useState(true)
-  const [timeOn, setTimeOn] = useState(true)
+  const [dateOn, setDateOn] = useState(false)
+  const [timeOn, setTimeOn] = useState(false)
   const [date, setDate] = useState(defaultDate())
   const [time, setTime] = useState(defaultTime())
   const [repeat, setRepeat] = useState('none')
