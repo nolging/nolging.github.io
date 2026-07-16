@@ -305,14 +305,26 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .quest-badge.is-done { color: #37b06a; }
 .quest-reroll { width: 100%; margin-top: 2px; border: 1px dashed var(--border); border-radius: 12px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 11px; cursor: pointer; }
 .quest-reroll:disabled { opacity: .5; cursor: default; }
-/* 랜덤 슬롯 */
-.quest-body { font-size: 12px; color: var(--muted); line-height: 1.4; }
-.quest-slot.is-cooling { opacity: .7; }
-.quest-cd { color: var(--muted); font-variant-numeric: tabular-nums; }
-.quest-label.muted { color: var(--muted); font-weight: 700; }
-.quest-slot-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.quest-slot-reroll { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: none; font-size: 14px; cursor: pointer; }
+/* 랜덤 슬롯: 가로 스크롤 카드 */
+.quest-slots { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.quest-slots::-webkit-scrollbar { display: none; }
+.quest-slot-card { flex: 0 0 auto; width: 200px; min-height: 132px; box-sizing: border-box; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-radius: 16px; padding: 14px; box-shadow: var(--card-shadow); }
+.quest-slot-card.is-cooling { opacity: .75; }
+.quest-slot-body { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.quest-slot-card .quest-label { font-size: 14px; font-weight: 700; color: var(--text); }
+.quest-slot-card .quest-body { font-size: 12px; color: var(--muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.quest-slot-card .quest-reward { font-size: 12px; font-weight: 700; color: #d98a4e; }
+.quest-slot-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.quest-slot-foot .quest-claim { padding: 7px 16px; }
+.quest-slot-reroll { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; border: 1px solid var(--border); background: none; font-size: 13px; cursor: pointer; }
 .quest-slot-reroll:disabled { opacity: .5; cursor: default; }
+/* 쿨다운 카드 */
+.quest-slot-cool { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.quest-slot-cool-t { font-size: 12px; font-weight: 700; color: var(--muted); }
+.quest-slot-cool-time { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.quest-slot-cool-s { font-size: 11px; color: var(--muted); }
 
 .mp-coin { display: block; position: relative; overflow: hidden; background: linear-gradient(135deg, #8574f2 0%, #7363e8 52%, #5f4ed9 100%); border-radius: 24px; padding: 20px; color: #fff; text-decoration: none; transition: transform .1s; }
 .mp-coin:hover { text-decoration: none; }

@@ -51,24 +51,25 @@ function DailyRow({ q, busy, onClaim }) {
   )
 }
 
-function SlotRow({ s, now, busy, onClaim, onReroll }) {
+function SlotCard({ s, now, busy, onClaim, onReroll }) {
   const cdMs = s.cooldown_until ? new Date(s.cooldown_until).getTime() - now : 0
   const cooling = cdMs > 0
   return (
-    <div className={`quest-row quest-slot ${cooling ? 'is-cooling' : ''}`}>
+    <div className={`quest-slot-card ${cooling ? 'is-cooling' : ''}`}>
       {cooling ? (
-        <div className="quest-info">
-          <span className="quest-label muted">다음 퀘스트 준비 중</span>
-          <span className="quest-reward quest-cd">{fmtLeft(cdMs)} 후 공개</span>
+        <div className="quest-slot-cool">
+          <span className="quest-slot-cool-t">다음 퀘스트</span>
+          <span className="quest-slot-cool-time">{fmtLeft(cdMs)}</span>
+          <span className="quest-slot-cool-s">후 공개</span>
         </div>
       ) : (
         <>
-          <div className="quest-info">
+          <div className="quest-slot-body">
             <span className="quest-label">{s.title}</span>
             {s.body && <span className="quest-body">{s.body}</span>}
-            <span className="quest-reward">+{s.reward} 츄르</span>
           </div>
-          <div className="quest-slot-actions">
+          <span className="quest-reward">+{s.reward} 츄르</span>
+          <div className="quest-slot-foot">
             {s.done ? (
               <button type="button" className="quest-claim" disabled={!!busy} onClick={onClaim}>받기</button>
             ) : (
@@ -132,6 +133,7 @@ export default function MyProfile() {
   }
   async function rerollSlot(slot) {
     if (busy) return
+    if (!window.confirm('1 츄르를 사용해서 다른 퀘스트로 변경할까요?')) return
     setBusy(`r${slot}`); setError('')
     try { setQuests(await rerollSlotQuest(slot)) }
     catch (err) { setError(err.message) } finally { setBusy('') }
@@ -180,10 +182,12 @@ export default function MyProfile() {
               ))}
 
               <div className="quest-title">랜덤 퀘스트</div>
-              {(quests.slots || []).map((s) => (
-                <SlotRow key={s.slot} s={s} now={now} busy={busy}
-                  onClaim={() => claimSlot(s.slot)} onReroll={() => rerollSlot(s.slot)} />
-              ))}
+              <div className="quest-slots" data-hscroll>
+                {(quests.slots || []).map((s) => (
+                  <SlotCard key={s.slot} s={s} now={now} busy={busy}
+                    onClaim={() => claimSlot(s.slot)} onReroll={() => rerollSlot(s.slot)} />
+                ))}
+              </div>
             </div>
           )}
 
