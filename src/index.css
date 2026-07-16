@@ -2085,7 +2085,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-timer-range {
   -webkit-appearance: none; appearance: none;
   width: calc(100% + 18px); margin: 12px -9px 0; height: 18px; background: transparent; cursor: pointer;
+  border: none; padding: 0; border-radius: 0; outline: none; /* 전역 input 알약 테두리/배경 제거 */
 }
+.nc-timer-range:not([type="checkbox"]):not([type="radio"]) { min-height: 0; } /* 전역 min-height:46px 무력화 */
+.nc-timer-range:focus { outline: none; border: none; }
 .nc-timer-range::-webkit-slider-runnable-track {
   height: 6px; border-radius: 999px;
   background: linear-gradient(to right, #3f9bde var(--pct, 0%), #e5e2ec var(--pct, 0%));
