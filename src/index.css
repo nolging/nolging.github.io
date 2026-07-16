@@ -2077,11 +2077,21 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ===== 물풍선 폭탄 쪽지 ===== */
 /* 작성 화면: 타이머 설정 */
-.nc-timer { margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.nc-timer { margin-top: 9px; display: flex; flex-direction: column; align-items: center; }
 .nc-timer-val { font-size: 30px; font-weight: 800; color: #2f83c9; letter-spacing: -1px; line-height: 1; }
-.nc-timer-val span { font-size: 15px; margin-left: 2px; }
-.nc-timer-range { width: 100%; accent-color: #3f9bde; }
-.nc-timer-ends { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.nc-timer-val span { font-size: 15px; }
+/* 슬라이더: 중립 트랙 + 먹색 썸(양끝까지 닿게 트랙을 썸 반지름만큼 좌우로 확장) */
+.nc-timer-range {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px;
+  background: #e5e2ec; outline: none; margin: 9px 0 0; cursor: pointer;
+}
+.nc-timer-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: #2b2833; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .22);
+}
+.nc-timer-range::-moz-range-thumb { width: 18px; height: 18px; border: none; border-radius: 50%; background: #2b2833; cursor: pointer; }
+.nc-timer-ends { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 3px; }
+.nc-link-err { margin-top: 8px; font-size: 12px; font-weight: 600; color: #e0322f; text-align: center; }
 
 /* 모달: 헤더 우측 카운트다운(시계 아이콘 + 분:초) */
 .note-water-clock {
@@ -2567,7 +2577,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-step-b:not(:disabled) { background: #eeebfe; color: #7363e8; }
 .nc-step-v { font-size: 14px; font-weight: 800; color: #191722; min-width: 16px; }
 .nc-sheet-confirm {
-  margin-top: 16px; width: 100%; height: 50px; border: none; border-radius: 15px; background: #7363e8; color: #fff;
+  margin-top: 16px; width: 100%; height: 50px; border: none; border-radius: 999px; background: #2b2833; color: #fff;
   font-size: 15px; font-weight: 700; cursor: pointer;
 }
 .nc-sheet-confirm:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; }
@@ -2577,8 +2587,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-link-ico { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 23px; flex-shrink: 0; }
 .nc-link-name { font-size: 17px; font-weight: 800; color: #191722; }
 .nc-link-sub { margin-top: 1px; font-size: 11.5px; color: #8b8798; }
-.nc-link-input { margin-top: 16px; display: flex; align-items: center; gap: 8px; border: 1.5px solid #efeef4; border-radius: 14px; padding: 12px 14px; box-sizing: border-box; }
-.nc-link-input:focus-within { border-color: #7363e8; }
+.nc-link-input { margin-top: 16px; display: flex; align-items: center; gap: 8px; border: 1.5px solid #efeef4; border-radius: 999px; padding: 8px 16px; box-sizing: border-box; }
+.nc-link-input:focus-within { border-color: #2b2833; }
 .nc-link-input input { flex: 1; border: none; outline: none; background: transparent; font: inherit; font-size: 13.5px; color: #191722; padding: 0; min-width: 0; }
 
 /* 우정 링: 그룹 멤버 아바타 겹치기(최대 3 + N) */

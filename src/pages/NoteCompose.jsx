@@ -17,12 +17,19 @@ const MEDIA = ['link', 'cassette', 'video', 'bluray']
 const USE_META = {
   'couple-ring': { name: '커플 링', emoji: '💍', useLabel: '커플 신청' },
   'friend-ring': { name: '우정 링', emoji: '💞', useLabel: '우정 신청' },
-  link: { name: '선물 상자', emoji: '🎁', urlHint: '전달할 링크 (URL)' },
-  cassette: { name: '카세트 테이프', emoji: '📼', urlHint: '유튜브 / 사운드클라우드 링크' },
-  video: { name: '비디오 테이프', emoji: '📹', urlHint: '유튜브 링크' },
-  bluray: { name: '블루레이', emoji: '💿', urlHint: '유튜브 링크' },
+  link: { name: '선물 상자', emoji: '🎁', urlHint: '링크(URL) 입력', sub: '선물 상자로 포장할 링크를 입력해 주세요' },
+  cassette: { name: '카세트 테이프', emoji: '📼', urlHint: '유튜브 / 사운드클라우드 링크', sub: '공유하고 싶은 음악 링크를 입력해 주세요' },
+  video: { name: '비디오 테이프', emoji: '📹', urlHint: '유튜브 링크', sub: '공유하고 싶은 영상 링크를 입력해 주세요' },
+  bluray: { name: '블루레이', emoji: '💿', urlHint: '유튜브 링크', sub: '공유하고 싶은 영상 링크를 입력해 주세요' },
   eraser: { name: '지우개', emoji: '🧽' },
   waterbomb: { name: '물풍선 폭탄', emoji: '💧' },
+}
+// 입력 링크 검증/정규화: 프로토콜 없으면 https:// 보정, 도메인 형태가 아니면 무효(null).
+function normalizeUrl(raw) {
+  let s = (raw || '').trim()
+  if (!s) return null
+  if (!/^https?:\/\//i.test(s)) s = `https://${s}`
+  try { const u = new URL(s); return u.hostname.includes('.') ? s : null } catch { return null }
 }
 const USE_SECTIONS = [
   { label: '스페셜', ids: RINGS },
@@ -56,6 +63,7 @@ export default function NoteCompose() {
   const [sheet, setSheet] = useState(null)        // 'use' | 'gift'
   const [linkFor, setLinkFor] = useState(null)    // media itemId for URL modal
   const [linkUrl, setLinkUrl] = useState('')
+  const [linkErr, setLinkErr] = useState('')      // URL 검증 오류
   const [timerOpen, setTimerOpen] = useState(false) // 물풍선 타이머 설정 모달
   const [timerVal, setTimerVal] = useState(30)      // 초
   const [giftDraft, setGiftDraft] = useState({})  // { id: qty }
@@ -133,7 +141,7 @@ export default function NoteCompose() {
       setUseItem({ id }); setSheet(null); setRecipient(null); setPickOpen(true); return
     }
     if (id === 'waterbomb') { setTimerVal(30); setTimerOpen(true); setSheet(null); return } // 타이머 설정
-    setLinkFor(id); setLinkUrl(''); setSheet(null)   // 미디어 → URL 입력
+    setLinkFor(id); setLinkUrl(''); setLinkErr(''); setSheet(null)   // 미디어 → URL 입력
   }
   function confirmTimer() {
     setUseItem({ id: 'waterbomb', timer: Math.max(TIMER_MIN, Math.min(TIMER_MAX, timerVal)) })
@@ -145,9 +153,10 @@ export default function NoteCompose() {
     setUseItem(null)
   }
   function confirmLink() {
-    if (!linkUrl.trim()) return
-    setUseItem({ id: linkFor, url: linkUrl.trim() })
-    setLinkFor(null)
+    const norm = normalizeUrl(linkUrl)
+    if (!norm) { setLinkErr('올바른 링크(URL)를 입력해 주세요.'); return }
+    setUseItem({ id: linkFor, url: norm })
+    setLinkFor(null); setLinkErr('')
   }
 
   // ---- 아이템 선물 시트 --------------------------------------------------
@@ -401,13 +410,14 @@ export default function NoteCompose() {
           <div className="nc-link">
             <div className="nc-link-head">
               <span className="nc-link-ico" style={{ background: metaOf(linkFor).bg }}><StoreItemImage id={linkFor} emoji={metaOf(linkFor).emoji} className="nc-img" /></span>
-              <div><div className="nc-link-name">{metaOf(linkFor).name}</div><div className="nc-link-sub">전달하고 싶은 링크를 입력해 주세요</div></div>
+              <div><div className="nc-link-name">{metaOf(linkFor).name}</div><div className="nc-link-sub">{USE_META[linkFor]?.sub || '전달하고 싶은 링크를 입력해 주세요'}</div></div>
             </div>
             <div className="nc-link-input">
               <svg width="15" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-              <input type="url" value={linkUrl} placeholder={USE_META[linkFor]?.urlHint || '링크 (URL)'} onChange={(e) => setLinkUrl(e.target.value)} autoFocus />
+              <input type="url" value={linkUrl} placeholder={USE_META[linkFor]?.urlHint || '링크 (URL)'} onChange={(e) => { setLinkUrl(e.target.value); if (linkErr) setLinkErr('') }} autoFocus />
             </div>
-            <button type="button" className="nc-sheet-confirm" disabled={!linkUrl.trim()} onClick={confirmLink}>첨부하기</button>
+            {linkErr && <div className="nc-link-err">{linkErr}</div>}
+            <button type="button" className="nc-sheet-confirm" disabled={!linkUrl.trim()} onClick={confirmLink}>포장하기</button>
           </div>
         )}
       </Modal>
@@ -420,12 +430,12 @@ export default function NoteCompose() {
             <div><div className="nc-link-name">물풍선 폭탄</div><div className="nc-link-sub">타이머가 0이 되면 쪽지가 젖어 다시 읽을 수 없어요</div></div>
           </div>
           <div className="nc-timer">
-            <div className="nc-timer-val">{timerVal}<span>초</span></div>
+            <div className="nc-timer-val">{timerVal} <span>초</span></div>
             <input type="range" className="nc-timer-range" min={TIMER_MIN} max={TIMER_MAX} step={1}
               value={timerVal} onChange={(e) => setTimerVal(Number(e.target.value))} />
-            <div className="nc-timer-ends"><span>{TIMER_MIN}초</span><span>{TIMER_MAX}초</span></div>
+            <div className="nc-timer-ends"><span>{TIMER_MIN} 초</span><span>{TIMER_MAX} 초</span></div>
           </div>
-          <button type="button" className="nc-sheet-confirm" onClick={confirmTimer}>첨부하기</button>
+          <button type="button" className="nc-sheet-confirm" onClick={confirmTimer}>세팅하기</button>
         </div>
       </Modal>
 
