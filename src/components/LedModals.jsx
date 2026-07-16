@@ -43,10 +43,9 @@ export function LedboardModal({ open, onClose, onDone }) {
       <div className="couple-modal">
         <div className="nc-link-head">
           <span className="nc-link-ico" style={{ background: imgBgOf('ledboard') }}><StoreItemImage id="ledboard" emoji="📟" className="nc-img" /></span>
-          <div><div className="nc-link-name">전광판</div><div className="nc-link-sub">커플만 쓸 수 있는 프리미엄 전광판</div></div>
+          <div><div className="nc-link-name">전광판</div><div className="nc-link-sub">24 시간 동안 우리 커플에게만 보여요</div></div>
         </div>
         {error && <div className="alert alert-error">{error}</div>}
-        <p className="couple-hint">24 시간 동안 우리 커플에게만 보여요.</p>
         <LedBanner text={text || '미리보기'} color={color} />
         <div className="couple-msg">
           <textarea className="wish-input" placeholder="전광판에 띄울 문구"

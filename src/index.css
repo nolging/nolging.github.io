@@ -2450,6 +2450,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 천체 망원경: 사용법 안내 + 리뷰 열람 버튼 */
 .tele-guide-label { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0; }
+/* 안내 모달: '사용 방법' 라벨을 헤더에서 넉넉히 띄움(.nc-mt 가 .tele-guide-label margin:0 에 밀리지 않게) */
+.nc-link .tele-guide-label { margin-top: 22px; }
+/* 냥피또: '결과 바로 확인' 텍스트 링크 버튼 */
+.scratch-reveal-link {
+  align-self: center; background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 14px; font-weight: 700; padding: 6px 4px;
+}
+.scratch-reveal-link:hover { color: var(--text); }
 .tele-guide-text { font-size: 15px; color: var(--text); line-height: 1.6; margin: 0; }
 .tele-btn {
   width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: none; cursor: pointer;

@@ -260,7 +260,8 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
-        <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} sub={item?.desc} emoji="✨" />
+        <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨"
+          sub={item ? (decoSlot(item.id) === 'face' ? '프로필 사진 얼굴에 장착해요' : '프로필 사진 머리 위에 장착해요') : ''} />
         {error && <div className="alert alert-error">{error}</div>}
 
         {applied && (
@@ -418,7 +419,7 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
   return (
     <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal">
       <div className="scratch-modal">
-        <ItemHead id="nyangpito" name="냥피또" sub="동전으로 긁으면 츄르가 쏟아질지도?" emoji="🐱" />
+        <ItemHead id="nyangpito" name="냥피또" sub="동전으로 긁어 보세요" emoji="🐱" />
         {error ? (
           <>
             <div className="alert alert-error">{error}</div>
@@ -426,7 +427,6 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
           </>
         ) : (
           <>
-            <p className="scratch-guide">동전으로 긁듯이 카드를 문질러 보세요</p>
             <ScratchCard onStart={roll} onReveal={() => setRevealed(true)} reveal={forceReveal}>
               {known ? (
                 <div className={`scratch-result ${win ? '' : 'lose'}`}>
@@ -441,9 +441,13 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
                 </div>
               )}
             </ScratchCard>
-            <button type="button" className={`btn btn-block ${revealed ? 'btn-primary' : ''}`} onClick={confirmBtn}>
-              {revealed ? (win ? `${prize}츄르 받기` : '확인') : '결과 확인'}
-            </button>
+            {revealed ? (
+              <button type="button" className="btn btn-block btn-primary" onClick={confirmBtn}>
+                {win ? `${prize}츄르 받기` : '확인'}
+              </button>
+            ) : (
+              <button type="button" className="scratch-reveal-link" onClick={confirmBtn}>결과 바로 확인 &gt;</button>
+            )}
           </>
         )}
       </div>
