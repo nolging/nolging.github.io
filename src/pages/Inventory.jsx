@@ -552,7 +552,7 @@ function UseGuideModal({ open, onClose, id, name, emoji, text }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="nc-link">
-        <div className="nc-link-head nc-link-head-center">
+        <div className="nc-link-head">
           <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
           <div className="nc-link-name">{name}</div>
         </div>

@@ -2116,8 +2116,6 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-link .nc-body-wrap { margin-top: 12px; }
 .nc-link .nc-body { height: 128px; }
 .nc-mt { margin-top: 16px; }
-/* 사용 방법 안내 모달: 헤더(이미지+이름) 가운데 정렬 */
-.nc-link-head.nc-link-head-center { flex-direction: column; text-align: center; gap: 8px; }
 
 /* 모달: 헤더 우측 카운트다운(시계 아이콘 + 분:초) */
 .note-water-clock {
