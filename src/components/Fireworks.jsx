@@ -35,28 +35,28 @@ export default function Fireworks({ className = '' }) {
       for (let i = 0; i < 3; i++) rockets.push({ x: R(W * 0.2, W * 0.8), y: H + R(0, 18), vy: -R(5.4, 7), ty: R(H * 0.14, H * 0.42), c: pick() })
     }
 
+    const TAIL = 2.6 // 속도 기반 꼬리 길이(프레임 수). 매 프레임 완전 지우므로 잔상이 남지 않음.
     const frame = () => {
       timer++
-      // 잔상이 서서히 지워지도록(투명 배경)
-      ctx.globalCompositeOperation = 'destination-out'
-      ctx.fillStyle = 'rgba(0,0,0,0.2)'
-      ctx.fillRect(0, 0, W, H)
-      ctx.globalCompositeOperation = 'source-over'
+      // 매 프레임 캔버스를 완전히 비운다 → 반투명 누적으로 인한 흐릿한 잔상이 안 생김
+      ctx.clearRect(0, 0, W, H)
+      ctx.lineCap = 'round'
 
       if (timer % 40 === 0) rockets.push({ x: R(W * 0.18, W * 0.82), y: H, vy: -R(5.4, 7), ty: R(H * 0.14, H * 0.44), c: pick() })
 
       for (let i = rockets.length - 1; i >= 0; i--) {
         const r = rockets[i]; r.y += r.vy
-        ctx.globalAlpha = 1; ctx.fillStyle = r.c
-        ctx.beginPath(); ctx.arc(r.x, r.y, 1.8, 0, 6.283); ctx.fill()
+        ctx.globalAlpha = 1; ctx.strokeStyle = r.c; ctx.lineWidth = 2
+        ctx.beginPath(); ctx.moveTo(r.x, r.y - r.vy * TAIL); ctx.lineTo(r.x, r.y); ctx.stroke()
         if (r.y <= r.ty) { explode(r.x, r.y, (R(34, 46)) | 0, R(3, 4.2)); rockets.splice(i, 1) }
       }
       for (let i = P.length - 1; i >= 0; i--) {
         const p = P[i]
         p.vy += p.g; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx; p.y += p.vy; p.life -= p.dec
-        ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.c
-        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(p.r * p.life, 0.3), 0, 6.283); ctx.fill()
-        if (p.life <= 0) P.splice(i, 1)
+        if (p.life <= 0) { P.splice(i, 1); continue }
+        ctx.globalAlpha = p.life
+        ctx.strokeStyle = p.c; ctx.lineWidth = Math.max(p.r * p.life, 0.5)
+        ctx.beginPath(); ctx.moveTo(p.x - p.vx * TAIL, p.y - p.vy * TAIL); ctx.lineTo(p.x, p.y); ctx.stroke()
       }
       ctx.globalAlpha = 1
       raf = requestAnimationFrame(frame)
