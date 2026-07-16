@@ -263,7 +263,6 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
       <div className="couple-modal">
         {error && <div className="alert alert-error">{error}</div>}
         {item?.desc && <p className="deco-desc">{item.desc}</p>}
-        <p className="couple-hint">프리미엄 그룹(커플·우정)에 적용하면 그 그룹의 내 아바타가 꾸며져요. 머리 장식(새싹·귀)은 하나만, 얼굴 장식과는 함께 적용돼요.</p>
 
         {applied && (
           <div className="couple-to">
