@@ -1798,37 +1798,40 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .theme-heart { animation: none; opacity: 0; } }
 
-/* 커플 기념일 폭죽 오버레이 (상단바 앞, 하단 탭 아래) */
-.fireworks { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
-.fireworks.fw-over { position: fixed; inset: 0; z-index: 15; }
-.fw { position: absolute; width: 0; height: 0; }
-.fw-spark {
-  position: absolute; left: 0; top: 0; width: 7px; height: 7px; margin: -3.5px;
-  border-radius: 50%; opacity: 0;
-  transform: rotate(var(--a)) translateY(0) scale(1);
-  animation: fw-spark 3.4s ease-out infinite; animation-delay: inherit;
-  box-shadow: 0 0 7px currentColor; will-change: transform, opacity;
+/* 커플 기념일 폭죽 (캔버스 오버레이 — 상단바 앞, 하단 탭 아래) */
+.fireworks-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 15; }
+
+/* ===== 커플 기념일 당일: 데이트 페이지 다크 모드 ===== */
+.app-shell.csx-anniv-dark { background: linear-gradient(180deg, #2a2140 0%, #161320 58%); }
+.app-shell.csx-anniv-dark .topbar, .app-shell.csx-anniv-dark .content { background: transparent; }
+.app-shell.csx-anniv-dark .topbar { color: #f3f0f7; }
+.app-shell.csx-anniv-dark .topbar-heading { color: #f3f0f7; }
+.app-shell.csx-anniv-dark .topbar .icon-btn { color: #ece8f5; }
+
+.csx-page.csx-dark { position: relative; isolation: isolate; }
+.csx-dark .csx-face-name { color: #f3f0f7; }
+.csx-dark .csx-days { color: #f3f0f7; }
+.csx-dark .csx-anniv-pill { background: rgba(255,255,255,.07); color: #c9c2dc; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.csx-dark .csx-mile { background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.09); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.csx-dark .csx-mile-label { color: #a49db8; }
+.csx-dark .csx-mile-label b { color: #f3f0f7; }
+.csx-dark .csx-mile-bar { background: rgba(255,255,255,.12); }
+.csx-dark .csx-mile-date { color: #8f88a4; }
+.csx-dark .csx-zone-title { color: #f3f0f7; }
+.csx-dark .csx-card { background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 6px 20px rgba(0,0,0,.28); }
+.csx-dark .csx-card-t { color: #f3f0f7; }
+.csx-dark .csx-card-s { color: #8f88a4; }
+
+/* 밤하늘 별 (다크 배경 뒤 레이어) */
+.csx-stars { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.csx-star { position: absolute; border-radius: 50%; opacity: .2;
+  animation-name: csx-twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.csx-star-glow { box-shadow: 0 0 6px 1px rgba(255,255,255,.5); }
+@keyframes csx-twinkle {
+  0%, 100% { opacity: .2; transform: scale(.7); }
+  50%      { opacity: 1; transform: scale(1.25); }
 }
-/* 각 불꽃이 자기 각도(--a) 방향으로 뻗어 나가며 사그라든다 */
-@keyframes fw-spark {
-  0%   { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(1); }
-  6%   { opacity: 1; }
-  10%  { transform: rotate(var(--a)) translateY(calc(var(--dist) * -0.15)) scale(1.05); }
-  55%  { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--dist) * -1)) scale(.35); }
-}
-/* 터질 때 중앙에서 번쩍이는 섬광 */
-.fw::before {
-  content: ''; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px;
-  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 70%);
-  opacity: 0; animation: fw-flash 3.4s ease-out infinite; animation-delay: inherit;
-}
-@keyframes fw-flash {
-  0%, 100% { opacity: 0; transform: scale(.3); }
-  4% { opacity: .9; transform: scale(1); }
-  16% { opacity: 0; transform: scale(1.4); }
-}
-@media (prefers-reduced-motion: reduce) { .fw, .fw-spark, .fw::before { animation: none; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .csx-star { animation: none; } }
 
 /* 하트 뿅뿅 테마: 상단바~콘텐츠를 하나의 은은한 분홍 그라데이션으로(자연스럽게 이어짐) */
 .app-shell.gd-bg-heart { background: linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%); }

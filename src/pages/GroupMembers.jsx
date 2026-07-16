@@ -5,6 +5,7 @@ import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
 import Fireworks from '../components/Fireworks'
+import NightSky from '../components/NightSky'
 import { isAnnivToday } from '../lib/anniv'
 
 function parseYMD(s) {
@@ -103,6 +104,13 @@ export default function GroupMembers() {
     return () => setHeaderTitle?.(null)
   }, [couple, setHeaderTitle])
 
+  // 커플 기념일 당일: 데이트 페이지를 다크 모드로 (상단바·콘텐츠 배경까지)
+  const annivDark = couple && isAnnivToday(anniv || claimDate)
+  useEffect(() => {
+    document.querySelector('.app-shell')?.classList.toggle('csx-anniv-dark', annivDark)
+    return () => document.querySelector('.app-shell')?.classList.remove('csx-anniv-dark')
+  }, [annivDark])
+
   function popHeart() {
     setBurst(true); clearTimeout(popHeart._t)
     popHeart._t = setTimeout(() => setBurst(false), 1000)
@@ -181,8 +189,9 @@ export default function GroupMembers() {
     )
 
     return (
-      <div className="page csx-page">
-        {isAnnivToday(effAnniv) && <Fireworks className="fw-over" />}
+      <div className={`page csx-page${annivDark ? ' csx-dark' : ''}`}>
+        {annivDark && <NightSky />}
+        {annivDark && <Fireworks className="fw-over" />}
         {error && <div className="alert alert-error">{error}</div>}
 
         {/* 커플 히어로 + 하트(콕!) */}
