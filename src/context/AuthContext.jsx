@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase, nicknameToEmail } from '../lib/supabase'
 import { syncPushToCurrentUser, detachPushFromServer } from '../lib/push'
 
@@ -8,6 +8,10 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  // 사용자가 '직접' 로그아웃했을 때만 로그인 화면으로 보낸다.
+  const explicitLogout = useRef(false) // logout()/차단 계정 등 의도적 종료 표시
+  const lastSession = useRef(null)     // 마지막으로 유효했던 세션(토큰 복구용)
+  const recoveringSession = useRef(false) // 세션 복구 재진입 방지
 
   const loadProfile = useCallback(async (userId) => {
     if (!userId) {
@@ -66,6 +70,7 @@ export function AuthProvider({ children }) {
       try {
         const { data } = await supabase.auth.getSession()
         if (!mounted) return
+        lastSession.current = data.session
         setSession(data.session)
         await loadProfile(data.session?.user?.id)
         // 이 기기의 기존 푸시 구독을 현재 로그인 사용자 소유로 재바인딩(계정 전환 대응)
@@ -77,12 +82,42 @@ export function AuthProvider({ children }) {
       }
     })()
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!mounted) return
+    const applySession = async (newSession) => {
+      lastSession.current = newSession
       setSession(newSession)
       await loadProfile(newSession?.user?.id)
       if (newSession?.user?.id) syncPushToCurrentUser() // 로그인/전환 시 기기 재바인딩
-      settle() // 인증 이벤트가 먼저 도착하면 그 시점에 로딩 해제
+      settle()
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return
+      if (newSession) { await applySession(newSession); return }
+
+      // 세션이 사라진 경우:
+      // (1) 사용자가 직접 로그아웃/차단 계정 → 로그인 화면으로
+      if (explicitLogout.current) {
+        explicitLogout.current = false
+        lastSession.current = null
+        setSession(null); setProfile(null); settle()
+        return
+      }
+      // (2) 그 외(토큰 갱신 경합·일시 실패 등으로 인한 예기치 않은 SIGNED_OUT):
+      //     마지막 토큰으로 세션 복구를 1회 시도해, 사용자가 튕겨나가지 않게 한다.
+      const prev = lastSession.current
+      if (prev?.refresh_token && !recoveringSession.current) {
+        recoveringSession.current = true
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: prev.access_token, refresh_token: prev.refresh_token,
+          })
+          recoveringSession.current = false
+          if (!error && data.session) return // 복구 성공 → 뒤이은 이벤트에서 반영됨
+        } catch { recoveringSession.current = false }
+      }
+      // 복구 실패(리프레시 토큰도 무효) → 정말로 세션 없음
+      lastSession.current = null
+      setSession(null); setProfile(null); settle()
     })
     return () => {
       mounted = false
@@ -120,6 +155,7 @@ export function AuthProvider({ children }) {
         const { data, error } = await supabase.auth.getSession()
         clearTimeout(hard)
         if (error) { reload(); return }
+        if (data.session) lastSession.current = data.session // 복구용 최신 토큰 유지
         setSession(data.session)                  // 재개 후 세션/유저 상태 최신화(누락 시 stale)
         await loadProfile(data.session?.user?.id) // 프로필/권한 최신화
         recovering = false
@@ -163,10 +199,12 @@ export function AuthProvider({ children }) {
       .eq('id', data.user.id)
       .single()
     if (prof?.status === 'pending') {
+      explicitLogout.current = true // 의도적 종료(복구 시도 안 함)
       await supabase.auth.signOut()
       throw new Error('아직 관리자 승인 대기 중인 계정입니다.')
     }
     if (prof?.status === 'disabled') {
+      explicitLogout.current = true
       await supabase.auth.signOut()
       throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.')
     }
@@ -174,6 +212,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(async () => {
+    // 사용자가 직접 로그아웃 → 세션 복구 시도 없이 로그인 화면으로
+    explicitLogout.current = true
     // 로그아웃 전에 이 기기의 서버 푸시 구독을 제거 — 로그아웃 상태에서 이전 사용자 푸시가 오지 않도록
     await detachPushFromServer()
     await supabase.auth.signOut()
