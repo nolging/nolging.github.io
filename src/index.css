@@ -2669,10 +2669,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   .bottomnav a svg { width: 21px; height: 21px; }
   .bottomnav a:hover { text-decoration: none; color: var(--muted); }
   .bottomnav a.active { color: var(--primary); font-weight: 700; }
-  /* 안 읽은 쪽지 점 (아이콘 우측 상단) */
-  .bottomnav a.nav-note { position: relative; }
+  /* 안 읽은 쪽지 점 (편지봉투 우측 상단에 살짝 겹치게) */
+  .bottomnav .nav-ico-wrap { position: relative; display: inline-flex; }
   .bottomnav .nav-dot {
-    position: absolute; top: 2px; left: 50%; transform: translateX(7px);
+    position: absolute; top: 1px; right: 1px;
     width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
   }
   /* 플로팅(아일랜드) 탭 뒤로 지나가는 콘텐츠를 자연스럽게 뿌옇게(블러+페이드) */

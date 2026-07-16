@@ -654,7 +654,7 @@ export default function Layout() {
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
           <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>
-          <NavLink to="/notes" className="nav-note"><NoteIcon /><span>쪽지</span>{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</NavLink>
+          <NavLink to="/notes"><span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span><span>쪽지</span></NavLink>
           <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
         </nav>
       )}
