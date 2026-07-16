@@ -913,8 +913,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .mention-opt-name { font-weight: 600; }
 /* 본문 내 @멘션 강조 (클릭 가능) */
 .mention-chip {
-  color: #7363e8; font-weight: 700; background: none; border: none; padding: 0;
-  font: inherit; cursor: pointer; display: inline;
+  background: none; border: none; padding: 0; font: inherit; cursor: pointer; display: inline;
+  color: #7363e8; font-weight: 600; /* font 뒤에 둬야 굵기가 유지됨 */
 }
 button.mention-chip:active { opacity: .6; }
 /* 키보드가 올라오면 세이프에어리어/추가 여백이 필요 없어, 위(12px)와 같은 여백으로 */
