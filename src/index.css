@@ -2099,14 +2099,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   font-size: 30px; font-weight: 800; color: #7f97ad; pointer-events: none; text-align: center;
 }
 .modal-card.modal-water-pop { background: linear-gradient(160deg, #e7f2fc, #f2f9ff); }
-/* 카드: 터진 뒤 옅은 파란색 + 블러 + 라벨 */
+/* 카드: 터진 뒤 옅은 파란색 */
 .note-card.note-water-pop { background: #eaf4fc; }
-.note-water-pop .note-card-bodyrow { position: relative; }
-.note-card-body.note-water-blur { filter: blur(5px); user-select: none; }
-.note-water-card-label {
-  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  font-size: 12px; font-weight: 700; color: #8b93a1; pointer-events: none; white-space: nowrap;
-}
+/* 카드: 물풍선 쪽지는 미리보기 대신 안내 문구(내용 숨김) */
+.note-card-body.note-water-hidden { color: #9a97a6; }
 @media (prefers-reduced-motion: reduce) { .note-water-clock.is-blink { animation: none; } }
 
 /* ---- 소원 쪽지 (일반 쪽지와 색상 구분) ---- */

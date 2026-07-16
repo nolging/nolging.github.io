@@ -396,6 +396,7 @@ export default function Notes() {
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
             const waterBlue = popped || (tab === 'sent' && isWater(n)) // 옅은 파란색(보낸함 물풍선은 처음부터)
+            const waterHide = tab === 'received' && isWater(n) // 받은함 물풍선은 미리보기 숨김
             // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
             const tagInfo = wish ? ['🌟 소원', 'note-tag']
               : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
@@ -418,8 +419,11 @@ export default function Notes() {
                       <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
                     </div>
                     <div className="note-card-bodyrow">
-                      <p className={`note-card-body ${popped ? 'note-water-blur' : ''}`}>{n.body}</p>
-                      {popped && <span className="note-water-card-label">물풍선 폭탄이 터졌어요</span>}
+                      {waterHide ? (
+                        <p className="note-card-body note-water-hidden">{popped ? '물풍선 폭탄이 터졌어요' : '꽁꽁 싸매서 내용이 보이지 않아요'}</p>
+                      ) : (
+                        <p className="note-card-body">{n.body}</p>
+                      )}
                       {tagInfo && (
                         <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
                           <span className={`${tagInfo[1]} note-tag-pill ${needClaim ? 'note-tag-seesaw' : ''}`}>{tagInfo[0]}</span>
