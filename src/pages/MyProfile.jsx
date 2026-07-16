@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getQuests, claimQuest, rerollRandomQuest, getMyCoinBalance } from '../lib/api'
+import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance } from '../lib/api'
 
 const GRADE_LABEL = { vvip: 'VVIP', vip: 'VIP', normal: '일반' }
+
+// 쿨다운 남은시간 M:SS
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
 
 function Chevron({ className }) {
   return (
@@ -27,7 +33,7 @@ function CoinCat() {
   )
 }
 
-function QuestRow({ q, busy, onClaim }) {
+function DailyRow({ q, busy, onClaim }) {
   return (
     <div className={`quest-row ${q.claimed ? 'is-done' : ''}`}>
       <div className="quest-info">
@@ -45,6 +51,37 @@ function QuestRow({ q, busy, onClaim }) {
   )
 }
 
+function SlotRow({ s, now, busy, onClaim, onReroll }) {
+  const cdMs = s.cooldown_until ? new Date(s.cooldown_until).getTime() - now : 0
+  const cooling = cdMs > 0
+  return (
+    <div className={`quest-row quest-slot ${cooling ? 'is-cooling' : ''}`}>
+      {cooling ? (
+        <div className="quest-info">
+          <span className="quest-label muted">다음 퀘스트 준비 중</span>
+          <span className="quest-reward quest-cd">{fmtLeft(cdMs)} 후 공개</span>
+        </div>
+      ) : (
+        <>
+          <div className="quest-info">
+            <span className="quest-label">{s.title}</span>
+            {s.body && <span className="quest-body">{s.body}</span>}
+            <span className="quest-reward">+{s.reward} 츄르</span>
+          </div>
+          <div className="quest-slot-actions">
+            {s.done ? (
+              <button type="button" className="quest-claim" disabled={!!busy} onClick={onClaim}>받기</button>
+            ) : (
+              <span className="quest-badge">진행 중</span>
+            )}
+            <button type="button" className="quest-slot-reroll" disabled={!!busy} onClick={onReroll} title="1츄르로 교체">🔄</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function MyProfile() {
   const { profile, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
@@ -52,35 +89,57 @@ export default function MyProfile() {
   const [quests, setQuests] = useState(null)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const [now, setNow] = useState(() => Date.now())
+
+  // 쿨다운 표시용 1초 틱
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(iv)
+  }, [])
+
+  // 쿨다운이 끝나는 시점에 새 퀘스트를 받아오도록 자동 새로고침
+  useEffect(() => {
+    const times = (quests?.slots || [])
+      .map((s) => (s.cooldown_until ? new Date(s.cooldown_until).getTime() : 0))
+      .filter((t) => t > Date.now())
+    if (!times.length) return
+    const t = setTimeout(() => { load() }, Math.min(...times) - Date.now() + 600)
+    return () => clearTimeout(t)
+  }, [quests]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = async () => {
     try {
       const q = await getQuests()
       // 퀘스트 RPC 미배포 시엔 잔액만이라도 표시(카드 정상 동작)
       if (q) setQuests(q)
-      else setQuests({ balance: await getMyCoinBalance(), grade: 'normal', daily: [], random: null })
+      else setQuests({ balance: await getMyCoinBalance(), grade: 'normal', daily: [], slots: [] })
       setError('')
     } catch (err) { setError(err.message) }
   }
   useEffect(() => { load().finally(() => setLoading(false)) }, [])
 
-  async function claim(key) {
+  async function claimDaily(key) {
     if (busy) return
     setBusy(key); setError('')
     try { await claimQuest(key); await load() }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
-  async function reroll() {
+  async function claimSlot(slot) {
     if (busy) return
-    setBusy('reroll'); setError('')
-    try { setQuests(await rerollRandomQuest()) }
+    setBusy(`c${slot}`); setError('')
+    try { await claimSlotQuest(slot); await load() }
+    catch (err) { setError(err.message) } finally { setBusy('') }
+  }
+  async function rerollSlot(slot) {
+    if (busy) return
+    setBusy(`r${slot}`); setError('')
+    try { setQuests(await rerollSlotQuest(slot)) }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
   async function handleLogout() { await logout(); navigate('/login') }
 
   const grade = quests?.grade || 'normal'
   const balance = quests?.balance
-  const canReroll = (balance ?? 0) >= 1
 
   return (
     <div className="page">
@@ -117,20 +176,14 @@ export default function MyProfile() {
             <div className="quests">
               <div className="quest-title">데일리 퀘스트</div>
               {(quests.daily || []).map((q) => (
-                <QuestRow key={q.key} q={q} busy={busy} onClaim={() => claim(q.key)} />
+                <DailyRow key={q.key} q={q} busy={busy} onClaim={() => claimDaily(q.key)} />
               ))}
 
               <div className="quest-title">랜덤 퀘스트</div>
-              {quests.random ? (
-                <>
-                  <QuestRow q={quests.random} busy={busy} onClaim={() => claim(quests.random.key)} />
-                  <button type="button" className="quest-reroll" onClick={reroll} disabled={busy === 'reroll' || !canReroll}>
-                    {busy === 'reroll' ? '바꾸는 중…' : '🔄 다른 퀘스트로 바꾸기 (1 츄르)'}
-                  </button>
-                </>
-              ) : (
-                <div className="quest-row"><span className="quest-label">준비 중이에요</span></div>
-              )}
+              {(quests.slots || []).map((s) => (
+                <SlotRow key={s.slot} s={s} now={now} busy={busy}
+                  onClaim={() => claimSlot(s.slot)} onReroll={() => rerollSlot(s.slot)} />
+              ))}
             </div>
           )}
 

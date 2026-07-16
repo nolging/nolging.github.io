@@ -305,6 +305,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .quest-badge.is-done { color: #37b06a; }
 .quest-reroll { width: 100%; margin-top: 2px; border: 1px dashed var(--border); border-radius: 12px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 11px; cursor: pointer; }
 .quest-reroll:disabled { opacity: .5; cursor: default; }
+/* 랜덤 슬롯 */
+.quest-body { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.quest-slot.is-cooling { opacity: .7; }
+.quest-cd { color: var(--muted); font-variant-numeric: tabular-nums; }
+.quest-label.muted { color: var(--muted); font-weight: 700; }
+.quest-slot-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.quest-slot-reroll { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: none; font-size: 14px; cursor: pointer; }
+.quest-slot-reroll:disabled { opacity: .5; cursor: default; }
 
 .mp-coin { display: block; position: relative; overflow: hidden; background: linear-gradient(135deg, #8574f2 0%, #7363e8 52%, #5f4ed9 100%); border-radius: 24px; padding: 20px; color: #fff; text-decoration: none; transition: transform .1s; }
 .mp-coin:hover { text-decoration: none; }

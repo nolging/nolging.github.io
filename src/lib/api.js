@@ -1304,11 +1304,38 @@ export async function claimQuest(key) {
   if (error) throw error
   return Number(data) || 0
 }
-// 랜덤 퀘스트 교체(1츄르) → 갱신된 퀘스트 상태 반환
-export async function rerollRandomQuest() {
-  const { data, error } = await supabase.rpc('reroll_random_quest')
+// 랜덤 슬롯 보상 수령 → 새 잔액. 30분 후 다음 퀘스트.
+export async function claimSlotQuest(slot) {
+  const { data, error } = await supabase.rpc('claim_slot_quest', { p_slot: slot })
+  if (error) throw error
+  return Number(data) || 0
+}
+// 랜덤 슬롯 교체(1츄르) → 갱신된 퀘스트 상태 반환
+export async function rerollSlotQuest(slot) {
+  const { data, error } = await supabase.rpc('reroll_slot_quest', { p_slot: slot })
   if (error) throw error
   return data
+}
+
+// ---- 관리자: 랜덤 퀘스트 정의(quest_defs) CRUD (RLS 상 쓰기는 관리자만) ----
+export async function adminListQuestDefs() {
+  const { data, error } = await supabase.from('quest_defs')
+    .select('id, title, body, reward, grade, active, sort_order').order('sort_order', { ascending: true })
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return data ?? []
+}
+export async function adminUpsertQuestDef(def) {
+  const row = {
+    id: def.id, title: def.title, body: def.body ?? '',
+    reward: Number(def.reward) || 0, grade: def.grade || 'all',
+    active: !!def.active, sort_order: Number(def.sort_order) || 0,
+  }
+  const { error } = await supabase.from('quest_defs').upsert(row)
+  if (error) throw error
+}
+export async function adminDeleteQuestDef(id) {
+  const { error } = await supabase.from('quest_defs').delete().eq('id', id)
+  if (error) throw error
 }
 // 그룹 방문 기록(데일리 '그룹 방문' 퀘스트). 실패는 조용히 무시.
 export async function touchGroupVisit() {

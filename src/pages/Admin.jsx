@@ -1,7 +1,17 @@
 import { useEffect, useState, useCallback } from 'react'
 import { adminCreateUser, adminListUsers, adminSetStatus, adminDeleteUser, adminCoinBalances, adminGrantCoin,
-  adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem } from '../lib/api'
+  adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem,
+  adminListQuestDefs, adminUpsertQuestDef, adminDeleteQuestDef } from '../lib/api'
 import { formatCoin } from '../lib/constants'
+
+const EMPTY_QUEST = { id: '', title: '', body: '', reward: '', grade: 'all', sort_order: '', active: true }
+const QUEST_GRADES = [
+  { key: 'all', label: '전체(모든 회원)' },
+  { key: 'premium', label: '프리미엄(커플·우정)' },
+  { key: 'vvip', label: 'VVIP(커플)' },
+  { key: 'vip', label: 'VIP(우정)' },
+]
+const QUEST_GRADE_LABEL = Object.fromEntries(QUEST_GRADES.map((g) => [g.key, g.label]))
 
 const STATUS = {
   active: { label: '활성', cls: 'badge-done' },
@@ -70,6 +80,36 @@ export default function Admin() {
     setError(''); setNotice('')
     try { await fn(); if (okMsg) setNotice(okMsg); await loadItems() }
     catch (err) { setError(err.message) }
+  }
+
+  // ---- 랜덤 퀘스트 관리 ----
+  const [questDefs, setQuestDefs] = useState([])
+  const [questForm, setQuestForm] = useState(EMPTY_QUEST)
+  const [editingQuest, setEditingQuest] = useState(false)
+  const [questBusy, setQuestBusy] = useState(false)
+  const setQuestField = (k) => (e) => setQuestForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+  const loadQuests = useCallback(async () => {
+    try { setQuestDefs(await adminListQuestDefs()) } catch (err) { setError(err.message) }
+  }, [])
+  useEffect(() => { loadQuests() }, [loadQuests])
+  function startAddQuest() { setQuestForm(EMPTY_QUEST); setEditingQuest(false) }
+  function startEditQuest(q) {
+    setQuestForm({ id: q.id, title: q.title, body: q.body || '', reward: String(q.reward), grade: q.grade, sort_order: String(q.sort_order ?? ''), active: q.active })
+    setEditingQuest(true)
+  }
+  async function questAct(fn, okMsg) {
+    setError(''); setNotice('')
+    try { await fn(); if (okMsg) setNotice(okMsg); await loadQuests() }
+    catch (err) { setError(err.message) }
+  }
+  async function saveQuest(e) {
+    e.preventDefault(); setQuestBusy(true)
+    try {
+      if (!questForm.id.trim() || !questForm.title.trim()) throw new Error('ID와 제목은 필수예요.')
+      await adminUpsertQuestDef(questForm)
+      setNotice(`퀘스트 '${questForm.title}'을(를) 저장했습니다.`)
+      setQuestForm(EMPTY_QUEST); setEditingQuest(false); await loadQuests()
+    } catch (err) { setError(err.message) } finally { setQuestBusy(false) }
   }
   function startAddItem() { setItemForm(EMPTY_ITEM); setEditingItem(false) }
   function startEditItem(it) {
@@ -276,6 +316,66 @@ export default function Admin() {
                 </tr>
               ))}
               {storeItems.length === 0 && <tr><td colSpan={7} className="muted sm">등록된 아이템이 없습니다.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 랜덤 퀘스트 관리 */}
+      <div className="card">
+        <h3 className="card-title">랜덤 퀘스트 {editingQuest ? '수정' : '추가'}</h3>
+        <p className="muted sm" style={{ margin: '0 0 10px' }}>
+          ID는 완료 판정 키예요. 새 ID로 추가하면 목록엔 뜨지만, 완료 처리는 개발자가 코드로 구현해야 동작해요.
+        </p>
+        <form onSubmit={saveQuest} className="form">
+          <div className="field-row">
+            <label className="field"><span>ID *</span>
+              <input value={questForm.id} onChange={setQuestField('id')} placeholder="예: r_wish" disabled={editingQuest} autoCapitalize="none" /></label>
+            <label className="field"><span>제목 *</span>
+              <input value={questForm.title} onChange={setQuestField('title')} placeholder="예: 위시 작성하기" /></label>
+          </div>
+          <label className="field"><span>내용</span>
+            <textarea rows={2} value={questForm.body} onChange={setQuestField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></label>
+          <div className="field-row">
+            <label className="field field-narrow"><span>보상(츄르) *</span>
+              <input type="number" inputMode="numeric" min="0" value={questForm.reward} onChange={setQuestField('reward')} placeholder="예: 2" /></label>
+            <label className="field field-narrow"><span>정렬</span>
+              <input type="number" inputMode="numeric" value={questForm.sort_order} onChange={setQuestField('sort_order')} placeholder="예: 1" /></label>
+            <label className="field"><span>대상 등급</span>
+              <select value={questForm.grade} onChange={setQuestField('grade')}>
+                {QUEST_GRADES.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
+              </select></label>
+          </div>
+          <div className="row-gap" style={{ flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5 }}>
+              <input type="checkbox" checked={questForm.active} onChange={setQuestField('active')} /> 활성(랜덤 풀에 포함)</label>
+          </div>
+          <div className="row-gap">
+            <button className="btn btn-primary" disabled={questBusy}>{questBusy ? '저장 중…' : editingQuest ? '수정 저장' : '퀘스트 추가'}</button>
+            {editingQuest && <button type="button" className="btn btn-ghost" onClick={startAddQuest}>취소</button>}
+          </div>
+        </form>
+
+        <div className="table-wrap" style={{ marginTop: 16 }}>
+          <table className="table">
+            <thead><tr><th>ID</th><th>제목</th><th>보상</th><th>대상</th><th>상태</th><th></th></tr></thead>
+            <tbody>
+              {questDefs.map((q) => (
+                <tr key={q.id} style={{ opacity: q.active ? 1 : .5 }}>
+                  <td className="muted sm">{q.id}</td>
+                  <td>{q.title}</td>
+                  <td>+{q.reward}</td>
+                  <td className="muted sm">{QUEST_GRADE_LABEL[q.grade] || q.grade}</td>
+                  <td><span className={`badge ${q.active ? 'badge-done' : 'badge'}`}>{q.active ? '활성' : '비활성'}</span></td>
+                  <td className="ta-right row-gap" style={{ justifyContent: 'flex-end' }}>
+                    <button className="btn btn-sm btn-ghost" onClick={() => startEditQuest(q)}>수정</button>
+                    <button className="btn btn-sm btn-ghost" onClick={() => questAct(() => adminUpsertQuestDef({ ...q, active: !q.active }))}>{q.active ? '비활성' : '활성'}</button>
+                    <button className="btn btn-sm btn-icon" title="삭제"
+                      onClick={() => { if (confirm(`'${q.title}' 퀘스트를 삭제할까요?`)) questAct(() => adminDeleteQuestDef(q.id), '퀘스트를 삭제했습니다.') }}>✕</button>
+                  </td>
+                </tr>
+              ))}
+              {questDefs.length === 0 && <tr><td colSpan={6} className="muted sm">등록된 퀘스트가 없습니다.</td></tr>}
             </tbody>
           </table>
         </div>
