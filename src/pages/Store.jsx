@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
@@ -29,7 +29,13 @@ export default function Store() {
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
-  const [premiumView, setPremiumView] = useState(false)
+  // 마지막으로 본 탭 기억(인벤토리 갔다가 "<"로 돌아오면 프리미엄 탭 복원)
+  const [premiumView, setPremiumView] = useState(() => {
+    try { return sessionStorage.getItem('storePremiumView') === '1' } catch { return false }
+  })
+  useEffect(() => {
+    try { sessionStorage.setItem('storePremiumView', premiumView ? '1' : '0') } catch { /* noop */ }
+  }, [premiumView])
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
@@ -108,6 +114,30 @@ export default function Store() {
   const hasPremium = hasCouple || hasFriend
   const inPremium = premiumView && hasPremium
 
+  // 좌우 스와이프로 일반↔프리미엄 탭 전환 (프리미엄 회원일 때만)
+  const swipeRef = useRef(null)
+  function onTouchStart(e) {
+    if (!hasPremium || selected || pickOpen || notice || e.touches.length !== 1) { swipeRef.current = null; return }
+    const t = e.touches[0]
+    swipeRef.current = { x0: t.clientX, y0: t.clientY, locked: null }
+  }
+  function onTouchMove(e) {
+    const s = swipeRef.current; if (!s) return
+    const t = e.touches[0]
+    const dx = t.clientX - s.x0, dy = t.clientY - s.y0
+    if (!s.locked) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
+      s.locked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+    }
+  }
+  function onTouchEnd(e) {
+    const s = swipeRef.current; swipeRef.current = null
+    if (!s || s.locked !== 'h') return
+    const dx = e.changedTouches[0].clientX - s.x0
+    if (Math.abs(dx) < 60) return
+    setPremiumView(dx < 0) // 왼쪽으로 밀면 프리미엄(오른쪽 탭), 오른쪽으로 밀면 일반
+  }
+
   function qualifies(item) {
     if (item.adminOnly && !isAdmin) return false   // 관리자 전용 아이템은 관리자에게만
     if (!item.premium) return !inPremium
@@ -124,7 +154,8 @@ export default function Store() {
   }).filter((s) => s.items.length || s.comingSoon)
 
   return (
-    <div className={`page store-page ${inPremium ? 'is-premium' : ''}`}>
+    <div className={`page store-page ${inPremium ? 'is-premium' : ''}`}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
       {hasPremium && (
