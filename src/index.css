@@ -2070,6 +2070,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   mask-composite: intersect;
 }
 
+/* ===== 익명(지우개) 쪽지: 살짝 회색 ===== */
+.note-card.note-anon { background: #f1f1f4; }
+.modal-card.modal-anon { background: linear-gradient(160deg, #eeeef1, #f6f6f8); }
+.modal-anon .note-view-body { background: rgba(255, 255, 255, .55); }
+
 /* ===== 물풍선 폭탄 쪽지 ===== */
 /* 작성 화면: 타이머 설정 */
 .nc-timer { margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }

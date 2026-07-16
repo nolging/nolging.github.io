@@ -341,7 +341,9 @@ export default function Notes() {
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
   const peer = (n) => tab === 'received'
     ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
-    : { name: n.recipient_name, avatar: n.recipient_avatar, label: '님에게', userId: n.recipient_id, groupId: n.group_id }
+    : { name: n.recipient_name, avatar: n.recipient_avatar, label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
+  // 익명(지우개) 쪽지의 아바타는 받은 쪽지함에서 발신자를 '?'로 가림
+  const anonAva = (n) => tab === 'received' && n.anonymous
   const peerDeco = (p) => (p.groupId && p.userId ? decosByGroup[p.groupId]?.[p.userId] : undefined)
 
   return (
@@ -401,8 +403,8 @@ export default function Notes() {
                             : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${popped ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
-                  <Avatar src={p.avatar} name={p.name} size={40} deco={peerDeco(p)} />
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${n.anonymous ? 'note-anon' : ''} ${popped ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                  <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
@@ -430,7 +432,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${waterPopped && isWater(open) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${waterPopped && isWater(open) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -454,7 +456,7 @@ export default function Notes() {
           return (
             <div className="note-view">
               <div className="note-view-head">
-                <Avatar src={p.avatar} name={p.name} size={44} deco={peerDeco(p)} />
+                <Avatar src={anonAva(open) ? null : p.avatar} name={anonAva(open) ? '?' : p.name} size={44} deco={anonAva(open) ? undefined : peerDeco(p)} />
                 <div className="note-view-who">
                   <span className="note-view-peer">
                     <span className="note-view-name">{p.name} <span className="note-card-rel">{p.label}</span></span>
