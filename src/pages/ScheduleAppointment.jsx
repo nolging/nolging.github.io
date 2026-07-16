@@ -84,6 +84,7 @@ export default function ScheduleAppointment() {
   // 위시 정보(작성자=유형·제목·작품, 참여자=작품 카드) 편집
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
+  const [comment, setComment] = useState('') // 운동·기타 유형의 코멘트(=description)
   const [mediaInfo, setMediaInfo] = useState(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [wishErr, setWishErr] = useState('')
@@ -94,6 +95,7 @@ export default function ScheduleAppointment() {
       const [g, t, m] = await Promise.all([getGroup(groupId), getTask(taskId), listMemberCards(groupId)])
       setGroup(g); setTask(t); setMembers(m)
       setTitle(t.title || ''); setCategory(t.category || ''); setMediaInfo(t.media_info || null)
+      setComment(t.category && !MEDIA_LOOKUP_CATS.includes(t.category) ? (t.description || '') : '')
 
       if (t.scheduled_at) {
         const d = new Date(t.scheduled_at)
@@ -133,7 +135,7 @@ export default function ScheduleAppointment() {
   function pickCategory(c) {
     const next = category === c ? '' : c
     setCategory(next); if (wishErr) setWishErr('')
-    if (!MEDIA_LOOKUP_CATS.includes(next)) setMediaInfo(null)
+    if (!MEDIA_LOOKUP_CATS.includes(next)) setMediaInfo(null); else setComment('')
   }
 
   function toggleMember(uid) {
@@ -167,7 +169,7 @@ export default function ScheduleAppointment() {
       if (isCreator) {
         await updateTask(taskId, {
           title: title.trim(),
-          description: mediaCat ? '' : (task.description ?? ''),
+          description: mediaCat ? '' : comment.trim(),
           category: category || null,
           media_info: mediaCat ? mediaInfo : null,
         })
@@ -256,6 +258,17 @@ export default function ScheduleAppointment() {
                   <span className="ts-search-label">{noun} 검색</span>
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 코멘트 — 운동·기타 등 비미디어 유형은 작성자가 편집 */}
+        {isCreator && category && !mediaCat && (
+          <div className="cg-field cg-mt-24">
+            <div className="cg-label">코멘트 <span className="cg-opt">선택</span></div>
+            <div className="cg-input-wrap">
+              <textarea className="cg-input cg-textarea" rows={3} value={comment}
+                onChange={(e) => setComment(e.target.value)} placeholder="어떤 위시인지 자유롭게 적어 주세요" />
             </div>
           </div>
         )}
