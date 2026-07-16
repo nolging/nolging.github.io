@@ -29,6 +29,7 @@ export default function MediaCard({ category, info, onClear }) {
   if (category === 'OTT') {
     const list = info.providers?.length ? info.providers : info.providers_buy
     if (list?.length) rows.push(['제공처', <span className="mc-ott">{list.map((p, i) => <OttBadge key={i} p={p} />)}</span>])
+    else rows.push(['제공처', <span className="muted">정보 없음</span>])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count}부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime}분`])
