@@ -2110,6 +2110,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-timer-range::-moz-range-thumb { width: 18px; height: 18px; border: 1px solid #e2dfea; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .22); }
 .nc-timer-ends { width: 100%; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 1px; }
 .nc-link-err { margin-top: 8px; font-size: 12px; font-weight: 600; color: #e0322f; text-align: center; }
+/* 인벤토리 사용 모달(쪽지 쓰기 페이지 디자인 재사용) */
+.nc-modal-alert { margin-top: 12px; }
+.nc-link .nc-to { margin-top: 14px; }
+.nc-link .nc-body-wrap { margin-top: 12px; }
+.nc-link .nc-body { height: 128px; }
+.nc-mt { margin-top: 16px; }
+/* 사용 방법 안내 모달: 헤더(이미지+이름) 가운데 정렬 */
+.nc-link-head.nc-link-head-center { flex-direction: column; text-align: center; gap: 8px; }
 
 /* 모달: 헤더 우측 카운트다운(시계 아이콘 + 분:초) */
 .note-water-clock {

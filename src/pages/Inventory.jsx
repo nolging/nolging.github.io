@@ -11,13 +11,9 @@ import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, us
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
-import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
+import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const MAX_WISH = 300
-const MAX_CASSETTE_MSG = 150
-const MAX_LINK_MSG = 150
-const MAX_VIDEO_MSG = 150
-const MAX_BLURAY_MSG = 150
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -188,36 +184,19 @@ export default function Inventory() {
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
       <CoupleModal open={coupleOpen} onClose={() => setCoupleOpen(false)} myId={user?.id} excludeGroupIds={coupleGroupIds} onDone={reload} />
       <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload} />
-      <CassetteModal open={cassetteOpen} onClose={() => setCassetteOpen(false)} onDone={reload} />
-      <LinkModal open={linkOpen} onClose={() => setLinkOpen(false)} onDone={reload} />
-      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} onDone={reload} />
-      <BlurayModal open={blurayOpen} onClose={() => setBlurayOpen(false)} onDone={reload} />
+      <MediaSendModal open={cassetteOpen} itemId="cassette" onClose={() => setCassetteOpen(false)} onDone={reload} />
+      <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
+      <MediaSendModal open={videoOpen} itemId="video" onClose={() => setVideoOpen(false)} onDone={reload} />
+      <MediaSendModal open={blurayOpen} itemId="bluray" onClose={() => setBlurayOpen(false)} onDone={reload} />
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
-      <Modal open={telescopeOpen} onClose={() => setTelescopeOpen(false)} title="천체 망원경">
-        <div className="couple-modal">
-          <p className="tele-guide-label">사용 방법</p>
-          <p className="tele-guide-text">흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.</p>
-          <button type="button" className="btn btn-primary btn-block" onClick={() => setTelescopeOpen(false)}>확인</button>
-        </div>
-      </Modal>
-
-      <Modal open={eraserOpen} onClose={() => setEraserOpen(false)} title="지우개">
-        <div className="couple-modal">
-          <p className="tele-guide-label">사용 방법</p>
-          <p className="tele-guide-text">쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.</p>
-          <button type="button" className="btn btn-primary btn-block" onClick={() => setEraserOpen(false)}>확인</button>
-        </div>
-      </Modal>
-
-      <Modal open={waterbombOpen} onClose={() => setWaterbombOpen(false)} title="물풍선 폭탄">
-        <div className="couple-modal">
-          <p className="tele-guide-label">사용 방법</p>
-          <p className="tele-guide-text">쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.</p>
-          <button type="button" className="btn btn-primary btn-block" onClick={() => setWaterbombOpen(false)}>확인</button>
-        </div>
-      </Modal>
+      <UseGuideModal open={telescopeOpen} onClose={() => setTelescopeOpen(false)} id="telescope" name="천체 망원경" emoji="🔭"
+        text="흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요." />
+      <UseGuideModal open={eraserOpen} onClose={() => setEraserOpen(false)} id="eraser" name="지우개" emoji="🧽"
+        text="쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요." />
+      <UseGuideModal open={waterbombOpen} onClose={() => setWaterbombOpen(false)} id="waterbomb" name="물풍선 폭탄" emoji="💧"
+        text="쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요." />
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
 
@@ -461,169 +440,68 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
   )
 }
 
-// ---- 비디오 테이프: 영상 링크 + 메시지 보내기 ----
-function VideoModal({ open, onClose, onDone }) {
-  const [message, setMessage] = useState('')
-  const [url, setUrl] = useState('')
-  const [recipient, setRecipient] = useState(null)
-  const [pickOpen, setPickOpen] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
-  }, [open])
-
-  const parsed = parseVideoUrl(url.trim())
-  const urlOk = !url.trim() || !!parsed
-
-  async function send() {
-    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
-    if (!url.trim()) { setError('영상 링크를 입력해 주세요.'); return }
-    if (!parsed) { setError('유튜브 영상 링크만 보낼 수 있어요.'); return }
-    setSending(true); setError('')
-    try {
-      await useVideo({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: url.trim() })
-      await onDone()
-      onClose()
-    } catch (e) { setError(e.message); setSending(false) }
-  }
-
-  return (
-    <>
-      <Modal open={open && !pickOpen} onClose={onClose} title="비디오 테이프">
-        <div className="couple-modal">
-          {error && <div className="alert alert-error">{error}</div>}
-          <p className="couple-hint">쪽지와 함께 영상(유튜브)을 보내요.</p>
-
-          {recipient ? (
-            <div className="couple-to">
-              <span className="couple-to-label">To.</span>
-              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
-              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
-          )}
-
-          <label className="field">
-            <span>영상 링크</span>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="유튜브 링크" inputMode="url" autoCapitalize="none" autoCorrect="off" />
-          </label>
-          {!urlOk && <p className="field-error">유튜브 영상 링크만 가능해요.</p>}
-
-          <div className="couple-msg">
-            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
-              value={message} maxLength={MAX_VIDEO_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
-            <span className="couple-msg-count">{message.length}/{MAX_VIDEO_MSG}</span>
-          </div>
-
-          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
-            {sending ? '보내는 중…' : '보내기'}
-          </button>
-        </div>
-      </Modal>
-      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
-        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
-    </>
-  )
-}
-
-// ---- 블루레이: 영상 링크 + 메시지 보내기 (시네마 플레이어 + PIP) ----
-function BlurayModal({ open, onClose, onDone }) {
-  const [message, setMessage] = useState('')
-  const [url, setUrl] = useState('')
-  const [recipient, setRecipient] = useState(null)
-  const [pickOpen, setPickOpen] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
-  }, [open])
-
-  const parsed = parseVideoUrl(url.trim())
-  const urlOk = !url.trim() || !!parsed
-
-  async function send() {
-    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
-    if (!url.trim()) { setError('영상 링크를 입력해 주세요.'); return }
-    if (!parsed) { setError('유튜브 영상 링크만 보낼 수 있어요.'); return }
-    setSending(true); setError('')
-    try {
-      await useBluray({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: url.trim() })
-      await onDone()
-      onClose()
-    } catch (e) { setError(e.message); setSending(false) }
-  }
-
-  return (
-    <>
-      <Modal open={open && !pickOpen} onClose={onClose} title="블루레이">
-        <div className="couple-modal">
-          {error && <div className="alert alert-error">{error}</div>}
-          <p className="couple-hint">쪽지와 함께 영상(유튜브)을 보내요. 받는 사람은 시네마 화면으로 감상하고, 작게 띄워(PIP) 앱을 쓰면서도 볼 수 있어요.</p>
-
-          {recipient ? (
-            <div className="couple-to">
-              <span className="couple-to-label">To.</span>
-              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
-              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
-          )}
-
-          <label className="field">
-            <span>영상 링크</span>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="유튜브 링크" inputMode="url" autoCapitalize="none" autoCorrect="off" />
-          </label>
-          {!urlOk && <p className="field-error">유튜브 영상 링크만 가능해요.</p>}
-
-          <div className="couple-msg">
-            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
-              value={message} maxLength={MAX_BLURAY_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
-            <span className="couple-msg-count">{message.length}/{MAX_BLURAY_MSG}</span>
-          </div>
-
-          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
-            {sending ? '보내는 중…' : '보내기'}
-          </button>
-        </div>
-      </Modal>
-      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
-        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
-    </>
-  )
-}
-
-// ---- 링크: 클릭 가능한 링크 + 메시지 보내기 ----
+// ---- 링크 URL 정규화 ----
 function normalizeUrl(u) {
   const s = (u || '').trim()
   if (!s) return ''
   return /^https?:\/\//i.test(s) ? s : `https://${s}`
 }
-function LinkModal({ open, onClose, onDone }) {
+
+// 미디어(링크 첨부) 아이템별 설정 — 쪽지 쓰기 페이지 모달과 동일한 헤더/placeholder
+const MEDIA_CFG = {
+  link: {
+    name: () => '선물 상자', emoji: '🎁',
+    sub: '선물 상자로 포장할 링크를 입력해 주세요', placeholder: '링크(URL) 입력',
+    validate: (u) => { const l = normalizeUrl(u); return l && /\./.test(l) ? l : null },
+    linkErr: '올바른 링크(URL)를 입력해 주세요.',
+    send: (a) => useLink(a),
+  },
+  cassette: {
+    name: () => itemName('cassette', '카세트 테이프'), emoji: '📼',
+    sub: '공유하고 싶은 음악 링크를 입력해 주세요', placeholder: '유튜브 / 사운드클라우드 링크',
+    validate: (u) => (parseMusicUrl(u.trim()) ? u.trim() : null),
+    linkErr: '유튜브 또는 사운드클라우드 링크만 보낼 수 있어요.',
+    send: (a) => useCassette(a),
+  },
+  video: {
+    name: () => '비디오 테이프', emoji: '📹',
+    sub: '공유하고 싶은 영상 링크를 입력해 주세요', placeholder: '유튜브 링크',
+    validate: (u) => (parseVideoUrl(u.trim()) ? u.trim() : null),
+    linkErr: '유튜브 영상 링크만 보낼 수 있어요.',
+    send: (a) => useVideo(a),
+  },
+  bluray: {
+    name: () => '블루레이', emoji: '💿',
+    sub: '공유하고 싶은 영상 링크를 입력해 주세요', placeholder: '유튜브 링크',
+    validate: (u) => (parseVideoUrl(u.trim()) ? u.trim() : null),
+    linkErr: '유튜브 영상 링크만 보낼 수 있어요.',
+    send: (a) => useBluray(a),
+  },
+}
+
+// 링크 첨부 아이템 공용 사용 모달(쪽지 쓰기 페이지 모달 디자인) — 받는 사람 + 링크 + 메시지 → 보내기
+function MediaSendModal({ open, itemId, onClose, onDone }) {
+  const cfg = MEDIA_CFG[itemId]
   const [message, setMessage] = useState('')
   const [url, setUrl] = useState('')
-  const [label, setLabel] = useState('')
   const [recipient, setRecipient] = useState(null)
   const [pickOpen, setPickOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (open) { setMessage(''); setUrl(''); setLabel(''); setRecipient(null); setError(''); setSending(false) }
+    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
   }, [open])
+
+  if (!cfg) return null
 
   async function send() {
     if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
-    if (!label.trim()) { setError('버튼에 표시할 텍스트를 입력해 주세요.'); return }
-    const link = normalizeUrl(url)
-    if (!link || !/\./.test(link)) { setError('올바른 링크를 입력해 주세요.'); return }
+    const link = cfg.validate(url)
+    if (!link) { setError(cfg.linkErr); return }
     setSending(true); setError('')
     try {
-      await useLink({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: link, label: label.trim() })
+      await cfg.send({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: link })
       await onDone()
       onClose()
     } catch (e) { setError(e.message); setSending(false) }
@@ -631,38 +509,34 @@ function LinkModal({ open, onClose, onDone }) {
 
   return (
     <>
-      <Modal open={open && !pickOpen} onClose={onClose} title="선물 상자">
-        <div className="couple-modal">
-          {error && <div className="alert alert-error">{error}</div>}
-          <p className="couple-hint">버튼에 표시할 텍스트와 연결할 링크를 입력하면, 받는 사람에게는 링크가 걸린 버튼만 보여요.</p>
+      <Modal open={open && !pickOpen} onClose={onClose} cardClassName="nc-link-modal">
+        <div className="nc-link">
+          <div className="nc-link-head">
+            <span className="nc-link-ico" style={{ background: imgBgOf(itemId) }}><StoreItemImage id={itemId} emoji={cfg.emoji} className="nc-img" /></span>
+            <div><div className="nc-link-name">{cfg.name()}</div><div className="nc-link-sub">{cfg.sub}</div></div>
+          </div>
+          {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
 
-          {recipient ? (
-            <div className="couple-to">
-              <span className="couple-to-label">To.</span>
-              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
-              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
-          )}
+          <button type="button" className="nc-to" onClick={() => setPickOpen(true)}>
+            <span className="nc-label">To.</span>
+            {recipient
+              ? <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={26} />{recipient.name}</span>
+              : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
+            <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+          </button>
 
-          <label className="field">
-            <span>버튼 텍스트</span>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="예: 여기를 눌러 보세요" maxLength={40} />
-          </label>
-
-          <label className="field">
-            <span>링크</span>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" inputMode="url" autoCapitalize="none" autoCorrect="off" />
-          </label>
-
-          <div className="couple-msg">
-            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
-              value={message} maxLength={MAX_LINK_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
-            <span className="couple-msg-count">{message.length}/{MAX_LINK_MSG}</span>
+          <div className="nc-link-input">
+            <svg width="15" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+            <input type="url" value={url} placeholder={cfg.placeholder} onChange={(e) => { setUrl(e.target.value); if (error) setError('') }} inputMode="url" autoCapitalize="none" autoCorrect="off" />
           </div>
 
-          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
+          <div className="nc-body-wrap">
+            <textarea className="nc-body" placeholder="함께 보낼 메시지(선택)" value={message} maxLength={150} rows={4}
+              onChange={(e) => setMessage(e.target.value.slice(0, 150))} />
+            <span className="nc-count">{message.length}/150</span>
+          </div>
+
+          <button type="button" className="nc-sheet-confirm" onClick={send} disabled={sending}>
             {sending ? '보내는 중…' : '보내기'}
           </button>
         </div>
@@ -673,71 +547,20 @@ function LinkModal({ open, onClose, onDone }) {
   )
 }
 
-// ---- 카세트 테이프: 음악 링크 + 메시지 보내기 ----
-function CassetteModal({ open, onClose, onDone }) {
-  const [message, setMessage] = useState('')
-  const [url, setUrl] = useState('')
-  const [recipient, setRecipient] = useState(null) // { groupId, userId, name, avatar }
-  const [pickOpen, setPickOpen] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (open) { setMessage(''); setUrl(''); setRecipient(null); setError(''); setSending(false) }
-  }, [open])
-
-  const parsed = parseMusicUrl(url.trim())
-  const urlOk = !url.trim() || !!parsed
-
-  async function send() {
-    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
-    if (!url.trim()) { setError('음악 링크를 입력해 주세요.'); return }
-    if (!parsed) { setError('유튜브 또는 사운드클라우드 링크만 보낼 수 있어요.'); return }
-    setSending(true); setError('')
-    try {
-      await useCassette({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), url: url.trim() })
-      await onDone()
-      onClose()
-    } catch (e) { setError(e.message); setSending(false) }
-  }
-
+// 즉시 사용(정보) 아이템 안내 모달 — 헤더(이미지+이름, 가운데) + 사용 방법
+function UseGuideModal({ open, onClose, id, name, emoji, text }) {
   return (
-    <>
-      <Modal open={open && !pickOpen} onClose={onClose} title="카세트 테이프">
-        <div className="couple-modal">
-          {error && <div className="alert alert-error">{error}</div>}
-          <p className="couple-hint">쪽지와 함께 음악(유튜브·사운드클라우드)을 보내요.</p>
-
-          {recipient ? (
-            <div className="couple-to">
-              <span className="couple-to-label">To.</span>
-              <span className="couple-to-value"><Avatar src={recipient.avatar} name={recipient.name} size={28} />{recipient.name}</span>
-              <button type="button" className="btn btn-sm cassette-change" onClick={() => setPickOpen(true)}>변경</button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-block" onClick={() => setPickOpen(true)}>받는 사람 선택</button>
-          )}
-
-          <label className="field">
-            <span>음악 링크</span>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="유튜브 / 사운드클라우드 링크" />
-          </label>
-          {!urlOk && <p className="field-error">유튜브 또는 사운드클라우드 링크만 가능해요.</p>}
-
-          <div className="couple-msg">
-            <textarea className="wish-input" placeholder="함께 보낼 메시지 (선택)"
-              value={message} maxLength={MAX_CASSETTE_MSG} onChange={(e) => setMessage(e.target.value)} rows={3} />
-            <span className="couple-msg-count">{message.length}/{MAX_CASSETTE_MSG}</span>
-          </div>
-
-          <button type="button" className="btn btn-primary btn-block" onClick={send} disabled={sending}>
-            {sending ? '보내는 중…' : '보내기'}
-          </button>
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="nc-link">
+        <div className="nc-link-head nc-link-head-center">
+          <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
+          <div className="nc-link-name">{name}</div>
         </div>
-      </Modal>
-      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
-        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
-    </>
+        <p className="tele-guide-label nc-mt">사용 방법</p>
+        <p className="tele-guide-text">{text}</p>
+        <button type="button" className="nc-sheet-confirm" onClick={onClose}>확인</button>
+      </div>
+    </Modal>
   )
 }
 
