@@ -809,7 +809,7 @@ export default function TaskDetail() {
             <div className="composer-row">
               <input ref={inputRef} value={body} onChange={onBodyChange}
                 onKeyDown={(e) => { if (e.key === 'Escape' && mentionOpen) { e.preventDefault(); setMentionOpen(false) } }}
-                placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요 (@로 멤버 호출)'} />
+                placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
               <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
             </div>
           </form>
