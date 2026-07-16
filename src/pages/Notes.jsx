@@ -125,24 +125,16 @@ export default function Notes() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
-  // 물풍선 쪽지 모달: 열면 opened_at(서버) 기준으로 카운트다운 시작 → 0 이 되면 터짐
+  // 물풍선 쪽지 모달: 처음 연 시각(opened_at) 기준으로 카운트다운 → 0 이 되면 터짐.
+  // opened_at 은 서버에 최초 1회만 기록되고, 목록 데이터에 담겨 오므로 재열람/재접속에도 이어짐.
   useEffect(() => {
     setWaterLeft(null); setWaterPopped(false)
     if (!open || !isWater(open) || tab !== 'received') return
-    let iv, cancelled = false
-    ;(async () => {
-      let openedAt = null, serverNow = null
-      try {
-        const r = await openWaterNote(open.id)
-        openedAt = r?.openedAt ? new Date(r.openedAt).getTime() : null
-        serverNow = r?.serverNow ? new Date(r.serverNow).getTime() : null
-      } catch { /* 서버 실패 시 로컬 기준으로 진행 */ }
-      if (cancelled) return
-      if (!openedAt) { openedAt = Date.now(); serverNow = Date.now() }
-      // 목록 카드에도 opened_at 반영(폭발 판정용)
-      setReceived((prev) => prev.map((x) => (x.id === open.id && !x.opened_at ? { ...x, opened_at: new Date(openedAt).toISOString() } : x)))
-      const elapsed = Math.max(0, ((serverNow || Date.now()) - openedAt) / 1000)
-      const deadline = Date.now() + (open.timer_seconds - elapsed) * 1000
+    let iv
+    const total = open.timer_seconds
+
+    const begin = (openedAtMs) => {
+      const deadline = openedAtMs + total * 1000
       const tick = () => {
         const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
         setWaterLeft(left)
@@ -154,8 +146,19 @@ export default function Notes() {
       }
       tick()
       iv = setInterval(tick, 250)
-    })()
-    return () => { cancelled = true; if (iv) clearInterval(iv) }
+    }
+
+    if (open.opened_at) {
+      // 이미 연 적 있음 → 그 시각 기준으로 이어서(또는 이미 폭발)
+      begin(new Date(open.opened_at).getTime())
+    } else {
+      // 최초 열람 → 지금부터 시작. 서버에 opened_at 기록 + 목록 카드에도 반영.
+      const now = Date.now()
+      setReceived((prev) => prev.map((x) => (x.id === open.id && !x.opened_at ? { ...x, opened_at: new Date(now).toISOString() } : x)))
+      openWaterNote(open.id).catch(() => {})
+      begin(now)
+    }
+    return () => { if (iv) clearInterval(iv) }
   }, [open, tab])
 
   // 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착되고 그룹이 프리미엄이 됨

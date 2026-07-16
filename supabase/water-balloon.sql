@@ -62,18 +62,14 @@ end;
 $$;
 grant execute on function public.send_note(uuid, uuid, text, boolean, integer) to authenticated;
 
--- 4) 물풍선 쪽지 처음 열기: opened_at 을 최초 1회만 기록하고, opened_at + 서버시각을 반환
+-- 4) 물풍선 쪽지 처음 열기: opened_at 을 최초 1회만 기록(멱등). 반환값 없음.
+--    (반환 테이블에서 opened_at 컬럼명이 겹쳐 return query 가 실패→update 롤백되던 문제 제거)
+drop function if exists public.open_water_note(uuid);
 create or replace function public.open_water_note(p_note_id uuid)
-returns table(opened_at timestamptz, server_now timestamptz)
-language plpgsql security definer set search_path = public as $$
-begin
+returns void language sql security definer set search_path = public as $$
   update public.notes set opened_at = now()
     where id = p_note_id and recipient_id = auth.uid()
       and timer_seconds is not null and opened_at is null;
-  return query
-    select n.opened_at, now() from public.notes n
-    where n.id = p_note_id and n.recipient_id = auth.uid();
-end;
 $$;
 grant execute on function public.open_water_note(uuid) to authenticated;
 

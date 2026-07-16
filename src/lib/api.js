@@ -755,12 +755,10 @@ export async function sendNote({ groupId, recipientId, body, anonymous = false, 
   return Array.isArray(data) ? data[0] : data
 }
 
-// 물풍선 쪽지: 받는 사람이 처음 열 때 opened_at 기록. { openedAt, serverNow }(ISO) 반환.
+// 물풍선 쪽지: 받는 사람이 처음 열 때 opened_at 을 서버에 최초 1회 기록(멱등).
 export async function openWaterNote(noteId) {
-  const { data, error } = await supabase.rpc('open_water_note', { p_note_id: noteId })
+  const { error } = await supabase.rpc('open_water_note', { p_note_id: noteId })
   if (error) throw error
-  const row = Array.isArray(data) ? data[0] : data
-  return row ? { openedAt: row.opened_at, serverNow: row.server_now } : null
 }
 
 // ---- 상점 ----------------------------------------------------
