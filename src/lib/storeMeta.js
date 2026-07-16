@@ -33,6 +33,7 @@ export const IS_IOS = typeof navigator !== 'undefined' && (
 // 기능(음악 링크)은 동일. id 는 'cassette' 그대로 유지하고 표시만 바꾼다.
 export function itemImgId(id) {
   if (id === 'cassette') return IS_IOS ? 'airpods' : 'buds'
+  if (id === 'waterbomb') return 'water-bomb' // 파일명(water-bomb.svg) ↔ 아이템 id(waterbomb)
   return id
 }
 export function itemName(id, fallback) {
