@@ -144,7 +144,7 @@ export default function MyProfile() {
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
   async function handleLogout() { await logout(); navigate('/login') }
-  const challenge = (key) => navigate(QUEST_TARGET[key] || '/')
+  const challenge = (key) => navigate(QUEST_TARGET[key] || '/', { state: { from: '/me' } })
 
   const grade = quests?.grade || 'normal'
   const balance = quests?.balance
@@ -190,7 +190,9 @@ export default function MyProfile() {
 
               <div className="quest-title">랜덤 퀘스트</div>
               <div className="quest-slots" data-hscroll>
-                {(quests.slots || []).map((s) => (
+                {[...(quests.slots || [])]
+                  .sort((a, b) => (b.done ? 1 : 0) - (a.done ? 1 : 0))
+                  .map((s) => (
                   <SlotCard key={s.slot} s={s} now={now} busy={busy}
                     onClaim={() => claimSlot(s.slot)} onChallenge={() => challenge(s.key)} onReroll={() => rerollSlot(s.slot)} />
                 ))}

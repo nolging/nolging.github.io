@@ -145,6 +145,8 @@ export default function Layout() {
   const coinHistoryMatch = useMatch('/me/coins')
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
+  // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
+  const fromMe = location.state?.from === '/me'
 
   // 태스크 상세가 알려주는 동적 제목/뒤로가기 경로 (상태별 명칭, 상태 탭 복귀)
   const [taskHeading, setTaskHeading] = useState(null)
@@ -569,6 +571,7 @@ export default function Layout() {
     // 상점: 좌측 "깜냥이 상점" 제목, 우측 보유 츄르 알약 + 인벤토리 버튼
     topbar = (
       <header className="topbar">
+        {fromMe && <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading topbar-title-lg">깜냥이 상점</span>
         <span className="coin-pill push-right" aria-label="보유 츄르">
           <span className="coin-pill-paw" aria-hidden="true">🐾</span>
@@ -581,7 +584,9 @@ export default function Layout() {
     // 인벤토리: 좌측 뒤로(상점으로), 제목 "인벤토리"
     topbar = (
       <header className="topbar">
-        <Link to="/store" state={{ restore: true }} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        {fromMe
+          ? <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+          : <Link to="/store" state={{ restore: true }} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">인벤토리</span>
       </header>
     )
@@ -598,6 +603,14 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <span className="topbar-heading topbar-title-lg">쪽지</span>
+      </header>
+    )
+  } else if (fromMe && homeMatch) {
+    // 마이 페이지 '도전'으로 홈에 진입: 좌측 뒤로(마이 페이지로)
+    topbar = (
+      <header className="topbar">
+        <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <span className="topbar-heading">내 그룹</span>
       </header>
     )
   } else {
