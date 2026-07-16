@@ -593,7 +593,8 @@ export async function listParticipantsByTasks(taskIds) {
 
 export async function listComments(taskId) {
   const { data, error } = await supabase
-    .from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true })
+    .from('task_comments').select('id, task_id, group_id, author_id, parent_id, body, created_at')
+    .eq('task_id', taskId).order('created_at', { ascending: true })
   if (error) throw error
   return data ?? []
 }

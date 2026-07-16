@@ -67,13 +67,23 @@ export default function Notes() {
   const [waterPopped, setWaterPopped] = useState(false) // 열린 물풍선이 터졌는지
   const [poppedIds, setPoppedIds] = useState(() => new Set()) // 터진 걸 목격한 쪽지 id
 
+  const lastFetchRef = useRef(0)      // 마지막 조회 시각(중복 재조회 방지)
+  const decoCacheRef = useRef({})     // 그룹 deco 캐시(자주 안 바뀜 → 새 그룹만 조회)
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
     const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
     setReceived(r); setSent(s)
+    lastFetchRef.current = Date.now()
+    // deco 는 캐시에 없는 그룹만 조회(매 재조회마다 전체 그룹 재조회하던 것 방지)
     const gids = [...new Set([...r, ...s].map((n) => n.group_id).filter(Boolean))]
-    Promise.all(gids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
-      .then((pairs) => setDecosByGroup(Object.fromEntries(pairs))).catch(() => {})
+    const missing = gids.filter((id) => !decoCacheRef.current[id])
+    if (missing.length) {
+      Promise.all(missing.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+        .then((pairs) => {
+          pairs.forEach(([id, m]) => { decoCacheRef.current[id] = m })
+          setDecosByGroup({ ...decoCacheRef.current })
+        }).catch(() => {})
+    }
     const giftIds = [...r, ...s].filter((n) => n.kind === 'gift').map((n) => n.id)
     try { setNoteItems(await listNoteItems(giftIds)) } catch { /* noop */ }
   }, [user?.id])
@@ -98,8 +108,13 @@ export default function Notes() {
   }, [user?.id, fetchNotes])
 
   // 백그라운드에서 돌아오면(재개) 조용히 다시 불러오기 — stale/무한 로딩 방지.
+  // visibilitychange·focus·pageshow 가 한꺼번에 발화해도 25초 내엔 1회만 실제 조회(중복 egress 방지).
   useEffect(() => {
-    const onResume = () => { if (document.visibilityState === 'visible') fetchNotes().catch(() => {}) }
+    const onResume = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastFetchRef.current < 25000) return
+      fetchNotes().catch(() => {})
+    }
     document.addEventListener('visibilitychange', onResume)
     window.addEventListener('focus', onResume)
     window.addEventListener('pageshow', onResume)
