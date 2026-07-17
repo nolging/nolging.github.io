@@ -10,6 +10,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead } from '../lib/api'
+import { NOTES_TTL, notesCache } from '../lib/notesCache'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
 const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
@@ -67,13 +68,14 @@ export default function Notes() {
   const [waterPopped, setWaterPopped] = useState(false) // 열린 물풍선이 터졌는지
   const [poppedIds, setPoppedIds] = useState(() => new Set()) // 터진 걸 목격한 쪽지 id
 
-  const lastFetchRef = useRef(0)      // 마지막 조회 시각(중복 재조회 방지)
-  const decoCacheRef = useRef({})     // 그룹 deco 캐시(자주 안 바뀜 → 새 그룹만 조회)
+  const decoCacheRef = useRef(notesCache.uid === user?.id ? notesCache.decos : {}) // 그룹 deco 캐시(모듈 캐시와 공유)
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
     const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
     setReceived(r); setSent(s)
-    lastFetchRef.current = Date.now()
+    // 모듈 캐시 갱신(재진입 시 재조회 생략용). uid 가 바뀌면 deco 캐시 초기화.
+    if (notesCache.uid !== user.id) { notesCache.uid = user.id; notesCache.decos = {}; decoCacheRef.current = notesCache.decos }
+    notesCache.received = r; notesCache.sent = s; notesCache.at = Date.now()
     // deco 는 캐시에 없는 그룹만 조회(매 재조회마다 전체 그룹 재조회하던 것 방지)
     const gids = [...new Set([...r, ...s].map((n) => n.group_id).filter(Boolean))]
     const missing = gids.filter((id) => !decoCacheRef.current[id])
@@ -85,7 +87,7 @@ export default function Notes() {
         }).catch(() => {})
     }
     const giftIds = [...r, ...s].filter((n) => n.kind === 'gift').map((n) => n.id)
-    try { setNoteItems(await listNoteItems(giftIds)) } catch { /* noop */ }
+    try { const ni = await listNoteItems(giftIds); setNoteItems(ni); notesCache.noteItems = ni } catch { /* noop */ }
   }, [user?.id])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
@@ -95,6 +97,12 @@ export default function Notes() {
   // 최초 로드 — 스피너가 무한히 돌지 않도록 15초 안전장치 포함.
   useEffect(() => {
     if (!user?.id) return
+    // 캐시가 신선하면(같은 유저·TTL 이내) 재조회 없이 즉시 표시 → 재진입 egress 절감.
+    if (notesCache.uid === user.id && Date.now() - notesCache.at < NOTES_TTL) {
+      setReceived(notesCache.received); setSent(notesCache.sent); setNoteItems(notesCache.noteItems)
+      setDecosByGroup({ ...notesCache.decos }); setError(''); setLoading(false)
+      return
+    }
     let on = true
     setLoading(true)
     const guard = setTimeout(() => {
@@ -112,7 +120,7 @@ export default function Notes() {
   useEffect(() => {
     const onResume = () => {
       if (document.visibilityState !== 'visible') return
-      if (Date.now() - lastFetchRef.current < 25000) return
+      if (Date.now() - notesCache.at < 25000) return
       fetchNotes().catch(() => {})
     }
     document.addEventListener('visibilitychange', onResume)

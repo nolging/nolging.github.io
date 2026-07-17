@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { itemName } from './storeMeta'
+import { invalidateNotesCache } from './notesCache'
 
 // 프로필에서 일반 조회 가능한 컬럼(민감정보 contact/birthdate 제외)
 const PROFILE_COLS = 'id, nickname, role, status, created_at'
@@ -754,9 +755,11 @@ export async function markNoteRead(noteId) {
   }
 }
 
+// UI 가 실제로 쓰는 컬럼만 조회(select('*') 대비 egress 절감)
+const SENT_NOTE_COLS = 'id, group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, is_read, created_at, item_id, item_name, claimed, rejected, media_url, anonymous, qty, timer_seconds, opened_at'
 export async function listSentNotes(userId) {
   const { data, error } = await supabase
-    .from('notes').select('*')
+    .from('notes').select(SENT_NOTE_COLS)
     .eq('sender_id', userId)
     .order('created_at', { ascending: false })
   if (error) {
@@ -778,6 +781,7 @@ export async function sendNote({ groupId, recipientId, body, anonymous = false, 
     }
     throw error
   }
+  invalidateNotesCache()
   return Array.isArray(data) ? data[0] : data
 }
 
@@ -881,6 +885,7 @@ export async function useCassette({ groupId, recipientId, message, url, anonymou
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
@@ -895,6 +900,7 @@ export async function useLink({ groupId, recipientId, message, url, label, anony
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
@@ -909,6 +915,7 @@ export async function useVideo({ groupId, recipientId, message, url, anonymous =
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
@@ -923,6 +930,7 @@ export async function useBluray({ groupId, recipientId, message, url, anonymous 
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
@@ -1050,6 +1058,7 @@ export async function useCoupleRing({ groupId, recipientId, message }) {
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
@@ -1147,6 +1156,7 @@ export async function useFriendRing({ groupId, message }) {
     }
     throw error
   }
+  invalidateNotesCache()
 }
 
 // 우정 링 수령: 내 인벤토리에 장착 우정 링 생성. (거절 없음)
@@ -1182,6 +1192,7 @@ export async function giftItem(itemId, groupId, recipientId, qty = 1, message = 
     }
     throw error
   }
+  invalidateNotesCache()
   return Number(data) || 0
 }
 
@@ -1197,6 +1208,7 @@ export async function giftOwnedItem(itemId, groupId, recipientId, qty = 1, { mes
     }
     throw error
   }
+  invalidateNotesCache()
 }
 
 // 쪽지 작성: 사용 아이템/선물/익명을 한 번에 처리하는 오케스트레이터.
@@ -1235,6 +1247,7 @@ export async function sendGiftNote({ groupId, recipientId, message = '', anonymo
     }
     throw error
   }
+  invalidateNotesCache()
   return data
 }
 
