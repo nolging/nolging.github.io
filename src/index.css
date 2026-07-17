@@ -156,6 +156,12 @@ input, textarea, select {
 }
 /* 텍스트형 입력·선택 높이를 submit 버튼(.btn-block)과 통일 (체크박스/라디오 제외) */
 input:not([type="checkbox"]):not([type="radio"]), select { min-height: 46px; }
+/* 체크박스/라디오는 위 텍스트형 스타일(width:100%·padding·둥근 테두리)을 상속하면
+   거대하게 깨지므로 네이티브 크기로 되돌린다. */
+input[type="checkbox"], input[type="radio"] {
+  width: auto; min-width: 0; padding: 0; border: none; border-radius: 0; background: none;
+  flex: none; accent-color: var(--primary);
+}
 /* 컴팩트/특수 입력은 자체 크기 유지 */
 .gs-input, .sched-val, .sched-num, .sched-title-input { min-height: 0; }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--text); outline-offset: -1px; border-color: var(--text); }

@@ -3,11 +3,15 @@ import { Link, useNavigate } from 'react-router-dom'
 import { adminListStoreItems } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
 
+// 상세로 들어갔다가 뒤로 나올 때(컴포넌트 재마운트) 직전 탭을 유지하기 위한 모듈 변수
+let lastStoreTab = 'general'
+
 // 상점 관리 — 일반/프리미엄 탭. 각 탭에서 이모지/이름/가격만. 행 클릭 → 상세/수정.
 export default function AdminStore() {
   const nav = useNavigate()
   const [items, setItems] = useState([])
-  const [tab, setTab] = useState('general') // 'general' | 'premium'
+  const [tab, setTabState] = useState(lastStoreTab) // 'general' | 'premium'
+  const setTab = (t) => { lastStoreTab = t; setTabState(t) }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
