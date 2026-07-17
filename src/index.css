@@ -2678,6 +2678,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-send:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; }
 
 /* 시트 공통(그리드/카드) */
+.nc-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.nc-sheet-store { flex-shrink: 0; margin-top: 2px; display: inline-flex; align-items: center; gap: 2px; background: none; border: none; padding: 4px 2px; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #7363e8; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.nc-sheet-store:active { opacity: .6; }
 .nc-sheet-title { font-size: 17px; font-weight: 800; color: #191722; margin: 0; text-align: left; }
 .nc-sheet-sub { margin: 3px 0 0; font-size: 12px; color: #8b8798; }
 .nc-sheet-empty { padding: 28px 0; text-align: center; color: #a8a4b2; font-size: 13.5px; }
@@ -2701,7 +2704,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-icard-badge { position: absolute; top: 6px; right: 6px; background: rgba(25,23,34,.72); color: #fff; border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
 .nc-icard-name { display: block; margin-top: 8px; font-size: 12px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nc-gcard { background: #fff; border-radius: 16px; padding: 11px 11px 10px; box-sizing: border-box; text-align: center; box-shadow: inset 0 0 0 0 transparent, 0 4px 14px rgba(25,23,34,.06); }
-.nc-gcard.is-picked { box-shadow: inset 0 0 0 2px #7363e8, 0 4px 14px rgba(25,23,34,.06); }
+.nc-gcard.is-picked { box-shadow: inset 0 0 0 2px #191722, 0 4px 14px rgba(25,23,34,.06); }
 .nc-gcard.is-off { opacity: .5; cursor: pointer; }
 .nc-gcard.is-tap { cursor: pointer; }
 .nc-gcard.is-tap:active { transform: scale(.97); }
@@ -2737,7 +2740,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-ava-stack-i + .nc-ava-stack-i { margin-left: -9px; }
 .nc-ava-stack-more { margin-left: -9px; height: 26px; min-width: 26px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: #ece9fb; color: #7363e8; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; }
 /* "사용 중" 배지 + 활성 카드 강조 */
-.nc-icard.is-active { box-shadow: inset 0 0 0 2px #7363e8, 0 4px 14px rgba(25,23,34,.06); }
+.nc-icard.is-active { box-shadow: inset 0 0 0 2px #191722, 0 4px 14px rgba(25,23,34,.06); }
 .nc-icard-using { position: absolute; top: 6px; right: 6px; background: #7363e8; color: #fff; border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
 /* 우정 링 그룹 단위 안내 */
 .picker-friend-note { font-size: 13px; color: #6b6777; background: #f4f3f7; border-radius: 12px; padding: 11px 14px; line-height: 1.5; }

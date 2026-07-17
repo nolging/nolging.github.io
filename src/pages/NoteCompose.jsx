@@ -88,7 +88,7 @@ export default function NoteCompose() {
     listStoreItems().then((rows) => {
       if (!on) return
       const m = {}
-      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null }
+      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null, sort: r.sort_order ?? 999 }
       setStore(m)
     }).catch(() => {})
     // 링 사용 시 제외할 그룹 + 프리미엄 선물 대상 판별용(커플/우정 그룹)
@@ -177,8 +177,9 @@ export default function NoteCompose() {
   // 선물 목록: 보유 아이템(소원권 제외). 프리미엄도 일단 노출하되, 받는 사람이
   // 정해졌고 대상이 아니면 비활성. (받는 사람 미선택이면 허용 → 이후 그룹으로 필터)
   const giftItemsList = useMemo(
-    () => Object.keys(owned).filter((id) => owned[id] > 0 && id !== 'wish'),
-    [owned],
+    () => Object.keys(owned).filter((id) => owned[id] > 0 && id !== 'wish')
+      .sort((a, b) => (store[a]?.sort ?? 999) - (store[b]?.sort ?? 999)),
+    [owned, store],
   )
   const giftReason = useCallback((id) => {
     const info = store[id]
@@ -332,8 +333,16 @@ export default function NoteCompose() {
 
       {/* 사용 아이템 시트 */}
       <BottomSheet open={sheet === 'use'} onClose={() => setSheet(null)}>
-        <h3 className="nc-sheet-title">쪽지에 사용할 아이템</h3>
-        <p className="nc-sheet-sub">내 인벤토리에 있는 쪽지 강화 아이템이에요</p>
+        <div className="nc-sheet-head">
+          <div>
+            <h3 className="nc-sheet-title">쪽지에 사용할 아이템</h3>
+            <p className="nc-sheet-sub">내 인벤토리에 있는 쪽지 강화 아이템이에요</p>
+          </div>
+          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store')}>
+            상점으로 가기
+            <svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+          </button>
+        </div>
         <div className="nc-sheet-scroll">
         {useSections.length === 0 ? (
           <div className="nc-sheet-empty">사용할 수 있는 아이템이 없어요.</div>
@@ -375,11 +384,13 @@ export default function NoteCompose() {
               const max = owned[id] || 0
               const reason = giftReason(id)
               const disabled = !!reason
-              // 미선택 카드(수량 0)를 탭하면 수량 1로 선택
-              const tapToSelect = !disabled && q === 0
+              // 카드 탭: 미선택이면 1개 선택, 이미 선택돼 있으면 선택 해제(수량 버튼은 stopPropagation)
+              const onCard = disabled
+                ? () => setGiftNotice(reason)
+                : () => { setGiftNotice(''); setDraft(id, q > 0 ? 0 : 1) }
               return (
-                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${tapToSelect ? 'is-tap' : ''}`}
-                  onClick={disabled ? () => setGiftNotice(reason) : tapToSelect ? () => { setGiftNotice(''); setDraft(id, 1) } : undefined}>
+                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${!disabled ? 'is-tap' : ''}`}
+                  onClick={onCard}>
                   <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
                     <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
                     <span className="nc-icard-badge">×{max}</span>
