@@ -7,7 +7,8 @@ export function parseMusicUrl(url) {
   if (!url) return null
   const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/|live\/))([\w-]{11})/)
   if (yt) return { kind: 'youtube', id: yt[1] }
-  if (/soundcloud\.com\//.test(url)) return { kind: 'soundcloud', url }
+  // soundcloud.com/… 정식 링크 + on.soundcloud.com·snd.sc 단축 공유 링크
+  if (/soundcloud\.com\/|snd\.sc\//i.test(url)) return { kind: 'soundcloud', url }
   return null
 }
 

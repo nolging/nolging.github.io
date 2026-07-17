@@ -111,14 +111,41 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   function ytRestart() { try { ytRef.current?.seekTo?.(0, true); ytRef.current?.playVideo?.() } catch { /* noop */ } }
 
   // ---- 사운드클라우드 ----
+  // on.soundcloud.com / snd.sc 단축 링크 → oEmbed(JSONP, CORS 우회)로 표준 트랙 URL 해석.
+  // 정식 링크면 즉시 통과(탭 제스처 유지). 실패/미지원 시 원본 그대로 사용.
+  function scResolve(url) {
+    if (!/(on\.soundcloud\.com|snd\.sc)\//i.test(url)) return Promise.resolve(url)
+    return new Promise((resolve) => {
+      const cb = '__sco_' + Date.now() + '_' + Math.floor(Math.random() * 1e6)
+      const s = document.createElement('script')
+      let done = false
+      const finish = (out) => {
+        if (done) return
+        done = true
+        try { delete window[cb] } catch { window[cb] = undefined }
+        try { s.remove() } catch { /* noop */ }
+        resolve(out)
+      }
+      window[cb] = (data) => {
+        let out = url
+        const m = data && data.html && data.html.match(/[?&]url=([^"&]+)/)
+        if (m) { try { out = decodeURIComponent(m[1]) } catch { out = m[1] } }
+        finish(out)
+      }
+      s.onerror = () => finish(url)
+      s.src = `https://soundcloud.com/oembed?format=json&callback=${cb}&url=${encodeURIComponent(url)}`
+      document.head.appendChild(s)
+      setTimeout(() => finish(url), 4500)
+    })
+  }
   function scBindState(SC, w) {
     w.bind(SC.Widget.Events.PLAY, () => setPlaying(true))
     w.bind(SC.Widget.Events.PAUSE, () => setPlaying(false))
     w.bind(SC.Widget.Events.FINISH, () => setPlaying(false))
   }
-  function scPlay(url) {
+  function scPlay(rawUrl) {
     const ifr = scIframeRef.current; if (!ifr) return
-    const go = (SC) => {
+    const go = (SC, url) => {
       // 위젯이 이미 있으면 트랙만 교체+재생(재부착 없이 안정적)
       if (scRef.current) {
         scRef.current.load(url, {
@@ -135,9 +162,12 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
       w.bind(SC.Widget.Events.READY, () => { try { w.play() } catch { /* noop */ } })
       scBindState(SC, w)
     }
-    // prewarm 으로 SC 스크립트가 이미 있으면 제스처 안에서 동기 실행(자동재생 허용 창 유지)
-    if (window.SC && window.SC.Widget) go(window.SC)
-    else loadSC().then(go).catch(() => {})
+    // 단축 링크는 표준 URL 로 해석 후 재생(정식 링크면 즉시). prewarm 으로 SC 가 이미 있으면
+    // 제스처 활성 창 안에서 재생 시작(자동재생 허용).
+    scResolve(rawUrl).then((url) => {
+      if (window.SC && window.SC.Widget) go(window.SC, url)
+      else loadSC().then((SC) => go(SC, url)).catch(() => {})
+    })
   }
   function scToggle() { const w = scRef.current; if (!w) return; if (playingRef.current) w.pause(); else w.play() }
   function scStop() { try { scRef.current?.pause() } catch { /* noop */ } }
