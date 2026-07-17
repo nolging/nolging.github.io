@@ -422,10 +422,10 @@ export default function Notes() {
               : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
                 : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
                   : gift ? ['📦 아이템', 'note-tag note-tag-gift']
-                    : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
+                    : cassette ? ['🎶 이어폰', 'note-tag note-tag-cassette']
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
-                        : video ? ['📹 영상', 'note-tag note-tag-video']
-                          : bluray ? ['💿 영상', 'note-tag note-tag-video']
+                        : video ? ['📼 비디오', 'note-tag note-tag-video']
+                          : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
                             : null
             return (
               <li key={n.id}>
@@ -471,7 +471,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -487,10 +487,10 @@ export default function Notes() {
             : couple ? [open.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
               : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
                 : gift ? ['📦 아이템', 'note-tag note-tag-gift']
-                  : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
+                  : cassette ? ['🎶 이어폰', 'note-tag note-tag-cassette']
                     : link ? ['🎁 선물', 'note-tag note-tag-link']
-                      : video ? ['📹 영상', 'note-tag note-tag-video']
-                        : bluray ? ['💿 영상', 'note-tag note-tag-video']
+                      : video ? ['📼 비디오', 'note-tag note-tag-video']
+                        : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
                           : null
           return (
             <div className="note-view">
