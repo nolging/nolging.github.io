@@ -2343,7 +2343,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-scroll { padding-bottom: 60px; }
 
 /* ---- 링크 쪽지 ---- */
-.note-tag-link { color: #5578d0; background: rgba(85, 120, 208, .14); }
+.note-tag-link { color: #c0524a; background: rgba(192, 82, 74, .14); }
+/* 선물(선물 상자) 쪽지: 흰 모달 + 내용 하단 큰 🎁(눌러서 링크 열기) */
+.note-giftbox { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: 16px; text-decoration: none; cursor: pointer; }
+.note-giftbox:hover { text-decoration: none; }
+.note-giftbox-emoji { font-size: 72px; line-height: 1; transition: transform .15s ease; filter: drop-shadow(0 6px 12px rgba(192, 82, 74, .22)); }
+.note-giftbox:hover .note-giftbox-emoji { transform: scale(1.06) rotate(-3deg); }
+.note-giftbox:active .note-giftbox-emoji { transform: scale(.95); }
+.note-giftbox-hint { font-size: 12.5px; font-weight: 700; color: #c0524a; }
 .modal-card.modal-link { background: linear-gradient(160deg, #eef2fb, #f5f8fd); }
 .modal-link .note-view-body { background: rgba(255,255,255,.6); }
 .note-linkbtn {
@@ -2379,7 +2386,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-gift-claim:disabled { opacity: .55; }
 .note-gift-done { flex-shrink: 0; font-size: 12px; font-weight: 700; color: #8b8798; padding: 0 6px; }
 
-.note-tag-video { color: #c0524a; background: rgba(192, 82, 74, .14); }
+.note-tag-video { color: #5578d0; background: rgba(85, 120, 208, .14); }
 .modal-card.modal-video { background: linear-gradient(160deg, #fdeeee, #fdf5f4); }
 .modal-video .note-view-body { background: rgba(255,255,255,.6); }
 .video-player {

@@ -423,7 +423,7 @@ export default function Notes() {
                 : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
                   : gift ? ['📦 아이템', 'note-tag note-tag-gift']
                     : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
-                      : link ? ['🎁 선물 상자', 'note-tag note-tag-link']
+                      : link ? ['🎁 선물', 'note-tag note-tag-link']
                         : video ? ['📹 영상', 'note-tag note-tag-video']
                           : bluray ? ['💿 영상', 'note-tag note-tag-video']
                             : null
@@ -471,7 +471,7 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : open?.kind === 'link' ? 'modal-link' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'cassette' ? 'modal-cassette' : (open?.kind === 'video' || open?.kind === 'bluray') ? 'modal-video' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
@@ -488,7 +488,7 @@ export default function Notes() {
               : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
                 : gift ? ['📦 아이템', 'note-tag note-tag-gift']
                   : cassette ? ['🎵 음악', 'note-tag note-tag-cassette']
-                    : link ? ['🎁 선물 상자', 'note-tag note-tag-link']
+                    : link ? ['🎁 선물', 'note-tag note-tag-link']
                       : video ? ['📹 영상', 'note-tag note-tag-video']
                         : bluray ? ['💿 영상', 'note-tag note-tag-video']
                           : null
@@ -521,8 +521,9 @@ export default function Notes() {
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
               {bluray && open.media_url && <BluraySlot url={open.media_url} player={blurayPlayer} />}
               {link && safeUrl(open.media_url) && (
-                <a className="note-linkbtn" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener">
-                  {open.item_name || '링크 열기'}
+                <a className="note-giftbox" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener" aria-label="선물 열기">
+                  <span className="note-giftbox-emoji">🎁</span>
+                  <span className="note-giftbox-hint">눌러서 선물 열기 ›</span>
                 </a>
               )}
               {gift && (() => {
