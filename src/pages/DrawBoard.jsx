@@ -191,6 +191,7 @@ export default function DrawBoard() {
   }
   function onDown(e) {
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
+    e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
     const p0 = pos(e)
     const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }

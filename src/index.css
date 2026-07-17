@@ -2953,7 +2953,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-draw-btn:hover { background: #e6e1fc; }
 .gd-draw-btn:active { transform: scale(.94); }
 
-.draw-page { height: 100%; display: flex; flex-direction: column; gap: 12px; }
+.draw-page { height: 100%; display: flex; flex-direction: column; gap: 12px;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 /* 접속 중 멤버 아바타 (낙서 영역 안쪽 좌측 상단·겹침. 스프링 바인딩 아래) */
 .draw-members { position: absolute; top: 27px; left: 14px; z-index: 5; pointer-events: none;
   display: flex; align-items: center; }
@@ -2967,7 +2968,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   display: flex; align-items: stretch; justify-content: center; }
 .draw-canvas { width: 100%; max-width: 620px; height: 100%; display: block;
   background: #fff; border-radius: 5px; box-shadow: 0 5px 16px rgba(25,23,34,.08);
-  touch-action: none; cursor: crosshair; }
+  touch-action: none; cursor: crosshair;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 /* 상단 스프링 제본(코일이 종이 윗변을 물고 있는 모양) */
 .draw-spring { position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 620px; height: 20px; z-index: 6; pointer-events: none;
