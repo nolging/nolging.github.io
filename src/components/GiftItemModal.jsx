@@ -56,7 +56,6 @@ export default function GiftItemModal({ open, onClose, item, qty = 1, onSend }) 
               <StoreItemImage id={item.id} emoji={item.emoji} className="nc-img" />
             </span>
             <span className="gift-sum-name">{item.name}{qty > 1 && <span className="gift-sum-qty"> ×{qty}</span>}</span>
-            <span className="gift-sum-tag">📦 선물</span>
           </div>
 
           <button type="button" className="nc-sheet-confirm" onClick={send} disabled={sending}>
