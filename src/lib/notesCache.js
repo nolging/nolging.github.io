@@ -2,7 +2,8 @@
 // 다시 불러오며 egress 가 급증하던 것을 막는다. 같은 유저·TTL 이내면 재조회 없이 즉시 표시.
 // 쪽지를 새로 보내거나 상태가 바뀌면 invalidateNotesCache() 로 무효화해 다음 진입에서 최신화.
 export const NOTES_TTL = 60000 // 60초
+export const PAGE = 15 // 한 번에 불러오는 쪽지 수(화면에 ~9개 노출 → 여유분 포함). 더 과거는 스크롤 시 조회.
 
-export const notesCache = { uid: null, received: [], sent: [], noteItems: {}, decos: {}, at: 0 }
+export const notesCache = { uid: null, received: [], sent: [], noteItems: {}, decos: {}, recvMore: false, sentMore: false, at: 0 }
 
 export function invalidateNotesCache() { notesCache.at = 0 }

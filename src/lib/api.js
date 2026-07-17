@@ -713,20 +713,30 @@ export async function deleteNotification(id) {
 // ---- 쪽지 (notes) -------------------------------------------
 // notes 테이블/RPC 미배포(42P01/PGRST202) 시 조회는 빈 배열로 폴백.
 
-export async function listReceivedNotes(userId) {
-  // 익명 쪽지는 발신자 정보를 가려 주는 전용 RPC 로 조회(완전 익명).
+// 페이지네이션 지원 여부(paged=false 면 구버전 RPC → 1회 전량, 이후 페이지 없음)
+let recvPaged = null // null=미확인, true=지원, false=미지원(구버전)
+// 받은 쪽지: 최근 limit 개(offset 부터). 반환 { rows, hasMore }.
+// 익명 쪽지는 발신자 정보를 가려 주는 전용 RPC 로 조회(완전 익명).
+export async function listReceivedNotes(userId, limit = 15, offset = 0) {
+  if (recvPaged !== false) {
+    const { data, error } = await supabase.rpc('list_received_notes', { p_limit: limit, p_offset: offset })
+    if (!error) { recvPaged = true; return { rows: data ?? [], hasMore: (data?.length ?? 0) >= limit } }
+    if (error.code === '42P01') return { rows: [], hasMore: false }
+    if (!(error.code === 'PGRST202' || /list_received_notes/.test(error.message || ''))) throw error
+    recvPaged = false // 페이지네이션 파라미터 미배포(구버전) → 아래 폴백
+  }
+  // 폴백: 구버전은 전량 반환 → offset>0 이면 추가 페이지 없음
+  if (offset > 0) return { rows: [], hasMore: false }
   const { data, error } = await supabase.rpc('list_received_notes')
-  if (!error) return data ?? []
-  // RPC 미배포(구버전) 시 기존 직접 조회로 폴백
+  if (!error) return { rows: data ?? [], hasMore: false }
+  // 아주 구버전(RPC 자체 없음) → 직접 조회
   if (error.code === 'PGRST202' || /list_received_notes/.test(error.message || '')) {
     const { data: d2, error: e2 } = await supabase
-      .from('notes').select('*')
-      .eq('recipient_id', userId)
-      .order('created_at', { ascending: false })
-    if (e2) { if (e2.code === '42P01') return []; throw e2 }
-    return d2 ?? []
+      .from('notes').select('*').eq('recipient_id', userId).order('created_at', { ascending: false })
+    if (e2) { if (e2.code === '42P01') return { rows: [], hasMore: false }; throw e2 }
+    return { rows: d2 ?? [], hasMore: false }
   }
-  if (error.code === '42P01') return []
+  if (error.code === '42P01') return { rows: [], hasMore: false }
   throw error
 }
 
@@ -757,16 +767,18 @@ export async function markNoteRead(noteId) {
 
 // UI 가 실제로 쓰는 컬럼만 조회(select('*') 대비 egress 절감)
 const SENT_NOTE_COLS = 'id, group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, is_read, created_at, item_id, item_name, claimed, rejected, media_url, anonymous, qty, timer_seconds, opened_at'
-export async function listSentNotes(userId) {
+// 보낸 쪽지: 최근 limit 개(offset 부터). 반환 { rows, hasMore }.
+export async function listSentNotes(userId, limit = 15, offset = 0) {
   const { data, error } = await supabase
     .from('notes').select(SENT_NOTE_COLS)
     .eq('sender_id', userId)
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
   if (error) {
-    if (error.code === '42P01') return []
+    if (error.code === '42P01') return { rows: [], hasMore: false }
     throw error
   }
-  return data ?? []
+  return { rows: data ?? [], hasMore: (data?.length ?? 0) >= limit }
 }
 
 export async function sendNote({ groupId, recipientId, body, anonymous = false, timerSeconds = null }) {

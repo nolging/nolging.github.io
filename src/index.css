@@ -1514,6 +1514,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
 .center-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; }
 .spinner { width: 26px; height: 26px; border: 3px solid #e0e3ee; border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin: 24px auto; }
+.spinner-sm { width: 18px; height: 18px; border-width: 2px; margin: 0 auto; }
+/* 더 과거 쪽지 로드 표시(스크롤 하단) */
+.note-more { list-style: none; display: flex; align-items: center; justify-content: center; padding: 12px 0 4px; min-height: 26px; }
+.note-more-dots { color: var(--muted); letter-spacing: .12em; font-size: 14px; opacity: .6; }
 /* 당겨서 새로고침: 본문·인디케이터가 함께 아래로 */
 .content { transition: transform .24s cubic-bezier(.2, .8, .2, 1); }
 .content.ptr-drag { transition: none; }

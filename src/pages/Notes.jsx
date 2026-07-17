@@ -10,7 +10,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead } from '../lib/api'
-import { NOTES_TTL, notesCache } from '../lib/notesCache'
+import { NOTES_TTL, PAGE, notesCache } from '../lib/notesCache'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
 const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
@@ -64,31 +64,78 @@ export default function Notes() {
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
+  const [recvMore, setRecvMore] = useState(notesCache.recvMore) // 받은함에 더 과거 쪽지가 있는지
+  const [sentMore, setSentMore] = useState(notesCache.sentMore) // 보낸함에 더 과거 쪽지가 있는지
+  const [loadingMore, setLoadingMore] = useState(false)
+  const recvCntRef = useRef(0)  // 현재 로드된 받은/보낸 개수(재조회 시 창 유지용)
+  const sentCntRef = useRef(0)
   const [waterLeft, setWaterLeft] = useState(null)     // 열린 물풍선 쪽지의 남은 초
   const [waterPopped, setWaterPopped] = useState(false) // 열린 물풍선이 터졌는지
   const [poppedIds, setPoppedIds] = useState(() => new Set()) // 터진 걸 목격한 쪽지 id
 
   const decoCacheRef = useRef(notesCache.uid === user?.id ? notesCache.decos : {}) // 그룹 deco 캐시(모듈 캐시와 공유)
+  // 그룹 deco 는 캐시에 없는 그룹만 조회(매 재조회마다 전체 그룹 재조회 방지)
+  const ensureDecos = useCallback((rows) => {
+    const gids = [...new Set(rows.map((n) => n.group_id).filter(Boolean))]
+    const missing = gids.filter((id) => !decoCacheRef.current[id])
+    if (!missing.length) return
+    Promise.all(missing.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+      .then((pairs) => {
+        pairs.forEach(([id, m]) => { decoCacheRef.current[id] = m })
+        setDecosByGroup({ ...decoCacheRef.current })
+      }).catch(() => {})
+  }, [])
+  // 동봉 아이템(선물 쪽지)만 조회해 기존 맵에 병합
+  const mergeItems = useCallback(async (rows) => {
+    const giftIds = rows.filter((n) => n.kind === 'gift').map((n) => n.id)
+    if (!giftIds.length) return
+    try {
+      const ni = await listNoteItems(giftIds)
+      setNoteItems((prev) => { const m = { ...prev, ...ni }; notesCache.noteItems = m; return m })
+    } catch { /* noop */ }
+  }, [])
+
+  // 최초/갱신 조회 — 각 탭의 첫 페이지(이미 스크롤로 더 불러온 상태면 그 개수만큼 유지).
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
-    const [r, s] = await Promise.all([listReceivedNotes(user.id), listSentNotes(user.id)])
-    setReceived(r); setSent(s)
+    const nRecv = Math.max(PAGE, recvCntRef.current || 0)
+    const nSent = Math.max(PAGE, sentCntRef.current || 0)
+    const [rr, ss] = await Promise.all([listReceivedNotes(user.id, nRecv, 0), listSentNotes(user.id, nSent, 0)])
+    const r = rr.rows, s = ss.rows
+    setReceived(r); setSent(s); setRecvMore(rr.hasMore); setSentMore(ss.hasMore)
+    recvCntRef.current = r.length; sentCntRef.current = s.length
     // 모듈 캐시 갱신(재진입 시 재조회 생략용). uid 가 바뀌면 deco 캐시 초기화.
     if (notesCache.uid !== user.id) { notesCache.uid = user.id; notesCache.decos = {}; decoCacheRef.current = notesCache.decos }
-    notesCache.received = r; notesCache.sent = s; notesCache.at = Date.now()
-    // deco 는 캐시에 없는 그룹만 조회(매 재조회마다 전체 그룹 재조회하던 것 방지)
-    const gids = [...new Set([...r, ...s].map((n) => n.group_id).filter(Boolean))]
-    const missing = gids.filter((id) => !decoCacheRef.current[id])
-    if (missing.length) {
-      Promise.all(missing.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
-        .then((pairs) => {
-          pairs.forEach(([id, m]) => { decoCacheRef.current[id] = m })
-          setDecosByGroup({ ...decoCacheRef.current })
-        }).catch(() => {})
-    }
+    notesCache.received = r; notesCache.sent = s; notesCache.recvMore = rr.hasMore; notesCache.sentMore = ss.hasMore; notesCache.at = Date.now()
+    ensureDecos([...r, ...s])
     const giftIds = [...r, ...s].filter((n) => n.kind === 'gift').map((n) => n.id)
     try { const ni = await listNoteItems(giftIds); setNoteItems(ni); notesCache.noteItems = ni } catch { /* noop */ }
-  }, [user?.id])
+  }, [user?.id, ensureDecos])
+
+  // 더 과거 쪽지 조회(스크롤 하단 도달 시) — 현재 탭만 다음 페이지 append.
+  const loadMore = useCallback(async (which) => {
+    if (!user?.id || loadingMore) return
+    if (which === 'received' ? !recvMore : !sentMore) return
+    setLoadingMore(true)
+    try {
+      if (which === 'received') {
+        const off = recvCntRef.current
+        const res = await listReceivedNotes(user.id, PAGE, off)
+        recvCntRef.current = off + res.rows.length // 서버 offset 전진(중복 제거와 무관)
+        setReceived((prev) => { const seen = new Set(prev.map((x) => x.id)); const m = [...prev, ...res.rows.filter((x) => !seen.has(x.id))]; notesCache.received = m; return m })
+        setRecvMore(res.hasMore); notesCache.recvMore = res.hasMore
+        ensureDecos(res.rows); await mergeItems(res.rows)
+      } else {
+        const off = sentCntRef.current
+        const res = await listSentNotes(user.id, PAGE, off)
+        sentCntRef.current = off + res.rows.length
+        setSent((prev) => { const seen = new Set(prev.map((x) => x.id)); const m = [...prev, ...res.rows.filter((x) => !seen.has(x.id))]; notesCache.sent = m; return m })
+        setSentMore(res.hasMore); notesCache.sentMore = res.hasMore
+        ensureDecos(res.rows); await mergeItems(res.rows)
+      }
+      notesCache.at = Date.now()
+    } finally { setLoadingMore(false) }
+  }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos, mergeItems])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
     try { await fetchNotes() } catch (err) { setError(err.message) }
@@ -100,7 +147,9 @@ export default function Notes() {
     // 캐시가 신선하면(같은 유저·TTL 이내) 재조회 없이 즉시 표시 → 재진입 egress 절감.
     if (notesCache.uid === user.id && Date.now() - notesCache.at < NOTES_TTL) {
       setReceived(notesCache.received); setSent(notesCache.sent); setNoteItems(notesCache.noteItems)
-      setDecosByGroup({ ...notesCache.decos }); setError(''); setLoading(false)
+      setDecosByGroup({ ...notesCache.decos }); setRecvMore(notesCache.recvMore); setSentMore(notesCache.sentMore)
+      recvCntRef.current = notesCache.received.length; sentCntRef.current = notesCache.sent.length
+      setError(''); setLoading(false)
       return
     }
     let on = true
@@ -276,11 +325,17 @@ export default function Notes() {
   const [gesture, setGesture] = useState(null) // { x, active }
   const [scrolled, setScrolled] = useState(false) // 스크롤 시 상단 탭 뒤 페이드 on
 
-  // 본문 스크롤 감지 → 상단 탭 아래 그라데이션 페이드(카드가 탭 뒤로 자연스럽게 사라짐)
+  // 스크롤 콜백은 항상 최신 loadMore/tab 을 참조(리스너 재부착 없이)
+  const loadMoreRef = useRef(loadMore); loadMoreRef.current = loadMore
+  const tabRef = useRef(tab); tabRef.current = tab
+  // 본문 스크롤 감지 → 상단 탭 페이드 + 하단 근접 시 다음 페이지 조회
   useEffect(() => {
     const sc = paneRef.current
     if (!sc) return
-    const onScroll = () => setScrolled(sc.scrollTop > 4)
+    const onScroll = () => {
+      setScrolled(sc.scrollTop > 4)
+      if (sc.scrollHeight - sc.scrollTop - sc.clientHeight < 240) loadMoreRef.current?.(tabRef.current)
+    }
     sc.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => sc.removeEventListener('scroll', onScroll)
@@ -473,6 +528,11 @@ export default function Notes() {
               </li>
             )
           })}
+          {(tab === 'received' ? recvMore : sentMore) && (
+            <li className="note-more" aria-hidden={!loadingMore}>
+              {loadingMore ? <span className="spinner spinner-sm" /> : <span className="note-more-dots">···</span>}
+            </li>
+          )}
         </ul>
       )}
       </div>
