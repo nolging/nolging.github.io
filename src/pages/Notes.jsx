@@ -522,8 +522,17 @@ export default function Notes() {
               {bluray && open.media_url && <BluraySlot url={open.media_url} player={blurayPlayer} />}
               {link && safeUrl(open.media_url) && (
                 <a className="note-giftbox" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener" aria-label="선물 열기">
-                  <span className="note-giftbox-emoji">🎁</span>
-                  <span className="note-giftbox-hint">눌러서 선물 열기 ›</span>
+                  <span className="note-giftbox-art" aria-hidden="true">
+                    <span className="note-giftbox-glow" />
+                    <span className="gb-spark gb-spark1">✦</span>
+                    <span className="gb-spark gb-spark2">✦</span>
+                    <span className="gb-spark gb-spark3">✧</span>
+                    <span className="gb-spark gb-spark4">✦</span>
+                    <span className="gb-spark gb-spark5">✧</span>
+                    <span className="note-giftbox-emoji">🎁</span>
+                  </span>
+                  <svg className="note-giftbox-caret" width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15" /></svg>
+                  <span className="note-giftbox-hint">눌러서 선물 열기</span>
                 </a>
               )}
               {gift && (() => {

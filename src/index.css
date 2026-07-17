@@ -2344,13 +2344,26 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ---- 링크 쪽지 ---- */
 .note-tag-link { color: #c0524a; background: rgba(192, 82, 74, .14); }
-/* 선물(선물 상자) 쪽지: 흰 모달 + 내용 하단 큰 🎁(눌러서 링크 열기) */
-.note-giftbox { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: 16px; text-decoration: none; cursor: pointer; }
+/* 선물(선물 상자) 쪽지: 흰 모달 + 내용 하단 큰 🎁(빛+반짝임, 눌러서 링크 열기) */
+.note-giftbox { display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: 14px; text-decoration: none; cursor: pointer; }
 .note-giftbox:hover { text-decoration: none; }
-.note-giftbox-emoji { font-size: 72px; line-height: 1; transition: transform .15s ease; filter: drop-shadow(0 6px 12px rgba(192, 82, 74, .22)); }
-.note-giftbox:hover .note-giftbox-emoji { transform: scale(1.06) rotate(-3deg); }
-.note-giftbox:active .note-giftbox-emoji { transform: scale(.95); }
-.note-giftbox-hint { font-size: 12.5px; font-weight: 700; color: #c0524a; }
+.note-giftbox-art { position: relative; width: 160px; height: 130px; display: flex; align-items: center; justify-content: center; }
+.note-giftbox-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,110,105,.36) 0%, rgba(255,110,105,.15) 42%, rgba(255,110,105,0) 70%);
+  animation: gb-pulse 2.6s ease-in-out infinite; }
+@keyframes gb-pulse { 0%,100% { transform: scale(.88); opacity: .7; } 50% { transform: scale(1.14); opacity: 1; } }
+.note-giftbox-emoji { position: relative; z-index: 2; font-size: 94px; line-height: 1; filter: drop-shadow(0 7px 13px rgba(192,82,74,.26)); transition: transform .15s ease; }
+.note-giftbox:hover .note-giftbox-emoji { transform: scale(1.05) rotate(-3deg); }
+.note-giftbox:active .note-giftbox-emoji { transform: scale(.96); }
+.gb-spark { position: absolute; z-index: 3; font-size: 14px; color: #ffb14e; opacity: 0; animation: gb-twinkle 1.9s ease-in-out infinite; }
+.gb-spark1 { top: 8px; left: 30px; animation-delay: 0s; }
+.gb-spark2 { top: 18px; right: 26px; color: #ff8f8f; animation-delay: .55s; }
+.gb-spark3 { top: 58px; left: 16px; font-size: 11px; animation-delay: 1s; }
+.gb-spark4 { bottom: 18px; right: 22px; color: #ff8f8f; animation-delay: 1.35s; }
+.gb-spark5 { top: 40px; right: 42px; font-size: 12px; color: #ffcf5a; animation-delay: 1.7s; }
+@keyframes gb-twinkle { 0%,100% { opacity: 0; transform: scale(.5); } 50% { opacity: 1; transform: scale(1); } }
+.note-giftbox-caret { color: #b8b4c2; margin-bottom: -1px; }
+.note-giftbox-hint { font-size: 12.5px; font-weight: 700; color: #a8a4b4; }
 .modal-card.modal-link { background: linear-gradient(160deg, #eef2fb, #f5f8fd); }
 .modal-link .note-view-body { background: rgba(255,255,255,.6); }
 .note-linkbtn {
