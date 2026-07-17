@@ -3941,3 +3941,41 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .dv-again { font-family: inherit; width: 100%; max-width: 320px; height: 48px; border: none; border-radius: 999px; background: #191722; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
 .dv-log { flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 6px 2px 0; }
 .dv-log-l { font-size: 11.5px; color: #9a96a6; text-align: center; }
+
+/* ===== 관리자 페이지 ===== */
+.admin-page .card { margin-bottom: 14px; }
+.admin-topbar { gap: 8px; }
+.admin-tabs { display: flex; gap: 4px; flex: 1; min-width: 0; }
+.admin-tabs a {
+  flex: 1; text-align: center; padding: 7px 4px; border-radius: 10px; text-decoration: none;
+  font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap;
+}
+.admin-tabs a.active { background: var(--primary); color: #fff; }
+/* 목록 카드 헤더(제목 + 추가/생성 버튼) */
+.admin-list-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+/* 클릭 가능한 목록 행(모바일: 가로 스크롤 없이) */
+.admin-rows { list-style: none; margin: 0; padding: 0; }
+.admin-row {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 2px;
+  background: transparent; border: none; border-bottom: 1px solid rgba(0, 0, 0, .06);
+  cursor: pointer; text-align: left; font: inherit; color: var(--text);
+}
+.admin-rows li:last-child .admin-row { border-bottom: none; }
+.admin-row:active { background: rgba(0, 0, 0, .03); }
+.admin-row-emoji { font-size: 20px; width: 26px; text-align: center; flex-shrink: 0; }
+.admin-row-main { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-row-side { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.admin-row-price { font-weight: 800; }
+.admin-row-caret { color: var(--muted); font-size: 18px; line-height: 1; }
+/* 상세 정보 나열 */
+.admin-detail { margin: 0; }
+.admin-detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0, 0, 0, .06); }
+.admin-detail-row:last-child { border-bottom: none; }
+.admin-detail dt { color: var(--muted); font-size: 13px; }
+.admin-detail dd { margin: 0; font-weight: 700; text-align: right; word-break: break-all; }
+/* 세그먼트 탭(일반/프리미엄) */
+.seg-tabs { display: flex; background: rgba(0, 0, 0, .05); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
+.seg-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 9px; font: inherit; font-weight: 700; color: var(--muted); cursor: pointer; }
+.seg-tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+/* 체크박스 라벨 */
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; }

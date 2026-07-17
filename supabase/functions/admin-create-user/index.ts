@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
   const bootstrap = (adminCount ?? 0) === 0
 
   // ---- 상태 변경 / 삭제 (관리자 전용) ----
-  if (action === 'set-status' || action === 'delete') {
+  if (action === 'set-status' || action === 'delete' || action === 'set-role') {
     if (!(await callerIsAdmin())) return json({ error: '관리자 권한이 필요합니다.' }, 403)
     if (!p.userId) return json({ error: 'userId 가 필요합니다.' }, 400)
 
@@ -81,6 +81,12 @@ Deno.serve(async (req) => {
       await admin.from('profiles').delete().eq('id', p.userId)
       await admin.auth.admin.deleteUser(p.userId).catch(() => {})
       return json({ ok: true })
+    }
+    if (action === 'set-role') {
+      const role = p.role === 'admin' ? 'admin' : 'member'
+      const { error } = await admin.from('profiles').update({ role }).eq('id', p.userId)
+      if (error) return json({ error: error.message }, 500)
+      return json({ ok: true, role })
     }
     const status = p.status === 'active' ? 'active' : 'disabled'
     const { error } = await admin.from('profiles').update({ status }).eq('id', p.userId)

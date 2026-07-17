@@ -146,6 +146,14 @@ export default function Layout() {
   const coinHistoryMatch = useMatch('/me/coins')
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
+  // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
+  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests'].includes(location.pathname)
+  const adminSub = location.pathname.startsWith('/admin/') && !adminSection
+  const adminSubTitle = (p) =>
+    p.startsWith('/admin/members') ? (p.endsWith('/new') ? '계정 생성' : '회원 상세')
+      : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 상세')
+        : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 상세')
+          : '관리자'
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'
 
@@ -625,6 +633,26 @@ export default function Layout() {
       <header className="topbar">
         <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <span className="topbar-heading">내 그룹</span>
+      </header>
+    )
+  } else if (adminSection) {
+    // 관리자 섹션: 좌측 뒤로(마이 페이지), 상단바에 회원/상점/퀘스트 탭 메뉴
+    topbar = (
+      <header className="topbar admin-topbar">
+        <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <nav className="admin-tabs">
+          <NavLink to="/admin/members">회원 관리</NavLink>
+          <NavLink to="/admin/store">상점 관리</NavLink>
+          <NavLink to="/admin/quests">퀘스트 관리</NavLink>
+        </nav>
+      </header>
+    )
+  } else if (adminSub) {
+    // 관리자 드릴다운(상세/추가): 좌측 뒤로, 제목
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">{adminSubTitle(location.pathname)}</span>
       </header>
     )
   } else {

@@ -33,7 +33,13 @@ import Store from './pages/Store'
 import Inventory from './pages/Inventory'
 import Notes from './pages/Notes'
 import NoteCompose from './pages/NoteCompose'
-import Admin from './pages/Admin'
+import AdminMembers from './pages/admin/AdminMembers'
+import AdminMemberNew from './pages/admin/AdminMemberNew'
+import AdminMemberDetail from './pages/admin/AdminMemberDetail'
+import AdminStore from './pages/admin/AdminStore'
+import AdminStoreItem from './pages/admin/AdminStoreItem'
+import AdminQuests from './pages/admin/AdminQuests'
+import AdminQuestDetail from './pages/admin/AdminQuestDetail'
 
 export default function App() {
   return (
@@ -79,14 +85,16 @@ export default function App() {
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
         <Route path="/notes/new" element={<ProtectedRoute><NoteCompose /></ProtectedRoute>} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute adminOnly>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin" element={<Navigate to="/admin/members" replace />} />
+        <Route path="/admin/members" element={<ProtectedRoute adminOnly><AdminMembers /></ProtectedRoute>} />
+        <Route path="/admin/members/new" element={<ProtectedRoute adminOnly><AdminMemberNew /></ProtectedRoute>} />
+        <Route path="/admin/members/:userId" element={<ProtectedRoute adminOnly><AdminMemberDetail /></ProtectedRoute>} />
+        <Route path="/admin/store" element={<ProtectedRoute adminOnly><AdminStore /></ProtectedRoute>} />
+        <Route path="/admin/store/new" element={<ProtectedRoute adminOnly><AdminStoreItem /></ProtectedRoute>} />
+        <Route path="/admin/store/:id" element={<ProtectedRoute adminOnly><AdminStoreItem /></ProtectedRoute>} />
+        <Route path="/admin/quests" element={<ProtectedRoute adminOnly><AdminQuests /></ProtectedRoute>} />
+        <Route path="/admin/quests/new" element={<ProtectedRoute adminOnly><AdminQuestDetail /></ProtectedRoute>} />
+        <Route path="/admin/quests/:id" element={<ProtectedRoute adminOnly><AdminQuestDetail /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

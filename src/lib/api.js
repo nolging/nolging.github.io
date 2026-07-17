@@ -1492,6 +1492,10 @@ export async function adminSetStatus(userId, status) {
 export async function adminDeleteUser(userId) {
   return invokeAdmin({ action: 'delete', userId })
 }
+// 관리자: 역할 변경(member ↔ admin)
+export async function adminSetRole(userId, role) {
+  return invokeAdmin({ action: 'set-role', userId, role })
+}
 
 // 관리자: 전체 사용자(연락처/생년월일 포함)
 export async function adminListUsers() {
