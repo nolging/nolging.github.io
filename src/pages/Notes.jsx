@@ -118,22 +118,23 @@ export default function Notes() {
     if (which === 'received' ? !recvMore : !sentMore) return
     setLoadingMore(true)
     try {
+      // 스크롤로 더 불러온 결과는 '이번 화면'에만 append. 모듈 캐시에는 반영하지 않는다
+      // → 다시 들어오면 항상 첫 페이지(15개)부터 보이게(캐시가 '전량'을 붙들지 않도록).
       if (which === 'received') {
         const off = recvCntRef.current
         const res = await listReceivedNotes(user.id, PAGE, off)
         recvCntRef.current = off + res.rows.length // 서버 offset 전진(중복 제거와 무관)
-        setReceived((prev) => { const seen = new Set(prev.map((x) => x.id)); const m = [...prev, ...res.rows.filter((x) => !seen.has(x.id))]; notesCache.received = m; return m })
-        setRecvMore(res.hasMore); notesCache.recvMore = res.hasMore
+        setReceived((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
+        setRecvMore(res.hasMore)
         ensureDecos(res.rows); await mergeItems(res.rows)
       } else {
         const off = sentCntRef.current
         const res = await listSentNotes(user.id, PAGE, off)
         sentCntRef.current = off + res.rows.length
-        setSent((prev) => { const seen = new Set(prev.map((x) => x.id)); const m = [...prev, ...res.rows.filter((x) => !seen.has(x.id))]; notesCache.sent = m; return m })
-        setSentMore(res.hasMore); notesCache.sentMore = res.hasMore
+        setSent((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
+        setSentMore(res.hasMore)
         ensureDecos(res.rows); await mergeItems(res.rows)
       }
-      notesCache.at = Date.now()
     } finally { setLoadingMore(false) }
   }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos, mergeItems])
   // 액션(수령 등) 후 목록만 갱신
