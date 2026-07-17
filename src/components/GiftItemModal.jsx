@@ -43,8 +43,8 @@ export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, 
     <>
       <Modal open={open && !pickOpen} onClose={sent ? finish : onClose} cardClassName="nc-link-modal">
         {sent ? (
-          <div className="st-done is-gift">
-            <div className="st-done-ico">🎁</div>
+          <div className="st-done is-gift gift-done">
+            <div className="st-done-ico">📦</div>
             <div className="st-done-t">선물 완료!</div>
             <div className="st-done-s">{item.name} {qty}개를 {purchased ? '구매해서 ' : ''}선물했어요.<br />보낸 쪽지함에서 확인할 수 있어요.</div>
             <button type="button" className="st-btn-buy st-btn-block" onClick={() => navigate('/notes', { state: { tab: 'sent' } })}>보낸 쪽지함으로 이동</button>
