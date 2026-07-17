@@ -6,7 +6,7 @@ import GiftItemModal from '../components/GiftItemModal'
 import StoreItemImage from '../components/StoreItemImage'
 import { decoSlot } from '../components/AvatarDeco'
 import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest } from '../lib/api'
-import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
+import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 
@@ -200,7 +200,7 @@ export default function Store() {
                       <StoreItemImage id={item.id} emoji={item.emoji} className="st-card-img" />
                       {decoSlot(item.id) && <span className="deco-slot-badge">{decoSlot(item.id) === 'head' ? '머리' : '얼굴'}</span>}
                     </span>
-                    <span className="st-card-name">{item.name}</span>
+                    <span className="st-card-name">{itemName(item.id, item.name)}</span>
                     <span className="st-card-price"><PawIcon className="st-paw" />{num(item.price)}</span>
                   </button>
                 ))}
@@ -242,7 +242,7 @@ export default function Store() {
                   <StoreItemImage id={selected.id} emoji={selected.emoji} className="st-detail-img" />
                 </span>
                 {selected.id !== 'couple-ring' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)}개</span>}
-                <div className="st-detail-name">{selected.name}</div>
+                <div className="st-detail-name">{itemName(selected.id, selected.name)}</div>
                 <div className="st-detail-desc">{selected.desc}</div>
               </div>
 
@@ -276,7 +276,7 @@ export default function Store() {
       <GiftItemModal open={giftOpen}
         onClose={() => setGiftOpen(false)}
         onFinish={() => { setGiftOpen(false); close() }}
-        item={selected ? { id: selected.id, name: selected.name, emoji: selected.emoji } : null}
+        item={selected ? { id: selected.id, name: itemName(selected.id, selected.name), emoji: selected.emoji } : null}
         qty={qty} price={selected?.price ?? null} purchased onSend={giftSend} />
     </div>
   )

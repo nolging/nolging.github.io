@@ -8,7 +8,7 @@ import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
-import { imgBgOf } from '../lib/storeMeta'
+import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead } from '../lib/api'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
@@ -452,7 +452,7 @@ export default function Notes() {
                           <p className="note-card-body note-water-hidden">꽁꽁 싸매서 내용이 보이지 않아요</p>
                         )
                       ) : (
-                        <p className="note-card-body">{n.body}</p>
+                        <p className="note-card-body">{resolveItemText(n.body)}</p>
                       )}
                       {tagInfo && (
                         <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
@@ -511,11 +511,11 @@ export default function Notes() {
               </div>
               {isWater(open) && tab === 'received' ? (
                 <div className="note-water-bodywrap">
-                  <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{open.body}</p>
+                  <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{resolveItemText(open.body)}</p>
                   {waterPopped && <span className="note-water-overlay">펑!</span>}
                 </div>
               ) : (
-                <p className="note-view-body">{open.body}</p>
+                <p className="note-view-body">{resolveItemText(open.body)}</p>
               )}
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
               {video && open.media_url && <VideoPlayer url={open.media_url} />}
@@ -543,7 +543,7 @@ export default function Notes() {
                           <span className="note-gift-thumb" style={{ background: imgBgOf(it.item_id) }}>
                             <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
                           </span>
-                          <span className="note-gift-name">{it.item_name}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
+                          <span className="note-gift-name">{itemName(it.item_id, it.item_name)}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
                           {mine && (it.claimed
                             ? <span className="note-gift-done">수령 완료</span>
                             : <button type="button" className="note-gift-claim" onClick={() => claimOne(open, it)} disabled={busy}>수령하기</button>)}

@@ -36,7 +36,14 @@ export function itemImgId(id) {
   if (id === 'waterbomb') return 'water-bomb' // 파일명(water-bomb.svg) ↔ 아이템 id(waterbomb)
   return id
 }
+// 카세트(이어폰) 아이템의 뷰어 플랫폼별 표시명. iOS=콩나물 한 가닥, 그 외=콩 한 쪽.
+export const CASSETTE_NAME = IS_IOS ? '콩나물 한 가닥' : '콩 한 쪽'
 export function itemName(id, fallback) {
-  if (id === 'cassette') return IS_IOS ? '콩나물 한 가닥' : '콩 한 쪽'
+  if (id === 'cassette') return CASSETTE_NAME
   return fallback
+}
+// 자유 텍스트(츄르 내역 사유, 선물 쪽지 본문 등)에 들어 있는 저장명("카세트 테이프")을
+// 뷰어 플랫폼 표시명으로 치환. 이름은 항상 보는 사람 기준으로 노출된다.
+export function resolveItemText(text) {
+  return text == null ? text : String(text).replace(/카세트 테이프/g, CASSETTE_NAME)
 }

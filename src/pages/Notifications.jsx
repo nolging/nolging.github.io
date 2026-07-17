@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
   listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteState,
 } from '../lib/api'
+import { resolveItemText } from '../lib/storeMeta'
 
 function TrashIcon() {
   return (
@@ -77,7 +78,7 @@ function NotifRow({ n, icon, clickable, timeText, onOpen, onDelete }) {
             </div>
             <span className="notif-time">{timeText}</span>
           </div>
-          {n.body && <p className="notif-text">{n.body}</p>}
+          {n.body && <p className="notif-text">{resolveItemText(n.body)}</p>}
         </div>
       </div>
     </li>

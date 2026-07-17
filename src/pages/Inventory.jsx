@@ -76,7 +76,7 @@ export default function Inventory() {
   const groups = useMemo(() => {
     const map = new Map()
     for (const r of items) {
-      if (!map.has(r.item_id)) map.set(r.item_id, { id: r.item_id, name: meta[r.item_id]?.name || r.item_name, emoji: meta[r.item_id]?.emoji || '🎁', count: 0, rows: [] })
+      if (!map.has(r.item_id)) map.set(r.item_id, { id: r.item_id, name: itemName(r.item_id, meta[r.item_id]?.name || r.item_name), emoji: meta[r.item_id]?.emoji || '🎁', count: 0, rows: [] })
       const g = map.get(r.item_id)
       g.count++
       g.rows.push(r)
@@ -214,7 +214,7 @@ export default function Inventory() {
         onGift={() => { const id = guideItem; setGuideItem(null); setGiftItemId(id) }} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
-        item={giftItemId ? { id: giftItemId, name: meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId, emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
+        item={giftItemId ? { id: giftItemId, name: itemName(giftItemId, meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId), emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
         qty={1} onSend={inventoryGiftSend} />
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />

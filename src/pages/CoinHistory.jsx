@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getMyCoinHistory, getMyCoinBalance } from '../lib/api'
+import { resolveItemText } from '../lib/storeMeta'
 
 const fmtDate = (iso) => {
   try {
@@ -51,7 +52,7 @@ export default function CoinHistory() {
             {rows.map((r) => (
               <div key={r.id} className="coin-hist-row">
                 <div className="chr-main">
-                  <span className="chr-reason">{r.reason || '츄르 변동'}</span>
+                  <span className="chr-reason">{resolveItemText(r.reason) || '츄르 변동'}</span>
                   <span className="chr-date">{fmtDate(r.created_at)}</span>
                 </div>
                 <span className={`chr-delta ${r.delta >= 0 ? 'plus' : 'minus'}`}>
