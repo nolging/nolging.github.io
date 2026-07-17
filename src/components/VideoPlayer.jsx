@@ -86,6 +86,8 @@ export default function VideoPlayer({ url }) {
           <div className={`crt-screen ${on ? 'on' : 'off'}`} onClick={screenClick} role="button" tabIndex={0}>
             <div ref={hostRef} className="crt-yt" />
             {on && <>
+              {/* 일시정지 중엔 옛날 TV 지직거리는 노이즈로 화면(유튜브 정지 프레임)을 가림 */}
+              {!playing && <div className="crt-static" />}
               <div className="crt-scan" />
               <div className="crt-sweep" />
               <div className="crt-vig" />
