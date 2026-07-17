@@ -1,14 +1,25 @@
 -- =============================================================
 --  쪽지 페이지네이션: list_received_notes 에 limit/offset 추가
 --  - 화면에 ~9개 노출 → 최근 15개만 조회, 더 과거는 스크롤 시 추가 조회(egress 절감).
---  - 기존 무인자 시그니처를 limit/offset 기본값 버전으로 교체(익명 가림 로직 동일).
+--  - 남아 있을 수 있는 모든 오버로드를 제거한 뒤 limit/offset 버전 하나만 생성.
+--  - 마지막에 PostgREST 스키마 캐시 리로드까지 트리거.
 --  적용: Supabase SQL Editor 에 그대로 실행.
 -- =============================================================
 
-drop function if exists public.list_received_notes();
-drop function if exists public.list_received_notes(integer, integer);
+-- 1) list_received_notes 의 모든 오버로드(무인자/구버전 포함) 제거
+do $$
+declare r record;
+begin
+  for r in
+    select oid::regprocedure::text as sig
+    from pg_proc where proname = 'list_received_notes' and pronamespace = 'public'::regnamespace
+  loop
+    execute 'drop function ' || r.sig;
+  end loop;
+end $$;
 
-create or replace function public.list_received_notes(p_limit integer default 15, p_offset integer default 0)
+-- 2) limit/offset 버전 생성(익명 가림 로직 동일)
+create function public.list_received_notes(p_limit integer default 15, p_offset integer default 0)
 returns table(
   id uuid, group_id uuid, sender_id uuid, recipient_id uuid,
   sender_name text, recipient_name text, sender_avatar text, recipient_avatar text,
@@ -32,3 +43,10 @@ returns table(
   offset greatest(0, coalesce(p_offset, 0));
 $$;
 grant execute on function public.list_received_notes(integer, integer) to authenticated;
+
+-- 3) PostgREST 스키마 캐시 즉시 리로드
+notify pgrst, 'reload schema';
+
+-- 4) (진단) 현재 남아 있는 오버로드와 본문에 limit 포함 여부 확인 — 결과 1행, body_has_limit=true 여야 정상
+select oid::regprocedure::text as signature, (prosrc ilike '%limit%') as body_has_limit
+from pg_proc where proname = 'list_received_notes' and pronamespace = 'public'::regnamespace;
