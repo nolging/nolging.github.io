@@ -153,7 +153,7 @@ export default function PraiseStickers() {
         </div>
       ) : (
         <div className={`praise-boardwrap ${variant === 'apple' ? 'is-apple' : 'is-grape'}`}>
-          <div className="praise-boardbox" style={{ aspectRatio: `${cfg.boxW} / ${cfg.boxH}`, maxWidth: cfg.boxW }}>
+          <div className="praise-boardbox" style={{ aspectRatio: `${cfg.boxW} / ${cfg.boxH}`, maxWidth: 460 }}>
             {/* 데코 */}
             {variant === 'grape' ? (
               <>
