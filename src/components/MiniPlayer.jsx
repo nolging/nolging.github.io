@@ -111,21 +111,33 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   function ytRestart() { try { ytRef.current?.seekTo?.(0, true); ytRef.current?.playVideo?.() } catch { /* noop */ } }
 
   // ---- 사운드클라우드 ----
+  function scBindState(SC, w) {
+    w.bind(SC.Widget.Events.PLAY, () => setPlaying(true))
+    w.bind(SC.Widget.Events.PAUSE, () => setPlaying(false))
+    w.bind(SC.Widget.Events.FINISH, () => setPlaying(false))
+  }
   function scPlay(url) {
-    const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
-      + '&auto_play=true&visual=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false'
-    if (scIframeRef.current) scIframeRef.current.src = src
-    loadSC().then((SC) => {
-      if (!scIframeRef.current) return
-      scRef.current = SC.Widget(scIframeRef.current)
+    const ifr = scIframeRef.current; if (!ifr) return
+    const go = (SC) => {
+      // 위젯이 이미 있으면 트랙만 교체+재생(재부착 없이 안정적)
+      if (scRef.current) {
+        scRef.current.load(url, {
+          auto_play: true, visual: false, hide_related: true, show_comments: false, show_user: false, show_reposts: false,
+          callback: () => { try { scRef.current.play() } catch { /* noop */ } },
+        })
+        return
+      }
+      // 최초: 플레이어 src 지정(제스처 안) 후 위젯 생성 + READY 에서 재생
+      ifr.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
+        + '&auto_play=true&visual=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false'
+      scRef.current = SC.Widget(ifr)
       const w = scRef.current
-      w.bind(SC.Widget.Events.READY, () => {
-        w.play()
-        w.bind(SC.Widget.Events.PLAY, () => setPlaying(true))
-        w.bind(SC.Widget.Events.PAUSE, () => setPlaying(false))
-        w.bind(SC.Widget.Events.FINISH, () => setPlaying(false))
-      })
-    }).catch(() => {})
+      w.bind(SC.Widget.Events.READY, () => { try { w.play() } catch { /* noop */ } })
+      scBindState(SC, w)
+    }
+    // prewarm 으로 SC 스크립트가 이미 있으면 제스처 안에서 동기 실행(자동재생 허용 창 유지)
+    if (window.SC && window.SC.Widget) go(window.SC)
+    else loadSC().then(go).catch(() => {})
   }
   function scToggle() { const w = scRef.current; if (!w) return; if (playingRef.current) w.pause(); else w.play() }
   function scStop() { try { scRef.current?.pause() } catch { /* noop */ } }
@@ -175,7 +187,7 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
       {/* 화면 밖 실제 플레이어 (항상 마운트 → 이동해도 재생 유지, 소리만) */}
       <div className="mini-hosts" aria-hidden="true">
         <div ref={ytHostRef} />
-        <iframe ref={scIframeRef} title="soundcloud" width="100%" height="80" allow="autoplay" />
+        <iframe ref={scIframeRef} title="soundcloud" width="300" height="80" allow="autoplay; encrypted-media" />
       </div>
       {track && (() => {
         const pct = dur ? Math.max(0, Math.min(100, (pos / dur) * 100)) : 0
