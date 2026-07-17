@@ -42,8 +42,8 @@ export function itemName(id, fallback) {
   if (id === 'cassette') return CASSETTE_NAME
   return fallback
 }
-// 자유 텍스트(츄르 내역 사유, 선물 쪽지 본문 등)에 들어 있는 저장명("카세트 테이프")을
-// 뷰어 플랫폼 표시명으로 치환. 이름은 항상 보는 사람 기준으로 노출된다.
+// 자유 텍스트(츄르 내역 사유, 선물 쪽지 본문 등)에 들어 있는 카세트 아이템 저장명
+// ("이어폰" 또는 "카세트 테이프")을 뷰어 플랫폼 표시명으로 치환. 이름은 항상 보는 사람 기준.
 export function resolveItemText(text) {
-  return text == null ? text : String(text).replace(/카세트 테이프/g, CASSETTE_NAME)
+  return text == null ? text : String(text).replace(/카세트 테이프|이어폰/g, CASSETTE_NAME)
 }
