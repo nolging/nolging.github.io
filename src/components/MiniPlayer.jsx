@@ -111,32 +111,19 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   function ytRestart() { try { ytRef.current?.seekTo?.(0, true); ytRef.current?.playVideo?.() } catch { /* noop */ } }
 
   // ---- 사운드클라우드 ----
-  // on.soundcloud.com / snd.sc 단축 링크 → oEmbed(JSONP, CORS 우회)로 표준 트랙 URL 해석.
-  // 정식 링크면 즉시 통과(탭 제스처 유지). 실패/미지원 시 원본 그대로 사용.
+  // on.soundcloud.com / snd.sc 단축 링크 → oEmbed 로 표준 트랙 URL 해석.
+  // (oEmbed 는 CORS 허용(Access-Control-Allow-Origin: *) 이라 fetch 로 바로 조회 가능. JSONP 미지원)
+  // 정식 링크면 즉시 통과(탭 제스처 유지). 실패 시 원본 그대로 사용.
   function scResolve(url) {
     if (!/(on\.soundcloud\.com|snd\.sc)\//i.test(url)) return Promise.resolve(url)
-    return new Promise((resolve) => {
-      const cb = '__sco_' + Date.now() + '_' + Math.floor(Math.random() * 1e6)
-      const s = document.createElement('script')
-      let done = false
-      const finish = (out) => {
-        if (done) return
-        done = true
-        try { delete window[cb] } catch { window[cb] = undefined }
-        try { s.remove() } catch { /* noop */ }
-        resolve(out)
-      }
-      window[cb] = (data) => {
-        let out = url
+    return fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
         const m = data && data.html && data.html.match(/[?&]url=([^"&]+)/)
-        if (m) { try { out = decodeURIComponent(m[1]) } catch { out = m[1] } }
-        finish(out)
-      }
-      s.onerror = () => finish(url)
-      s.src = `https://soundcloud.com/oembed?format=json&callback=${cb}&url=${encodeURIComponent(url)}`
-      document.head.appendChild(s)
-      setTimeout(() => finish(url), 4500)
-    })
+        if (m) { try { return decodeURIComponent(m[1]) } catch { return m[1] } }
+        return url
+      })
+      .catch(() => url)
   }
   function scBindState(SC, w) {
     w.bind(SC.Widget.Events.PLAY, () => setPlaying(true))
