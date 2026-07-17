@@ -6,11 +6,15 @@
 //   'request'    (공개)   : 가입 요청 → status='pending' 사용자 생성 (관리자 승인 대기)
 //   'create'     (관리자) : status='active' 사용자 즉시 생성
 //   'set-status' (관리자) : 사용자 status 변경 (active/disabled)
+//   'set-role'   (관리자) : 사용자 role 변경 (member/admin)
 //   'delete'     (관리자) : 사용자 삭제 (가입요청 거절 등)
 //
 // 첫 관리자: profiles 에 admin 이 0명이면 최초 1명(admin) 을 인증 없이 생성 허용(부트스트랩).
 //
-// 배포:  supabase functions deploy admin-create-user --no-verify-jwt
+// 배포(CLI):        supabase functions deploy admin-create-user --no-verify-jwt
+// 배포(대시보드):    Edge Functions → admin-create-user → 이 코드로 교체 → Deploy.
+//   ※ 이 함수는 자체적으로 권한을 검사하고 'request'(가입 요청)는 공개라서,
+//     "Verify JWT" 옵션은 반드시 OFF 로 둬야 함(기존 배포 설정 유지됨).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
