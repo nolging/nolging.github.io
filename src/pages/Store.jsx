@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import RecipientPicker from '../components/RecipientPicker'
+import GiftItemModal from '../components/GiftItemModal'
 import StoreItemImage from '../components/StoreItemImage'
 import { decoSlot } from '../components/AvatarDeco'
 import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest } from '../lib/api'
@@ -26,7 +26,7 @@ export default function Store() {
   const [loadError, setLoadError] = useState('')
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [pickOpen, setPickOpen] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
@@ -104,14 +104,12 @@ export default function Store() {
     } catch (err) { setNotice({ type: 'err', text: err.message }) } finally { setBusy(false) }
   }
 
-  async function handleGift(r) {
-    if (!selected || busy) return
-    setPickOpen(false); setBusy(true); setNotice(null)
-    try {
-      await giftItem(selected.id, r.groupId, r.userId, qty)
-      await refreshCoin?.()
-      setNotice({ type: 'ok', kind: 'gift', text: `${r.name} 님에게 ${selected.name}을(를) 선물로 보냈어요.`, who: r.name })
-    } catch (err) { setNotice({ type: 'err', text: err.message }) } finally { setBusy(false) }
+  // 선물 전용 모달의 보내기 → 구매+선물(메시지 포함). 성공 시 상세 모달이 성공 화면으로 전환.
+  async function giftSend(r, message) {
+    if (!selected) return
+    await giftItem(selected.id, r.groupId, r.userId, qty, message || null)
+    await refreshCoin?.()
+    setNotice({ type: 'ok', kind: 'gift', text: `${r.name} 님에게 ${selected.name}을(를) 선물로 보냈어요.`, who: r.name })
   }
 
   const done = notice?.type === 'ok'
@@ -124,7 +122,7 @@ export default function Store() {
   // 좌우 스와이프로 일반↔프리미엄 탭 전환 (프리미엄 회원일 때만)
   const swipeRef = useRef(null)
   function onTouchStart(e) {
-    if (!hasPremium || selected || pickOpen || notice || e.touches.length !== 1) { swipeRef.current = null; return }
+    if (!hasPremium || selected || giftOpen || notice || e.touches.length !== 1) { swipeRef.current = null; return }
     const t = e.touches[0]
     swipeRef.current = { x0: t.clientX, y0: t.clientY, locked: null }
   }
@@ -213,7 +211,7 @@ export default function Store() {
         ))
       )}
 
-      <Modal open={!!selected} onClose={close} cardClassName="st-modal">
+      <Modal open={!!selected && !giftOpen} onClose={close} cardClassName="st-modal">
         {selected && (done ? (
           <div className={`st-done ${notice.kind === 'gift' ? 'is-gift' : ''}`}>
             <div className="st-done-ico">
@@ -266,7 +264,7 @@ export default function Store() {
               </div>
 
               <div className="st-detail-actions">
-                <button type="button" className="st-btn-ghost" disabled={busy} onClick={() => { setNotice(null); setPickOpen(true) }}>선물하기</button>
+                <button type="button" className="st-btn-ghost" disabled={busy} onClick={() => { setNotice(null); setGiftOpen(true) }}>선물하기</button>
                 <button type="button" className="st-btn-buy" disabled={selected.giftOnly || busy || ownedCouple} onClick={handleBuy}>
                   {ownedCouple ? '보유 중' : busy ? '처리 중…' : '구매하기'}
                 </button>
@@ -276,7 +274,9 @@ export default function Store() {
         })())}
       </Modal>
 
-      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} onPick={handleGift} title="선물 받는 사람" />
+      <GiftItemModal open={giftOpen} onClose={() => setGiftOpen(false)}
+        item={selected ? { id: selected.id, name: selected.name, emoji: selected.emoji } : null}
+        qty={qty} onSend={giftSend} />
     </div>
   )
 }

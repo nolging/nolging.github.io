@@ -6,8 +6,9 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import { decoSlot } from '../components/AvatarDeco'
 import RecipientPicker from '../components/RecipientPicker'
+import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -43,9 +44,8 @@ export default function Inventory() {
   const [ledboardOpen, setLedboardOpen] = useState(false)
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
-  const [telescopeOpen, setTelescopeOpen] = useState(false)
-  const [eraserOpen, setEraserOpen] = useState(false)
-  const [waterbombOpen, setWaterbombOpen] = useState(false)
+  const [guideItem, setGuideItem] = useState(null) // 사용 방법 + 선물/사용 선택 모달 (id)
+  const [giftItemId, setGiftItemId] = useState(null) // 아이템 선물 모달 (id)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
@@ -109,17 +109,11 @@ export default function Inventory() {
 
   function useItem(g) {
     setNotice('')
-    if (g.id === 'wish') setWishOpen(true)
+    if (GUIDE[g.id]) setGuideItem(g.id)   // 선물 상자/카세트/비디오/블루레이/지우개/물풍선/망원경 → 중간 안내 모달
+    else if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
     else if (g.id === 'friend-ring') setFriendOpen(true)
-    else if (g.id === 'cassette') setCassetteOpen(true)
-    else if (g.id === 'link') setLinkOpen(true)
-    else if (g.id === 'video') setVideoOpen(true)
-    else if (g.id === 'bluray') setBlurayOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
-    else if (g.id === 'telescope') setTelescopeOpen(true)
-    else if (g.id === 'eraser') setEraserOpen(true)
-    else if (g.id === 'waterbomb') setWaterbombOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
@@ -130,6 +124,20 @@ export default function Inventory() {
       setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '', appliedGroupId: appliedRow?.group_id || null })
     }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
+  }
+
+  // 안내 모달에서 '사용하기' → 해당 아이템의 실제 사용 모달 열기 (미디어 4종)
+  function openUse(id) {
+    setGuideItem(null)
+    if (id === 'cassette') setCassetteOpen(true)
+    else if (id === 'link') setLinkOpen(true)
+    else if (id === 'video') setVideoOpen(true)
+    else if (id === 'bluray') setBlurayOpen(true)
+  }
+  // 인벤토리 아이템 선물 → 보유분 1개 소모 + 선물 쪽지 전송
+  async function inventoryGiftSend(r, message) {
+    await giftOwnedItem(giftItemId, r.groupId, r.userId, 1, { message: message || null })
+    await reload()
   }
 
   return (
@@ -201,12 +209,13 @@ export default function Inventory() {
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
-      <UseGuideModal open={telescopeOpen} onClose={() => setTelescopeOpen(false)} id="telescope" name="천체 망원경" emoji="🔭"
-        text="흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요." />
-      <UseGuideModal open={eraserOpen} onClose={() => setEraserOpen(false)} id="eraser" name="지우개" emoji="🧽"
-        text="쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요." />
-      <UseGuideModal open={waterbombOpen} onClose={() => setWaterbombOpen(false)} id="waterbomb" name="물풍선 폭탄" emoji="💧"
-        text="쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요." />
+      <ItemGuideModal id={guideItem} onClose={() => setGuideItem(null)}
+        onUse={() => openUse(guideItem)}
+        onGift={() => { const id = guideItem; setGuideItem(null); setGiftItemId(id) }} />
+
+      <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
+        item={giftItemId ? { id: giftItemId, name: meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId, emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
+        qty={1} onSend={inventoryGiftSend} />
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
 
@@ -562,19 +571,39 @@ function MediaSendModal({ open, itemId, onClose, onDone }) {
   )
 }
 
-// 즉시 사용(정보) 아이템 안내 모달 — 헤더(이미지+이름, 가운데) + 사용 방법
-function UseGuideModal({ open, onClose, id, name, emoji, text }) {
+// 중간 안내 모달 대상 아이템: 사용 방법 + [선물하기 / 사용하기|확인]
+//  canUse: 사용 모달이 따로 있는 아이템(미디어 4종) 은 '사용하기', 아니면 '확인'
+const GUIDE = {
+  link:      { name: '선물 상자',      emoji: '🎁', text: '쪽지를 보낼 때 링크를 선물 상자로 예쁘게 포장해서 함께 보내요.', canUse: true },
+  cassette:  { name: itemName('cassette', '카세트 테이프'), emoji: '📼', text: '좋아하는 음악 링크를 담아 쪽지와 함께 보내요.', canUse: true },
+  video:     { name: '비디오 테이프',  emoji: '📹', text: '보여 주고 싶은 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
+  bluray:    { name: '블루레이',       emoji: '💿', text: '고화질 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
+  telescope: { name: '천체 망원경',    emoji: '🔭', text: '흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.', canUse: false },
+  eraser:    { name: '지우개',         emoji: '🧽', text: '쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.', canUse: false },
+  waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
+}
+
+// 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
+function ItemGuideModal({ id, onClose, onUse, onGift }) {
+  const cfg = id ? GUIDE[id] : null
   return (
-    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
-      <div className="nc-link">
-        <div className="nc-link-head">
-          <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
-          <div className="nc-link-name">{name}</div>
+    <Modal open={!!id} onClose={onClose} cardClassName="nc-link-modal">
+      {cfg && (
+        <div className="nc-link">
+          <div className="nc-link-head">
+            <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={cfg.emoji} className="nc-img" /></span>
+            <div className="nc-link-name">{cfg.name}</div>
+          </div>
+          <p className="tele-guide-label nc-mt">사용 방법</p>
+          <p className="tele-guide-text">{cfg.text}</p>
+          <div className="st-detail-actions ig-actions">
+            <button type="button" className="st-btn-ghost" onClick={onGift}>선물하기</button>
+            {cfg.canUse
+              ? <button type="button" className="st-btn-buy" onClick={onUse}>사용하기</button>
+              : <button type="button" className="st-btn-buy" onClick={onClose}>확인</button>}
+          </div>
         </div>
-        <p className="tele-guide-label nc-mt">사용 방법</p>
-        <p className="tele-guide-text">{text}</p>
-        <button type="button" className="nc-sheet-confirm" onClick={onClose}>확인</button>
-      </div>
+      )}
     </Modal>
   )
 }

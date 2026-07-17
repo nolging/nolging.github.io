@@ -1156,10 +1156,14 @@ export async function listFriendGroups() {
 }
 
 // 아이템 선물(받는 사람 지정, 내 츄르 차감). 반환=내 새 잔액.
-export async function giftItem(itemId, groupId, recipientId, qty = 1) {
-  const { data, error } = await supabase.rpc('gift_item', {
-    p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId, p_qty: qty,
-  })
+export async function giftItem(itemId, groupId, recipientId, qty = 1, message = null) {
+  const params = { p_item_id: itemId, p_group_id: groupId, p_recipient_id: recipientId, p_qty: qty, p_message: message }
+  let { data, error } = await supabase.rpc('gift_item', params)
+  // p_message 미배포(구버전 4-인자) 시 → 메시지 없이 재시도
+  if (error && error.code === 'PGRST202') {
+    const { p_message, ...rest } = params // eslint-disable-line no-unused-vars
+    ;({ data, error } = await supabase.rpc('gift_item', rest))
+  }
   if (error) {
     if (error.code === 'PGRST202' || /gift_item/.test(error.message || '')) {
       throw new Error('선물 기능이 아직 DB에 설정되지 않았습니다. (gift_item 함수를 먼저 적용해 주세요)')
