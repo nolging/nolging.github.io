@@ -1816,12 +1816,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .st-stepper button { width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: #191722; font-size: 18px; font-weight: 700; }
 .st-stepper button:disabled { opacity: .35; cursor: default; }
 .st-stepper span { min-width: 38px; text-align: center; font-size: 15px; font-weight: 800; color: #191722; }
-.st-total { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; background: #f7f6fa; border-radius: 14px; padding: 12px 15px; }
+.st-total { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; background: #f7f6fa; border-radius: 999px; padding: 12px 18px; }
 .st-total-l { font-size: 12.5px; font-weight: 700; color: #8b8798; }
 .st-total-v { display: flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 800; color: #191722; }
 .st-total-v .st-paw { color: #191722; }
 .st-detail-actions { margin-top: 14px; display: flex; gap: 9px; }
-.st-btn-ghost, .st-btn-buy { height: 50px; border-radius: 15px; font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+.st-btn-ghost, .st-btn-buy { height: 50px; border-radius: 999px; font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
 .st-btn-ghost { flex: 1; border: 1.5px solid #e4e2ea; background: #fff; color: #191722; }
 .st-btn-ghost:active { transform: scale(.98); }
 .st-btn-buy { flex: 1.25; border: none; background: #7363e8; color: #fff; }
