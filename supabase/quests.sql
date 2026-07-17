@@ -57,7 +57,7 @@ begin
     when 'r_wish'      then exists(select 1 from public.tasks where created_by = v_uid and created_at >= p_since)
     when 'r_item_note' then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since
                                      and (item_id is not null or kind in ('cassette','video','bluray','link','gift')))
-    when 'r_nyangpito' then exists(select 1 from public.coin_ledger where user_id = v_uid and ref_type = 'nyangpito' and created_at >= p_since)
+    when 'r_nyangpito' then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'nyangpito' and status = 'used' and used_at >= p_since)
     when 'r_buy'       then exists(select 1 from public.coin_ledger where user_id = v_uid and ref_type = 'purchase' and created_at >= p_since)
     when 'r_spend10'   then coalesce((select -sum(delta) from public.coin_ledger
                                         where user_id = v_uid and delta < 0 and created_at >= p_since), 0) >= 10
