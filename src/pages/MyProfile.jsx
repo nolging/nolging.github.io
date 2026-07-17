@@ -182,7 +182,20 @@ export default function MyProfile() {
   const grade = quests?.grade || 'normal'
   const balance = quests?.balance
   const daily = quests?.daily || []
-  const slots = [...(quests?.slots || [])].sort((a, b) => (b.done ? 1 : 0) - (a.done ? 1 : 0))
+  // 랜덤 슬롯 정렬: ①완료(받기) → ②미완료(도전) → ③대기(타이머)
+  //  · 완료·미완료 그룹은 먼저 주어진(assigned_at 이른) 순, 대기 그룹은 남은 시간 적은(cooldown_until 이른) 순
+  const slotTime = (v, fallback) => (v ? new Date(v).getTime() : fallback)
+  const slotRank = (s) => {
+    if (s.done) return 0
+    if (!(s.cooldown_until && new Date(s.cooldown_until).getTime() > now)) return 1
+    return 2
+  }
+  const slots = [...(quests?.slots || [])].sort((a, b) => {
+    const ra = slotRank(a), rb = slotRank(b)
+    if (ra !== rb) return ra - rb
+    if (ra === 2) return slotTime(a.cooldown_until, 0) - slotTime(b.cooldown_until, 0)
+    return slotTime(a.assigned_at, a.slot) - slotTime(b.assigned_at, b.slot)
+  })
   const dailyDone = daily.filter((q) => q.claimed).length
   const readyCount = slots.filter((s) => s.done).length
 

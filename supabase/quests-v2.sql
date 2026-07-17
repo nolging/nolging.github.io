@@ -126,6 +126,7 @@ begin
   select jsonb_agg(jsonb_build_object(
       'slot', s.slot,
       'cooldown_until', case when s.available_at > now() then s.available_at else null end,
+      'assigned_at', s.assigned_at,
       'key',    s.quest_key,
       'title',  dq.title,
       'body',   dq.body,
