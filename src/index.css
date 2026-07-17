@@ -2552,6 +2552,18 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .led-stop-actions { display: flex; gap: 8px; justify-content: center; }
 .led-stop-yes { background: var(--danger); color: #fff; }
 
+/* 전광판 게재 권한 가져오기 확인 */
+.led-takeover { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.led-takeover-ico { width: 60px; height: 60px; border-radius: 50%; background: #e5484d; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(229, 72, 77, .35); }
+.led-takeover-t { margin-top: 15px; font-size: 17px; font-weight: 800; color: #191722; }
+.led-takeover-s { margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #8b8798; }
+.led-takeover-box { margin-top: 16px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; background: #f7f6fa; border-radius: 999px; padding: 12px 18px; }
+.led-takeover-time { font-size: 13px; font-weight: 700; color: #8b8798; }
+.led-takeover-cost { font-size: 15px; font-weight: 800; color: #191722; }
+.led-takeover-actions { margin-top: 16px; display: flex; gap: 9px; width: 100%; }
+.led-takeover-actions .btn { flex: 1; }
+.led-takeover-actions .btn-primary { flex: 1.5; }
+
 /* 천체 망원경: 사용법 안내 + 리뷰 열람 버튼 */
 .tele-guide-label { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0; }
 /* 안내 모달: '사용 방법' 라벨을 헤더에서 넉넉히 띄움(.nc-mt 가 .tele-guide-label margin:0 에 밀리지 않게) */

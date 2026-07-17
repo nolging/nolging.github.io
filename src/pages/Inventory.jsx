@@ -206,7 +206,7 @@ export default function Inventory() {
       <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
       <MediaSendModal open={videoOpen} itemId="video" onClose={() => setVideoOpen(false)} onDone={reload} />
       <MediaSendModal open={blurayOpen} itemId="bluray" onClose={() => setBlurayOpen(false)} onDone={reload} />
-      <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} />
+      <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
       <ItemGuideModal id={guideItem} onClose={() => setGuideItem(null)}

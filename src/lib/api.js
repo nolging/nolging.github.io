@@ -1004,6 +1004,18 @@ export async function useLedboard({ text, color }) {
   }
 }
 
+// 전광판 게재 권한 가져오기(상대 배너 내림 + 배상 + 내 전광판 게재). 반환=차감된 츄르.
+export async function takeoverLedboard({ text, color }) {
+  const { data, error } = await supabase.rpc('takeover_ledboard', { p_text: text, p_color: color })
+  if (error) {
+    if (error.code === 'PGRST202' || /takeover_ledboard/.test(error.message || '')) {
+      throw new Error('전광판 권한 가져오기 기능이 아직 DB에 설정되지 않았습니다. (takeover_ledboard 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Number(data) || 0
+}
+
 // 전광판 문구/색상 수정
 export async function editLedBanner({ text, color }) {
   const { error } = await supabase.rpc('edit_led_banner', { p_text: text, p_color: color })
