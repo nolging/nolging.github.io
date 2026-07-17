@@ -8,7 +8,7 @@ import { decoSlot } from '../components/AvatarDeco'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem, useStickerBoard } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -122,6 +122,11 @@ export default function Inventory() {
     else if (g.id.startsWith('deco-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
       setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '', appliedGroupId: appliedRow?.group_id || null })
+    }
+    else if (g.id.startsWith('sticker-')) {
+      useStickerBoard(g.id)
+        .then(() => { setNotice(`${g.name}을(를) 적용했어요. 데이트에서 칭찬 스티커를 열어봐요 🎉`); reload() })
+        .catch((err) => setNotice(err.message))
     }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }

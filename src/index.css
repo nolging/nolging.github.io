@@ -3985,3 +3985,38 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .seg-tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 /* 체크박스 라벨 */
 .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; }
+
+/* ===== 칭찬 스티커 (커플) ===== */
+.praise-page { margin: calc(var(--pad-y) * -1) calc(var(--pad-x) * -1); padding: 16px 20px 40px; min-height: 100%; box-sizing: border-box; position: relative; display: flex; flex-direction: column; }
+.praise-tabs { display: flex; gap: 6px; padding: 5px; border-radius: 999px; }
+.praise-tab { flex: 1; height: 38px; border: none; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #8b8798; transition: background .18s; }
+.praise-tab.on { background: #fff; color: #191722; box-shadow: 0 2px 6px rgba(25, 23, 34, .14); }
+.praise-head { margin-top: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.praise-title { font-size: 15px; font-weight: 800; color: #191722; }
+.praise-hint { margin-top: 2px; font-size: 11.5px; color: #8b8798; }
+.praise-fullbadge { margin-top: 6px; display: inline-block; font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+.praise-count { flex-shrink: 0; font-size: 20px; font-weight: 800; }
+.praise-count span:last-child { font-size: 13px; }
+.praise-track { margin-top: 10px; height: 8px; border-radius: 999px; overflow: hidden; }
+.praise-boardwrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 0; }
+.praise-boardbox { position: relative; width: 100%; max-width: 372px; margin: 0 auto; }
+.praise-empty-board { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 40px 24px; }
+.praise-empty-emoji { font-size: 46px; }
+.praise-empty-msg { font-size: 16px; font-weight: 800; color: #191722; }
+.praise-empty-sub { font-size: 12.5px; color: #8b8798; line-height: 1.5; max-width: 260px; }
+.praise-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(25, 23, 34, .9); color: #fff; font-size: 12px; font-weight: 600; padding: 10px 16px; border-radius: 999px; z-index: 80; white-space: nowrap; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
+/* 모달 */
+.praise-modal-card { max-width: 302px; border-radius: 24px; }
+.praise-modal { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.praise-modal-fruit { width: 46px; height: 46px; }
+.praise-modal-fruit.lg { width: 66px; height: 66px; }
+.praise-modal-ttl { font-size: 16px; font-weight: 800; color: #191722; text-align: center; }
+.praise-modal-sub { margin-top: -8px; font-size: 11.5px; color: #8b8798; }
+.praise-modal-meta { font-size: 11px; font-weight: 800; color: #a99fce; letter-spacing: .02em; }
+.praise-modal-reason { width: 100%; background: #f4f3f7; border-radius: 16px; padding: 16px 15px; box-sizing: border-box; font-size: 14px; line-height: 1.6; color: #2c2938; text-align: center; }
+.praise-modal-ta { width: 100%; height: 98px; resize: none; border: none; background: #f4f3f7; border-radius: 14px; padding: 12px 13px; box-sizing: border-box; font: inherit; font-size: 13px; color: #191722; outline: none; line-height: 1.55; min-height: 0; }
+.praise-modal-len { width: 100%; text-align: right; font-size: 10px; color: #b0abc0; margin-top: -8px; }
+.praise-modal-actions { display: flex; gap: 9px; width: 100%; margin-top: 2px; }
+.praise-modal-cancel { flex: 1; height: 46px; border: none; border-radius: 14px; background: #f0eef4; color: #6b6777; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.praise-modal-confirm { flex: 1.4; height: 46px; border: none; border-radius: 14px; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.praise-modal-btn { width: 100%; height: 46px; border: none; border-radius: 14px; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }

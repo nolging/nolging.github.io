@@ -1497,6 +1497,37 @@ export async function adminSetRole(userId, role) {
   return invokeAdmin({ action: 'set-role', userId, role })
 }
 
+// ---- 칭찬 스티커 (커플 전용) ----
+// 스티커판 아이템 사용 → 내 칭찬판 활성(소모)
+export async function useStickerBoard(itemId) {
+  const { error } = await supabase.rpc('use_sticker_board', { p_item_id: itemId })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_sticker_board/.test(error.message || '')) {
+      throw new Error('칭찬 스티커 기능이 아직 DB에 설정되지 않았습니다. (praise-stickers.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+// 칭찬판 조회 → { viewer, members:[{user_id,name,variant}], stickers:[{owner_id,slot,reason,from_id,id,created_at}] }
+export async function praiseGet(groupId) {
+  const { data, error } = await supabase.rpc('praise_get', { p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || /praise_get/.test(error.message || '')) return null // 미배포
+    throw error
+  }
+  return data
+}
+// 상대 판 빈 칸에 스티커 붙이기
+export async function praisePlace(groupId, ownerId, slot, reason) {
+  const { error } = await supabase.rpc('praise_place', { p_group_id: groupId, p_owner_id: ownerId, p_slot: slot, p_reason: reason })
+  if (error) throw error
+}
+// 내가 붙인 스티커 내용 수정
+export async function praiseEdit(stickerId, reason) {
+  const { error } = await supabase.rpc('praise_edit', { p_sticker_id: stickerId, p_reason: reason })
+  if (error) throw error
+}
+
 // 관리자: 전체 사용자(연락처/생년월일 포함)
 export async function adminListUsers() {
   const { data, error } = await supabase.rpc('admin_list_users')
