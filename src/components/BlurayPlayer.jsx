@@ -43,7 +43,6 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
   const rectRef = useRef(null)
   const rafRef = useRef(0)
   const dragRef = useRef(null)             // pip 드래그 상태
-  const draggedRef = useRef(false)         // 드래그 직후 클릭(재생토글) 무시용
   const playingRef = useRef(false); playingRef.current = playing
 
   // 진행 상태 폴링
@@ -103,10 +102,13 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
     }).catch(() => {})
   }
 
-  function toggle() {
-    if (draggedRef.current) { draggedRef.current = false; return } // 방금 드래그였으면 재생토글 무시
+  function doToggle() {
     const p = ytRef.current; if (!p) return
     if (playingRef.current) p.pauseVideo?.(); else p.playVideo?.()
+  }
+  function onBoxClick() {
+    if (mode === 'pip') return // pip 은 pointerup 에서 탭/드래그를 구분해 처리
+    doToggle()
   }
   function close() {
     try { ytRef.current?.stopVideo?.() } catch { /* noop */ }
@@ -114,7 +116,8 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
     setPlaying(false); setRect(null); setPipPos(null); setMode(null)
   }
 
-  // pip 드래그 이동(고정 위치가 버튼을 가리는 문제 회피)
+  // pip 드래그 이동(고정 위치가 버튼을 가리는 문제 회피). 유튜브 iframe 위에는 .bluray-catch 가
+  // 덮여 있어 pointerdown 이 우리 DOM(→ stage)까지 전달된다.
   function pipDown(e) {
     if (mode !== 'pip' || e.target.closest('button')) return
     const r = e.currentTarget.getBoundingClientRect()
@@ -130,8 +133,8 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
     setPipPos({ left, top })
   }
   function pipUp() {
-    if (dragRef.current?.moved) draggedRef.current = true
-    dragRef.current = null
+    const d = dragRef.current; dragRef.current = null
+    if (d && !d.moved) doToggle() // 이동 없이 탭 → 재생/일시정지
   }
   function seek(e) {
     e.stopPropagation()
@@ -175,18 +178,14 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
     <div className={`bluray-stage bluray-${mode || 'off'} ${inlineHidden ? 'bluray-hide' : ''}`} style={stageStyle}
       onPointerDown={pipDown} onPointerMove={pipMove} onPointerUp={pipUp} onPointerCancel={pipUp}>
       <div className="bluray-shell">
-        <div className="bluray-box" onClick={toggle} role="button" tabIndex={-1}>
+        <div className="bluray-box" onClick={onBoxClick} role="button" tabIndex={-1}>
           <div ref={hostRef} className="bluray-yt" />
           {/* 정지/일시정지 중엔 유튜브 제목·로고·재생버튼을 가리는 커버 */}
           {mode && !playing && <div className="bluray-cover" />}
           <div className="bluray-vig" />
+          {/* 항상 유튜브 위를 덮어 탭이 iframe 에 닿지 않게(재생 중 YT 자체 컨트롤 노출·PIP 드래그 방해 방지) */}
+          <div className="bluray-catch" />
           {mode && !playing && <span className="bluray-playbig"><PlayGlyph s={mode === 'pip' ? 17 : 22} /></span>}
-
-          {mode === 'inline' && (
-            <div className="bluray-inline-top">
-              <button type="button" className="bluray-rnd" onClick={(e) => { e.stopPropagation(); setMode('full') }} aria-label="전체화면" title="전체화면"><ExpandGlyph /></button>
-            </div>
-          )}
           {mode === 'pip' && (
             <>
               <div className="bluray-pip-top">
@@ -200,7 +199,7 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
 
         {(mode === 'full' || mode === 'inline') && (
           <div className="bluray-ctrl">
-            <button type="button" className="bluray-pp" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}>{playing ? <PauseGlyph s={18} /> : <PlayGlyph s={18} />}</button>
+            <button type="button" className="bluray-pp" onClick={doToggle} aria-label={playing ? '일시정지' : '재생'}>{playing ? <PauseGlyph s={18} /> : <PlayGlyph s={18} />}</button>
             <div className="bluray-bar" onClick={seek}><div className="bluray-fill" style={{ width: w }} /><span className="bluray-knob" style={{ left: w }} /></div>
             <span className="bluray-time">{fmt(prog.pos)} / {fmt(prog.dur)}</span>
           </div>

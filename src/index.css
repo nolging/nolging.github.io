@@ -2490,6 +2490,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .bluray-vig { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(0,0,0,.4); }
 /* 정지/일시정지 중 유튜브 제목·로고·재생버튼 가림 */
 .bluray-cover { position: absolute; inset: 0; background: #0c0b10; pointer-events: none; }
+/* 유튜브 iframe 위 상시 투명 캐처: 탭이 iframe 에 닿지 않게(YT 자체 컨트롤 노출 방지 + PIP 드래그 확보) */
+.bluray-catch { position: absolute; inset: 0; z-index: 1; background: transparent; }
 .bluray-playbig {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
   width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.12);
@@ -2536,7 +2538,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 슬롯: 영상(16:9) + 하단 컨트롤 바 높이 확보 (인라인 오버레이가 이 크기에 맞춰 렌더) */
 .bluray-slot-vid { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px 14px 0 0; overflow: hidden;
   background: linear-gradient(160deg, #2a2740, #4a3f6e 58%, #141225); }
-.bluray-slot-bar { height: 46px; border-radius: 0 0 14px 14px; background: #141218; }
+.bluray-slot-bar { height: 36px; border-radius: 0 0 14px 14px; background: #141218; }
 
 /* 쪽지 안의 블루레이 슬롯(플레이어가 이 위에 겹쳐 렌더). 떠 있을 땐 ‘크게 보기’ 힌트 노출 */
 .bluray-slot {
