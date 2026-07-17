@@ -741,8 +741,17 @@ export async function unreadNoteCount(userId) {
 
 // 쪽지 읽음 처리(받은 사람만 — RLS: recipient_id = auth.uid())
 export async function markNoteRead(noteId) {
-  const { error } = await supabase.from('notes').update({ is_read: true }).eq('id', noteId)
-  if (error) throw error
+  // 익명 쪽지는 notes_select 정책상 수신자가 직접 볼 수 없어 update .eq(id) 가 0행이 됨.
+  // → SECURITY DEFINER RPC(수신자 본인 것만) 로 읽음 처리. 미배포 시 직접 update 로 폴백.
+  const { error } = await supabase.rpc('mark_note_read', { p_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /mark_note_read/.test(error.message || '')) {
+      const { error: e2 } = await supabase.from('notes').update({ is_read: true }).eq('id', noteId)
+      if (e2) throw e2
+      return
+    }
+    throw error
+  }
 }
 
 export async function listSentNotes(userId) {

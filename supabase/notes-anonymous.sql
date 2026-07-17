@@ -289,3 +289,13 @@ begin
 end;
 $$;
 grant execute on function public.gift_owned_item(text, uuid, uuid, integer, text, boolean) to authenticated;
+
+-- 받은 쪽지 읽음 처리(익명 포함). 익명 쪽지는 notes_select 정책상 수신자가
+-- 직접 볼 수 없어 클라이언트의 update .eq(id) 가 0행이 되므로, 수신자 본인 것만
+-- 갱신하는 SECURITY DEFINER 함수로 처리한다.
+create or replace function public.mark_note_read(p_id uuid)
+returns void language sql security definer set search_path = public as $$
+  update public.notes set is_read = true
+  where id = p_id and recipient_id = auth.uid();
+$$;
+grant execute on function public.mark_note_read(uuid) to authenticated;
