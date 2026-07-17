@@ -123,11 +123,6 @@ export default function Inventory() {
       const appliedRow = g.rows.find((r) => r.status === 'used')
       setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '', appliedGroupId: appliedRow?.group_id || null })
     }
-    else if (g.id.startsWith('sticker-')) {
-      useStickerBoard(g.id)
-        .then(() => { setNotice(`${g.name}을(를) 적용했어요. 데이트에서 칭찬 스티커를 열어봐요 🎉`); reload() })
-        .catch((err) => setNotice(err.message))
-    }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
 
@@ -138,6 +133,11 @@ export default function Inventory() {
     else if (id === 'link') setLinkOpen(true)
     else if (id === 'video') setVideoOpen(true)
     else if (id === 'bluray') setBlurayOpen(true)
+    else if (id.startsWith('sticker-')) {
+      useStickerBoard(id)
+        .then(() => { setNotice('칭찬 스티커판을 적용했어요. 데이트에서 열어봐요 🎉'); reload() })
+        .catch((err) => setNotice(err.message))
+    }
   }
   // 인벤토리 아이템 선물 → 보유분 1개 소모 + 선물 쪽지 전송
   async function inventoryGiftSend(r, message) {
@@ -586,6 +586,8 @@ const GUIDE = {
   telescope: { name: '천체 망원경',    emoji: '🔭', text: '흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.', canUse: false },
   eraser:    { name: '지우개',         emoji: '🧽', text: '쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.', canUse: false },
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
+  'sticker-grape': { name: '칭찬 포도판',   emoji: '🍇', text: '사용하면 내 칭찬 포도판이 생겨요. 데이트의 칭찬 스티커에서 짝꿍이 칭찬 포도알을 붙여줄 수 있어요.', canUse: true },
+  'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사용하면 내 칭찬 사과나무가 생겨요. 데이트의 칭찬 스티커에서 짝꿍이 칭찬 사과를 붙여줄 수 있어요.', canUse: true },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
