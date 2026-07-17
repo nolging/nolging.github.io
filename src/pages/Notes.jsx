@@ -95,12 +95,12 @@ export default function Notes() {
     } catch { /* noop */ }
   }, [])
 
-  // 최초/갱신 조회 — 각 탭의 첫 페이지(이미 스크롤로 더 불러온 상태면 그 개수만큼 유지).
+  // 최초/갱신 조회 — 항상 각 탭의 첫 페이지(PAGE)만. 더 과거는 스크롤 시 loadMore 로 이어붙인다.
+  // (예전엔 '스크롤로 불러온 개수만큼 유지'했더니, 한 번 끝까지 내리면 이후 모든 재조회가 전량을
+  //  다시 끌어와 페이지네이션이 무력화 → egress 급증. 그래서 항상 첫 페이지만 조회.)
   const fetchNotes = useCallback(async () => {
     if (!user?.id) return
-    const nRecv = Math.max(PAGE, recvCntRef.current || 0)
-    const nSent = Math.max(PAGE, sentCntRef.current || 0)
-    const [rr, ss] = await Promise.all([listReceivedNotes(user.id, nRecv, 0), listSentNotes(user.id, nSent, 0)])
+    const [rr, ss] = await Promise.all([listReceivedNotes(user.id, PAGE, 0), listSentNotes(user.id, PAGE, 0)])
     const r = rr.rows, s = ss.rows
     setReceived(r); setSent(s); setRecvMore(rr.hasMore); setSentMore(ss.hasMore)
     recvCntRef.current = r.length; sentCntRef.current = s.length
