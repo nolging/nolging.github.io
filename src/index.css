@@ -1657,6 +1657,12 @@ button.mlist-row:hover { background: #f6f5fa; }
   max-height: calc(100% - 48px); overflow-y: auto;
 }
 .modal-root.shown .modal-card { transform: none; opacity: 1; }
+/* 카드 아래(바깥)에 별도 블록을 붙이는 경우(예: 비디오 TV 플레이어) — 카드+below 를 세로로 쌓아 함께 스크롤 */
+.modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px;
+  max-height: calc(100% - 48px); overflow-y: auto; }
+.modal-stack .modal-card { max-width: none; max-height: none; overflow: visible; }
+.modal-below { width: 100%; }
+.modal-below .crt { margin: 0; }
 .modal-title { font-size: 1.05rem; margin: 0 0 16px; text-align: center; color: var(--text); }
 
 /* ---- 상점 ---- */
