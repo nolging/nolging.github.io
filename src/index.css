@@ -1660,7 +1660,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* 카드 아래(바깥)에 별도 블록을 붙이는 경우(예: 비디오 TV 플레이어) — 카드+below 를 세로로 쌓아 함께 스크롤 */
 .modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 26px;
   max-height: calc(100% - 48px); overflow-y: auto; }
-.modal-stack .modal-card { max-width: none; max-height: none; overflow: visible; }
+.modal-stack .modal-card { max-width: none; max-height: none; overflow: visible; box-shadow: none; }
 /* below 를 카드보다 위 층으로(안테나가 카드에 안 가리게 + 카드 그림자가 플레이어 뒤에 안 비치게) */
 .modal-below { position: relative; z-index: 3; width: 100%; }
 .modal-below .crt { margin: 0; }
@@ -2515,26 +2515,29 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .bluray-pip-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.3); }
 .bluray-pip-fill { height: 100%; background: #7363e8; }
 
-/* inline: 쪽지 슬롯 위에 겹쳐 재생 (position/크기는 JS 가 슬롯에 맞춰 지정) */
+/* inline: 쪽지 슬롯 위에 겹쳐 재생 (position/크기는 JS 가 슬롯에 맞춰 지정) — 시안(다크 시네마 + 하단 컨트롤) */
 .bluray-stage.bluray-inline { position: fixed; z-index: 70; }
 .bluray-stage.bluray-inline.bluray-hide { opacity: 0; pointer-events: none; }
-.bluray-inline .bluray-shell { width: 100%; height: 100%; }
+.bluray-inline .bluray-shell { display: flex; flex-direction: column; width: 100%; height: 100%;
+  background: #141218; border-radius: 14px; overflow: hidden; }
 .bluray-inline .bluray-box {
-  width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
-  position: relative; background: #000; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.28);
+  width: 100%; aspect-ratio: 16 / 9; height: auto; flex: none; border-radius: 0; overflow: hidden;
+  position: relative; background: #000; cursor: pointer;
 }
-/* inline 컨트롤: 우상단 작게 버튼 + 하단 진행바(시크) */
-.bluray-min { position: absolute; top: 8px; right: 8px; z-index: 2; }
-.bluray-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; z-index: 2; cursor: pointer;
-  background: rgba(255,255,255,.25); }
+.bluray-inline .bluray-ctrl { flex: 1; min-height: 0; padding: 0 14px; }
+/* inline 우상단 컨트롤(전체화면/작게) */
+.bluray-inline-top { position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; gap: 8px; }
+.bluray-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
 .bluray-prog-fill { height: 100%; background: #7363e8; }
 .bluray-prog-pip { height: 3px; cursor: default; pointer-events: none; }
+/* 슬롯: 영상(16:9) + 하단 컨트롤 바 높이 확보 (인라인 오버레이가 이 크기에 맞춰 렌더) */
+.bluray-slot-vid { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px 14px 0 0; overflow: hidden;
+  background: linear-gradient(160deg, #2a2740, #4a3f6e 58%, #141225); }
+.bluray-slot-bar { height: 46px; border-radius: 0 0 14px 14px; background: #141218; }
 
 /* 쪽지 안의 블루레이 슬롯(플레이어가 이 위에 겹쳐 렌더). 떠 있을 땐 ‘크게 보기’ 힌트 노출 */
 .bluray-slot {
-  position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 6px 0 2px;
-  border-radius: 12px; overflow: hidden; cursor: pointer;
-  background: linear-gradient(160deg, #2a2740, #4a3f6e 58%, #141225);
+  position: relative; width: 100%; margin: 0; display: flex; flex-direction: column;
 }
 .bluray-slot-hint {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px;

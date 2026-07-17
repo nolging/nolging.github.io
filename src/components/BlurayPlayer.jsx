@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import { loadYT, parseVideoUrl } from '../lib/youtube'
 
 const PlayGlyph = ({ s = 22 }) => (<svg width={s} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>)
+const PauseGlyph = ({ s = 18 }) => (<svg width={s} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>)
 const ExpandGlyph = () => (<svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>)
 const MinGlyph = () => (<svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 3H3v6M21 15v6h-6M3 3l7 7M21 21l-7-7" /></svg>)
 const CloseGlyph = () => (<svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>)
@@ -22,8 +23,9 @@ export function BluraySlot({ url, player }) {
     return () => player?.release?.(el)
   }, [url]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="bluray-slot" ref={ref} onClick={() => player?.expand?.()} role="button" tabIndex={-1}>
-      <span className="bluray-slot-hint"><PlayGlyph s={16} /> 크게 보기</span>
+    <div className="bluray-slot" ref={ref}>
+      <div className="bluray-slot-vid"><span className="bluray-slot-hint"><PlayGlyph s={16} /> 블루레이</span></div>
+      <div className="bluray-slot-bar" />
     </div>
   )
 }
@@ -150,10 +152,10 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
           {mode && !playing && <span className="bluray-playbig"><PlayGlyph s={mode === 'pip' ? 17 : 22} /></span>}
 
           {mode === 'inline' && (
-            <>
-              <button type="button" className="bluray-rnd bluray-min" onClick={(e) => { e.stopPropagation(); setMode('pip') }} aria-label="작게 보기" title="작게 보기"><MinGlyph /></button>
-              <div className="bluray-prog" onClick={seek}><div className="bluray-prog-fill" style={{ width: w }} /></div>
-            </>
+            <div className="bluray-inline-top">
+              <button type="button" className="bluray-rnd" onClick={(e) => { e.stopPropagation(); setMode('full') }} aria-label="전체화면" title="전체화면"><ExpandGlyph /></button>
+              <button type="button" className="bluray-rnd" onClick={(e) => { e.stopPropagation(); setMode('pip') }} aria-label="작게 보기" title="작게 보기"><MinGlyph /></button>
+            </div>
           )}
           {mode === 'pip' && (
             <>
@@ -166,9 +168,9 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
           )}
         </div>
 
-        {mode === 'full' && (
+        {(mode === 'full' || mode === 'inline') && (
           <div className="bluray-ctrl">
-            <button type="button" className="bluray-pp" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}><PlayGlyph s={18} /></button>
+            <button type="button" className="bluray-pp" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}>{playing ? <PauseGlyph s={18} /> : <PlayGlyph s={18} />}</button>
             <div className="bluray-bar" onClick={seek}><div className="bluray-fill" style={{ width: w }} /><span className="bluray-knob" style={{ left: w }} /></div>
             <span className="bluray-time">{fmt(prog.pos)} / {fmt(prog.dur)}</span>
           </div>
