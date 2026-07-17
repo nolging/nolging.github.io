@@ -80,7 +80,7 @@ export default function AdminStoreItem() {
           <label className="field"><span>설명</span>
             <textarea rows={3} value={form.description} onChange={setField('description')}
               placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></label>
-          <div className="row-gap" style={{ flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label className="chk"><input type="checkbox" checked={form.giftOnly} onChange={setField('giftOnly')} /> 선물 전용(구매 불가)</label>
             <label className="chk"><input type="checkbox" checked={form.isActive} onChange={setField('isActive')} /> 활성(상점 노출)</label>
           </div>
