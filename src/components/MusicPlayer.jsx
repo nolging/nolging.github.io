@@ -12,7 +12,8 @@ export function parseMusicUrl(url) {
 }
 
 const fmt = (t) => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0') }
-const EQ = [{ h: 7, d: '0s' }, { h: 13, d: '-.2s' }, { h: 6, d: '-.35s' }, { h: 11, d: '-.12s' }]
+// 높이는 cqw(212px 기준 px×0.4717) — 본체 폭에 비례 확대
+const EQ = [{ h: 3.30, d: '0s' }, { h: 6.13, d: '-.2s' }, { h: 2.83, d: '-.35s' }, { h: 5.19, d: '-.12s' }]
 
 const PlayGlyph = () => (<svg width="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>)
 const PauseGlyph = () => (<svg width="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>)
@@ -59,7 +60,7 @@ export default function MusicPlayer({ url, player, title = '음악 선물' }) {
               <div className="ipod-sub">{sub}</div>
               <div className="ipod-eq" aria-hidden="true">
                 {EQ.map((b, i) => (
-                  <span key={i} style={{ height: b.h + 'px', animationDelay: b.d, animationPlayState: playing ? 'running' : 'paused' }} />
+                  <span key={i} style={{ height: b.h + 'cqw', animationDelay: b.d, animationPlayState: playing ? 'running' : 'paused' }} />
                 ))}
               </div>
             </div>
@@ -77,7 +78,6 @@ export default function MusicPlayer({ url, player, title = '음악 선물' }) {
           <button type="button" className="ipod-center" onClick={tap} aria-label={playing ? '일시정지' : '재생'} />
         </div>
       </div>
-      <div className="ipod-caption"><div className="ipod-cap-title">{title}</div><div className="ipod-cap-sub">{sub}</div></div>
     </div>
   )
 }

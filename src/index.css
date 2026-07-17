@@ -2333,37 +2333,39 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .music-sc iframe { border: none; border-radius: 12px; display: block; }
 .music-fallback { display: inline-block; font-weight: 600; color: var(--primary); }
 
-/* ---- 쪽지 안 아이팟(음악 선물) 플레이어 — 시안 1b ---- */
-.ipod { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.ipod-body { width: 212px; background: #f1f1f3; border-radius: 26px; padding: 16px 16px 22px; box-sizing: border-box;
-  box-shadow: 0 12px 30px rgba(25, 23, 34, .16), inset 0 0 0 1px rgba(0, 0, 0, .05); }
-.ipod-screen { background: #e8e8ec; border-radius: 8px; padding: 10px; box-shadow: inset 0 0 0 2px #d6d6da; }
-.ipod-screen-top { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: #6f6e77; font-weight: 700; }
+/* ---- 쪽지 안 아이팟(음악 선물) 플레이어 — 시안 1b ----
+   폭을 쪽지 모달과 동일하게(width:100%) 맞추고 비율 유지: .ipod 를 컨테이너로 두고
+   모든 치수를 cqw(컨테이너 폭 대비 %)로 지정 → 항상 비례 확대. (212px 기준 1px ≈ 0.4717cqw) */
+.ipod { container-type: inline-size; width: 100%; }
+.ipod-body { width: 100%; box-sizing: border-box;
+  background: #f1f1f3; border-radius: 12.26cqw; padding: 7.55cqw 7.55cqw 10.38cqw;
+  box-shadow: 0 5.66cqw 14.15cqw rgba(25, 23, 34, .16), inset 0 0 0 0.47cqw rgba(0, 0, 0, .05); }
+.ipod-screen { background: #e8e8ec; border-radius: 3.77cqw; padding: 4.72cqw; box-shadow: inset 0 0 0 0.94cqw #d6d6da; }
+.ipod-screen-top { display: flex; align-items: center; justify-content: space-between; font-size: 4.25cqw; color: #6f6e77; font-weight: 700; }
 .ipod-batt { letter-spacing: .05em; }
-.ipod-now { margin-top: 8px; display: flex; gap: 9px; align-items: center; }
-.ipod-cover { width: 44px; height: 44px; border-radius: 6px; background: #93929a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; }
+.ipod-now { margin-top: 3.77cqw; display: flex; gap: 4.25cqw; align-items: flex-start; }
+.ipod-cover { width: 20.75cqw; height: 20.75cqw; border-radius: 2.83cqw; background: #93929a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9.43cqw; flex-shrink: 0; }
 .ipod-info { min-width: 0; flex: 1; }
-.ipod-title { font-size: 11px; font-weight: 800; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ipod-sub { font-size: 9.5px; color: #8b8798; }
-.ipod-eq { margin-top: 5px; display: flex; align-items: flex-end; gap: 2px; height: 16px; }
-.ipod-eq span { width: 3px; background: #6f6e77; border-radius: 1px; transform-origin: bottom; animation: eqbar .7s ease-in-out infinite; }
-.ipod-prog { margin-top: 9px; }
-.ipod-prog-bar { height: 3px; border-radius: 2px; background: #cfcfd4; position: relative; }
-.ipod-prog-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #6f6e77; border-radius: 2px; }
-.ipod-prog-time { margin-top: 3px; display: flex; justify-content: space-between; font-size: 8px; color: #8b8798; }
-.ipod-wheel { margin: 18px auto 0; width: 132px; height: 132px; border-radius: 50%; background: #e3e3e7; position: relative; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .09); }
-.ipod-menu { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font-size: 8.5px; font-weight: 800; color: #94949c; letter-spacing: .04em; }
-.ipod-pp { font-family: inherit; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 42px; height: 24px; border: none; background: transparent; cursor: pointer; color: #6f6e77; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 0; }
+.ipod-title { font-size: 5.19cqw; font-weight: 800; line-height: 1.15; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ipod-sub { font-size: 4.48cqw; line-height: 1.1; color: #8b8798; }
+.ipod-eq { margin-top: 2.83cqw; display: flex; align-items: flex-end; gap: 0.94cqw; height: 7.55cqw; }
+.ipod-eq span { width: 1.42cqw; background: #6f6e77; border-radius: 0.47cqw; transform-origin: bottom; animation: eqbar .7s ease-in-out infinite; }
+.ipod-prog { margin-top: 4.25cqw; }
+.ipod-prog-bar { height: 1.42cqw; border-radius: 0.94cqw; background: #cfcfd4; position: relative; }
+.ipod-prog-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #6f6e77; border-radius: 0.94cqw; }
+.ipod-prog-time { margin-top: 1.42cqw; display: flex; justify-content: space-between; font-size: 3.77cqw; color: #8b8798; }
+.ipod-wheel { margin: 8.49cqw auto 0; width: 62.26cqw; height: 62.26cqw; border-radius: 50%; background: #e3e3e7; position: relative; box-shadow: inset 0 0.47cqw 1.42cqw rgba(0, 0, 0, .09); }
+.ipod-menu { position: absolute; top: 3.77cqw; left: 50%; transform: translateX(-50%); font-size: 4.01cqw; font-weight: 800; color: #94949c; letter-spacing: .04em; }
+.ipod-pp { font-family: inherit; position: absolute; bottom: 1.42cqw; left: 50%; transform: translateX(-50%); width: 19.81cqw; height: 11.32cqw; border: none; background: transparent; cursor: pointer; color: #6f6e77; display: flex; align-items: center; justify-content: center; gap: 1.42cqw; padding: 0; }
 .ipod-pp:active { transform: translateX(-50%) scale(.88); }
-.ipod-prev, .ipod-next { font-family: inherit; position: absolute; top: 50%; width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; }
-.ipod-prev { left: 3px; transform: translateY(-50%); }
-.ipod-next { right: 3px; transform: translateY(-50%); }
+.ipod-pp svg { width: 5.19cqw; height: auto; }
+.ipod-prev, .ipod-next { font-family: inherit; position: absolute; top: 50%; width: 13.21cqw; height: 13.21cqw; border: none; background: transparent; cursor: pointer; color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; }
+.ipod-prev svg, .ipod-next svg { width: 6.13cqw; height: auto; }
+.ipod-prev { left: 1.42cqw; transform: translateY(-50%); }
+.ipod-next { right: 1.42cqw; transform: translateY(-50%); }
 .ipod-prev:active, .ipod-next:active { transform: translateY(-50%) scale(.88); }
-.ipod-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; border: none; background: #f1f1f3; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .03); }
+.ipod-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24.53cqw; height: 24.53cqw; border-radius: 50%; border: none; background: #f1f1f3; cursor: pointer; box-shadow: 0 0.47cqw 1.42cqw rgba(0, 0, 0, .14), inset 0 0 0 0.47cqw rgba(0, 0, 0, .03); }
 .ipod-center:active { transform: translate(-50%, -50%) scale(.95); }
-.ipod-caption { text-align: center; }
-.ipod-cap-title { font-size: 13.5px; font-weight: 700; color: #191722; }
-.ipod-cap-sub { margin-top: 2px; font-size: 11.5px; color: #8b8798; }
 @keyframes eqbar { 0%, 100% { transform: scaleY(.28); } 50% { transform: scaleY(1); } }
 
 /* ---- 전역 미니 플레이어(페이지 이동해도 재생 유지) — 시안 1g 하단 바 ---- */
