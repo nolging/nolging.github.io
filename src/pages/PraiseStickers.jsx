@@ -164,13 +164,13 @@ export default function PraiseStickers() {
               <>
                 <div style={{ position: 'absolute', bottom: T(-81), left: '50%', transform: 'translateX(-50%)', width: D(500), height: T(130), background: 'radial-gradient(50% 100% at 50% 0,#a7d98a,#84c268)', borderRadius: '50%' }} />
                 <div style={{ position: 'absolute', bottom: T(22), left: '50%', transform: 'translateX(-50%)', width: D(78), height: T(138), background: '#7d4f28', clipPath: 'polygon(19% 0,81% 0,100% 100%,0 100%)' }} />
-                <div style={{ position: 'absolute', left: D(-1), top: T(196), width: D(172), height: D(172), borderRadius: '50%', background: '#6FB45A' }} />
-                <div style={{ position: 'absolute', left: D(187), top: T(194), width: D(172), height: D(172), borderRadius: '50%', background: '#6FB45A' }} />
-                <div style={{ position: 'absolute', left: D(94), top: T(38), width: D(160), height: D(154), borderRadius: '50%', background: '#96D181' }} />
-                <div style={{ position: 'absolute', left: D(181), top: T(90), width: D(160), height: D(154), borderRadius: '50%', background: '#86c96e', zIndex: 1 }} />
-                <div style={{ position: 'absolute', left: D(15), top: T(107), width: D(160), height: D(154), borderRadius: '50%', background: '#86c96e', zIndex: 1 }} />
-                <div style={{ position: 'absolute', left: D(74), top: T(217), width: D(214), height: D(160), borderRadius: '50%', background: '#79BD63' }} />
-                <div style={{ position: 'absolute', left: D(74), top: T(134), width: D(214), height: D(170), borderRadius: '50%', background: '#8ccb73', zIndex: 2 }} />
+                <div style={{ position: 'absolute', left: D(-1), top: T(196), width: D(172), height: T(172), borderRadius: '50%', background: '#6FB45A' }} />
+                <div style={{ position: 'absolute', left: D(187), top: T(194), width: D(172), height: T(172), borderRadius: '50%', background: '#6FB45A' }} />
+                <div style={{ position: 'absolute', left: D(94), top: T(38), width: D(160), height: T(154), borderRadius: '50%', background: '#96D181' }} />
+                <div style={{ position: 'absolute', left: D(181), top: T(90), width: D(160), height: T(154), borderRadius: '50%', background: '#86c96e', zIndex: 1 }} />
+                <div style={{ position: 'absolute', left: D(15), top: T(107), width: D(160), height: T(154), borderRadius: '50%', background: '#86c96e', zIndex: 1 }} />
+                <div style={{ position: 'absolute', left: D(74), top: T(217), width: D(214), height: T(160), borderRadius: '50%', background: '#79BD63' }} />
+                <div style={{ position: 'absolute', left: D(74), top: T(134), width: D(214), height: T(170), borderRadius: '50%', background: '#8ccb73', zIndex: 2 }} />
               </>
             )}
             {/* 칸 */}
