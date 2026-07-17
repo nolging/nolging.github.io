@@ -163,6 +163,8 @@ export default function Layout() {
   const [taskBackTo, setTaskBackTo] = useState(null)
   // 페이지가 상단바 뒤로가기 동작을 가로챌 수 있게 (예: 그룹 만들기 2단계 → 1단계)
   const [backHandler, setBackHandler] = useState(null)
+  // 페이지가 상단바 배경색을 지정할 수 있게 (예: 칭찬 스티커 — 페이지 그라데이션을 상단바까지 연장)
+  const [headerBg, setHeaderBg] = useState(null)
   // 페이지가 "당겨서 새로고침" 핸들러를 등록할 수 있게 (예: 알림 페이지)
   const [refreshHandler, setRefreshHandler] = useState(null)
   // 페이지가 상단바 필터 버튼 동작/뱃지를 등록할 수 있게 (예: 일정 페이지)
@@ -416,9 +418,9 @@ export default function Layout() {
     // 가위바위보: 페이지가 자체 헤더를 그리므로 Layout 상단바는 숨김
     topbar = null
   } else if (praiseMatch) {
-    // 칭찬 스티커: 좌측 뒤로(데이트로), 제목
+    // 칭찬 스티커: 좌측 뒤로(데이트로), 제목. 페이지 그라데이션을 상단바까지 연장(headerBg).
     topbar = (
-      <header className="topbar">
+      <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
       </header>
@@ -709,7 +711,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderBg, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

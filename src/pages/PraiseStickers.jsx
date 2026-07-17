@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import { praiseGet, praisePlace, praiseEdit } from '../lib/api'
@@ -12,7 +12,7 @@ const VAR = {
     pos: [[208, 448, 94], [224, 387, 92], [136, 407, 91], [86, 345, 82], [159, 343, 85], [277, 346, 90], [216, 299, 89], [135, 276, 88], [58, 269, 88], [49, 181, 92], [114, 196, 103], [207, 223, 95], [243, 158, 94], [291, 256, 102], [314, 195, 97], [298, 112, 92], [165, 134, 105], [69, 104, 96], [139, 61, 88], [227, 72, 89]],
     fill: ['radial-gradient(circle at 34% 28%, #b6a1f5 0%, #7358d6 52%, #4e35aa 100%)', 'radial-gradient(circle at 34% 28%, #d8ef9c 0%, #9ccb56 52%, #74a638 100%)'],
     accent: '#7363e8', slash: '#b6afce', track: '#e7e4f0', bar: 'linear-gradient(90deg,#7363e8,#9a86f5)',
-    pageBg: 'linear-gradient(180deg,#f2efff 0%,#fdfcfe 60%)', tabBg: '#eceaf3',
+    pageBg: 'linear-gradient(180deg,#f2efff 0%,#fdfcfe 60%)', topColor: '#f2efff', tabBg: '#eceaf3',
     fullBg: '#f0ecff', fullColor: '#7363e8', fullText: '한 송이 가득 채웠어요 🎉',
   },
   apple: {
@@ -20,7 +20,7 @@ const VAR = {
     pos: [[62, 218, 46], [125, 194, 42], [188, 206, 50], [243, 240, 44], [304, 241, 48], [316, 298, 40], [267, 329, 46], [218, 296, 50], [162, 263, 42], [99, 271, 48], [38, 279, 44], [88, 327, 46], [160, 331, 40], [178, 88, 50], [126, 130, 44], [192, 148, 42], [300, 159, 48], [251, 182, 44], [68, 158, 46], [248, 120, 42]],
     fill: ['radial-gradient(circle at 35% 26%, #ff9585 0%, #ef4d4d 55%, #bf2f39 100%)', 'radial-gradient(circle at 35% 26%, #c6e880 0%, #7cc23f 55%, #4c9a2c 100%)'],
     accent: '#4f9e2f', slash: '#a9c39f', track: '#dcebd6', bar: 'linear-gradient(90deg,#5aa64a,#88c96a)',
-    pageBg: 'linear-gradient(180deg,#ecf6ea 0%,#fdfcfe 62%)', tabBg: '#e6efe4',
+    pageBg: 'linear-gradient(180deg,#ecf6ea 0%,#fdfcfe 62%)', topColor: '#ecf6ea', tabBg: '#e6efe4',
     fullBg: '#eaf6e4', fullColor: '#4f9e2f', fullText: '나무를 가득 채웠어요 🎉',
   },
 }
@@ -50,6 +50,8 @@ function Apple({ bg }) {
 
 export default function PraiseStickers() {
   const { groupId } = useParams()
+  const navigate = useNavigate()
+  const { setHeaderBg } = useOutletContext()
   const { user, isAdmin } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -72,6 +74,11 @@ export default function PraiseStickers() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
+
+  // 현재 탭 소유자의 판 색으로 상단바까지 그라데이션 연장(상단바엔 그라데이션 최상단 색)
+  const hdrOwner = data ? (data.members.find((m) => m.user_id === tabOwner) || data.members.find((m) => m.user_id !== data.viewer)) : null
+  const hdrTop = (VAR[hdrOwner?.variant] || VAR.grape).topColor
+  useEffect(() => { setHeaderBg(hdrTop); return () => setHeaderBg(null) }, [hdrTop, setHeaderBg])
 
   if (!isAdmin) return <div className="page"><div className="empty">준비 중인 기능이에요 🐾</div></div>
   if (loading) return <div className="page"><div className="spinner" /></div>
@@ -151,8 +158,8 @@ export default function PraiseStickers() {
       {/* 제목 + 카운트 */}
       <div className="praise-head">
         <div>
-          <div className="praise-title">{canAdd ? `${owner?.name || '짝꿍'}에게 주는 칭찬` : '내가 받은 칭찬'}</div>
-          <div className="praise-hint">{canAdd ? '빈 칸을 눌러 칭찬을 붙여줘요' : `${partner?.name || '짝꿍'}이(가) 붙여준 칭찬이에요`}</div>
+          <div className="praise-title">{owner?.name || '짝꿍'} 님의 칭찬 스티커</div>
+          <div className="praise-hint">{canAdd ? '스티커를 다 모으면 내가 소원을 들어줘요' : '스티커를 다 모아서 소원을 말해 봐요'}</div>
           {full && <div className="praise-fullbadge" style={{ background: cfg.fullBg, color: cfg.fullColor }}>{cfg.fullText}</div>}
         </div>
         <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>
@@ -163,8 +170,10 @@ export default function PraiseStickers() {
       {!variant ? (
         <div className="praise-empty-board">
           <div className="praise-empty-emoji">{isMine ? '🛒' : '🎁'}</div>
-          <div className="praise-empty-msg">상점에서 스티커판을 구매해 주세요</div>
-          <div className="praise-empty-sub">{isMine ? '프리미엄 상점에서 내 스티커판을 구매하고 인벤토리에서 사용해요' : `${owner?.name || '짝꿍'}이(가) 아직 스티커판을 준비하지 않았어요`}</div>
+          <div className="praise-empty-msg">아직 스티커판이 없어요</div>
+          <button type="button" className="praise-empty-link" onClick={() => navigate('/store', { state: { premium: true } })}>
+            {isMine ? '구매하러 가기' : '선물하러 가기'} <span aria-hidden="true">›</span>
+          </button>
         </div>
       ) : (
         <div className="praise-boardwrap">
