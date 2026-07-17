@@ -2345,9 +2345,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* ---- 링크 쪽지 ---- */
 .note-tag-link { color: #c0524a; background: rgba(192, 82, 74, .14); }
 /* 선물(선물 상자) 쪽지: 흰 모달 + 내용 하단 큰 🎁(빛+반짝임, 눌러서 링크 열기) */
-.note-giftbox { display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: 14px; text-decoration: none; cursor: pointer; }
+.note-giftbox { display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: 2px; text-decoration: none; cursor: pointer; }
 .note-giftbox:hover { text-decoration: none; }
-.note-giftbox-art { position: relative; width: 160px; height: 130px; display: flex; align-items: center; justify-content: center; }
+.note-giftbox-art { position: relative; width: 160px; height: 104px; display: flex; align-items: center; justify-content: center; }
 .note-giftbox-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%;
   background: radial-gradient(circle, rgba(255,110,105,.36) 0%, rgba(255,110,105,.15) 42%, rgba(255,110,105,0) 70%);
   animation: gb-pulse 2.6s ease-in-out infinite; }
