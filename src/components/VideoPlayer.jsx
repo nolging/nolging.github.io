@@ -89,8 +89,6 @@ export default function VideoPlayer({ url }) {
               <div className="crt-scan" />
               <div className="crt-sweep" />
               <div className="crt-vig" />
-              {/* 재생 시작 직후·일시정지 때 유튜브가 띄우는 영상 제목/링크를 항상 가림 */}
-              <div className="crt-maskt" />
               {!playing && <span className="crt-play"><PlayGlyph /></span>}
             </>}
             {!on && <div className="crt-dark" />}
