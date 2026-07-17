@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="grPurple" cx="0.35" cy="0.28" r="0.72" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#CCA1EE"></stop><stop offset="0.55" stop-color="#8257B8"></stop><stop offset="1" stop-color="#533682"></stop>
+    </radialGradient>
+    <radialGradient id="grGreen" cx="0.35" cy="0.28" r="0.72" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#E7F6A4"></stop><stop offset="0.55" stop-color="#AAD156"></stop><stop offset="1" stop-color="#729A34"></stop>
+    </radialGradient>
+  </defs>
+  <g transform="translate(44 34) scale(1.15)">
+    <path d="M0 4 Q-1 -4 -3 -10" stroke="#6E4A2E" stroke-width="2.8" fill="none" stroke-linecap="round"></path>
+    <path d="M-3 -10 C-12 -15 -17 -8 -11 -1 C-6 -3 -3 -6 -3 -10 Z" fill="#6FA83C"></path>
+    <path d="M-4 -9 Q-8 -7 -12 -5" stroke="#4E7A2A" stroke-width="0.9" fill="none"></path>
+    <g fill="url(#grPurple)">
+      <circle cx="-16" cy="6" r="8"></circle><circle cx="-5" cy="2" r="8.5"></circle><circle cx="6" cy="3" r="8"></circle><circle cx="16" cy="8" r="7.5"></circle>
+      <circle cx="-11" cy="13" r="8"></circle><circle cx="0" cy="11" r="8.5"></circle><circle cx="11" cy="14" r="8"></circle>
+      <circle cx="-15" cy="20" r="7"></circle><circle cx="-4" cy="20" r="8"></circle><circle cx="7" cy="21" r="8"></circle><circle cx="16" cy="22" r="6.5"></circle>
+      <circle cx="-9" cy="28" r="7.5"></circle><circle cx="3" cy="29" r="8"></circle><circle cx="12" cy="29" r="7"></circle>
+      <circle cx="-2" cy="36" r="7.5"></circle><circle cx="8" cy="37" r="7"></circle>
+      <circle cx="3" cy="44" r="7"></circle>
+    </g>
+    <g fill="#FFEFA6" fill-opacity="0.92">
+      <circle cx="-18" cy="3.5" r="1.7"></circle><circle cx="-7" cy="-0.5" r="1.8"></circle><circle cx="4" cy="0.5" r="1.7"></circle><circle cx="14" cy="5.5" r="1.5"></circle>
+      <circle cx="-13" cy="10.5" r="1.7"></circle><circle cx="-2" cy="8.5" r="1.8"></circle><circle cx="9" cy="11.5" r="1.7"></circle>
+      <circle cx="-17" cy="17.5" r="1.4"></circle><circle cx="-6" cy="17.5" r="1.7"></circle><circle cx="5" cy="18.5" r="1.7"></circle><circle cx="14" cy="19.5" r="1.3"></circle>
+      <circle cx="-11" cy="25.5" r="1.6"></circle><circle cx="1" cy="26.5" r="1.7"></circle><circle cx="10" cy="26.5" r="1.4"></circle>
+      <circle cx="-4" cy="33.5" r="1.6"></circle><circle cx="6" cy="34.5" r="1.4"></circle>
+      <circle cx="1" cy="41.5" r="1.4"></circle>
+    </g>
+  </g>
+  <g transform="translate(86 39) scale(1.12)">
+    <path d="M0 4 Q1 -4 3 -10" stroke="#6E4A2E" stroke-width="2.8" fill="none" stroke-linecap="round"></path>
+    <path d="M3 -10 C12 -15 17 -8 11 -1 C6 -3 3 -6 3 -10 Z" fill="#57902F"></path>
+    <path d="M4 -9 Q8 -7 12 -5" stroke="#3F6E23" stroke-width="0.9" fill="none"></path>
+    <g fill="url(#grGreen)">
+      <circle cx="-16" cy="6" r="8"></circle><circle cx="-5" cy="2" r="8.5"></circle><circle cx="6" cy="3" r="8"></circle><circle cx="16" cy="8" r="7.5"></circle>
+      <circle cx="-11" cy="13" r="8"></circle><circle cx="0" cy="11" r="8.5"></circle><circle cx="11" cy="14" r="8"></circle>
+      <circle cx="-15" cy="20" r="7"></circle><circle cx="-4" cy="20" r="8"></circle><circle cx="7" cy="21" r="8"></circle><circle cx="16" cy="22" r="6.5"></circle>
+      <circle cx="-9" cy="28" r="7.5"></circle><circle cx="3" cy="29" r="8"></circle><circle cx="12" cy="29" r="7"></circle>
+      <circle cx="-2" cy="36" r="7.5"></circle><circle cx="8" cy="37" r="7"></circle>
+      <circle cx="3" cy="44" r="7"></circle>
+    </g>
+    <g fill="#FFEFA6" fill-opacity="0.95">
+      <circle cx="-18" cy="3.5" r="1.7"></circle><circle cx="-7" cy="-0.5" r="1.8"></circle><circle cx="4" cy="0.5" r="1.7"></circle><circle cx="14" cy="5.5" r="1.5"></circle>
+      <circle cx="-13" cy="10.5" r="1.7"></circle><circle cx="-2" cy="8.5" r="1.8"></circle><circle cx="9" cy="11.5" r="1.7"></circle>
+      <circle cx="-17" cy="17.5" r="1.4"></circle><circle cx="-6" cy="17.5" r="1.7"></circle><circle cx="5" cy="18.5" r="1.7"></circle><circle cx="14" cy="19.5" r="1.3"></circle>
+      <circle cx="-11" cy="25.5" r="1.6"></circle><circle cx="1" cy="26.5" r="1.7"></circle><circle cx="10" cy="26.5" r="1.4"></circle>
+      <circle cx="-4" cy="33.5" r="1.6"></circle><circle cx="6" cy="34.5" r="1.4"></circle>
+      <circle cx="1" cy="41.5" r="1.4"></circle>
+    </g>
+  </g>
+  <polygon points="112,29 113.7,33.6 118,35.3 113.7,37 112,41.6 110.3,37 106,35.3 110.3,33.6" fill="#FFC93A"></polygon>
+  <polygon points="9,46 10.1,48.9 13,50 10.1,51.1 9,54 7.9,51.1 5,50 7.9,48.9" fill="#FFD65C"></polygon>
+</svg>

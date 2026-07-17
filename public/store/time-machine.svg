@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="tmGlow" cx="0.5" cy="0.5" r="0.5" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#9AD0F5" stop-opacity="0.5"></stop><stop offset="0.7" stop-color="#9AD0F5" stop-opacity="0.12"></stop><stop offset="1" stop-color="#9AD0F5" stop-opacity="0"></stop>
+    </radialGradient>
+    <linearGradient id="tmRim" x1="64" y1="34" x2="64" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9BD6F7"></stop><stop offset="1" stop-color="#4EA6E2"></stop>
+    </linearGradient>
+    <radialGradient id="tmFace" cx="0.38" cy="0.32" r="0.75" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#FBFDFF"></stop><stop offset="1" stop-color="#E7F1F8"></stop>
+    </radialGradient>
+    <filter id="tmBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"></feGaussianBlur></filter>
+  </defs>
+  <circle cx="64" cy="64" r="41" fill="url(#tmGlow)"></circle>
+  <path d="M76.3 30.2 A 36 36 0 1 1 51.7 30.2" stroke="#5F92DB" stroke-width="4.5" fill="none" stroke-linecap="round"></path>
+  <polygon points="50.5,22 50.5,38 61.5,29.5" fill="#4E7EC6"></polygon>
+  <circle cx="64" cy="64" r="30" fill="url(#tmRim)"></circle>
+  <circle cx="64" cy="64" r="24.5" fill="url(#tmFace)"></circle>
+  <line x1="64" y1="42.5" x2="64" y2="46.5" stroke="#5A6069" stroke-width="2.4" stroke-linecap="round"></line>
+  <line x1="64" y1="81.5" x2="64" y2="85.5" stroke="#5A6069" stroke-width="2.4" stroke-linecap="round"></line>
+  <line x1="42.5" y1="64" x2="46.5" y2="64" stroke="#5A6069" stroke-width="2.4" stroke-linecap="round"></line>
+  <line x1="81.5" y1="64" x2="85.5" y2="64" stroke="#5A6069" stroke-width="2.4" stroke-linecap="round"></line>
+  <line x1="64" y1="64" x2="55" y2="48" stroke="#33373E" stroke-width="3" stroke-linecap="round"></line>
+  <line x1="64" y1="64" x2="75" y2="58" stroke="#33373E" stroke-width="4" stroke-linecap="round"></line>
+  <circle cx="64" cy="64" r="3.2" fill="#33373E"></circle>
+  <circle cx="64" cy="64" r="1.4" fill="#BFE3FB"></circle>
+  <ellipse cx="54" cy="54" rx="8" ry="5" fill="#FFFFFF" fill-opacity="0.5" filter="url(#tmBlur)" transform="rotate(-30 54 54)"></ellipse>
+  <polygon points="101,32 102.6,36.4 107,38 102.6,39.6 101,44 99.4,39.6 95,38 99.4,36.4" fill="#8CC7F1"></polygon>
+  <circle cx="27" cy="44" r="1.7" fill="#A7D8F7"></circle>
+</svg>

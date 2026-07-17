@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="apRed" cx="0.36" cy="0.30" r="0.78" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#FF9276"></stop><stop offset="0.55" stop-color="#E8402C"></stop><stop offset="1" stop-color="#BC1F14"></stop>
+    </radialGradient>
+    <radialGradient id="apGreen" cx="0.36" cy="0.30" r="0.78" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#CDE877"></stop><stop offset="0.55" stop-color="#86BC3F"></stop><stop offset="1" stop-color="#4F8A29"></stop>
+    </radialGradient>
+    <filter id="apBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter>
+  </defs>
+  <g transform="translate(45 66) scale(1.5)">
+    <path d="M0 -12 Q-1 -18 -5 -20.5" stroke="#7A4E2D" stroke-width="2.6" fill="none" stroke-linecap="round"></path>
+    <path d="M1 -14 Q9 -20 14.5 -14.5 Q9 -10 1 -14 Z" fill="#6FA83C"></path>
+    <path d="M3.5 -14 Q8.5 -15.5 12.5 -15" stroke="#52822A" stroke-width="0.8" fill="none"></path>
+    <path d="M0 -12 C5 -17 12.5 -15.5 14.5 -8 C16.5 -1 14.5 9 8 13.5 C4 16 -4 16 -8 13.5 C-14.5 9 -16.5 -1 -14.5 -8 C-12.5 -15.5 -5 -17 0 -12 Z" fill="url(#apGreen)"></path>
+    <ellipse cx="0" cy="-11" rx="3.2" ry="1.6" fill="#3F6B1F" fill-opacity="0.35" filter="url(#apBlur)"></ellipse>
+    <ellipse cx="-6.5" cy="-3" rx="3.4" ry="6.5" fill="#FFFFFF" fill-opacity="0.4" filter="url(#apBlur)" transform="rotate(-24 -6.5 -3)"></ellipse>
+    <circle cx="-6.5" cy="-7" r="1.6" fill="#FFFFFF" fill-opacity="0.8"></circle>
+  </g>
+  <g transform="translate(80 60) scale(1.72)">
+    <path d="M0 -12 Q1 -18 5 -20.5" stroke="#7A4E2D" stroke-width="2.6" fill="none" stroke-linecap="round"></path>
+    <path d="M-1 -14 Q-9 -20 -14.5 -14.5 Q-9 -10 -1 -14 Z" fill="#6FA83C"></path>
+    <path d="M-3.5 -14 Q-8.5 -15.5 -12.5 -15" stroke="#52822A" stroke-width="0.8" fill="none"></path>
+    <path d="M0 -12 C5 -17 12.5 -15.5 14.5 -8 C16.5 -1 14.5 9 8 13.5 C4 16 -4 16 -8 13.5 C-14.5 9 -16.5 -1 -14.5 -8 C-12.5 -15.5 -5 -17 0 -12 Z" fill="url(#apRed)"></path>
+    <ellipse cx="0" cy="-11" rx="3.2" ry="1.6" fill="#7D1F14" fill-opacity="0.4" filter="url(#apBlur)"></ellipse>
+    <ellipse cx="-6.5" cy="-3" rx="3.6" ry="7" fill="#FFFFFF" fill-opacity="0.42" filter="url(#apBlur)" transform="rotate(-24 -6.5 -3)"></ellipse>
+    <circle cx="-6.5" cy="-7" r="1.7" fill="#FFFFFF" fill-opacity="0.85"></circle>
+  </g>
+</svg>

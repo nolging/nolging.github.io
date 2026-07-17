@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="npPlate" x1="64" y1="42" x2="64" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FCF8EE"></stop><stop offset="1" stop-color="#EADCC2"></stop>
+    </linearGradient>
+    <linearGradient id="npBand" x1="64" y1="42" x2="64" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3D5789"></stop><stop offset="1" stop-color="#2B3E63"></stop>
+    </linearGradient>
+    <linearGradient id="npMetal" x1="20" y1="36" x2="66" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4F7FA"></stop><stop offset="0.5" stop-color="#CBD3DD"></stop><stop offset="1" stop-color="#9EAAB8"></stop>
+    </linearGradient>
+    <filter id="npBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"></feGaussianBlur></filter>
+  </defs>
+  <g transform="rotate(-4 64 64)">
+    <ellipse cx="64" cy="88" rx="44" ry="5" fill="#000000" fill-opacity="0.12" filter="url(#npBlur)"></ellipse>
+    <rect x="24" y="42" width="80" height="44" rx="9" fill="url(#npPlate)"></rect>
+    <path d="M24 54 L104 54 L104 51 Q104 42 95 42 L33 42 Q24 42 24 51 Z" fill="url(#npBand)"></path>
+    <rect x="48" y="46.5" width="32" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.85"></rect>
+    <rect x="30" y="56" width="40" height="2.4" rx="1.2" fill="#FFFFFF" fill-opacity="0.5" filter="url(#npBlur)"></rect>
+    <rect x="30" y="82" width="56" height="3" rx="1.5" fill="#B49865" fill-opacity="0.4" filter="url(#npBlur)"></rect>
+    <g transform="translate(31 42) rotate(-26)">
+      <rect x="-4" y="-5.5" width="34" height="11" rx="5.5" fill="none" stroke="url(#npMetal)" stroke-width="2.6"></rect>
+      <circle cx="-4" cy="0" r="5" fill="none" stroke="url(#npMetal)" stroke-width="2.6"></circle>
+      <circle cx="-4" cy="0" r="1.4" fill="#8E99A7"></circle>
+      <path d="M25 -6.4 Q31 -6.4 31 0 Q31 6.4 25 6.4 Z" fill="url(#npMetal)"></path>
+      <rect x="2" y="-4.2" width="20" height="1.8" rx="0.9" fill="#FFFFFF" fill-opacity="0.7"></rect>
+    </g>
+  </g>
+</svg>
