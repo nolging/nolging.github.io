@@ -2336,7 +2336,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* ---- 쪽지 안 아이팟(음악 선물) 플레이어 — 시안 1b ----
    폭을 쪽지 모달과 동일하게(width:100%) 맞추고 비율 유지: .ipod 를 컨테이너로 두고
    모든 치수를 cqw(컨테이너 폭 대비 %)로 지정 → 항상 비례 확대. (212px 기준 1px ≈ 0.4717cqw) */
-.ipod { container-type: inline-size; width: 100%; }
+.ipod { container-type: inline-size; width: 100%; max-width: 236px; margin: 0 auto; }
 .ipod-body { width: 100%; box-sizing: border-box;
   background: #f1f1f3; border-radius: 12.26cqw; padding: 7.55cqw 7.55cqw 10.38cqw;
   box-shadow: 0 5.66cqw 14.15cqw rgba(25, 23, 34, .16), inset 0 0 0 0.47cqw rgba(0, 0, 0, .05); }
