@@ -95,7 +95,7 @@ export default function Puzzle() {
     setBusy(true); setError('')
     try {
       const r = await resizeToJpeg(file, 1100)
-      const url = await uploadPuzzleImage(r.blob, uid)
+      const url = await uploadPuzzleImage(r.blob, groupId, uid)
       const asp = r.w / r.h, seed = Math.floor(Math.random() * 1e9), cols = grid, rows = grid
       const positions = scatter(seed, cols, rows, layout(cols, rows, asp))
       const pz = { image: url, cols, rows, seed }
