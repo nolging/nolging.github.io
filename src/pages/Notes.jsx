@@ -471,7 +471,9 @@ export default function Notes() {
       </div>
 
       <Modal open={!!open} onClose={() => setOpen(null)}
-        below={open?.kind === 'video' && safeUrl(open.media_url) ? <VideoPlayer url={open.media_url} /> : null}
+        below={open?.kind === 'video' && safeUrl(open.media_url) ? <VideoPlayer url={open.media_url} />
+          : open?.kind === 'bluray' && safeUrl(open.media_url) ? <BluraySlot url={open.media_url} player={blurayPlayer} />
+          : null}
         cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && (() => {
           const p = peer(open)
@@ -519,7 +521,6 @@ export default function Notes() {
                 <p className="note-view-body">{resolveItemText(open.body)}</p>
               )}
               {cassette && open.media_url && <MusicPlayer url={open.media_url} player={player} />}
-              {bluray && open.media_url && <BluraySlot url={open.media_url} player={blurayPlayer} />}
               {link && safeUrl(open.media_url) && (
                 <a className="note-giftbox" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener" aria-label="선물 열기">
                   <span className="note-giftbox-art" aria-hidden="true">
