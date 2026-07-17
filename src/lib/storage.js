@@ -43,3 +43,11 @@ export async function deleteAvatarByUrl(url) {
   if (!path) return
   try { await supabase.storage.from(BUCKET).remove([path]) } catch { /* noop */ }
 }
+
+// 더 이상 필요 없는 퍼즐 이미지 정리 (avatars 버킷, best-effort).
+// 스토리지 RLS 상 본인 폴더의 파일만 삭제되므로, 만든 사람이 새로 시작/초기화할 때 정리된다.
+export async function deletePuzzleImageByUrl(url) {
+  const path = storagePathFromUrl(url)
+  if (!path) return
+  try { await supabase.storage.from(BUCKET).remove([path]) } catch { /* noop */ }
+}

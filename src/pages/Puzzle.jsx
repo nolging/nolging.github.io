@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { buildEdges, piecePath } from '../lib/jigsaw'
-import { uploadPuzzleImage } from '../lib/storage'
+import { uploadPuzzleImage, deletePuzzleImageByUrl } from '../lib/storage'
 import { getGroupPuzzle, saveGroupPuzzle, updatePuzzlePositions, deleteGroupPuzzle } from '../lib/api'
 
 const GRIDS = [{ n: 3, l: '9' }, { n: 4, l: '16' }, { n: 5, l: '25' }, { n: 6, l: '36' }, { n: 7, l: '49' }, { n: 8, l: '64' }]
@@ -106,7 +106,10 @@ export default function Puzzle() {
   }
   async function resetPuzzle() {
     if (!confirm('퍼즐을 지우고 새로 시작할까요?')) return
+    const oldImage = puzzle?.image
     try { await deleteGroupPuzzle(groupId) } catch { /* noop */ }
+    // 더 이상 띄우지 않는 퍼즐 이미지는 스토리지에서 정리 (best-effort)
+    if (oldImage) deletePuzzleImageByUrl(oldImage)
     setPuzzle(null); setPos({}); setAspect(0); setFile(null); setPreview('')
     chanRef.current?.send({ type: 'broadcast', event: 'reset' })
   }
