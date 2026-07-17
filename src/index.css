@@ -4000,8 +4000,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-count { flex-shrink: 0; font-size: 20px; font-weight: 800; }
 .praise-count span:last-child { font-size: 13px; }
 .praise-track { margin-top: 10px; height: 8px; border-radius: 999px; overflow: hidden; }
-/* 판은 좌우 여백 없이 화면 끝까지(페이지 좌우 패딩 20px 상쇄) */
-.praise-boardwrap { flex: 1; min-height: 0; margin: 0 -20px; display: flex; justify-content: center; overflow: hidden; position: relative; }
+/* 판은 화면 끝까지 뻗되 좌우에 살짝 여백(페이지 패딩 20px 중 10px만 상쇄) */
+.praise-boardwrap { flex: 1; min-height: 0; margin: 0 -10px; display: flex; justify-content: center; overflow: hidden; position: relative; }
 .praise-boardwrap.is-grape { align-items: center; }
 .praise-boardwrap.is-apple { align-items: flex-end; } /* 나무는 하단 정렬 → 동산(타원)이 화면 하단에서 잘림 */
 .praise-boardbox { position: relative; flex: none; width: 100%; }
