@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest } from '../lib/api'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
@@ -103,6 +103,9 @@ export default function GroupMembers() {
     setHeaderTitle?.(couple ? '데이트' : null)
     return () => setHeaderTitle?.(null)
   }, [couple, setHeaderTitle])
+
+  // 커플 그룹 데이트 페이지 방문 → 랜덤 퀘스트 '데이트하러 가기'
+  useEffect(() => { if (couple) touchQuest('r_date') }, [couple])
 
   // 커플 기념일 당일: 데이트 페이지를 다크 모드로 (상단바·콘텐츠 배경까지)
   const annivDark = couple && isAnnivToday(anniv || claimDate)

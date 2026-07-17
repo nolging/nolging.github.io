@@ -1381,6 +1381,11 @@ export async function touchGroupVisit() {
   try { await supabase.rpc('touch_group_visit') } catch { /* noop */ }
 }
 
+// 랜덤 퀘스트 방문/행동 이벤트 기록(데이트/뽀뽀/프리미엄상점/일정 등). 실패는 조용히 무시.
+export async function touchQuest(key) {
+  try { await supabase.rpc('touch_quest', { p_key: key }) } catch { /* noop */ }
+}
+
 // 내 잔액(츄르/coin) 조회. 원장이 아직 없거나 RPC 미배포 시 0 으로 폴백.
 export async function getMyCoinBalance() {
   const { data, error } = await supabase.rpc('my_coin_balance')

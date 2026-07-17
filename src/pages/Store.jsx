@@ -5,7 +5,7 @@ import Modal from '../components/Modal'
 import RecipientPicker from '../components/RecipientPicker'
 import StoreItemImage from '../components/StoreItemImage'
 import { decoSlot } from '../components/AvatarDeco'
-import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
@@ -30,9 +30,12 @@ export default function Store() {
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
-  // 새로 진입하면 일반 상점. 단, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
+  // 새로 진입하면 일반 상점. 단, 퀘스트 등으로 premium 지정 시 프리미엄 탭, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
   const [premiumView, setPremiumView] = useState(() => {
-    try { return !!location.state?.restore && sessionStorage.getItem('storePremiumView') === '1' } catch { return false }
+    try {
+      if (location.state?.premium) return true
+      return !!location.state?.restore && sessionStorage.getItem('storePremiumView') === '1'
+    } catch { return false }
   })
   useEffect(() => {
     try { sessionStorage.setItem('storePremiumView', premiumView ? '1' : '0') } catch { /* noop */ }
@@ -114,6 +117,9 @@ export default function Store() {
   const done = notice?.type === 'ok'
   const hasPremium = hasCouple || hasFriend
   const inPremium = premiumView && hasPremium
+
+  // 프리미엄 상점 입장 → 랜덤 퀘스트 '프리미엄 상점 입장'
+  useEffect(() => { if (inPremium) touchQuest('r_premium_shop') }, [inPremium])
 
   // 좌우 스와이프로 일반↔프리미엄 탭 전환 (프리미엄 회원일 때만)
   const swipeRef = useRef(null)

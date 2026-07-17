@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance } from '../lib/api'
+import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { GRADE_LABEL } from '../lib/membership'
 
-// 퀘스트별 '도전' 이동 경로 (수행할 수 있는 페이지). 없는 키는 홈으로.
+// 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
 const QUEST_TARGET = {
   visit: '/', note: '/notes/new',
   r_wish: '/', r_item_note: '/notes/new', r_nyangpito: '/inventory',
   r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
+  r_waterbomb: '/notes/new', r_deco: '/inventory', r_schedule: '/schedule',
+  r_premium_shop: '/store',
 }
 
-// 퀘스트 키 → 아이콘/파스텔 (데일리 + 랜덤 시드). 미지정 키는 기본값.
+// 퀘스트 키 → 아이콘/파스텔 (데일리 + 랜덤 시드). 랜덤 이모지는 DB(quest_defs.emoji) 우선, bg 는 이 표 사용.
 const QUEST_ICON = {
   attend: { emoji: '🗓️', bg: '#eef1fb' },
   visit: { emoji: '🚪', bg: '#e8f4ec' },
@@ -23,6 +25,16 @@ const QUEST_ICON = {
   r_spend10: { emoji: '🪙', bg: '#fbf1d3' },
   r_game_win: { emoji: '🎮', bg: '#e6eefd' },
   r_poke: { emoji: '👉', bg: '#eeebfe' },
+  r_date: { emoji: '💖', bg: '#fde8ee' },
+  r_doodle: { emoji: '✏️', bg: '#eef1fb' },
+  r_kiss: { emoji: '💋', bg: '#fde8ee' },
+  r_accept: { emoji: '📆', bg: '#e6eefd' },
+  r_waterbomb: { emoji: '💦', bg: '#e6f4fb' },
+  r_deco: { emoji: '✨', bg: '#f3ecfb' },
+  r_premium_shop: { emoji: '💍', bg: '#fdf1d6' },
+  r_review: { emoji: '⭐', bg: '#fbf1d3' },
+  r_first_comment: { emoji: '💬', bg: '#e8f4ec' },
+  r_schedule: { emoji: '🗓', bg: '#eef1fb' },
 }
 const questIcon = (key) => QUEST_ICON[key] || { emoji: '✨', bg: '#eef0f2' }
 
@@ -130,6 +142,16 @@ export default function MyProfile() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [now, setNow] = useState(() => Date.now())
+  const [coupleGroups, setCoupleGroups] = useState([])
+  const [friendGroups, setFriendGroups] = useState([])
+
+  // '도전' 이동 경로 계산용 커플/우정 그룹
+  useEffect(() => {
+    const uid = profile?.id
+    if (!uid) return
+    listCoupleGroups(uid).then((g) => setCoupleGroups(g || [])).catch(() => {})
+    listFriendGroups().then((g) => setFriendGroups(g || [])).catch(() => {})
+  }, [profile?.id])
 
   // 쿨다운 표시용 1초 틱
   useEffect(() => {
@@ -177,10 +199,30 @@ export default function MyProfile() {
     try { setQuests(await rerollSlotQuest(slot)) }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
-  const challenge = (key) => navigate(QUEST_TARGET[key] || '/', { state: { from: '/me' } })
-
   const grade = quests?.grade || 'normal'
   const balance = quests?.balance
+  const coupleGid = coupleGroups[0]
+  const friendGid = friendGroups[0]
+
+  // 퀘스트별 '도전' 이동 경로 (등급/그룹 의존). 없는 키는 null.
+  function questRoute(key) {
+    switch (key) {
+      case 'r_date': return coupleGid ? `/groups/${coupleGid}/members` : '/'
+      case 'r_doodle': return grade === 'vvip'
+        ? (coupleGid ? `/groups/${coupleGid}/draw` : '/')
+        : (friendGid ? `/groups/${friendGid}/draw` : '/')
+      case 'r_kiss': return coupleGid ? `/groups/${coupleGid}/touch` : '/'
+      case 'r_accept': return grade === 'vvip' && coupleGid ? `/groups/${coupleGid}` : '/'
+      case 'r_review': return grade === 'vvip' && coupleGid ? `/groups/${coupleGid}?tab=done` : '/'
+      case 'r_first_comment': return grade === 'vvip' && coupleGid ? `/groups/${coupleGid}` : '/'
+      default: return QUEST_TARGET[key] || null
+    }
+  }
+  const challenge = (key) => {
+    // 프리미엄 상점은 프리미엄 탭으로 진입
+    if (key === 'r_premium_shop') { navigate('/store', { state: { from: '/me', premium: true } }); return }
+    navigate(questRoute(key) || '/', { state: { from: '/me' } })
+  }
   const daily = quests?.daily || []
   // 랜덤 슬롯 정렬: ①완료(받기) → ②미완료(도전) → ③대기(타이머)
   //  · 완료·미완료 그룹은 먼저 주어진(assigned_at 이른) 순, 대기 그룹은 남은 시간 적은(cooldown_until 이른) 순
@@ -241,7 +283,7 @@ export default function MyProfile() {
                 {daily.map((q, i) => (
                   <DailyRow key={q.key} q={q} last={i === daily.length - 1} busy={busy}
                     onClaim={() => claimDaily(q.key)}
-                    onChallenge={QUEST_TARGET[q.key] ? () => challenge(q.key) : null} />
+                    onChallenge={questRoute(q.key) ? () => challenge(q.key) : null} />
                 ))}
               </div>
 

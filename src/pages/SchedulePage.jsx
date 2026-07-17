@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
-import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap } from '../lib/api'
+import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap, touchQuest } from '../lib/api'
 import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
@@ -88,6 +88,9 @@ export default function SchedulePage() {
   const [myGroups, setMyGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // 일정 페이지 방문 → 랜덤 퀘스트 '일정 확인하기'
+  useEffect(() => { touchQuest('r_schedule') }, [])
 
   const today = useMemo(() => new Date(), [])
   // 선택 날짜를 URL(?date=)에 보존 → 상세로 갔다가 뒤로 오면 그 날짜로 복원.

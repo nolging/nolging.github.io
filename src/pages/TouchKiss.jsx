@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getMyGroupMember, getGroupMemberMap, summonToTouch } from '../lib/api'
+import { getMyGroupMember, getGroupMemberMap, summonToTouch, touchQuest } from '../lib/api'
 import PeekCat from '../components/PeekCat'
 import Avatar from '../components/Avatar'
 
@@ -153,6 +153,7 @@ export default function TouchKiss() {
     setExcited(true)
     buzz(200)
     spawnBurst(mx, my)
+    touchQuest('r_kiss')  // 랜덤 퀘스트 '쪽 쪽 뽀갈' (손가락 맞닿음)
     // 계속 맞대고 있으면 진동+그라데이션+하트를 반복
     if (!pulseRef.current) pulseRef.current = setInterval(() => {
       buzz(80); spawnBurst(midRef.current.x, midRef.current.y)
