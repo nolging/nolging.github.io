@@ -2378,30 +2378,42 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   position: absolute; z-index: 25; left: 12px; right: 12px; bottom: 16px; max-width: 340px; margin: 0 auto;
   background: #f1f1f3; border-radius: 16px; padding: 9px 11px; box-sizing: border-box;
   box-shadow: 0 10px 26px rgba(25, 23, 34, .16), inset 0 0 0 1px rgba(0, 0, 0, .05);
-  display: flex; align-items: center; gap: 11px;
+  display: flex; align-items: center; gap: 11px; cursor: pointer;
 }
 .app-shell.has-nav .mini-player { bottom: 96px; }
-.mini-cover { width: 46px; height: 46px; border-radius: 9px; background: #93929a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 21px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
+/* 진행 링(시간에 따라 채워지는 원형 테두리) + 안쪽 재생/일시정지 버튼 */
+.mini-ring { width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; padding: 3px; box-sizing: border-box;
+  background: conic-gradient(#6f6e77 var(--pct, 0%), #d3d3d8 0); }
+.mini-play {
+  width: 100%; height: 100%; border-radius: 50%; border: none; cursor: pointer;
+  background: #fff; color: #4a4753; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .16);
+}
+.mini-play:active { transform: scale(.92); }
 .mini-meta { min-width: 0; flex: 1; }
 .mini-title { font-size: 12.5px; font-weight: 800; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mini-sub { font-size: 10.5px; color: #8b8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mini-progress { margin-top: 6px; display: flex; align-items: center; gap: 6px; }
-.mini-time { font-size: 8px; color: #8b8798; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.mini-track { flex: 1; height: 3px; border-radius: 2px; background: #d3d3d8; position: relative; }
-.mini-track-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #6f6e77; border-radius: 2px; }
-.mini-restart { width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
-.mini-restart:active { transform: scale(.88); }
-.mini-play {
-  width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
-  background: #6f6e77; color: #fff; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, .18);
+.mini-sub { margin-top: 2px; font-size: 10.5px; color: #8b8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-fold, .mini-close {
+  width: 28px; height: 28px; flex-shrink: 0; border: none; background: transparent; cursor: pointer;
+  color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;
 }
-.mini-play:active { transform: scale(.93); }
-.mini-close {
-  position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; padding: 0;
-  border-radius: 50%; border: 1.5px solid #fff; background: #6b6f7a; color: #fff;
-  display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 0;
+.mini-fold:active, .mini-close:active { transform: scale(.88); }
+.mini-close { color: #6b6f7a; }
+/* 왼쪽 책갈피(접힘): 오른쪽 두 모서리만 둥근 정사각형, 세로 드래그 */
+.mini-tab {
+  position: fixed; left: 0; top: 50%; z-index: 26; width: 34px; height: 34px;
+  background: #6f6e77; color: #fff; border-radius: 0 10px 10px 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(25, 23, 34, .28); touch-action: none;
 }
+.mini-tab:active { cursor: grabbing; }
+/* 전체 아이팟(미니바에서 펼침) — 어두운 배경 오버레이 */
+.mini-ipod-back {
+  position: fixed; inset: 0; z-index: 3200; display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(20, 22, 40, .34);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.mini-ipod-wrap { width: 100%; max-width: 300px; }
 /* 미니 플레이어가 목록 맨 아래 항목을 가리지 않게 여백 */
 .app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-scroll { padding-bottom: 84px; }
 

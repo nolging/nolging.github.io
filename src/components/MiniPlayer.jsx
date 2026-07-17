@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import MusicPlayer from './MusicPlayer'
 
 // 유튜브 IFrame API 싱글턴 로더
 let ytApiPromise = null
@@ -34,10 +35,9 @@ function loadSC() {
 
 const PlayIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>)
 const PauseIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>)
-const RestartIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6L2 12l9 6zM20 6l-9 6 9 6z" /></svg>)
-const CloseIcon = () => (<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>)
-
-const fmt = (t) => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0') }
+const CloseIcon = () => (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>)
+const ChevL = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>)
+const ChevR = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>)
 
 // 전역(앱 상단에 항상 마운트) 미니 플레이어. 페이지 이동/모달 닫기와 무관하게 재생 유지.
 export default forwardRef(function MiniPlayer({ onState }, ref) {
@@ -45,6 +45,9 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   const [playing, setPlaying] = useState(false)
   const [pos, setPos] = useState(0)          // 현재 재생 위치(초)
   const [dur, setDur] = useState(0)          // 전체 길이(초)
+  const [view, setView] = useState('bar')    // 'bar' | 'folded'(왼쪽 책갈피) | 'ipod'(전체 아이팟)
+  const [foldTop, setFoldTop] = useState(null) // 책갈피 세로 위치(px)
+  const tabDragRef = useRef(null)
   const ytRef = useRef(null)      // YT.Player 인스턴스
   const ytHostRef = useRef(null)  // 유튜브 플레이어가 들어갈 div
   const scRef = useRef(null)      // SC.Widget 인스턴스
@@ -170,7 +173,32 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
     setPos(0)
   }
   function close() {
-    ytStop(); scStop(); setPlaying(false); setTrack(null); setPos(0); setDur(0)
+    ytStop(); scStop(); setPlaying(false); setTrack(null); setPos(0); setDur(0); setView('bar')
+  }
+
+  // 왼쪽 책갈피(folded) — 왼쪽 가장자리에 붙은 채 위아래로만 드래그. 이동 없이 탭하면 다시 펼침.
+  function fold() {
+    if (foldTop == null) {
+      const h = typeof window !== 'undefined' ? window.innerHeight : 600
+      setFoldTop(Math.max(6, Math.round(h * 0.5) - 24))
+    }
+    setView('folded')
+  }
+  function tabDown(e) {
+    const r = e.currentTarget.getBoundingClientRect()
+    tabDragRef.current = { sy: e.clientY, top: r.top, h: r.height, moved: false }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+  function tabMove(e) {
+    const d = tabDragRef.current; if (!d) return
+    const dy = e.clientY - d.sy
+    if (Math.abs(dy) > 3) d.moved = true
+    const top = Math.min(Math.max(6, d.top + dy), (window.innerHeight || 600) - d.h - 6)
+    setFoldTop(top)
+  }
+  function tabUp() {
+    const d = tabDragRef.current; tabDragRef.current = null
+    if (d && !d.moved) setView('bar') // 탭 → 펼치기
   }
 
   useImperativeHandle(ref, () => ({
@@ -178,7 +206,7 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
       const cur = trackRef.current
       if (cur && cur.key === t.key) { toggle(); return }   // 같은 곡 → 토글
       ytStop(); scStop()                                    // 다른 곡 → 기존 정지
-      setTrack(t); setPlaying(true); setPos(0); setDur(0)   // 낙관적 표시
+      setTrack(t); setPlaying(true); setPos(0); setDur(0); setView('bar')   // 낙관적 표시
       if (t.kind === 'youtube') ytPlay(t.id); else scPlay(t.url)
     },
     toggle,
@@ -206,28 +234,45 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
         <div ref={ytHostRef} />
         <iframe ref={scIframeRef} title="soundcloud" width="300" height="80" allow="autoplay; encrypted-media" />
       </div>
-      {track && (() => {
+      {/* 미니바: 왼쪽=진행 링을 두른 재생/일시정지, 가운데=제목/가수, 오른쪽=접기(<)·닫기(X).
+          버튼 외 영역 탭 → 전체 아이팟 열기 */}
+      {track && view === 'bar' && (() => {
         const pct = dur ? Math.max(0, Math.min(100, (pos / dur) * 100)) : 0
         return (
-          <div className="mini-player">
-            <div className="mini-cover" aria-hidden="true">♫</div>
+          <div className="mini-player" onClick={() => setView('ipod')} role="button" tabIndex={-1}>
+            <div className="mini-ring" style={{ '--pct': pct + '%' }}>
+              <button type="button" className="mini-play" onClick={(e) => { e.stopPropagation(); toggle() }} aria-label={playing ? '일시정지' : '재생'}>
+                {playing ? <PauseIcon /> : <PlayIcon />}
+              </button>
+            </div>
             <div className="mini-meta">
               <div className="mini-title">{track.title || track.label}</div>
               <div className="mini-sub">{track.sub || track.label}</div>
-              <div className="mini-progress">
-                <span className="mini-time">{fmt(pos)}</span>
-                <div className="mini-track"><div className="mini-track-fill" style={{ width: pct + '%' }} /></div>
-                <span className="mini-time">{fmt(dur)}</span>
-              </div>
             </div>
-            <button type="button" className="mini-restart" onClick={restart} aria-label="처음으로" title="처음으로"><RestartIcon /></button>
-            <button type="button" className="mini-play" onClick={toggle} aria-label={playing ? '일시정지' : '재생'}>
-              {playing ? <PauseIcon /> : <PlayIcon />}
-            </button>
-            <button type="button" className="mini-close" onClick={close} aria-label="닫기" title="닫기"><CloseIcon /></button>
+            <button type="button" className="mini-fold" onClick={(e) => { e.stopPropagation(); fold() }} aria-label="접기" title="접기"><ChevL /></button>
+            <button type="button" className="mini-close" onClick={(e) => { e.stopPropagation(); close() }} aria-label="닫기" title="닫기"><CloseIcon /></button>
           </div>
         )
       })()}
+
+      {/* 왼쪽 책갈피(folded): 화면 왼쪽 가장자리, 오른쪽 두 모서리만 둥근 정사각형. 드래그(세로)로 이동, 탭하면 펼침 */}
+      {track && view === 'folded' && (
+        <div className="mini-tab" style={foldTop != null ? { top: foldTop } : undefined}
+          onPointerDown={tabDown} onPointerMove={tabMove} onPointerUp={tabUp} onPointerCancel={tabUp}
+          role="button" tabIndex={-1} aria-label="미니 플레이어 펼치기" title="펼치기">
+          <ChevR />
+        </div>
+      )}
+
+      {/* 전체 아이팟(쪽지 없이 단독). 배경 탭하면 다시 미니바로 */}
+      {track && view === 'ipod' && (
+        <div className="mini-ipod-back" onClick={() => setView('bar')}>
+          <div className="mini-ipod-wrap" onClick={(e) => e.stopPropagation()}>
+            <MusicPlayer url={track.url} title={track.title}
+              player={{ current: track, playing, pos, dur, toggle, restart, playTrack: () => toggle(), prewarm: () => {} }} />
+          </div>
+        </div>
+      )}
     </>
   )
 })
