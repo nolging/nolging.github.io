@@ -104,12 +104,11 @@ export default function Store() {
     } catch (err) { setNotice({ type: 'err', text: err.message }) } finally { setBusy(false) }
   }
 
-  // 선물 전용 모달의 보내기 → 구매+선물(메시지 포함). 성공 시 상세 모달이 성공 화면으로 전환.
+  // 선물 전용 모달의 보내기 → 구매+선물(메시지 포함). 성공 화면은 GiftItemModal 이 표시.
   async function giftSend(r, message) {
     if (!selected) return
     await giftItem(selected.id, r.groupId, r.userId, qty, message || null)
     await refreshCoin?.()
-    setNotice({ type: 'ok', kind: 'gift', text: `${r.name} 님에게 ${selected.name}을(를) 선물로 보냈어요.`, who: r.name })
   }
 
   const done = notice?.type === 'ok'
@@ -274,9 +273,11 @@ export default function Store() {
         })())}
       </Modal>
 
-      <GiftItemModal open={giftOpen} onClose={() => setGiftOpen(false)}
+      <GiftItemModal open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        onFinish={() => { setGiftOpen(false); close() }}
         item={selected ? { id: selected.id, name: selected.name, emoji: selected.emoji } : null}
-        qty={qty} onSend={giftSend} />
+        qty={qty} price={selected?.price ?? null} purchased onSend={giftSend} />
     </div>
   )
 }

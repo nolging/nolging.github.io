@@ -1,21 +1,33 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Modal from './Modal'
 import Avatar from './Avatar'
 import RecipientPicker from './RecipientPicker'
 import StoreItemImage from './StoreItemImage'
 import { imgBgOf } from '../lib/storeMeta'
 
+const Paw = () => (
+  <svg className="gift-paw" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="7" cy="7" r="2.4" /><circle cx="12" cy="5.4" r="2.4" /><circle cx="17" cy="7" r="2.4" />
+    <path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" />
+  </svg>
+)
+
 // 상점·인벤토리 공용 "아이템 선물" 모달.
-// item: { id, name, emoji }, qty: 수량, onSend(recipient, message) → Promise
-export default function GiftItemModal({ open, onClose, item, qty = 1, onSend }) {
+// item:{id,name,emoji}, qty:수량, price:개당 가격(상점=구매선물 시 표시), purchased:구매해서 선물 여부.
+// onSend(recipient, message)→Promise. onFinish=성공 화면 하단 버튼(없으면 onClose).
+export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, price = null, purchased = false, onSend }) {
+  const navigate = useNavigate()
   const [recipient, setRecipient] = useState(null)
   const [message, setMessage] = useState('')
   const [pickOpen, setPickOpen] = useState(false)
   const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const finish = onFinish || onClose
 
   useEffect(() => {
-    if (open) { setRecipient(null); setMessage(''); setPickOpen(false); setError(''); setSending(false) }
+    if (open) { setRecipient(null); setMessage(''); setPickOpen(false); setSending(false); setSent(false); setError('') }
   }, [open])
 
   if (!item) return null
@@ -23,45 +35,56 @@ export default function GiftItemModal({ open, onClose, item, qty = 1, onSend }) 
   async function send() {
     if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
     setSending(true); setError('')
-    try { await onSend(recipient, message.trim()); onClose() }
+    try { await onSend(recipient, message.trim()); setSent(true) }
     catch (e) { setError(e.message); setSending(false) }
   }
 
   return (
     <>
-      <Modal open={open && !pickOpen} onClose={onClose} cardClassName="nc-link-modal">
-        <div className="nc-link">
-          <div className="nc-link-head">
-            <span className="nc-link-ico" style={{ background: '#fde8ee' }}>📦</span>
-            <div><div className="nc-link-name">아이템 선물</div><div className="nc-link-sub">간단한 쪽지와 함께 아이템을 선물해요</div></div>
+      <Modal open={open && !pickOpen} onClose={sent ? finish : onClose} cardClassName="nc-link-modal">
+        {sent ? (
+          <div className="st-done is-gift">
+            <div className="st-done-ico">🎁</div>
+            <div className="st-done-t">선물 완료!</div>
+            <div className="st-done-s">{item.name} {qty}개를 {purchased ? '구매해서 ' : ''}선물했어요.<br />보낸 쪽지함에서 확인할 수 있어요.</div>
+            <button type="button" className="st-btn-buy st-btn-block" onClick={() => navigate('/notes', { state: { tab: 'sent' } })}>보낸 쪽지함으로 이동</button>
+            <button type="button" className="st-btn-text" onClick={finish}>{purchased ? '계속 둘러보기' : '닫기'}</button>
           </div>
-          {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
+        ) : (
+          <div className="nc-link">
+            <div className="nc-link-head">
+              <span className="nc-link-ico" style={{ background: '#fde8ee' }}>📦</span>
+              <div><div className="nc-link-name">아이템 선물</div><div className="nc-link-sub">간단한 쪽지와 함께 아이템을 선물해요</div></div>
+            </div>
+            {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
 
-          <button type="button" className="nc-to" onClick={() => setPickOpen(true)}>
-            <span className="nc-label">To.</span>
-            {recipient
-              ? <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={26} />{recipient.name}</span>
-              : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
-            <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
-          </button>
+            <button type="button" className="nc-to" onClick={() => setPickOpen(true)}>
+              <span className="nc-label">To.</span>
+              {recipient
+                ? <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={26} />{recipient.name}</span>
+                : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
+              <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+            </button>
 
-          <div className="nc-body-wrap">
-            <textarea className="nc-body" placeholder="함께 보낼 메시지(선택)" value={message} maxLength={150} rows={4}
-              onChange={(e) => setMessage(e.target.value.slice(0, 150))} />
-            <span className="nc-count">{message.length}/150</span>
+            <div className="nc-body-wrap">
+              <textarea className="nc-body" placeholder="함께 보낼 메시지(선택)" value={message} maxLength={150} rows={4}
+                onChange={(e) => setMessage(e.target.value.slice(0, 150))} />
+              <span className="nc-count">{message.length}/150</span>
+            </div>
+
+            <div className="gift-sum">
+              <span className="gift-sum-ico" style={{ background: imgBgOf(item.id) }}>
+                <StoreItemImage id={item.id} emoji={item.emoji} className="nc-img" />
+              </span>
+              <span className="gift-sum-name">{item.name}{qty > 1 && <span className="gift-sum-qty"> ×{qty}</span>}</span>
+              {price != null && <span className="gift-sum-price"><Paw />{(price * qty).toLocaleString('ko-KR')}</span>}
+            </div>
+
+            <button type="button" className="nc-sheet-confirm" onClick={send} disabled={sending}>
+              {sending ? '보내는 중…' : '보내기'}
+            </button>
           </div>
-
-          <div className="gift-sum">
-            <span className="gift-sum-ico" style={{ background: imgBgOf(item.id) }}>
-              <StoreItemImage id={item.id} emoji={item.emoji} className="nc-img" />
-            </span>
-            <span className="gift-sum-name">{item.name}{qty > 1 && <span className="gift-sum-qty"> ×{qty}</span>}</span>
-          </div>
-
-          <button type="button" className="nc-sheet-confirm" onClick={send} disabled={sending}>
-            {sending ? '보내는 중…' : '보내기'}
-          </button>
-        </div>
+        )}
       </Modal>
       <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="선물 받는 사람"
         onPick={(r) => { setRecipient(r); setPickOpen(false) }} />

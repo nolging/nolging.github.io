@@ -2727,6 +2727,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gift-sum-ico .nc-img img.store-img { width: 76%; height: 76%; object-fit: contain; }
 .gift-sum-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: #191722; }
 .gift-sum-qty { color: #8b8798; font-weight: 700; }
+.gift-sum-price { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 800; color: #a8a4b4; }
+.gift-paw { width: 14px; height: 14px; }
 /* 인벤토리 안내 모달 액션(선물/사용) */
 .ig-actions { margin-top: 18px; }
 
