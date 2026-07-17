@@ -309,8 +309,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 퀘스트 */
 .quests { margin-top: 6px; }
 .quest-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 2px 8px; }
-.quest-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
-.quest-star { font-size: 11px; color: #a79bf0; }
+.quest-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.3px; display: inline-flex; align-items: center; gap: 4px; }
+.quest-star { font-size: 13px; line-height: 1; color: #a79bf0; }
 .quest-count { font-size: 11.5px; font-weight: 600; color: var(--muted); }
 .quest-list { background: var(--surface); border-radius: 18px; padding: 2px 15px; box-shadow: var(--card-shadow); }
 .quest-row { display: flex; align-items: center; gap: 12px; padding: 7.5px 0; border-bottom: 1px solid var(--divider, #f2f1f5); }

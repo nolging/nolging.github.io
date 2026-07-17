@@ -234,7 +234,7 @@ export default function MyProfile() {
           {daily.length > 0 && (
             <div className="quests">
               <div className="quest-head">
-                <span className="quest-title">데일리 퀘스트</span>
+                <span className="quest-title">데일리 퀘스트<span className="quest-star">✦</span></span>
                 <span className="quest-count">{dailyDone}/{daily.length} 완료</span>
               </div>
               <div className="quest-list">
@@ -248,7 +248,7 @@ export default function MyProfile() {
               {slots.length > 0 && (
                 <>
                   <div className="quest-head">
-                    <span className="quest-title">랜덤 퀘스트 <span className="quest-star">✦</span></span>
+                    <span className="quest-title">랜덤 퀘스트<span className="quest-star">✦</span></span>
                     {readyCount > 0 && <span className="quest-count">받기 {readyCount}개</span>}
                   </div>
                   <div className="quest-slots" data-hscroll>
