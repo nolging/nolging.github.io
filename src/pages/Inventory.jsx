@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
@@ -12,6 +12,7 @@ import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, us
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
+import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const MAX_WISH = 300
@@ -28,6 +29,7 @@ function ItemHead({ id, name, sub, emoji }) {
 
 export default function Inventory() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { refreshCoin } = useOutletContext()
   const [items, setItems] = useState([])   // 원본 인벤토리 행
   const [meta, setMeta] = useState({})     // itemId → { emoji, name }
@@ -49,6 +51,7 @@ export default function Inventory() {
   const [scratchOpen, setScratchOpen] = useState(false)
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
+  const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -133,11 +136,7 @@ export default function Inventory() {
     else if (id === 'link') setLinkOpen(true)
     else if (id === 'video') setVideoOpen(true)
     else if (id === 'bluray') setBlurayOpen(true)
-    else if (id.startsWith('sticker-')) {
-      useStickerBoard(id)
-        .then(() => { setNotice('칭찬 스티커판을 적용했어요. 데이트에서 열어봐요 🎉'); reload() })
-        .catch((err) => setNotice(err.message))
-    }
+    else if (id.startsWith('sticker-')) setStickerUse({ id, variant: id === 'sticker-grape' ? 'grape' : 'apple' })
   }
   // 인벤토리 아이템 선물 → 보유분 1개 소모 + 선물 쪽지 전송
   async function inventoryGiftSend(r, message) {
@@ -217,6 +216,8 @@ export default function Inventory() {
       <ItemGuideModal id={guideItem} onClose={() => setGuideItem(null)}
         onUse={() => openUse(guideItem)}
         onGift={() => { const id = guideItem; setGuideItem(null); setGiftItemId(id) }} />
+
+      <StickerUseModal item={stickerUse} coupleGroupId={coupleGroupIds[0]} onClose={() => setStickerUse(null)} onDone={reload} navigate={navigate} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
         item={giftItemId ? { id: giftItemId, name: itemName(giftItemId, meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId), emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
@@ -609,6 +610,52 @@ function ItemGuideModal({ id, onClose, onUse, onGift }) {
               ? <button type="button" className="st-btn-buy" onClick={onUse}>사용하기</button>
               : <button type="button" className="st-btn-buy" onClick={onClose}>확인</button>}
           </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// ---- 칭찬 스티커판: 색 선택 + 적용 완료 모달 ----
+function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
+  const f = item ? FRUIT[item.variant] : null
+  const [color, setColor] = useState(f?.def)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+  useEffect(() => { if (item) { setColor(FRUIT[item.variant].def); setDone(false); setError('') } }, [item])
+  if (!item || !f) return <Modal open={false} onClose={onClose} />
+
+  async function apply() {
+    setBusy(true); setError('')
+    try { await useStickerBoard(item.id, color); await onDone?.(); setDone(true) }
+    catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+
+  return (
+    <Modal open={!!item} onClose={onClose} cardClassName="nc-link-modal">
+      {done ? (
+        <div className="st-done is-gift">
+          <div className="st-done-ico">🎉</div>
+          <div className="st-done-t">적용 완료!</div>
+          <div className="st-done-s">칭찬 {f.label}을(를) 적용했어요.<br />데이트의 칭찬 스티커에서 확인할 수 있어요.</div>
+          <button type="button" className="st-btn-buy st-btn-block" disabled={!coupleGroupId}
+            onClick={() => { onClose(); if (coupleGroupId) navigate(`/groups/${coupleGroupId}/praise`) }}>스티커판 보러 가기</button>
+          <button type="button" className="st-btn-text" onClick={onClose}>닫기</button>
+        </div>
+      ) : (
+        <div className="sticker-pick">
+          <div className="sticker-pick-ttl">어떤 스티커로 붙일까요?</div>
+          <div className="sticker-pick-opts">
+            {f.options.map((o) => (
+              <button key={o.key} type="button" className={`sticker-opt ${color === o.key ? 'on' : ''}`} onClick={() => setColor(o.key)}>
+                <span className="sticker-opt-fruit"><Sticker variant={item.variant} bg={f.colors[o.key]} /></span>
+                <span className="sticker-opt-label">{o.label}</span>
+              </button>
+            ))}
+          </div>
+          {error && <div className="alert alert-error" style={{ marginTop: 4 }}>{error}</div>}
+          <button type="button" className="st-btn-buy st-btn-block" disabled={busy} onClick={apply}>{busy ? '적용 중…' : '적용하기'}</button>
         </div>
       )}
     </Modal>

@@ -1498,9 +1498,9 @@ export async function adminSetRole(userId, role) {
 }
 
 // ---- 칭찬 스티커 (커플 전용) ----
-// 스티커판 아이템 사용 → 내 칭찬판 활성(소모)
-export async function useStickerBoard(itemId) {
-  const { error } = await supabase.rpc('use_sticker_board', { p_item_id: itemId })
+// 스티커판 아이템 사용 → 색을 골라 내 칭찬판 활성(소모)
+export async function useStickerBoard(itemId, color) {
+  const { error } = await supabase.rpc('use_sticker_board', { p_item_id: itemId, p_color: color })
   if (error) {
     if (error.code === 'PGRST202' || /use_sticker_board/.test(error.message || '')) {
       throw new Error('칭찬 스티커 기능이 아직 DB에 설정되지 않았습니다. (praise-stickers.sql 을 먼저 적용해 주세요)')
