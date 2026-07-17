@@ -1517,7 +1517,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 .spinner-sm { width: 18px; height: 18px; border-width: 2px; margin: 0 auto; }
 /* 더 과거 쪽지 로드 표시(스크롤 하단) */
 .note-more { list-style: none; display: flex; align-items: center; justify-content: center; padding: 12px 0 4px; min-height: 26px; }
-.note-more-dots { color: var(--muted); letter-spacing: .12em; font-size: 14px; opacity: .6; }
+.note-more-btn { border: none; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 6px 14px; border-radius: 999px; }
+.note-more-btn:active { background: rgba(0, 0, 0, .05); }
 /* 당겨서 새로고침: 본문·인디케이터가 함께 아래로 */
 .content { transition: transform .24s cubic-bezier(.2, .8, .2, 1); }
 .content.ptr-drag { transition: none; }

@@ -334,7 +334,9 @@ export default function Notes() {
     if (!sc) return
     const onScroll = () => {
       setScrolled(sc.scrollTop > 4)
-      if (sc.scrollHeight - sc.scrollTop - sc.clientHeight < 240) loadMoreRef.current?.(tabRef.current)
+      // 실제로 아래로 스크롤(scrollTop>0)해서 하단 근처에 왔을 때만 추가 로드.
+      // (마운트 직후 동기 호출 시엔 scrollTop=0 이라 자동 로드하지 않음 → 처음엔 15개만)
+      if (sc.scrollTop > 0 && sc.scrollHeight - sc.scrollTop - sc.clientHeight < 240) loadMoreRef.current?.(tabRef.current)
     }
     sc.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
@@ -529,8 +531,10 @@ export default function Notes() {
             )
           })}
           {(tab === 'received' ? recvMore : sentMore) && (
-            <li className="note-more" aria-hidden={!loadingMore}>
-              {loadingMore ? <span className="spinner spinner-sm" /> : <span className="note-more-dots">···</span>}
+            <li className="note-more">
+              {loadingMore
+                ? <span className="spinner spinner-sm" />
+                : <button type="button" className="note-more-btn" onClick={() => loadMore(tab)}>이전 쪽지 더 보기</button>}
             </li>
           )}
         </ul>
