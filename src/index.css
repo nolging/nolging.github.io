@@ -2333,25 +2333,71 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .music-sc iframe { border: none; border-radius: 12px; display: block; }
 .music-fallback { display: inline-block; font-weight: 600; color: var(--primary); }
 
-/* ---- 전역 미니 플레이어(페이지 이동해도 재생 유지). 버튼만 노출 ---- */
+/* ---- 쪽지 안 아이팟(음악 선물) 플레이어 — 시안 1b ---- */
+.ipod { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.ipod-body { width: 212px; background: #f1f1f3; border-radius: 26px; padding: 16px 16px 22px; box-sizing: border-box;
+  box-shadow: 0 12px 30px rgba(25, 23, 34, .16), inset 0 0 0 1px rgba(0, 0, 0, .05); }
+.ipod-screen { background: #e8e8ec; border-radius: 8px; padding: 10px; box-shadow: inset 0 0 0 2px #d6d6da; }
+.ipod-screen-top { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: #6f6e77; font-weight: 700; }
+.ipod-batt { letter-spacing: .05em; }
+.ipod-now { margin-top: 8px; display: flex; gap: 9px; align-items: center; }
+.ipod-cover { width: 44px; height: 44px; border-radius: 6px; background: #93929a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; }
+.ipod-info { min-width: 0; flex: 1; }
+.ipod-title { font-size: 11px; font-weight: 800; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ipod-sub { font-size: 9.5px; color: #8b8798; }
+.ipod-eq { margin-top: 5px; display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+.ipod-eq span { width: 3px; background: #6f6e77; border-radius: 1px; transform-origin: bottom; animation: eqbar .7s ease-in-out infinite; }
+.ipod-prog { margin-top: 9px; }
+.ipod-prog-bar { height: 3px; border-radius: 2px; background: #cfcfd4; position: relative; }
+.ipod-prog-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #6f6e77; border-radius: 2px; }
+.ipod-prog-time { margin-top: 3px; display: flex; justify-content: space-between; font-size: 8px; color: #8b8798; }
+.ipod-wheel { margin: 18px auto 0; width: 132px; height: 132px; border-radius: 50%; background: #e3e3e7; position: relative; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .09); }
+.ipod-menu { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font-size: 8.5px; font-weight: 800; color: #94949c; letter-spacing: .04em; }
+.ipod-pp { font-family: inherit; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 42px; height: 24px; border: none; background: transparent; cursor: pointer; color: #6f6e77; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 0; }
+.ipod-pp:active { transform: translateX(-50%) scale(.88); }
+.ipod-prev, .ipod-next { font-family: inherit; position: absolute; top: 50%; width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; }
+.ipod-prev { left: 3px; transform: translateY(-50%); }
+.ipod-next { right: 3px; transform: translateY(-50%); }
+.ipod-prev:active, .ipod-next:active { transform: translateY(-50%) scale(.88); }
+.ipod-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; border: none; background: #f1f1f3; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .03); }
+.ipod-center:active { transform: translate(-50%, -50%) scale(.95); }
+.ipod-caption { text-align: center; }
+.ipod-cap-title { font-size: 13.5px; font-weight: 700; color: #191722; }
+.ipod-cap-sub { margin-top: 2px; font-size: 11.5px; color: #8b8798; }
+@keyframes eqbar { 0%, 100% { transform: scaleY(.28); } 50% { transform: scaleY(1); } }
+
+/* ---- 전역 미니 플레이어(페이지 이동해도 재생 유지) — 시안 1g 하단 바 ---- */
 .mini-hosts { position: absolute; width: 1px; height: 1px; left: -9999px; top: 0; overflow: hidden; opacity: 0; pointer-events: none; }
 .mini-player {
-  position: absolute; z-index: 25; left: 16px; bottom: 16px;
-  width: 45px; height: 45px;
+  position: absolute; z-index: 25; left: 12px; right: 12px; bottom: 16px; max-width: 340px; margin: 0 auto;
+  background: #f1f1f3; border-radius: 16px; padding: 9px 11px; box-sizing: border-box;
+  box-shadow: 0 10px 26px rgba(25, 23, 34, .16), inset 0 0 0 1px rgba(0, 0, 0, .05);
+  display: flex; align-items: center; gap: 11px;
 }
 .app-shell.has-nav .mini-player { bottom: 96px; }
+.mini-cover { width: 46px; height: 46px; border-radius: 9px; background: #93929a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 21px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
+.mini-meta { min-width: 0; flex: 1; }
+.mini-title { font-size: 12.5px; font-weight: 800; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-sub { font-size: 10.5px; color: #8b8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-progress { margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+.mini-time { font-size: 8px; color: #8b8798; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.mini-track { flex: 1; height: 3px; border-radius: 2px; background: #d3d3d8; position: relative; }
+.mini-track-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #6f6e77; border-radius: 2px; }
+.mini-restart { width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; color: #94949c; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+.mini-restart:active { transform: scale(.88); }
 .mini-play {
-  width: 45px; height: 45px; border-radius: 50%; border: none; cursor: pointer;
-  background: #9aa0ac; color: #fff; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 16px rgba(25, 23, 34, .24);
+  width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+  background: #6f6e77; color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .18);
 }
+.mini-play:active { transform: scale(.93); }
 .mini-close {
-  position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; padding: 0;
+  position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; padding: 0;
   border-radius: 50%; border: 1.5px solid #fff; background: #6b6f7a; color: #fff;
   display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 0;
 }
 /* 미니 플레이어가 목록 맨 아래 항목을 가리지 않게 여백 */
-.app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-scroll { padding-bottom: 60px; }
+.app-shell.has-mini .tab-pane, .app-shell.has-mini .notes-scroll { padding-bottom: 84px; }
 
 /* ---- 링크 쪽지 ---- */
 .note-tag-link { color: #c0524a; background: rgba(192, 82, 74, .14); }

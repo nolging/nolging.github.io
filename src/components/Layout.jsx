@@ -168,12 +168,16 @@ export default function Layout() {
   const [storePremium, setStorePremium] = useState(false)
   // 전역 음악 플레이어(페이지 이동/모달 닫아도 재생 유지)
   const playerRef = useRef(null)
-  const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false })
+  const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false, pos: 0, dur: 0 })
   const player = {
     playTrack: (t) => playerRef.current?.play(t),
     prewarm: (kind) => playerRef.current?.prewarm(kind),
+    toggle: () => playerRef.current?.toggle(),
+    restart: () => playerRef.current?.restart(),
     current: nowPlaying.current,
     playing: nowPlaying.playing,
+    pos: nowPlaying.pos || 0,
+    dur: nowPlaying.dur || 0,
   }
   // 전역 블루레이 플레이어(쪽지 안 인라인 재생 ↔ 인앱 PIP, 페이지 이동해도 유지)
   const blurayRef = useRef(null)
