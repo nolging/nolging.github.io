@@ -4002,7 +4002,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-boardbox { position: relative; width: 100%; max-width: 372px; margin: 0 auto; }
 .praise-empty-board { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 40px 24px; }
 .praise-empty-emoji { font-size: 46px; }
-.praise-empty-msg { font-size: 16px; font-weight: 800; color: #191722; }
+.praise-empty-msg { font-size: 15px; font-weight: 500; color: #6b6777; }
 .praise-empty-link { border: none; background: transparent; color: var(--primary); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px; }
 .praise-empty-link span { font-size: 17px; line-height: 1; }
 .praise-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(25, 23, 34, .9); color: #fff; font-size: 12px; font-weight: 600; padding: 10px 16px; border-radius: 999px; z-index: 80; white-space: nowrap; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }

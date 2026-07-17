@@ -169,7 +169,6 @@ export default function PraiseStickers() {
       {/* 판 */}
       {!variant ? (
         <div className="praise-empty-board">
-          <div className="praise-empty-emoji">{isMine ? '🛒' : '🎁'}</div>
           <div className="praise-empty-msg">아직 스티커판이 없어요</div>
           <button type="button" className="praise-empty-link" onClick={() => navigate('/store', { state: { premium: true } })}>
             {isMine ? '구매하러 가기' : '선물하러 가기'} <span aria-hidden="true">›</span>
