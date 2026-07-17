@@ -1658,7 +1658,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 .modal-root.shown .modal-card { transform: none; opacity: 1; }
 /* 카드 아래(바깥)에 별도 블록을 붙이는 경우(예: 비디오 TV 플레이어) — 카드+below 를 세로로 쌓아 함께 스크롤 */
-.modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 26px;
+.modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px;
   max-height: calc(100% - 48px); overflow-y: auto; }
 .modal-stack .modal-card { max-width: none; max-height: none; overflow: visible; box-shadow: none; }
 /* below 를 카드보다 위 층으로(안테나가 카드에 안 가리게 + 카드 그림자가 플레이어 뒤에 안 비치게) */
@@ -2476,8 +2476,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* pip: 우하단 플로팅 카드 (모달보다도 위에 떠 있음) */
 .bluray-stage.bluray-pip {
   position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 74px);
-  z-index: 3000; width: 172px;
+  z-index: 3000; width: 172px; touch-action: none; cursor: grab;
 }
+.bluray-stage.bluray-pip:active { cursor: grabbing; }
 .bluray-pip .bluray-shell { width: 172px; }
 .bluray-pip .bluray-box {
   width: 172px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
@@ -2487,6 +2488,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* YT API 가 .bluray-yt 를 iframe 으로 교체하므로 .bluray-box 하위로 직접 타겟 */
 .bluray-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
 .bluray-vig { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(0,0,0,.4); }
+/* 정지/일시정지 중 유튜브 제목·로고·재생버튼 가림 */
+.bluray-cover { position: absolute; inset: 0; background: #0c0b10; pointer-events: none; }
 .bluray-playbig {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
   width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.12);

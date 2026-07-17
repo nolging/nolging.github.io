@@ -35,12 +35,15 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
   const [playing, setPlaying] = useState(false)
   const [prog, setProg] = useState({ pos: 0, dur: 0 })
   const [rect, setRect] = useState(null)   // inline: 슬롯 위치/크기
+  const [pipPos, setPipPos] = useState(null) // pip: 사용자가 드래그로 옮긴 위치({left,top}px)
   const ytRef = useRef(null)
   const hostRef = useRef(null)
   const slotRef = useRef(null)             // 현재 인라인 슬롯 엘리먼트
   const curIdRef = useRef(null)
   const rectRef = useRef(null)
   const rafRef = useRef(0)
+  const dragRef = useRef(null)             // pip 드래그 상태
+  const draggedRef = useRef(false)         // 드래그 직후 클릭(재생토글) 무시용
   const playingRef = useRef(false); playingRef.current = playing
 
   // 진행 상태 폴링
@@ -86,11 +89,13 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
       if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(id); if (autoplay) ytRef.current.playVideo?.(); return }
       ytRef.current = new YT.Player(hostRef.current, {
         videoId: id,
-        playerVars: { playsinline: 1, rel: 0, modestbranding: 1, controls: 0, fs: 0, iv_load_policy: 3, cc_load_policy: 0, disablekb: 1 },
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1, controls: 0, fs: 0, iv_load_policy: 3, cc_load_policy: 0, disablekb: 1, showinfo: 0 },
         events: {
-          onReady: (e) => { if (autoplay) e.target.playVideo(); setProg({ pos: 0, dur: e.target.getDuration?.() || 0 }) },
+          // 자막(cc)은 재생이 시작돼 로드된 뒤 unload 해야 확실히 꺼진다 → onApiChange/onReady.
+          onApiChange: (e) => { try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } },
+          onReady: (e) => { try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } if (autoplay) e.target.playVideo(); setProg({ pos: 0, dur: e.target.getDuration?.() || 0 }) },
           onStateChange: (e) => {
-            if (e.data === YT.PlayerState.PLAYING) setPlaying(true)
+            if (e.data === YT.PlayerState.PLAYING) { setPlaying(true); try { e.target.unloadModule('captions'); e.target.unloadModule('cc') } catch { /* noop */ } }
             else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false)
           },
         },
@@ -99,13 +104,34 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
   }
 
   function toggle() {
+    if (draggedRef.current) { draggedRef.current = false; return } // 방금 드래그였으면 재생토글 무시
     const p = ytRef.current; if (!p) return
     if (playingRef.current) p.pauseVideo?.(); else p.playVideo?.()
   }
   function close() {
     try { ytRef.current?.stopVideo?.() } catch { /* noop */ }
     slotRef.current = null; rectRef.current = null
-    setPlaying(false); setRect(null); setMode(null)
+    setPlaying(false); setRect(null); setPipPos(null); setMode(null)
+  }
+
+  // pip 드래그 이동(고정 위치가 버튼을 가리는 문제 회피)
+  function pipDown(e) {
+    if (mode !== 'pip' || e.target.closest('button')) return
+    const r = e.currentTarget.getBoundingClientRect()
+    dragRef.current = { sx: e.clientX, sy: e.clientY, left: r.left, top: r.top, w: r.width, h: r.height, moved: false }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+  function pipMove(e) {
+    const d = dragRef.current; if (!d) return
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true
+    const left = Math.min(Math.max(6, d.left + dx), window.innerWidth - d.w - 6)
+    const top = Math.min(Math.max(6, d.top + dy), window.innerHeight - d.h - 6)
+    setPipPos({ left, top })
+  }
+  function pipUp() {
+    if (dragRef.current?.moved) draggedRef.current = true
+    dragRef.current = null
   }
   function seek(e) {
     e.stopPropagation()
@@ -128,11 +154,11 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
     // 쪽지가 닫히면: 재생 중이면 PIP 로 유지, 아니면 종료
     release(el) {
       if (slotRef.current !== el) return
-      slotRef.current = null; rectRef.current = null; setRect(null)
+      slotRef.current = null; rectRef.current = null; setRect(null); setPipPos(null)
       if (playingRef.current) setMode('pip'); else close()
     },
     // 슬롯(쪽지)이 PIP 상태일 때 다시 크게: 슬롯 있으면 인라인, 없으면 전체화면
-    expand() { setMode(slotRef.current ? 'inline' : 'full') },
+    expand() { setPipPos(null); setMode(slotRef.current ? 'inline' : 'full') },
   }), [])
 
   useEffect(() => () => { try { ytRef.current?.destroy?.() } catch { /* noop */ } }, [])
@@ -141,20 +167,24 @@ export default forwardRef(function BlurayPlayer(_props, ref) {
   const inlineHidden = mode === 'inline' && !rect
   const stageStyle = mode === 'inline' && rect
     ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-    : undefined
+    : mode === 'pip' && pipPos
+      ? { left: pipPos.left, top: pipPos.top, right: 'auto', bottom: 'auto' }
+      : undefined
 
   return createPortal(
-    <div className={`bluray-stage bluray-${mode || 'off'} ${inlineHidden ? 'bluray-hide' : ''}`} style={stageStyle}>
+    <div className={`bluray-stage bluray-${mode || 'off'} ${inlineHidden ? 'bluray-hide' : ''}`} style={stageStyle}
+      onPointerDown={pipDown} onPointerMove={pipMove} onPointerUp={pipUp} onPointerCancel={pipUp}>
       <div className="bluray-shell">
         <div className="bluray-box" onClick={toggle} role="button" tabIndex={-1}>
           <div ref={hostRef} className="bluray-yt" />
+          {/* 정지/일시정지 중엔 유튜브 제목·로고·재생버튼을 가리는 커버 */}
+          {mode && !playing && <div className="bluray-cover" />}
           <div className="bluray-vig" />
           {mode && !playing && <span className="bluray-playbig"><PlayGlyph s={mode === 'pip' ? 17 : 22} /></span>}
 
           {mode === 'inline' && (
             <div className="bluray-inline-top">
               <button type="button" className="bluray-rnd" onClick={(e) => { e.stopPropagation(); setMode('full') }} aria-label="전체화면" title="전체화면"><ExpandGlyph /></button>
-              <button type="button" className="bluray-rnd" onClick={(e) => { e.stopPropagation(); setMode('pip') }} aria-label="작게 보기" title="작게 보기"><MinGlyph /></button>
             </div>
           )}
           {mode === 'pip' && (
