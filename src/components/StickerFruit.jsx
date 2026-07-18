@@ -35,7 +35,7 @@ export function Apple({ bg }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <span style={{ position: 'absolute', top: '-4%', left: '55%', width: '36%', height: '20%', background: '#5aa64a', borderRadius: '0 65% 0 65%', transform: 'rotate(-20deg)', transformOrigin: 'left bottom', zIndex: 1 }} />
-      <svg viewBox="0 0 12 30" style={{ position: 'absolute', top: '-11%', left: '46%', width: '9%', height: '28%', overflow: 'visible' }}><path d="M9 29 Q4.5 16 6.5 2" fill="none" stroke="#7d4f28" strokeWidth="3" strokeLinecap="round" /></svg>
+      <svg viewBox="0 0 14 30" style={{ position: 'absolute', top: '-11%', left: '45%', width: '11%', height: '28%', overflow: 'visible' }}><path d="M10 29 Q5 16 7 2" fill="none" stroke="#7d4f28" strokeWidth="5.5" strokeLinecap="round" /></svg>
       <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '90%', borderRadius: '46% 46% 50% 50%', boxShadow: 'inset -4px -5px 8px rgba(0,0,0,.26),inset 3px 3px 6px rgba(255,255,255,.4),0 3px 7px rgba(0,0,0,.17)', background: bg }}>
         <span style={{ position: 'absolute', top: '15%', left: '19%', width: '26%', height: '19%', borderRadius: '50%', background: 'rgba(255,255,255,.62)', filter: 'blur(1.5px)' }} />
       </div>
