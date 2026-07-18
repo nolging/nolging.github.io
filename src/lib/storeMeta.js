@@ -41,7 +41,6 @@ export function itemImgId(id) {
 export const CASSETTE_NAME = IS_IOS ? '콩나물 한 가닥' : '콩 한 쪽'
 export function itemName(id, fallback) {
   if (id === 'cassette') return CASSETTE_NAME
-  if (id === 'sticker-grape') return '칭찬 포도알'
   return fallback
 }
 // 자유 텍스트(츄르 내역 사유, 선물 쪽지 본문 등)에 들어 있는 카세트 아이템 저장명
