@@ -1527,6 +1527,17 @@ export async function praiseEdit(stickerId, reason) {
   const { error } = await supabase.rpc('praise_edit', { p_sticker_id: stickerId, p_reason: reason })
   if (error) throw error
 }
+// 완성한 내 판에서 소원권 수령 → 인벤토리에 소원권 지급
+export async function praiseClaim(boardId) {
+  const { error } = await supabase.rpc('praise_claim', { p_board_id: boardId })
+  if (error) throw error
+}
+// 특정(과거 완성) 판 조회 → { board_id, owner_id, variant, color, started_at, completed_at, stickers }
+export async function praiseBoardGet(boardId) {
+  const { data, error } = await supabase.rpc('praise_board_get', { p_board_id: boardId })
+  if (error) throw error
+  return data
+}
 
 // 관리자: 전체 사용자(연락처/생년월일 포함)
 export async function adminListUsers() {

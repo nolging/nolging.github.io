@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
+import StoreItemImage from '../components/StoreItemImage'
 import { Sticker, fruitBg } from '../components/StickerFruit'
-import { praiseGet, praisePlace, praiseEdit } from '../lib/api'
+import { praiseGet, praisePlace, praiseEdit, praiseClaim, praiseBoardGet } from '../lib/api'
 
 // ── 판 구성(시안 좌표 그대로, 박스 대비 %로 변환해 반응형) ──────────────
 const VAR = {
@@ -24,14 +25,14 @@ const VAR = {
   },
 }
 const pct = (v, t) => `${(v / t * 100).toFixed(2)}%`
-const fmtDate = (iso) => { try { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일` } catch { return '' } }
 const fmtDateTime = (iso) => { try { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0'); return `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${p(d.getHours())}:${p(d.getMinutes())}` } catch { return '' } }
+const fmtYmd = (iso) => { try { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}` } catch { return '' } }
 const ordinalOf = (stickers, id) => [...stickers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).findIndex((s) => s.id === id) + 1
 
 export default function PraiseStickers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
-  const { setHeaderBg } = useOutletContext()
+  const { setHeaderBg, setHeaderMenu } = useOutletContext()
   const { user, isAdmin } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -40,11 +41,13 @@ export default function PraiseStickers() {
   const [modal, setModal] = useState(null) // { ownerId, slot, mode:'write'|'edit'|'view', text, sticker }
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
+  const [claimBusy, setClaimBusy] = useState(false)
+  const [histSel, setHistSel] = useState(null)   // 선택된 과거 board_id
+  const [histData, setHistData] = useState(null) // 과거 판 조회 결과
   const taRef = useRef(null)
   const primeRef = useRef(null)
 
   // 탭 제스처 안에서 임시 input 을 포커스해 키보드를 미리 띄운다(iOS 대응).
-  // 실제 textarea 가 마운트되면 포커스를 넘기고 임시 input 은 제거한다.
   function primeKeyboard() {
     const inp = document.createElement('input')
     inp.type = 'text'
@@ -69,6 +72,14 @@ export default function PraiseStickers() {
   }, [groupId])
   useEffect(() => { load() }, [load])
 
+  // 과거 판 조회
+  useEffect(() => {
+    if (!histSel) { setHistData(null); return }
+    let on = true
+    praiseBoardGet(histSel).then((d) => { if (on) setHistData(d) }).catch((e) => { if (on) setError(e.message) })
+    return () => { on = false }
+  }, [histSel])
+
   // 칭찬 입력/수정 모달이 열리면 입력창 자동 포커스(키보드 유지)
   useEffect(() => {
     if (modal && modal.mode !== 'view') {
@@ -80,33 +91,57 @@ export default function PraiseStickers() {
     }
   }, [modal?.slot, modal?.mode])
 
-  // 현재 탭 소유자의 판 색으로 상단바까지 그라데이션 연장(상단바엔 그라데이션 최상단 색)
-  const hdrOwner = data ? (data.members.find((m) => m.user_id === tabOwner) || data.members.find((m) => m.user_id !== data.viewer)) : null
-  const hdrTop = (VAR[hdrOwner?.variant] || VAR.grape).topColor
-  useEffect(() => { setHeaderBg(hdrTop); return () => setHeaderBg(null) }, [hdrTop, setHeaderBg])
-
-  if (!isAdmin) return <div className="page"><div className="empty">준비 중인 기능이에요 🐾</div></div>
-  if (loading) return <div className="page"><div className="spinner" /></div>
-  if (error) return <div className="page"><div className="alert alert-error">{error}</div></div>
-
-  const viewer = data.viewer
-  const members = data.members || []
+  // ── 렌더에 쓰일 파생값(훅 순서 유지 위해 early-return 이전에 계산) ──
+  const viewer = data?.viewer
+  const members = data?.members || []
   const me = members.find((m) => m.user_id === viewer)
   const partner = members.find((m) => m.user_id !== viewer)
   const owner = members.find((m) => m.user_id === tabOwner) || partner
   const isMine = owner?.user_id === viewer
-  const canAdd = !isMine
-  const variant = owner?.variant || null
+  const ownerBoard = owner?.board || null
+  const history = owner?.history || []
+  const viewingHist = !!histSel && !!histData && histData.board_id === histSel
+  const board = viewingHist ? histData : ownerBoard
+  const variant = board?.variant || null
   const cfg = VAR[variant] || VAR.grape
-  const fillBg = fruitBg(variant, owner?.color)
+  const fillBg = fruitBg(variant, board?.color)
 
-  const stickers = data.stickers.filter((s) => s.owner_id === owner?.user_id)
+  // 상단바 그라데이션 색을 현재 표시 중인 판 색으로 연장
+  const hdrTop = (VAR[variant] || VAR.grape).topColor
+  useEffect(() => { setHeaderBg(hdrTop); return () => setHeaderBg(null) }, [hdrTop, setHeaderBg])
+
+  // 상단바 우측 삼선 메뉴: 이 탭 소유자의 완성한 판(히스토리)
+  const histKey = history.map((h) => h.board_id).join(',')
+  useEffect(() => {
+    if (!setHeaderMenu) return
+    if (!history.length) { setHeaderMenu(null); return }
+    setHeaderMenu({
+      items: history.map((h) => ({ id: h.board_id, label: `${fmtYmd(h.started_at)} - ${fmtYmd(h.completed_at)}` })),
+      selectedId: histSel,
+      onSelect: (id) => setHistSel((cur) => (cur === id ? null : id)),
+    })
+  }, [histKey, histSel, tabOwner, setHeaderMenu]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setHeaderMenu?.(null), [setHeaderMenu])
+
+  if (!isAdmin) return <div className="page"><div className="empty">준비 중인 기능이에요 🐾</div></div>
+  if (loading) return <div className="page"><div className="spinner" /></div>
+  if (error && !data) return <div className="page"><div className="alert alert-error">{error}</div></div>
+
+  const canAdd = !isMine && !viewingHist && !!ownerBoard && !ownerBoard.completed_at
+  const completed = !!ownerBoard?.completed_at
+  const claimed = !!ownerBoard?.claimed_at
+  const claimable = isMine && completed && !claimed && !viewingHist
+  const histLoading = !!histSel && !viewingHist
+
+  const stickers = viewingHist ? (histData.stickers || []) : (data.stickers || []).filter((s) => s.owner_id === owner?.user_id)
   const slots = Array(20).fill(null)
   stickers.forEach((s) => { if (s.slot >= 0 && s.slot < 20) slots[s.slot] = s })
   const count = slots.filter(Boolean).length
   const full = count >= 20
 
   function showToast(msg) { setToast(msg); clearTimeout(showToast._t); showToast._t = setTimeout(() => setToast(''), 1900) }
+
+  function selectTab(uid) { setTabOwner(uid); setHistSel(null); setHistData(null) }
 
   function slotClick(slot) {
     const s = slots[slot]
@@ -116,7 +151,7 @@ export default function PraiseStickers() {
     } else if (canAdd) {
       primeKeyboard()
       setModal({ ownerId: owner.user_id, slot, mode: 'write', text: '' })
-    } else {
+    } else if (isMine && !viewingHist) {
       showToast('내 칭찬 스티커는 스스로 붙일 수 없어요')
     }
   }
@@ -130,6 +165,13 @@ export default function PraiseStickers() {
       else await praiseEdit(modal.sticker.id, text)
       setModal(null); await load()
     } catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+
+  async function claim() {
+    if (!ownerBoard?.board_id) return
+    setClaimBusy(true); setError('')
+    try { await praiseClaim(ownerBoard.board_id); await load(); showToast('소원권을 받았어요 🎫') }
+    catch (err) { setError(err.message) } finally { setClaimBusy(false) }
   }
 
   // z-index: 포도는 송이 중심에 가까울수록 앞으로, 사과는 잎 캐노피 위에
@@ -157,7 +199,7 @@ export default function PraiseStickers() {
           return (
             <button key={mem.user_id} type="button"
               className={`praise-tab ${on ? 'on' : ''}`}
-              onClick={() => setTabOwner(mem.user_id)}>{mem.name}</button>
+              onClick={() => selectTab(mem.user_id)}>{mem.name}</button>
           )
         })}
       </div>
@@ -166,15 +208,25 @@ export default function PraiseStickers() {
       <div className="praise-head">
         <div>
           <div className="praise-title">{owner?.name || '짝꿍'} 님의 칭찬 스티커</div>
-          <div className="praise-hint">{canAdd ? '스티커를 다 모으면 내가 소원을 들어줘요' : '스티커를 다 모아서 소원을 말해 봐요'}</div>
-          {full && <div className="praise-fullbadge" style={{ background: cfg.fullBg, color: cfg.fullColor }}>{cfg.fullText}</div>}
+          <div className="praise-hint">{isMine ? '스티커를 다 모아서 소원을 말해 봐요' : '스티커를 다 모으면 내가 소원을 들어줘요'}</div>
+          {full && !claimable && <div className="praise-fullbadge" style={{ background: cfg.fullBg, color: cfg.fullColor }}>{cfg.fullText}</div>}
         </div>
-        <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>
+        {variant && <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>}
       </div>
-      <div className="praise-track" style={{ background: cfg.track }}><div style={{ height: '100%', borderRadius: 999, background: cfg.bar, transition: 'width .45s ease', width: pct(count, 20) }} /></div>
+      {variant && <div className="praise-track" style={{ background: cfg.track }}><div style={{ height: '100%', borderRadius: 999, background: cfg.bar, transition: 'width .45s ease', width: pct(count, 20) }} /></div>}
+
+      {/* 과거 판 보기 배너 */}
+      {viewingHist && (
+        <div className="praise-hist-banner">
+          <span>{fmtYmd(histData.started_at)} - {fmtYmd(histData.completed_at)} · 지난 스티커판</span>
+          <button type="button" className="praise-hist-close" aria-label="현재 판으로" onClick={() => selectTab(owner.user_id)}>✕</button>
+        </div>
+      )}
 
       {/* 판 */}
-      {!variant ? (
+      {histLoading ? (
+        <div className="praise-boardwrap"><div className="spinner" /></div>
+      ) : !variant ? (
         <div className="praise-empty-board">
           <div className="praise-empty-msg">아직 스티커판이 없어요</div>
           <button type="button" className="praise-empty-link" onClick={() => navigate('/store', { state: { premium: true } })}>
@@ -183,7 +235,7 @@ export default function PraiseStickers() {
         </div>
       ) : (
         <div className={`praise-boardwrap ${variant === 'apple' ? 'is-apple' : 'is-grape'}`}>
-          <div className="praise-boardbox" style={{ aspectRatio: `${cfg.boxW} / ${cfg.boxH}`, maxWidth: 460 }}>
+          <div className={`praise-boardbox ${claimable ? 'is-blurred' : ''}`} style={{ aspectRatio: `${cfg.boxW} / ${cfg.boxH}`, maxWidth: 460 }}>
             {/* 데코 */}
             {variant === 'grape' ? (
               <>
@@ -224,6 +276,23 @@ export default function PraiseStickers() {
               )
             })}
           </div>
+
+          {/* 소원권 수령 오버레이 */}
+          {claimable && (
+            <button type="button" className="praise-claim" onClick={claim} disabled={claimBusy}>
+              <span className="praise-claim-stage">
+                <span className="praise-claim-pulse" />
+                <span className="praise-claim-spark s1" />
+                <span className="praise-claim-spark s2" />
+                <span className="praise-claim-spark s3" />
+                <span className="praise-claim-spark s4" />
+                <span className="praise-claim-spark s5" />
+                <span className="praise-claim-ticket"><StoreItemImage id="wish" emoji="🎫" className="praise-claim-img" /></span>
+              </span>
+              <svg className="praise-claim-chev" width="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 15 12 9 18 15" /></svg>
+              <span className="praise-claim-label">{claimBusy ? '수령 중…' : '소원권 수령하기'}</span>
+            </button>
+          )}
         </div>
       )}
 

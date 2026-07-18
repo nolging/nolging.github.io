@@ -37,6 +37,15 @@ function BackIcon() {
   )
 }
 
+function MenuIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
+  )
+}
+
 function SaveIcon() {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -165,6 +174,10 @@ export default function Layout() {
   const [backHandler, setBackHandler] = useState(null)
   // 페이지가 상단바 배경색을 지정할 수 있게 (예: 칭찬 스티커 — 페이지 그라데이션을 상단바까지 연장)
   const [headerBg, setHeaderBg] = useState(null)
+  // 페이지가 상단바 우측 삼선 메뉴를 등록할 수 있게 (예: 칭찬 스티커 완성판 히스토리)
+  const [headerMenu, setHeaderMenu] = useState(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  useEffect(() => { if (!praiseMatch) setMenuOpen(false) }, [praiseMatch])
   // 페이지가 "당겨서 새로고침" 핸들러를 등록할 수 있게 (예: 알림 페이지)
   const [refreshHandler, setRefreshHandler] = useState(null)
   // 페이지가 상단바 필터 버튼 동작/뱃지를 등록할 수 있게 (예: 일정 페이지)
@@ -419,10 +432,32 @@ export default function Layout() {
     topbar = null
   } else if (praiseMatch) {
     // 칭찬 스티커: 좌측 뒤로(데이트로), 제목. 페이지 그라데이션을 상단바까지 연장(headerBg).
+    // 완성한 판이 있으면 우측 삼선 버튼 → 히스토리 드롭다운.
+    const hasMenu = headerMenu?.items?.length > 0
     topbar = (
       <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
+        {hasMenu && (
+          <div className="praise-menu-wrap">
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="완성한 스티커판" onClick={() => setMenuOpen((o) => !o)}>
+              <MenuIcon />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="praise-menu-backdrop" onClick={() => setMenuOpen(false)} />
+                <div className="praise-menu-dd">
+                  <div className="praise-menu-hd">완성한 스티커판</div>
+                  {headerMenu.items.map((it) => (
+                    <button key={it.id} type="button"
+                      className={`praise-menu-item ${headerMenu.selectedId === it.id ? 'on' : ''}`}
+                      onClick={() => { headerMenu.onSelect(it.id); setMenuOpen(false) }}>{it.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
     )
   } else if (memberDetailMatch) {
@@ -711,7 +746,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderBg, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
