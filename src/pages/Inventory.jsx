@@ -587,8 +587,8 @@ const GUIDE = {
   telescope: { name: '천체 망원경',    emoji: '🔭', text: '흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.', canUse: false },
   eraser:    { name: '지우개',         emoji: '🧽', text: '쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.', canUse: false },
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
-  'sticker-grape': { name: '칭찬 포도판',   emoji: '🍇', text: '사용하면 내 칭찬 포도판이 생겨요. 데이트의 칭찬 스티커에서 짝꿍이 칭찬 포도알을 붙여줄 수 있어요.', canUse: true },
-  'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사용하면 내 칭찬 사과나무가 생겨요. 데이트의 칭찬 스티커에서 짝꿍이 칭찬 사과를 붙여줄 수 있어요.', canUse: true },
+  'sticker-grape': { name: '칭찬 포도알',   emoji: '🍇', text: '포도송이 디자인의 스티커판이에요.\n포도알 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
+  'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
@@ -619,11 +619,11 @@ function ItemGuideModal({ id, onClose, onUse, onGift }) {
 // ---- 칭찬 스티커판: 색 선택 + 적용 완료 모달 ----
 function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
   const f = item ? FRUIT[item.variant] : null
-  const [color, setColor] = useState(f?.def)
+  const [color, setColor] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  useEffect(() => { if (item) { setColor(FRUIT[item.variant].def); setDone(false); setError('') } }, [item])
+  useEffect(() => { if (item) { setColor(null); setDone(false); setError('') } }, [item])
   if (!item || !f) return <Modal open={false} onClose={onClose} />
 
   async function apply() {
@@ -657,7 +657,7 @@ function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
             ))}
           </div>
           {error && <div className="alert alert-error" style={{ marginTop: 4 }}>{error}</div>}
-          <button type="button" className="st-btn-buy st-btn-block" disabled={busy} onClick={apply}>{busy ? '적용 중…' : '적용하기'}</button>
+          <button type="button" className="st-btn-buy st-btn-block" style={{ opacity: color && !busy ? 1 : .5 }} disabled={busy || !color} onClick={apply}>{busy ? '적용 중…' : '적용하기'}</button>
         </div>
       )}
     </Modal>

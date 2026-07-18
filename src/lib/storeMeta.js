@@ -16,6 +16,7 @@ const IMG_BG = {
   'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
   'nyangpito': '#eaf4ec', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
+  'sticker-grape': '#332c52', 'sticker-apple': '#332c52',
   'deco-sprout': '#eaf6ee', 'deco-jaguar': '#ecebf0', 'deco-wolf': '#eceef3', 'deco-blush': '#fdeef2',
   'deco-anger': '#fdecec',
   // 하트 뿅뿅 테마: 실제 적용 시 배경(연분홍 그라데이션)과 동일하게 → 위에 하트가 솟아오름
@@ -40,6 +41,7 @@ export function itemImgId(id) {
 export const CASSETTE_NAME = IS_IOS ? '콩나물 한 가닥' : '콩 한 쪽'
 export function itemName(id, fallback) {
   if (id === 'cassette') return CASSETTE_NAME
+  if (id === 'sticker-grape') return '칭찬 포도알'
   return fallback
 }
 // 자유 텍스트(츄르 내역 사유, 선물 쪽지 본문 등)에 들어 있는 카세트 아이템 저장명

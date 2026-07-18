@@ -1,7 +1,7 @@
 // 칭찬 스티커 과일(포도알/사과) 렌더 + 색 설정 — 스티커판/인벤토리에서 공용.
 export const FRUIT = {
   grape: {
-    label: '포도판',
+    label: '포도알',
     colors: {
       grape: 'radial-gradient(circle at 34% 28%, #b6a1f5 0%, #7358d6 52%, #4e35aa 100%)',
       shine: 'radial-gradient(circle at 34% 28%, #d8ef9c 0%, #9ccb56 52%, #74a638 100%)',

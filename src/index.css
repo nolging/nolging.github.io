@@ -2709,7 +2709,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   color: var(--muted); font-size: 14px; font-weight: 700; padding: 6px 4px;
 }
 .scratch-reveal-link:hover { color: var(--text); }
-.tele-guide-text { font-size: 15px; color: var(--text); line-height: 1.6; margin: 0; }
+.tele-guide-text { font-size: 15px; color: var(--text); line-height: 1.6; margin: 0; white-space: pre-line; }
 .tele-btn {
   width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: none; cursor: pointer;
   background: var(--canvas); color: var(--text); font-size: 20px; line-height: 1;
@@ -4063,6 +4063,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ===== 칭찬 스티커판 색 선택 모달 ===== */
 .sticker-pick { display: flex; flex-direction: column; gap: 16px; }
+.sticker-pick .st-btn-buy { margin-top: -6px; } /* 선택 버튼 ↔ 적용하기 간격 축소 */
 .sticker-pick-ttl { font-size: 16px; font-weight: 800; color: #191722; text-align: center; }
 .sticker-pick-opts { display: flex; gap: 12px; }
 .sticker-opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 8px 12px; border: 2px solid transparent; border-radius: 18px; background: #ecebf0; cursor: pointer; font: inherit; transition: border-color .15s, background .15s, filter .15s; }
