@@ -2,9 +2,39 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import StoreItemImage from '../components/StoreItemImage'
 import { Sticker, fruitBg } from '../components/StickerFruit'
 import { praiseGet, praisePlace, praiseEdit, praiseClaim, praiseBoardGet } from '../lib/api'
+
+// 소원권 티켓(자체 반짝이 제거 버전) — 수령 오버레이 전용. viewBox 를 티켓에 딱 맞춰 크게 보이게.
+function WishTicket() {
+  return (
+    <svg className="praise-claim-img" viewBox="10 30 108 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ptGold" x1="18" y1="40" x2="110" y2="92" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FCE59A" /><stop offset="0.5" stopColor="#F1C64B" /><stop offset="1" stopColor="#D2A11D" />
+        </linearGradient>
+        <mask id="ptEdge" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+          <rect x="14" y="36" width="100" height="58" fill="#fff" />
+          {[47, 53, 59, 65, 71, 77, 83].map((cy) => (
+            <g key={cy}><circle cx="18" cy={cy} r="3" fill="#000" /><circle cx="110" cy={cy} r="3" fill="#000" /></g>
+          ))}
+        </mask>
+      </defs>
+      <g transform="rotate(-5 64 64)">
+        <g mask="url(#ptEdge)"><rect x="18" y="40" width="92" height="50" rx="7" fill="url(#ptGold)" /></g>
+        <rect x="26" y="47" width="76" height="36" rx="4" fill="none" stroke="#9C6E16" strokeWidth="1.6" />
+        <rect x="28.5" y="49.5" width="71" height="31" rx="3" fill="none" stroke="#B4881F" strokeWidth="0.8" strokeOpacity="0.7" />
+        <circle cx="31" cy="52" r="1.5" fill="#9C6E16" /><circle cx="97" cy="52" r="1.5" fill="#9C6E16" />
+        <circle cx="31" cy="78" r="1.5" fill="#9C6E16" /><circle cx="97" cy="78" r="1.5" fill="#9C6E16" />
+        <text x="64" y="62" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="11" fontWeight="700" letterSpacing="3" fill="#7A5410">WISH</text>
+        <text x="64" y="76" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="11" fontWeight="700" letterSpacing="1.5" fill="#7A5410">TICKET</text>
+        <polygon transform="translate(35 65) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#8A6410" />
+        <polygon transform="translate(93 65) scale(0.5)" points="0,-8 1.88,-2.59 7.61,-2.47 3.04,0.99 4.7,6.47 0,3.2 -4.7,6.47 -3.04,0.99 -7.61,-2.47 -1.88,-2.59" fill="#8A6410" />
+        <polygon points="52,46 66,46 44,84 30,84" fill="#FFFFFF" fillOpacity="0.16" />
+      </g>
+    </svg>
+  )
+}
 
 // ── 판 구성(시안 좌표 그대로, 박스 대비 %로 변환해 반응형) ──────────────
 const VAR = {
@@ -287,7 +317,7 @@ export default function PraiseStickers() {
                 <span className="praise-claim-spark s3" />
                 <span className="praise-claim-spark s4" />
                 <span className="praise-claim-spark s5" />
-                <span className="praise-claim-ticket"><StoreItemImage id="wish" emoji="🎫" className="praise-claim-img" /></span>
+                <span className="praise-claim-ticket"><WishTicket /></span>
               </span>
               <svg className="praise-claim-chev" width="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 15 12 9 18 15" /></svg>
               <span className="praise-claim-label">{claimBusy ? '수령 중…' : '소원권 수령하기'}</span>

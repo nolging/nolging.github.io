@@ -4032,10 +4032,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-boardbox.is-blurred { filter: blur(5px); opacity: .5; pointer-events: none; transition: filter .3s ease, opacity .3s ease; }
 .praise-claim { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: none; border: none; padding: 0; cursor: pointer; }
 .praise-claim:disabled { cursor: default; }
-.praise-claim-stage { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; }
-.praise-claim-pulse { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(255,206,102,.6) 0%, rgba(255,206,102,.22) 42%, rgba(255,206,102,0) 70%); animation: claim-pulse 2s ease-in-out infinite; }
+.praise-claim-stage { position: relative; width: 260px; height: 240px; display: flex; align-items: center; justify-content: center; }
+.praise-claim-pulse { position: absolute; width: 236px; height: 236px; border-radius: 50%; background: radial-gradient(circle, rgba(255,206,102,.6) 0%, rgba(255,206,102,.22) 42%, rgba(255,206,102,0) 70%); animation: claim-pulse 2s ease-in-out infinite; }
 @keyframes claim-pulse { 0%, 100% { transform: scale(.78); opacity: .45; } 50% { transform: scale(1.18); opacity: 1; } }
-.praise-claim-ticket { position: relative; z-index: 2; width: 96px; animation: claim-bob 2.6s ease-in-out infinite; filter: drop-shadow(0 10px 16px rgba(150,110,20,.3)); }
+.praise-claim-ticket { position: relative; z-index: 2; width: 210px; animation: claim-bob 1.7s ease-in-out infinite; filter: drop-shadow(0 10px 16px rgba(150,110,20,.3)); }
 .praise-claim-img { width: 100%; height: auto; display: block; }
 @keyframes claim-bob { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
 .praise-claim-spark { position: absolute; z-index: 3; background: linear-gradient(135deg, #fff2c8, #ffcf5c); border-radius: 1px;
@@ -4046,8 +4046,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-claim-spark.s3 { top: 48%;  right: 6%;  width: 12px; height: 12px; animation-delay: 1s; }
 .praise-claim-spark.s4 { bottom: 16%; left: 12%; width: 11px; height: 11px; animation-delay: .8s; }
 .praise-claim-spark.s5 { bottom: 12%; right: 20%; width: 9px;  height: 9px;  animation-delay: 1.4s; }
-.praise-claim-chev { color: #e8a53d; margin-top: -6px; animation: claim-bob 2.6s ease-in-out infinite; }
-.praise-claim-label { font-size: 15px; font-weight: 800; color: #191722; }
+.praise-claim-chev { color: #8b8798; margin-top: -4px; }
+.praise-claim-label { font-size: 14px; font-weight: 600; color: #8b8798; }
 
 /* ===== 완성판 히스토리 배너/메뉴 ===== */
 .praise-hist-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2px 0 4px; font-size: 12.5px; font-weight: 700; color: #8b8798; }
