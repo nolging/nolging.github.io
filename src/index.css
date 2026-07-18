@@ -3542,6 +3542,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .cm-wordchip { display: inline-flex; align-items: center; gap: 6px; background: #f3f2f7; border-radius: 999px; padding: 6px 8px 6px 12px; font-size: 13px; font-weight: 600; color: #2c2938; }
 .cm-wordchip button { width: 18px; height: 18px; border: none; border-radius: 50%; background: rgba(120,110,140,.18); color: #6b6777; font-size: 9px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .cm-wordempty { text-align: center; font-size: 12.5px; color: #b0abc0; padding: 8px 0; }
+.cm-worderr { font-size: 12px; color: #e5484d; text-align: center; }
 
 /* betting */
 .om-bet { margin: 14px 20px 0; background: #fff; border-radius: 20px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(25,23,34,.05);

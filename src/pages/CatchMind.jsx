@@ -53,6 +53,7 @@ export default function CatchMind() {
   const [wordModalOpen, setWordModalOpen] = useState(false)
   const [newWord, setNewWord] = useState('')
   const [savingWord, setSavingWord] = useState(false)
+  const [wordErr, setWordErr] = useState('')
   const [chat, setChat] = useState([])
   const [now, setNow] = useState(Date.now())
   const [guess, setGuess] = useState('')
@@ -266,17 +267,14 @@ export default function CatchMind() {
   async function addWord() {
     const w = newWord.trim()
     if (!w) return
-    if (customWords.includes(w) || CATCH_WORDS.includes(w)) { setNewWord(''); return }
+    if (!/^[가-힣]+$/.test(w)) { setWordErr('완성된 한글 단어만 추가할 수 있어요.'); return }
+    if (customWords.includes(w) || CATCH_WORDS.includes(w)) { setNewWord(''); setWordErr('이미 있는 제시어예요.'); return }
     setSavingWord(true)
     try {
       const next = [...customWords, w]
       await setCatchWords(groupId, next)
-      setCustomWords(next); setWords([...CATCH_WORDS, ...next]); setNewWord('')
-    } catch (e) { alert(e.message) } finally { setSavingWord(false) }
-  }
-  async function removeWord(w) {
-    const next = customWords.filter((x) => x !== w)
-    try { await setCatchWords(groupId, next); setCustomWords(next); setWords([...CATCH_WORDS, ...next]) } catch (e) { alert(e.message) }
+      setCustomWords(next); setWords([...CATCH_WORDS, ...next]); setNewWord(''); setWordErr('')
+    } catch (e) { setWordErr(e.message) } finally { setSavingWord(false) }
   }
   function changeBet(d) { setLob((l) => { const bet = Math.max(0, Math.min(capFromBals(), (l.bet || 0) + d)); const n = { ...l, bet }; broadcastLobby(n); return n }) }
   function sendLobbyChat(e) {
@@ -419,16 +417,12 @@ export default function CatchMind() {
           <div className="cm-wordmodal">
             <p className="cm-wordmodal-sub">이 그룹에서만 나오는 제시어를 추가해요.<br />기본 제시어({CATCH_WORDS.length}개)와 함께 출제돼요.</p>
             <form className="cm-wordadd" onSubmit={(e) => { e.preventDefault(); addWord() }}>
-              <input value={newWord} onChange={(e) => setNewWord(e.target.value)} placeholder="예: 우리 강아지 이름" maxLength={20} />
+              <input value={newWord}
+                onChange={(e) => { setNewWord(e.target.value.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ]/g, '')); if (wordErr) setWordErr('') }}
+                placeholder="예: 코끼리" maxLength={20} inputMode="text" lang="ko" />
               <button type="submit" className="cm-wordadd-btn" disabled={savingWord || !newWord.trim()}>추가</button>
             </form>
-            {customWords.length > 0 ? (
-              <div className="cm-wordchips">
-                {customWords.map((w) => (
-                  <span key={w} className="cm-wordchip">{w}<button type="button" onClick={() => removeWord(w)} aria-label="삭제">✕</button></span>
-                ))}
-              </div>
-            ) : <div className="cm-wordempty">아직 추가한 제시어가 없어요.</div>}
+            {wordErr && <div className="cm-worderr">{wordErr}</div>}
           </div>
         </Modal>
       </div>
