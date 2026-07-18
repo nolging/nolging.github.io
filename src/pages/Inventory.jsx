@@ -648,7 +648,7 @@ function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
       ) : (
         <div className="sticker-pick">
           <div className="sticker-pick-ttl">어떤 스티커로 붙일까요?</div>
-          <div className="sticker-pick-opts">
+          <div className={`sticker-pick-opts ${color ? 'has-sel' : ''}`}>
             {f.options.map((o) => (
               <button key={o.key} type="button" className={`sticker-opt ${color === o.key ? 'on' : ''}`} onClick={() => setColor(o.key)}>
                 <span className="sticker-opt-fruit"><Sticker variant={item.variant} bg={f.colors[o.key]} /></span>

@@ -4066,9 +4066,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sticker-pick .st-btn-buy { margin-top: -6px; } /* 선택 버튼 ↔ 적용하기 간격 축소 */
 .sticker-pick-ttl { font-size: 16px; font-weight: 800; color: #191722; text-align: center; }
 .sticker-pick-opts { display: flex; gap: 12px; }
-.sticker-opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 8px 12px; border: 2px solid transparent; border-radius: 18px; background: #ecebf0; cursor: pointer; font: inherit; transition: border-color .15s, background .15s, filter .15s; }
-.sticker-opt:not(.on) { filter: brightness(.93); } /* 선택 안 한 건 살짝 어둡게 */
-.sticker-opt.on { border-color: #191722; background: #fff; filter: none; } /* 선택 = 먹색 테두리 */
+.sticker-opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 8px 12px; border: 2px solid transparent; border-radius: 18px; background: #fff; box-shadow: 0 3px 12px rgba(20,22,40,.1); cursor: pointer; font: inherit; transition: border-color .15s, background .15s, box-shadow .15s, filter .15s; }
+.sticker-opt.on { border-color: #191722; } /* 선택 = 먹색 테두리(흰 배경 유지) */
+/* 하나를 선택하면 선택 안 된 버튼만 어둡게 */
+.sticker-pick-opts.has-sel .sticker-opt:not(.on) { background: #e7e6ee; box-shadow: none; filter: brightness(.97); }
 .sticker-opt-fruit { width: 58px; height: 58px; margin-top: 6px; }
 .sticker-opt-label { font-size: 13px; font-weight: 700; color: #4a4753; }
 /* 적용하기 버튼 먹색 */
