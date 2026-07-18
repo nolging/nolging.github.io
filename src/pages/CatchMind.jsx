@@ -267,7 +267,7 @@ export default function CatchMind() {
   async function addWord() {
     const w = newWord.trim()
     if (!w) return
-    if (!/^[가-힣]+$/.test(w)) { setWordErr('완성된 한글 단어만 추가할 수 있어요.'); return }
+    if (!/^[가-힣]+$/.test(w)) { setWordErr('자음, 모음은 입력할 수 없어요.'); return }
     if (customWords.includes(w) || CATCH_WORDS.includes(w)) { setNewWord(''); setWordErr('이미 있는 제시어예요.'); return }
     setSavingWord(true)
     try {
@@ -415,7 +415,7 @@ export default function CatchMind() {
 
         <Modal open={wordModalOpen} onClose={() => setWordModalOpen(false)} title="제시어 추가">
           <div className="cm-wordmodal">
-            <p className="cm-wordmodal-sub">이 그룹에서만 나오는 제시어를 추가해요.<br />기본 제시어({CATCH_WORDS.length}개)와 함께 출제돼요.</p>
+            <p className="cm-wordmodal-sub">이 그룹에서만 나오는 제시어를 추가할 수 있어요.<br />한글만 입력해 주세요.</p>
             <form className="cm-wordadd" onSubmit={(e) => { e.preventDefault(); addWord() }}>
               <input value={newWord}
                 onChange={(e) => { setNewWord(e.target.value.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ]/g, '')); if (wordErr) setWordErr('') }}
