@@ -59,6 +59,8 @@ Deno.serve(async (req) => {
     let url = '/'
     if (record.type === 'touch_call' && record.group_id) {
       url = `/groups/${record.group_id}/touch` // 우심뽀까 알림 → 우심뽀까 페이지
+    } else if (record.type === 'praise' && record.group_id) {
+      url = `/groups/${record.group_id}/praise` // 스티커판 완성 → 칭찬 스티커 페이지
     } else if (record.task_id && record.group_id) {
       url = `/groups/${record.group_id}/tasks/${record.task_id}`
       if (record.comment_id) url += `?c=${record.comment_id}` // 알림 유발 댓글로 포커스

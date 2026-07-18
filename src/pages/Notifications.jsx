@@ -149,6 +149,7 @@ export default function Notifications() {
   function targetOf(n) {
     if (NOTE_TYPES.has(n.type)) return '/notes'
     if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
+    if (n.type === 'praise' && n.group_id) return `/groups/${n.group_id}/praise`
     if (n.task_id && n.group_id) {
       const base = `/groups/${n.group_id}/tasks/${n.task_id}`
       return n.comment_id ? `${base}?c=${n.comment_id}` : base
