@@ -25,6 +25,7 @@ export default function GroupSettingsPage() {
     show_contact: !!member.show_contact,
     show_birthdate: !!member.show_birthdate,
     show_ott: !!member.show_ott,
+    nick_locked_until: member.nick_locked_until || null,
   }
   const backToGroup = () => navigate(`/groups/${groupId}`)
 

@@ -8,7 +8,7 @@ import { decoSlot } from '../components/AvatarDeco'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem, useStickerBoard } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -16,6 +16,9 @@ import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const MAX_WISH = 300
+const NAME_TAG_MS = 24 * 3600 * 1000
+// 명찰 used 행이 아직 유효(24h 내)한지
+const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 
 // 인벤토리 모달 공용 헤더 — 좌측 정렬(이미지 + 아이템명 한 줄), 사용 아이템은 설명(1줄) 포함
 function ItemHead({ id, name, sub, emoji }) {
@@ -52,6 +55,7 @@ export default function Inventory() {
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
+  const [nameTagOpen, setNameTagOpen] = useState(false) // 명찰(닉네임 변경) 모달
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -79,6 +83,8 @@ export default function Inventory() {
   const groups = useMemo(() => {
     const map = new Map()
     for (const r of items) {
+      // 만료된 명찰(used) 행은 소모된 것 → 숨김
+      if (r.item_id === 'name-tag' && r.status === 'used' && !nameTagLive(r)) continue
       if (!map.has(r.item_id)) map.set(r.item_id, { id: r.item_id, name: itemName(r.item_id, meta[r.item_id]?.name || r.item_name), emoji: meta[r.item_id]?.emoji || '🎁', count: 0, rows: [] })
       const g = map.get(r.item_id)
       g.count++
@@ -112,6 +118,8 @@ export default function Inventory() {
 
   function useItem(g) {
     setNotice('')
+    // 명찰 사용 중이면 안내 모달 없이 바로 닉네임 변경 모달
+    if (g.id === 'name-tag' && g.rows.some(nameTagLive)) { setNameTagOpen(true); return }
     if (GUIDE[g.id]) setGuideItem(g.id)   // 선물 상자/카세트/비디오/블루레이/지우개/물풍선/망원경 → 중간 안내 모달
     else if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
@@ -137,6 +145,7 @@ export default function Inventory() {
     else if (id === 'video') setVideoOpen(true)
     else if (id === 'bluray') setBlurayOpen(true)
     else if (id.startsWith('sticker-')) setStickerUse({ id, variant: id === 'sticker-grape' ? 'grape' : 'apple' })
+    else if (id === 'name-tag') setNameTagOpen(true)
   }
   // 인벤토리 아이템 선물 → 보유분 1개 소모 + 선물 쪽지 전송
   async function inventoryGiftSend(r, message) {
@@ -171,10 +180,13 @@ export default function Inventory() {
                 const themeApplied = isTheme && g.rows.some((r) => r.status === 'used')
                 const isDeco = g.id.startsWith('deco-')
                 const decoApplied = isDeco && g.rows.some((r) => r.status === 'used')
+                const isNameTag = g.id === 'name-tag'
+                const nameTagActive = isNameTag && g.rows.some(nameTagLive)
                 // 시안: 상태 뱃지(좌) + 개수(우) + 카드 전체 클릭
                 let badge = null, onClick = () => useItem(g), actionable = true
                 let countShown = g.count, showCount = g.count > 1
-                if (isTheme) badge = themeApplied ? '적용 중' : null
+                if (isNameTag) { badge = nameTagActive ? '사용 중' : null; countShown = activeCount; showCount = activeCount >= 1 }
+                else if (isTheme) badge = themeApplied ? '적용 중' : null
                 else if (isDeco) badge = decoApplied ? '장착 중' : null
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
                 else if (equipped) {
@@ -219,6 +231,8 @@ export default function Inventory() {
         onGift={() => { const id = guideItem; setGuideItem(null); setGiftItemId(id) }} />
 
       <StickerUseModal item={stickerUse} coupleGroupId={coupleGroupIds[0]} onClose={() => setStickerUse(null)} onDone={reload} navigate={navigate} />
+
+      <NameTagModal open={nameTagOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setNameTagOpen(false)} onDone={reload} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
         item={giftItemId ? { id: giftItemId, name: itemName(giftItemId, meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId), emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
@@ -590,6 +604,8 @@ const GUIDE = {
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
   'sticker-grape': { name: '칭찬 포도알',   emoji: '🍇', text: '포도송이 디자인의 스티커판이에요.\n포도알 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
   'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
+  'name-tag':  { name: '명찰',     emoji: '🏷️', text: '24시간 동안 연인의 이름을 내 마음대로 바꿀 수 있어요.\n사용하기를 눌러 새 이름을 정해 보세요.', canUse: true },
+  'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터진 쪽지를 터지기 전으로 한 번 되돌려요.\n받은 쪽지함에서 터진 쪽지를 열어 사용해요.', canUse: false },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
@@ -661,6 +677,66 @@ function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
           <button type="button" className="st-btn-buy st-btn-block" style={{ opacity: color && !busy ? 1 : .5 }} disabled={busy || !color} onClick={apply}>{busy ? '적용 중…' : '적용하기'}</button>
         </div>
       )}
+    </Modal>
+  )
+}
+
+// ---- 명찰: 연인 닉네임 24h 변경 모달 ----
+function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
+  const [partner, setPartner] = useState(null)
+  const [nick, setNick] = useState('')
+  const [until, setUntil] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!open) return
+    setError(''); setLoading(true)
+    ;(async () => {
+      try {
+        if (!coupleGroupId) { setError('커플 그룹을 찾을 수 없어요.'); setLoading(false); return }
+        const [cards, st] = await Promise.all([
+          listMemberCards(coupleGroupId),
+          nametagState(coupleGroupId).catch(() => null),
+        ])
+        const p = (cards || []).find((c) => !c.is_self) || null
+        setPartner(p)
+        const active = st?.active || null
+        setUntil(active?.until || null)
+        setNick(active?.nickname || p?.display_nickname || '')
+      } catch (e) { setError(e.message) } finally { setLoading(false) }
+    })()
+  }, [open, coupleGroupId, myId])
+
+  const leftH = until && new Date(until) > new Date() ? Math.max(1, Math.ceil((new Date(until) - new Date()) / 3600000)) : 0
+
+  async function submit() {
+    if (!nick.trim()) { setError('변경할 이름을 입력해 주세요.'); return }
+    setBusy(true); setError('')
+    try { await useNameTag(coupleGroupId, nick.trim()); await onDone?.(); onClose() }
+    catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="nametag-modal">
+        <ItemHead id="name-tag" name="명찰" emoji="🏷️" sub="24시간 동안 연인의 이름을 바꿔요" />
+        {error && <div className="alert alert-error">{error}</div>}
+        {loading ? <div className="spinner" /> : (
+          <>
+            <div className="nametag-target">
+              <Avatar src={partner?.avatar_url} name={partner?.display_nickname || '짝꿍'} size={76} />
+              {leftH > 0 && <span className="nametag-left">사용 중 · 약 {leftH}시간 남음</span>}
+            </div>
+            <input className="cg-input nametag-input" value={nick} maxLength={12}
+              onChange={(e) => { setNick(e.target.value); if (error) setError('') }}
+              placeholder="바꿀 이름을 입력하세요" />
+            <button type="button" className="st-btn-buy st-btn-block" style={{ opacity: nick.trim() && !busy ? 1 : .5 }}
+              disabled={!nick.trim() || busy} onClick={submit}>{busy ? '변경 중…' : '변경하기'}</button>
+          </>
+        )}
+      </div>
     </Modal>
   )
 }

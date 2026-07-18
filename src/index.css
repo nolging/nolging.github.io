@@ -4074,3 +4074,30 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sticker-opt-label { font-size: 13px; font-weight: 700; color: #4a4753; }
 /* 적용하기 버튼 먹색 */
 .sticker-pick .st-btn-buy { background: #191722; }
+
+/* ===== 타임머신: 되돌리기 버튼 + 확인 모달 ===== */
+.note-tm-row { text-align: center; margin-top: 12px; }
+.note-tm-restore { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 999px; background: #eaf3fb; color: #3f7fb8; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.tm-modal { max-width: 320px; }
+.tm-confirm { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.tm-stage { position: relative; width: 220px; height: 210px; display: flex; align-items: center; justify-content: center; }
+.tm-pulse { position: absolute; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle, rgba(120,190,240,.55) 0%, rgba(120,190,240,.2) 45%, rgba(120,190,240,0) 70%); animation: claim-pulse 2s ease-in-out infinite; }
+.tm-art { position: relative; z-index: 2; width: 158px; animation: claim-bob 2s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(60,110,160,.28)); }
+.tm-art-svg { width: 100%; height: auto; display: block; }
+.tm-spark { position: absolute; z-index: 3; background: linear-gradient(135deg, #eaf6ff, #8fccf3); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); animation: claim-spark 1.9s ease-in-out infinite; }
+.tm-spark.s1 { top: 12%; left: 15%; width: 13px; height: 13px; animation-delay: 0s; }
+.tm-spark.s2 { top: 9%; right: 17%; width: 10px; height: 10px; animation-delay: .5s; }
+.tm-spark.s3 { top: 46%; right: 6%; width: 12px; height: 12px; animation-delay: 1s; }
+.tm-spark.s4 { bottom: 16%; left: 12%; width: 11px; height: 11px; animation-delay: .8s; }
+.tm-spark.s5 { bottom: 12%; right: 19%; width: 9px; height: 9px; animation-delay: 1.4s; }
+.tm-title { margin-top: 8px; font-size: 16px; font-weight: 800; color: #191722; }
+.tm-sub { margin-top: 6px; font-size: 13px; color: #8b8798; }
+.tm-actions { display: flex; gap: 9px; width: 100%; margin-top: 16px; }
+.tm-cancel { flex: 1; height: 46px; border: none; border-radius: 14px; background: #f0eef4; color: #6b6777; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.tm-ok { flex: 1.4; height: 46px; border: none; border-radius: 14px; background: #4ea6e2; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+
+/* ===== 명찰(닉네임 변경) 모달 ===== */
+.nametag-modal { display: flex; flex-direction: column; gap: 16px; }
+.nametag-target { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.nametag-left { font-size: 12px; font-weight: 700; color: #8b8798; }
+.nametag-input { text-align: center; }

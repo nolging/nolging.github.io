@@ -331,7 +331,7 @@ export async function updateMyGroupMember(groupId, userId, patch) {
 export async function getMyGroupMember(groupId, userId) {
   const { data, error } = await supabase
     .from('group_members')
-    .select('display_nickname, avatar_url, show_contact, show_birthdate, show_ott')
+    .select('display_nickname, avatar_url, show_contact, show_birthdate, show_ott, nick_locked_until')
     .eq('group_id', groupId).eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
@@ -863,9 +863,9 @@ export async function purchaseItem(itemId, qty = 1) {
 export async function listInventory(userId) {
   const { data, error } = await supabase
     .from('user_items')
-    .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at')
+    .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at, used_at')
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
     .order('created_at', { ascending: false })
   if (error) {
     if (error.code === '42P01') return []
@@ -1537,6 +1537,23 @@ export async function praiseBoardGet(boardId) {
   const { data, error } = await supabase.rpc('praise_board_get', { p_board_id: boardId })
   if (error) throw error
   return data
+}
+
+// ---- 명찰(24h 닉네임 변경) / 타임머신 ----
+export async function useNameTag(groupId, nickname) {
+  const { data, error } = await supabase.rpc('use_name_tag', { p_group_id: groupId, p_nickname: nickname })
+  if (error) throw error
+  return data // { target_id, nickname, until }
+}
+export async function nametagState(groupId) {
+  const { data, error } = await supabase.rpc('nametag_state', { p_group_id: groupId })
+  if (error) { if (error.code === 'PGRST202') return null; throw error }
+  return data // { active:{target_id,nickname,until}|null, mine:{until}|null }
+}
+export async function useTimeMachine(noteId) {
+  const { data, error } = await supabase.rpc('use_time_machine', { p_note_id: noteId })
+  if (error) throw error
+  return data // 새 opened_at(timestamptz)
 }
 
 // 관리자: 전체 사용자(연락처/생년월일 포함)

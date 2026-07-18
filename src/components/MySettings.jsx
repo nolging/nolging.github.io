@@ -25,6 +25,11 @@ export default function MySettings({ group, me, onSaved, secondary }) {
   const [nickErr, setNickErr] = useState('')
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
+  // 명찰 효과로 내 닉네임이 잠긴 경우 → 닉네임만 수정 불가
+  const nickLockedUntil = me?.nick_locked_until ? new Date(me.nick_locked_until) : null
+  const nickLocked = !!nickLockedUntil && nickLockedUntil > new Date()
+  const lockLeftH = nickLocked ? Math.max(1, Math.ceil((nickLockedUntil - new Date()) / 3600000)) : 0
+
   async function save() {
     if (!form.display_nickname.trim()) { setNickErr('닉네임을 입력해 주세요.'); return }
     setBusy(true); setError('')
@@ -59,11 +64,13 @@ export default function MySettings({ group, me, onSaved, secondary }) {
         <div className="cg-field cg-mt-22">
           <div className="cg-label">닉네임 <span className="cg-req">*</span></div>
           <div className="cg-input-wrap">
-            <input className="cg-input" value={form.display_nickname} maxLength={12}
+            <input className="cg-input" value={form.display_nickname} maxLength={12} disabled={nickLocked}
               onChange={(e) => { set({ display_nickname: e.target.value }); if (nickErr) setNickErr('') }}
               placeholder="이 그룹에서 불릴 이름" />
           </div>
-          {nickErr && <span className="field-error">{nickErr}</span>}
+          {nickLocked
+            ? <span className="field-error">🏷️ 명찰 효과로 지금은 닉네임을 바꿀 수 없어요. (약 {lockLeftH}시간 남음)</span>
+            : nickErr && <span className="field-error">{nickErr}</span>}
         </div>
 
         {/* 이 그룹에 공개할 내 정보 */}

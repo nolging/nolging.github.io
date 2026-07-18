@@ -9,7 +9,7 @@ import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
 import { NOTES_TTL, PAGE, notesCache } from '../lib/notesCache'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
@@ -19,6 +19,43 @@ const mmss = (sec) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0,
 const ClockIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg>
 )
+// 되돌리기(반시계 원형 화살표)
+const UndoIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 8 8 8" /></svg>
+)
+// 타임머신 아트(자체 반짝이 제거, 시계에 맞춰 크롭) — 확인 모달용
+function TimeMachineArt() {
+  return (
+    <svg className="tm-art-svg" viewBox="18 16 92 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="tmGlow2" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#9AD0F5" stopOpacity="0.5" /><stop offset="0.7" stopColor="#9AD0F5" stopOpacity="0.12" /><stop offset="1" stopColor="#9AD0F5" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="tmRim2" x1="64" y1="34" x2="64" y2="94" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#9BD6F7" /><stop offset="1" stopColor="#4EA6E2" />
+        </linearGradient>
+        <radialGradient id="tmFace2" cx="0.38" cy="0.32" r="0.75">
+          <stop offset="0" stopColor="#FBFDFF" /><stop offset="1" stopColor="#E7F1F8" />
+        </radialGradient>
+        <filter id="tmBlur2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4" /></filter>
+      </defs>
+      <circle cx="64" cy="64" r="41" fill="url(#tmGlow2)" />
+      <path d="M76.3 30.2 A 36 36 0 1 1 51.7 30.2" stroke="#5F92DB" strokeWidth="4.5" fill="none" strokeLinecap="round" />
+      <polygon points="50.5,22 50.5,38 61.5,29.5" fill="#4E7EC6" />
+      <circle cx="64" cy="64" r="30" fill="url(#tmRim2)" />
+      <circle cx="64" cy="64" r="24.5" fill="url(#tmFace2)" />
+      <line x1="64" y1="42.5" x2="64" y2="46.5" stroke="#5A6069" strokeWidth="2.4" strokeLinecap="round" />
+      <line x1="64" y1="81.5" x2="64" y2="85.5" stroke="#5A6069" strokeWidth="2.4" strokeLinecap="round" />
+      <line x1="42.5" y1="64" x2="46.5" y2="64" stroke="#5A6069" strokeWidth="2.4" strokeLinecap="round" />
+      <line x1="81.5" y1="64" x2="85.5" y2="64" stroke="#5A6069" strokeWidth="2.4" strokeLinecap="round" />
+      <line x1="64" y1="64" x2="55" y2="48" stroke="#33373E" strokeWidth="3" strokeLinecap="round" />
+      <line x1="64" y1="64" x2="75" y2="58" stroke="#33373E" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="64" cy="64" r="3.2" fill="#33373E" />
+      <circle cx="64" cy="64" r="1.4" fill="#BFE3FB" />
+      <ellipse cx="54" cy="54" rx="8" ry="5" fill="#FFFFFF" fillOpacity="0.5" filter="url(#tmBlur2)" transform="rotate(-30 54 54)" />
+    </svg>
+  )
+}
 
 function NoteFabIcon() {
   return (
@@ -72,6 +109,9 @@ export default function Notes() {
   const [waterLeft, setWaterLeft] = useState(null)     // 열린 물풍선 쪽지의 남은 초
   const [waterPopped, setWaterPopped] = useState(false) // 열린 물풍선이 터졌는지
   const [poppedIds, setPoppedIds] = useState(() => new Set()) // 터진 걸 목격한 쪽지 id
+  const [timeMachines, setTimeMachines] = useState(0)  // 보유한 타임머신 개수
+  const [tmConfirm, setTmConfirm] = useState(false)    // 타임머신 사용 확인 모달
+  const [tmBusy, setTmBusy] = useState(false)
 
   const decoCacheRef = useRef(notesCache.uid === user?.id ? notesCache.decos : {}) // 그룹 deco 캐시(모듈 캐시와 공유)
   // 그룹 deco 는 캐시에 없는 그룹만 조회(매 재조회마다 전체 그룹 재조회 방지)
@@ -237,6 +277,31 @@ export default function Notes() {
     }
     return () => { if (iv) clearInterval(iv) }
   }, [open, tab])
+
+  // 보유 타임머신 개수(터진 물풍선 되돌리기 버튼 노출용)
+  const loadTimeMachines = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      const rows = await listInventory(user.id)
+      setTimeMachines((rows || []).filter((r) => r.item_id === 'time-machine' && r.status === 'active').length)
+    } catch { /* noop */ }
+  }, [user?.id])
+  useEffect(() => { loadTimeMachines() }, [loadTimeMachines])
+
+  // 타임머신 사용: opened_at 을 지금으로 되돌려 타이머 재시작
+  async function restoreWater() {
+    if (!open) return
+    setTmBusy(true); setError('')
+    try {
+      const newOpenedAt = await useTimeMachine(open.id)
+      const iso = newOpenedAt ? new Date(newOpenedAt).toISOString() : new Date().toISOString()
+      setReceived((prev) => prev.map((x) => (x.id === open.id ? { ...x, opened_at: iso } : x)))
+      setPoppedIds((s) => { const n = new Set(s); n.delete(open.id); return n })
+      setOpen((o) => (o ? { ...o, opened_at: iso } : o))
+      setTimeMachines((c) => Math.max(0, c - 1))
+      setTmConfirm(false)
+    } catch (e) { setError(e.message) } finally { setTmBusy(false) }
+  }
 
   // 커플 링 수령(나눠 끼기): 양쪽 인벤토리에 장착되고 그룹이 프리미엄이 됨
   async function accept(n) {
@@ -594,6 +659,13 @@ export default function Notes() {
               ) : (
                 <p className="note-view-body">{resolveItemText(open.body)}</p>
               )}
+              {isWater(open) && tab === 'received' && waterPopped && timeMachines > 0 && (
+                <div className="note-tm-row">
+                  <button type="button" className="note-tm-restore" onClick={() => setTmConfirm(true)}>
+                    <UndoIcon /> 되돌리기
+                  </button>
+                </div>
+              )}
               {link && safeUrl(open.media_url) && (
                 <a className="note-giftbox" href={safeUrl(open.media_url)} target="_blank" rel="noreferrer noopener" aria-label="선물 열기">
                   <span className="note-giftbox-art" aria-hidden="true">
@@ -674,6 +746,23 @@ export default function Notes() {
             </div>
           )
         })()}
+      </Modal>
+
+      <Modal open={tmConfirm} onClose={() => setTmConfirm(false)} cardClassName="tm-modal">
+        <div className="tm-confirm">
+          <span className="tm-stage">
+            <span className="tm-pulse" />
+            <span className="tm-spark s1" /><span className="tm-spark s2" /><span className="tm-spark s3" /><span className="tm-spark s4" /><span className="tm-spark s5" />
+            <span className="tm-art"><TimeMachineArt /></span>
+          </span>
+          <div className="tm-title">타임머신을 사용해 시간을 되돌릴까요?</div>
+          <div className="tm-sub">물풍선 폭탄이 터지기 전으로 돌아가요</div>
+          {error && <div className="alert alert-error" style={{ marginTop: 8 }}>{error}</div>}
+          <div className="tm-actions">
+            <button type="button" className="tm-cancel" onClick={() => setTmConfirm(false)} disabled={tmBusy}>취소</button>
+            <button type="button" className="tm-ok" onClick={restoreWater} disabled={tmBusy}>{tmBusy ? '되돌리는 중…' : '확인'}</button>
+          </div>
+        </div>
       </Modal>
 
       <Link to="/notes/new" className="fab fab-above-nav" aria-label="쪽지 쓰기" title="쪽지 쓰기">
