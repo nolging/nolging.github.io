@@ -4050,8 +4050,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-claim-label { font-size: 14px; font-weight: 600; color: #8b8798; }
 
 /* ===== 완성판 히스토리 메뉴/되돌아가기 ===== */
-.praise-back-row { display: flex; justify-content: flex-end; margin-top: 8px; }
-.praise-back-btn { width: 34px; height: 34px; border: none; border-radius: 50%; background: rgba(120,110,140,.12); color: #6b6777; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+/* 되돌아가기: 레이아웃 높이를 차지하지 않도록 판 위에 떠 있는 버튼(판이 잘리지 않게) */
+.praise-back-row { position: absolute; right: 16px; bottom: 16px; z-index: 28; }
+.praise-back-btn { width: 38px; height: 38px; border: none; border-radius: 50%; background: rgba(255,255,255,.9); color: #6b6777; box-shadow: 0 4px 12px rgba(20,22,40,.18); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .praise-menu-wrap { position: relative; margin-left: auto; }
 .praise-menu-backdrop { position: fixed; inset: 0; z-index: 40; }
 .praise-menu-dd { position: absolute; top: calc(100% + 6px); right: 0; z-index: 41; min-width: 208px; background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(20,22,40,.2); padding: 6px; overflow: hidden; }
