@@ -106,11 +106,13 @@ export default function PraiseStickers() {
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
-  // z-index: 포도는 아래→위(뒤 알이 먼저), 사과는 잎 캐노피 위에
+  // z-index: 포도는 송이 중심에 가까울수록 앞으로, 사과는 잎 캐노피 위에
   let zOf
   if (variant === 'grape') {
-    const order = cfg.pos.map((p, i) => ({ i, s: (186 - Math.abs(p[0] - 186)) - p[1] * 4 })).sort((a, b) => a.s - b.s)
-    const z = {}; order.forEach((o, r) => { z[o.i] = 3 + r }); zOf = (i, filled) => z[i]
+    const cxm = cfg.pos.reduce((a, p) => a + p[0], 0) / cfg.pos.length
+    const cym = cfg.pos.reduce((a, p) => a + p[1], 0) / cfg.pos.length
+    const order = cfg.pos.map((p, i) => ({ i, d: Math.hypot(p[0] - cxm, p[1] - cym) })).sort((a, b) => b.d - a.d)
+    const z = {}; order.forEach((o, r) => { z[o.i] = r }); zOf = (i) => z[i]
   } else {
     zOf = (i, filled) => (filled ? 5 : 3)
   }
@@ -159,8 +161,8 @@ export default function PraiseStickers() {
             {/* 데코 */}
             {variant === 'grape' ? (
               <>
-                <div style={{ position: 'absolute', top: T(-14), left: '51%', width: D(73), height: T(64), background: 'linear-gradient(135deg,#7cc06a,#5a9e48)', borderRadius: '0 75% 10% 75%', transform: 'rotate(-16deg)', zIndex: 1 }} />
                 <svg viewBox="0 0 30 48" style={{ position: 'absolute', top: T(-16), left: D(163), width: D(38), height: T(60), zIndex: 2 }}><path d="M22 3 C 15 16, 15 32, 19 45" fill="none" stroke="#7d4f28" strokeWidth="6" strokeLinecap="round" /></svg>
+                <div style={{ position: 'absolute', top: T(-14), left: '53%', width: D(73), height: T(64), background: 'linear-gradient(135deg,#7cc06a,#5a9e48)', borderRadius: '0 75% 10% 75%', transform: 'rotate(-16deg)', zIndex: 3 }} />
               </>
             ) : (
               <>
