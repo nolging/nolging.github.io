@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
+import { useParams, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import { Sticker, fruitBg } from '../components/StickerFruit'
@@ -62,6 +62,7 @@ const ordinalOf = (stickers, id) => [...stickers].sort((a, b) => new Date(a.crea
 export default function PraiseStickers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { setHeaderBg, setHeaderMenu } = useOutletContext()
   const { user } = useAuth()
   const [data, setData] = useState(null)
@@ -95,11 +96,12 @@ export default function PraiseStickers() {
       setData(d)
       setTabOwner((cur) => {
         if (cur) return cur
+        if (searchParams.get('mine') === '1') return d.viewer // 완성 알림 등 → 내 판(오른쪽 탭)
         const partner = (d.members || []).find((m) => m.user_id !== d.viewer)
         return partner?.user_id || d.viewer
       })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [groupId])
+  }, [groupId, searchParams])
   useEffect(() => { load() }, [load])
 
   // 과거 판 조회
