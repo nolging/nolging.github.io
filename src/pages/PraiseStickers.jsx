@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
@@ -40,6 +40,7 @@ export default function PraiseStickers() {
   const [modal, setModal] = useState(null) // { ownerId, slot, mode:'write'|'edit'|'view', text, sticker }
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
+  const taRef = useRef(null)
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +55,14 @@ export default function PraiseStickers() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
+
+  // 칭찬 입력/수정 모달이 열리면 입력창 자동 포커스
+  useEffect(() => {
+    if (modal && modal.mode !== 'view') {
+      const t = setTimeout(() => taRef.current?.focus(), 80)
+      return () => clearTimeout(t)
+    }
+  }, [modal?.slot, modal?.mode])
 
   // 현재 탭 소유자의 판 색으로 상단바까지 그라데이션 연장(상단바엔 그라데이션 최상단 색)
   const hdrOwner = data ? (data.members.find((m) => m.user_id === tabOwner) || data.members.find((m) => m.user_id !== data.viewer)) : null
@@ -226,7 +235,7 @@ export default function PraiseStickers() {
               <div className="praise-modal-ttl">{modal.mode === 'edit' ? '칭찬 내용 수정' : '칭찬해요'}</div>
               <div className="praise-modal-sub">{ordinal} 번째 칭찬 {fruitName}{modal.mode === 'edit' ? ` · ${fmtDateTime(modal.sticker.created_at)}` : ''}</div>
               <div className="praise-modal-tawrap">
-                <textarea className="praise-modal-ta" value={text} maxLength={100}
+                <textarea ref={taRef} className="praise-modal-ta" value={text} maxLength={100}
                   onChange={(e) => setModal((m) => ({ ...m, text: e.target.value.slice(0, 100) }))}
                   placeholder="칭찬의 한마디를 남겨 주세요" />
                 <span className="praise-modal-len">{text.length}/100</span>
