@@ -241,7 +241,7 @@ export default function GroupMembers() {
           <div className="csx-scroll">
             <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={() => go('touch')} />
             <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
-            <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub={isAdmin ? '칭찬 붙여주기' : '메뉴 준비 중'} onClick={isAdmin ? () => go('praise') : undefined} />
+            <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub={isAdmin ? '착한 애인 챌린지' : '메뉴 준비 중'} onClick={isAdmin ? () => go('praise') : undefined} />
             <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function GroupMembers() {
           <div className="csx-zone-title">미니 게임</div>
           <div className="csx-scroll">
             <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={() => go('catchmind')} />
-            <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="숫자 추리 한판" onClick={() => go('davinci')} />
+            <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={() => go('davinci')} />
             <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={() => go('puzzle')} />
             <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={() => go('rps')} />
             <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={() => go('omok')} />
