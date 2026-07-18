@@ -628,7 +628,7 @@ create policy notif_delete on public.notifications
 -- ---- 헬퍼: 유형별 명칭 / 수락 용어 / 그룹내 표시 닉네임 --------
 create or replace function public.notif_noun(p_type text)
 returns text language sql immutable as $$
-  select case when p_type = 'ilhaging' then '태스크' else '위시' end;
+  select '위시';  -- 모든 그룹 공통(위시 → 약속 → 추억). '태스크' 용어는 폐기.
 $$;
 
 create or replace function public.notif_accept_term(p_type text)
