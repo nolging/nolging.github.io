@@ -238,20 +238,23 @@ export default function PraiseStickers() {
       <div className="praise-head">
         <div>
           <div className="praise-title">{owner?.name || '짝꿍'} 님의 칭찬 스티커</div>
-          <div className="praise-hint">{isMine ? '스티커를 다 모아서 소원을 말해 봐요' : '스티커를 다 모으면 내가 소원을 들어줘요'}</div>
-          {full && !claimable && <div className="praise-fullbadge" style={{ background: cfg.fullBg, color: cfg.fullColor }}>{cfg.fullText}</div>}
+          <div className="praise-hint">{
+            viewingHist ? `${fmtYmd(board.started_at)} - ${fmtYmd(board.completed_at)}`
+              : isMine ? '스티커를 다 모아서 소원을 말해 봐요'
+                : completed ? '스티커를 다 모았으니 소원권을 전달할게요'
+                  : '스티커를 다 모으면 내가 소원을 들어줘요'
+          }</div>
         </div>
-        {variant && <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>}
+        <div className="praise-head-right">
+          {variant && <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>}
+          {viewingHist && (
+            <button type="button" className="praise-back-btn" aria-label="현재 판으로 돌아가기" onClick={() => selectTab(owner.user_id)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 8 8 8" /></svg>
+            </button>
+          )}
+        </div>
       </div>
       {variant && <div className="praise-track" style={{ background: cfg.track }}><div style={{ height: '100%', borderRadius: 999, background: cfg.bar, transition: 'width .45s ease', width: pct(count, 20) }} /></div>}
-
-      {/* 과거 판 보기 배너 */}
-      {viewingHist && (
-        <div className="praise-hist-banner">
-          <span>{fmtYmd(histData.started_at)} - {fmtYmd(histData.completed_at)} · 지난 스티커판</span>
-          <button type="button" className="praise-hist-close" aria-label="현재 판으로" onClick={() => selectTab(owner.user_id)}>✕</button>
-        </div>
-      )}
 
       {/* 판 */}
       {histLoading ? (

@@ -4049,9 +4049,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-claim-chev { color: #8b8798; margin-top: -4px; }
 .praise-claim-label { font-size: 14px; font-weight: 600; color: #8b8798; }
 
-/* ===== 완성판 히스토리 배너/메뉴 ===== */
-.praise-hist-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2px 0 4px; font-size: 12.5px; font-weight: 700; color: #8b8798; }
-.praise-hist-close { width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(120,110,140,.16); color: #6b6777; font-size: 10px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+/* ===== 완성판 히스토리 메뉴/되돌아가기 ===== */
+.praise-head-right { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+.praise-back-btn { width: 34px; height: 34px; border: none; border-radius: 50%; background: rgba(120,110,140,.12); color: #6b6777; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .praise-menu-wrap { position: relative; margin-left: auto; }
 .praise-menu-backdrop { position: fixed; inset: 0; z-index: 40; }
 .praise-menu-dd { position: absolute; top: calc(100% + 6px); right: 0; z-index: 41; min-width: 208px; background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(20,22,40,.2); padding: 6px; overflow: hidden; }
