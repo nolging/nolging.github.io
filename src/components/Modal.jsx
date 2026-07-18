@@ -26,7 +26,8 @@ export default function Modal({ open, onClose, children, title, cardClassName = 
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  // 키보드가 올라오면(visualViewport 축소) 남은 화면 영역에 맞춰 모달을 재배치 → 가운데 유지
+  // 키보드가 올라오면(visualViewport 축소) 모달 크기는 그대로 두고,
+  // 남은 가시 영역의 가운데로 카드만 이동(--kb-shift)시킨다.
   useEffect(() => {
     if (!open || !mounted) return
     const vv = window.visualViewport
@@ -34,9 +35,8 @@ export default function Modal({ open, onClose, children, title, cardClassName = 
     const apply = () => {
       const el = rootRef.current
       if (!el) return
-      el.style.top = `${vv.offsetTop}px`
-      el.style.height = `${vv.height}px`
-      el.style.bottom = 'auto'
+      const shift = (vv.offsetTop + vv.height / 2) - (el.clientHeight / 2)
+      el.style.setProperty('--kb-shift', `${shift}px`)
     }
     apply()
     vv.addEventListener('resize', apply)
@@ -44,8 +44,7 @@ export default function Modal({ open, onClose, children, title, cardClassName = 
     return () => {
       vv.removeEventListener('resize', apply)
       vv.removeEventListener('scroll', apply)
-      const el = rootRef.current
-      if (el) { el.style.top = ''; el.style.height = ''; el.style.bottom = '' }
+      rootRef.current?.style.removeProperty('--kb-shift')
     }
   }, [open, mounted])
 

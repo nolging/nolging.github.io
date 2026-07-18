@@ -1667,7 +1667,8 @@ button.mlist-row:hover { background: #f6f5fa; }
   transition: transform .2s cubic-bezier(.2, .8, .2, 1), opacity .2s ease;
   max-height: calc(100% - 48px); overflow-y: auto;
 }
-.modal-root.shown .modal-card { transform: none; opacity: 1; }
+.modal-root.shown .modal-card { transform: translateY(var(--kb-shift, 0px)); opacity: 1; }
+.modal-root.shown .modal-stack { transform: translateY(var(--kb-shift, 0px)); transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
 /* 카드 아래(바깥)에 별도 블록을 붙이는 경우(예: 비디오 TV 플레이어) — 카드+below 를 세로로 쌓아 함께 스크롤 */
 .modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px;
   max-height: calc(100% - 48px); overflow-y: auto; }
