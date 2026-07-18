@@ -3527,6 +3527,21 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .om-seat-name { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; color: #191722; }
 .om-badge-me { font-size: 9.5px; font-weight: 700; color: #191722; border-radius: 999px; padding: 1.5px 6px; background: #f3f3f5; }
 .om-seats-hint { margin-top: 10px; font-size: 11.5px; color: #8b8798; text-align: center; }
+/* 캐치마인드 대기실 상단 우측(인원/제시어 추가) */
+.om-head-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.om-head-right .om-icon-btn { font-size: 20px; font-weight: 800; }
+/* 캐치마인드 제시어 추가 모달 */
+.cm-wordmodal { display: flex; flex-direction: column; gap: 12px; }
+.cm-wordmodal-sub { margin: 0; font-size: 12.5px; color: #8b8798; line-height: 1.5; text-align: center; }
+.cm-wordadd { display: flex; gap: 8px; }
+.cm-wordadd input { flex: 1; height: 44px; border: 1.5px solid #e7e4f0; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 14px; outline: none; min-width: 0; }
+.cm-wordadd input:focus { border-color: #191722; }
+.cm-wordadd-btn { flex: none; height: 44px; padding: 0 18px; border: none; border-radius: 12px; background: #191722; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.cm-wordadd-btn:disabled { opacity: .5; }
+.cm-wordchips { display: flex; flex-wrap: wrap; gap: 8px; max-height: 230px; overflow-y: auto; }
+.cm-wordchip { display: inline-flex; align-items: center; gap: 6px; background: #f3f2f7; border-radius: 999px; padding: 6px 8px 6px 12px; font-size: 13px; font-weight: 600; color: #2c2938; }
+.cm-wordchip button { width: 18px; height: 18px; border: none; border-radius: 50%; background: rgba(120,110,140,.18); color: #6b6777; font-size: 9px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cm-wordempty { text-align: center; font-size: 12.5px; color: #b0abc0; padding: 8px 0; }
 
 /* betting */
 .om-bet { margin: 14px 20px 0; background: #fff; border-radius: 20px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(25,23,34,.05);

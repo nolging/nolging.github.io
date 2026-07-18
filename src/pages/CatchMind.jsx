@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getGroupMemberMap, getCatchWords, setCatchWords, settleCatchmind, getMyCoinBalance } from '../lib/api'
+import { getGroupMemberMap, getCatchWords, setCatchWords, settleCatchmind, getMyCoinBalance, isCoupleGroup } from '../lib/api'
+import Modal from '../components/Modal'
 import { CATCH_WORDS, normWord, wordLen } from '../lib/catchWords'
 
 const TURNS = 5, TURN_SEC = 75, REVEAL_MS = 2800, HINT_AT = 10
@@ -20,6 +21,7 @@ function chosung(word) {
 const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
 const CloseIcon = () => <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 const SendIcon = () => <svg width="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
+const PersonIcon = () => <svg width="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
 function Av({ name, avatar, size = 40 }) {
   return avatar
     ? <img className="om-av-img" src={avatar} alt="" style={{ width: size, height: size }} />
@@ -43,8 +45,14 @@ export default function CatchMind() {
   const [g, setGraw] = useState({ phase: 'lobby', players: [], turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: null, bet: 5 })
   const gRef = useRef(g)
   const setG = useCallback((up) => setGraw((p) => { const n = typeof up === 'function' ? up(p) : up; gRef.current = n; return n }), [])
-  const [lob, setLob] = useState({ participants: [], ready: [], bet: 5 })
+  const [lob, setLob] = useState({ participants: [], ready: [], bet: 5, seats: [null, null] })
   const lobRef = useRef(lob); lobRef.current = lob
+  const [isCouple, setIsCouple] = useState(false)
+  const isCoupleRef = useRef(false); isCoupleRef.current = isCouple
+  const [customWords, setCustomWords] = useState([])
+  const [wordModalOpen, setWordModalOpen] = useState(false)
+  const [newWord, setNewWord] = useState('')
+  const [savingWord, setSavingWord] = useState(false)
   const [chat, setChat] = useState([])
   const [now, setNow] = useState(Date.now())
   const [guess, setGuess] = useState('')
@@ -126,7 +134,7 @@ export default function CatchMind() {
 
   const apply = useCallback((type, pl) => {
     if (type === 'lobby') {
-      setLob({ participants: pl.participants || [], ready: pl.ready || [], bet: pl.bet ?? 5 })
+      setLob({ participants: pl.participants || [], ready: pl.ready || [], bet: pl.bet ?? 5, seats: pl.seats || [null, null] })
     } else if (type === 'lobby_req') {
       if (gRef.current.phase === 'lobby') broadcastLobby(lobRef.current)
     } else if (type === 'chat') {
@@ -180,7 +188,8 @@ export default function CatchMind() {
       if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }]) }
     }).catch(() => {})
     getMyCoinBalance().then((b) => { myBalRef.current = b; setMyBal(b); retrack() }).catch(() => {})
-    getCatchWords(groupId).then((w) => { if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
+    getCatchWords(groupId).then((w) => { setCustomWords(w); if (w.length) setWords([...CATCH_WORDS, ...w]) }).catch(() => {})
+    isCoupleGroup(groupId).then(setIsCouple).catch(() => {})
     ;['lobby', 'lobby_req', 'chat', 'game_start', 'turn_start', 'stroke', 'guess', 'turn_end', 'award']
       .forEach((ev) => ch.on('broadcast', { event: ev }, ({ payload }) => applyRef.current(ev, payload)))
     ch.on('presence', { event: 'join' }, ({ key }) => {
@@ -195,7 +204,7 @@ export default function CatchMind() {
       if (gRef.current.phase !== 'lobby') return
       const nm = membersRef.current[key]?.name || peersRef.current[key]?.name || leftPresences?.[0]?.name || '누군가'
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
-      setLob((l) => ((l.participants.includes(key) || l.ready.includes(key)) ? { ...l, participants: l.participants.filter((x) => x !== key), ready: l.ready.filter((x) => x !== key) } : l))
+      setLob((l) => ({ ...l, participants: l.participants.filter((x) => x !== key), ready: l.ready.filter((x) => x !== key), seats: (l.seats || [null, null]).map((s) => (s === key ? null : s)) }))
     })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { retrack(); setTimeout(() => emit('lobby_req', {}), 200) } })
     return () => { clearTimeout(timerRef.current); supabase.removeChannel(ch); chanRef.current = null }
@@ -226,8 +235,9 @@ export default function CatchMind() {
   const isSmall = Math.max(Object.keys(members).length, presentUids.length) <= 2
   // 참여 확정(준비 완료)한 인원의 최소 보유 츄르 기준 베팅 상한(5단위 내림, 최대 20)
   const capOf = (uids, balForUid) => { const bals = uids.map(balForUid).filter((b) => typeof b === 'number'); return bals.length ? Math.max(0, Math.min(20, Math.floor(Math.min(...bals) / 5) * 5)) : 20 }
-  const capFromBals = () => capOf(lobRef.current.ready || [], (u) => (u === uid ? myBalRef.current : peersRef.current[u]?.bal))
-  const betCap = capOf(lob.ready || [], (u) => (u === uid ? myBal : peers[u]?.bal))
+  const betUids = (l) => (isCoupleRef.current ? (l.seats || []).filter(Boolean) : (l.ready || []))
+  const capFromBals = () => capOf(betUids(lobRef.current), (u) => (u === uid ? myBalRef.current : peersRef.current[u]?.bal))
+  const betCap = capOf(isCouple ? (lob.seats || []).filter(Boolean) : (lob.ready || []), (u) => (u === uid ? myBal : peers[u]?.bal))
   useEffect(() => { if (gRef.current.phase === 'lobby' && (lobRef.current.bet || 0) > betCap) changeBet(0) }, [betCap])
   const parts = lob.participants
   const readySet = new Set(lob.ready)
@@ -245,12 +255,43 @@ export default function CatchMind() {
       const n = { ...l, participants: p, ready: r }; broadcastLobby(n); return n
     })
   }
+  function toggleSeat(idx) {
+    setLob((l) => {
+      const seats = [...(l.seats || [null, null])]
+      if (seats[idx] === uid) seats[idx] = null
+      else { const at = seats.indexOf(uid); if (at >= 0) seats[at] = null; if (!seats[idx]) seats[idx] = uid }
+      const n = { ...l, seats }; broadcastLobby(n); return n
+    })
+  }
+  async function addWord() {
+    const w = newWord.trim()
+    if (!w) return
+    if (customWords.includes(w) || CATCH_WORDS.includes(w)) { setNewWord(''); return }
+    setSavingWord(true)
+    try {
+      const next = [...customWords, w]
+      await setCatchWords(groupId, next)
+      setCustomWords(next); setWords([...CATCH_WORDS, ...next]); setNewWord('')
+    } catch (e) { alert(e.message) } finally { setSavingWord(false) }
+  }
+  async function removeWord(w) {
+    const next = customWords.filter((x) => x !== w)
+    try { await setCatchWords(groupId, next); setCustomWords(next); setWords([...CATCH_WORDS, ...next]) } catch (e) { alert(e.message) }
+  }
   function changeBet(d) { setLob((l) => { const bet = Math.max(0, Math.min(capFromBals(), (l.bet || 0) + d)); const n = { ...l, bet }; broadcastLobby(n); return n }) }
   function sendLobbyChat(e) {
     e?.preventDefault?.(); const text = draft.trim(); if (!text) return
     const m = { id: uuid(), uid, text }; emit('chat', m); pushChat(m); setDraft('')
   }
   function startGame() {
+    if (isCoupleRef.current) {
+      const s = lobRef.current.seats || []
+      if (!(s[0] && s[1] && s[0] !== s[1])) { alert('두 자리가 다 차야 시작할 수 있어요.'); return }
+      const players = [s[0], s[1]].map((u) => ({ uid: u, name: memberName(u), avatar: memberAvatar(u) }))
+      const payload = { players, gameId: uuid(), bet: lobRef.current.bet || 0 }
+      emit('game_start', payload); apply('game_start', payload)
+      return
+    }
     const partUids = isSmall ? presentUids : lobRef.current.participants
     const playerUids = partUids.filter((u) => readySet.has(u))
     if (playerUids.length < 2) { alert('참여자 두 명 이상이 준비해야 시작할 수 있어요.'); return }
@@ -277,6 +318,21 @@ export default function CatchMind() {
   if (g.phase === 'lobby') {
     const listUids = isSmall ? presentUids : parts
     const allReady = listUids.length >= 2 && listUids.every((u) => readySet.has(u))
+    const seatUsers = lob.seats || [null, null]
+    const seatsFilled = seatUsers[0] && seatUsers[1] && seatUsers[0] !== seatUsers[1]
+    const seat = (idx) => {
+      const su = seatUsers[idx]
+      const mine = su === uid
+      return (
+        <div className={`om-seat ${su ? 'taken' : 'empty'} ${mine ? 'mine' : ''}`} role="button" tabIndex={0}
+          onClick={() => toggleSeat(idx)}>
+          <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '먼저 그리기' : '먼저 맞히기'}</span></div>
+          {su
+            ? <><Av name={nameOf(su)} avatar={memberAvatar(su)} size={52} /><div className="om-seat-name">{nameOf(su)}{mine && <span className="om-badge-me">나</span>}</div></>
+            : <><span className="om-seat-empty"><PersonIcon /></span><div className="om-seat-wait">대기 중</div></>}
+        </div>
+      )
+    }
     const chatBox = (
       <div className="om-chat">
         <div className="om-chat-scroll">
@@ -300,10 +356,18 @@ export default function CatchMind() {
         <div className="om-head">
           <button type="button" className="om-icon-btn" aria-label="뒤로" onClick={() => navigate(-1)}><BackIcon /></button>
           <div className="om-title">캐치마인드</div><span className="om-pill">대기실</span>
-          {!isSmall && <span className="cm-count">👥 {presentUids.length}</span>}
+          <div className="om-head-right">
+            {!isSmall && !isCouple && <span className="cm-count">👥 {presentUids.length}</span>}
+            <button type="button" className="om-icon-btn" aria-label="제시어 추가" onClick={() => setWordModalOpen(true)}>＋</button>
+          </div>
         </div>
         {chatBox}
-        {isSmall ? (
+        {isCouple ? (
+          <div className="om-seats">
+            <div className="om-seats-row">{seat(0)}{seat(1)}</div>
+            <div className="om-seats-hint">빈 자리를 <b>탭</b>해서 참여하세요 · 먼저 그리기부터 시작해요</div>
+          </div>
+        ) : isSmall ? (
           <div className="cm-cards">
             {presentUids.map((u) => (
               <div key={u} className={`cm-card ${readySet.has(u) ? 'rdy' : ''}`}>
@@ -335,13 +399,38 @@ export default function CatchMind() {
           <span className="om-bet-val">{lob.bet}</span>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(5)} disabled={lob.bet >= betCap} aria-label="늘리기">+</button>
         </div>
-        <div className="cm-lobby-btns">
-          {!isSmall && !iPart && <button type="button" className="cm-btn primary" onClick={toggleParticipate}>참여하기</button>}
-          {iPart && <button type="button" className={`cm-btn ${iReady ? 'ghost' : 'primary'}`} onClick={toggleReady}>{iReady ? '준비 취소' : '준비하기!'}</button>}
-          <button type="button" className={`cm-btn start ${allReady ? 'on' : ''}`} disabled={!allReady} onClick={startGame}>
-            {allReady ? '게임 시작' : '모두 준비되면 시작할 수 있어요'}
-          </button>
-        </div>
+        {isCouple ? (
+          <div className="cm-lobby-btns">
+            <button type="button" className={`cm-btn start ${seatsFilled ? 'on' : ''}`} disabled={!seatsFilled} onClick={startGame}>
+              {seatsFilled ? '게임 시작' : '두 자리가 다 차면 시작할 수 있어요'}
+            </button>
+          </div>
+        ) : (
+          <div className="cm-lobby-btns">
+            {!isSmall && !iPart && <button type="button" className="cm-btn primary" onClick={toggleParticipate}>참여하기</button>}
+            {iPart && <button type="button" className={`cm-btn ${iReady ? 'ghost' : 'primary'}`} onClick={toggleReady}>{iReady ? '준비 취소' : '준비하기!'}</button>}
+            <button type="button" className={`cm-btn start ${allReady ? 'on' : ''}`} disabled={!allReady} onClick={startGame}>
+              {allReady ? '게임 시작' : '모두 준비되면 시작할 수 있어요'}
+            </button>
+          </div>
+        )}
+
+        <Modal open={wordModalOpen} onClose={() => setWordModalOpen(false)} title="제시어 추가">
+          <div className="cm-wordmodal">
+            <p className="cm-wordmodal-sub">이 그룹에서만 나오는 제시어를 추가해요.<br />기본 제시어({CATCH_WORDS.length}개)와 함께 출제돼요.</p>
+            <form className="cm-wordadd" onSubmit={(e) => { e.preventDefault(); addWord() }}>
+              <input value={newWord} onChange={(e) => setNewWord(e.target.value)} placeholder="예: 우리 강아지 이름" maxLength={20} />
+              <button type="submit" className="cm-wordadd-btn" disabled={savingWord || !newWord.trim()}>추가</button>
+            </form>
+            {customWords.length > 0 ? (
+              <div className="cm-wordchips">
+                {customWords.map((w) => (
+                  <span key={w} className="cm-wordchip">{w}<button type="button" onClick={() => removeWord(w)} aria-label="삭제">✕</button></span>
+                ))}
+              </div>
+            ) : <div className="cm-wordempty">아직 추가한 제시어가 없어요.</div>}
+          </div>
+        </Modal>
       </div>
     )
   }

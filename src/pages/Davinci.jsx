@@ -287,14 +287,14 @@ export default function Davinci() {
       const afford = su ? v.stakeOk?.[su] : canAfford
       const clickable = mine || (!su && canAfford)
       return (
-        <div className={`om-seat ${su ? 'taken dv-rdy' : 'empty'} ${mine ? 'mine' : ''}`}
+        <div className={`om-seat ${su ? 'taken' : 'empty'} ${mine ? 'mine' : ''}`}
           role="button" tabIndex={0}
           onClick={() => { if (clickable) toggleSeat(idx) }}>
           <div className="om-seat-top"><span className="dv-order">{idx === 0 ? '선공' : '후공'}</span></div>
           {su
             ? <><LobbyAvatar name={nameOf(su)} avatar={avatarOf(su)} /><div className="om-seat-name">{nameOf(su)}{mine && <span className="om-badge-me">나</span>}</div></>
             : <><span className="om-seat-empty"><PersonIcon /></span>
-                <div className="om-seat-wait">{afford ? '탭해서 참여' : '보유 부족'}</div></>}
+                <div className="om-seat-wait">{afford ? '대기 중' : '보유 부족'}</div></>}
         </div>
       )
     }
