@@ -236,7 +236,8 @@ export default function Inventory() {
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
         item={giftItemId ? { id: giftItemId, name: itemName(giftItemId, meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId), emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
-        qty={1} onSend={inventoryGiftSend} />
+        qty={1} onSend={inventoryGiftSend}
+        excludeGroupIds={giftItemId === 'friend-ring' ? [...new Set([...coupleGroupIds, ...friendGroupIds])] : []} />
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
 

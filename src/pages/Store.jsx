@@ -30,6 +30,7 @@ export default function Store() {
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
+  const [premiumGroupIds, setPremiumGroupIds] = useState([]) // 커플/우정 링 적용 그룹(우정 링 선물 시 제외)
   // 새로 진입하면 일반 상점. 단, 퀘스트 등으로 premium 지정 시 프리미엄 탭, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
   const [premiumView, setPremiumView] = useState(() => {
     try {
@@ -67,8 +68,11 @@ export default function Store() {
   useEffect(() => {
     if (!user?.id) return
     ownsCoupleRing(user.id).then(setOwnsCouple).catch(() => {})
-    listCoupleGroups(user.id).then((g) => setHasCouple((g || []).length > 0)).catch(() => {})
-    listFriendGroups().then((g) => setHasFriend((g || []).length > 0)).catch(() => {})
+    Promise.all([listCoupleGroups(user.id).catch(() => []), listFriendGroups().catch(() => [])])
+      .then(([c, f]) => {
+        setHasCouple((c || []).length > 0); setHasFriend((f || []).length > 0)
+        setPremiumGroupIds([...new Set([...(c || []), ...(f || [])])])
+      })
   }, [user?.id])
 
   // 프리미엄 탭이 켜지면 앱 전체를 다크 테마로 (Layout 이 상단바·하단탭까지 반영)
@@ -279,7 +283,8 @@ export default function Store() {
         onClose={() => setGiftOpen(false)}
         onFinish={() => { setGiftOpen(false); close() }}
         item={selected ? { id: selected.id, name: itemName(selected.id, selected.name), emoji: selected.emoji } : null}
-        qty={qty} price={selected?.price ?? null} purchased onSend={giftSend} />
+        qty={qty} price={selected?.price ?? null} purchased onSend={giftSend}
+        excludeGroupIds={selected?.id === 'friend-ring' ? premiumGroupIds : []} />
     </div>
   )
 }

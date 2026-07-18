@@ -16,7 +16,7 @@ const Paw = () => (
 // 상점·인벤토리 공용 "아이템 선물" 모달.
 // item:{id,name,emoji}, qty:수량, price:개당 가격(상점=구매선물 시 표시), purchased:구매해서 선물 여부.
 // onSend(recipient, message)→Promise. onFinish=성공 화면 하단 버튼(없으면 onClose).
-export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, price = null, purchased = false, onSend }) {
+export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, price = null, purchased = false, onSend, excludeGroupIds = [] }) {
   const navigate = useNavigate()
   const [recipient, setRecipient] = useState(null)
   const [message, setMessage] = useState('')
@@ -87,6 +87,7 @@ export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, 
         )}
       </Modal>
       <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="선물 받는 사람"
+        excludeGroupIds={excludeGroupIds}
         onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
     </>
   )

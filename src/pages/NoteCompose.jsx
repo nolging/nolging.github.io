@@ -98,7 +98,9 @@ export default function NoteCompose() {
   }, [user?.id])
 
   const pickerMode = useItem?.id === 'friend-ring' ? 'friend' : null
-  const pickerExclude = RINGS.includes(useItem?.id) ? ringExclude : []
+  // 우정 링을 사용/선물할 때는 이미 커플·우정 링이 적용된 그룹을 후보에서 제외
+  const giftingFriendRing = gifts.some((g) => g.id === 'friend-ring')
+  const pickerExclude = (RINGS.includes(useItem?.id) || giftingFriendRing) ? ringExclude : []
 
   const metaOf = useCallback((id) => ({
     name: itemName(id, USE_META[id]?.name || store[id]?.name || id),
