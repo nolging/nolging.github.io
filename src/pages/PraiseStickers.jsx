@@ -25,7 +25,8 @@ const VAR = {
 }
 const pct = (v, t) => `${(v / t * 100).toFixed(2)}%`
 const fmtDate = (iso) => { try { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일` } catch { return '' } }
-const fmtDateTime = (iso) => { try { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0'); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${p(d.getHours())}:${p(d.getMinutes())}` } catch { return '' } }
+const fmtDateTime = (iso) => { try { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0'); return `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${p(d.getHours())}:${p(d.getMinutes())}` } catch { return '' } }
+const ordinalOf = (stickers, id) => [...stickers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).findIndex((s) => s.id === id) + 1
 
 export default function PraiseStickers() {
   const { groupId } = useParams()
@@ -208,7 +209,7 @@ export default function PraiseStickers() {
             return (
               <div className="praise-modal">
                 <div className="praise-modal-fruit lg"><Sticker variant={variant} bg={fillBg} /></div>
-                <div className="praise-modal-meta">{s ? fmtDateTime(s.created_at) : ''}</div>
+                <div className="praise-modal-meta">{s ? `${ordinalOf(stickers, s.id)} 번째 칭찬 ${variant === 'apple' ? '사과' : '포도알'} · ${fmtDateTime(s.created_at)}` : ''}</div>
                 <div className="praise-modal-reason">{s?.reason}</div>
               </div>
             )
@@ -216,11 +217,7 @@ export default function PraiseStickers() {
           // write / edit
           const text = modal.text || ''
           const fruitName = variant === 'apple' ? '사과' : '포도알'
-          let ordinal
-          if (modal.mode === 'edit') {
-            const sorted = [...stickers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-            ordinal = sorted.findIndex((s) => s.id === modal.sticker.id) + 1
-          } else ordinal = count + 1
+          const ordinal = modal.mode === 'edit' ? ordinalOf(stickers, modal.sticker.id) : count + 1
           return (
             <div className="praise-modal">
               {mini}
