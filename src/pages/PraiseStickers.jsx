@@ -245,16 +245,17 @@ export default function PraiseStickers() {
                   : '스티커를 다 모으면 내가 소원을 들어줘요'
           }</div>
         </div>
-        <div className="praise-head-right">
-          {variant && <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>}
-          {viewingHist && (
-            <button type="button" className="praise-back-btn" aria-label="현재 판으로 돌아가기" onClick={() => selectTab(owner.user_id)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 8 8 8" /></svg>
-            </button>
-          )}
-        </div>
+        {variant && <div className="praise-count"><span style={{ color: cfg.accent }}>{count}</span><span style={{ color: cfg.slash }}> / 20</span></div>}
       </div>
       {variant && <div className="praise-track" style={{ background: cfg.track }}><div style={{ height: '100%', borderRadius: 999, background: cfg.bar, transition: 'width .45s ease', width: pct(count, 20) }} /></div>}
+
+      {viewingHist && (
+        <div className="praise-back-row">
+          <button type="button" className="praise-back-btn" aria-label="현재 판으로 돌아가기" onClick={() => selectTab(owner.user_id)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 8 8 8" /></svg>
+          </button>
+        </div>
+      )}
 
       {/* 판 */}
       {histLoading ? (
