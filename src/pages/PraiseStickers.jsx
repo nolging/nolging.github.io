@@ -63,7 +63,7 @@ export default function PraiseStickers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { setHeaderBg, setHeaderMenu } = useOutletContext()
-  const { user, isAdmin } = useAuth()
+  const { user } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -153,7 +153,6 @@ export default function PraiseStickers() {
   }, [histKey, histSel, tabOwner, setHeaderMenu]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => setHeaderMenu?.(null), [setHeaderMenu])
 
-  if (!isAdmin) return <div className="page"><div className="empty">준비 중인 기능이에요 🐾</div></div>
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !data) return <div className="page"><div className="alert alert-error">{error}</div></div>
 

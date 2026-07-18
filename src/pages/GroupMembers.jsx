@@ -7,7 +7,6 @@ import Modal from '../components/Modal'
 import Fireworks from '../components/Fireworks'
 import NightSky from '../components/NightSky'
 import { isAnnivToday } from '../lib/anniv'
-import { useAuth } from '../context/AuthContext'
 
 function parseYMD(s) {
   const [y, mo, d] = String(s).split('-').map(Number)
@@ -65,7 +64,6 @@ export default function GroupMembers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { setHeaderTitle } = useOutletContext()
-  const { isAdmin } = useAuth()
   const [members, setMembers] = useState([])
   const [decoMap, setDecoMap] = useState({})
   const [group, setGroup] = useState(null)
@@ -241,7 +239,7 @@ export default function GroupMembers() {
           <div className="csx-scroll">
             <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={() => go('touch')} />
             <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
-            <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub={isAdmin ? '착한 애인 챌린지' : '메뉴 준비 중'} onClick={isAdmin ? () => go('praise') : undefined} />
+            <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="착한 애인 챌린지" onClick={() => go('praise')} />
             <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />
           </div>
         </div>

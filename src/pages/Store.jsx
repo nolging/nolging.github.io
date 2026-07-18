@@ -143,7 +143,9 @@ export default function Store() {
   }
 
   function qualifies(item) {
-    if (item.adminOnly && !isAdmin) return false   // 관리자 전용 아이템은 관리자에게만
+    // 칭찬 스티커판(사과/포도알)은 관리자 전용이지만, 커플 링 보유자에게도 노출
+    const stickerBoard = item.id === 'sticker-grape' || item.id === 'sticker-apple'
+    if (item.adminOnly && !isAdmin && !(stickerBoard && ownsCouple)) return false
     if (!item.premium) return !inPremium
     if (!inPremium) return false
     if (item.tier === 'couple') return hasCouple
