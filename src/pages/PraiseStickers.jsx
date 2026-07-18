@@ -41,6 +41,19 @@ export default function PraiseStickers() {
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
   const taRef = useRef(null)
+  const primeRef = useRef(null)
+
+  // 탭 제스처 안에서 임시 input 을 포커스해 키보드를 미리 띄운다(iOS 대응).
+  // 실제 textarea 가 마운트되면 포커스를 넘기고 임시 input 은 제거한다.
+  function primeKeyboard() {
+    const inp = document.createElement('input')
+    inp.type = 'text'
+    inp.setAttribute('aria-hidden', 'true')
+    inp.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;z-index:-1;'
+    document.body.appendChild(inp)
+    inp.focus()
+    primeRef.current = inp
+  }
 
   const load = useCallback(async () => {
     try {
@@ -56,10 +69,13 @@ export default function PraiseStickers() {
   }, [groupId])
   useEffect(() => { load() }, [load])
 
-  // 칭찬 입력/수정 모달이 열리면 입력창 자동 포커스
+  // 칭찬 입력/수정 모달이 열리면 입력창 자동 포커스(키보드 유지)
   useEffect(() => {
     if (modal && modal.mode !== 'view') {
-      const t = setTimeout(() => taRef.current?.focus(), 80)
+      const t = setTimeout(() => {
+        taRef.current?.focus()
+        if (primeRef.current) { primeRef.current.remove(); primeRef.current = null }
+      }, 80)
       return () => clearTimeout(t)
     }
   }, [modal?.slot, modal?.mode])
@@ -95,9 +111,10 @@ export default function PraiseStickers() {
   function slotClick(slot) {
     const s = slots[slot]
     if (s) {
-      if (canAdd) setModal({ ownerId: owner.user_id, slot, mode: 'edit', text: s.reason, sticker: s })
+      if (canAdd) { primeKeyboard(); setModal({ ownerId: owner.user_id, slot, mode: 'edit', text: s.reason, sticker: s }) }
       else setModal({ ownerId: owner.user_id, slot, mode: 'view', sticker: s })
     } else if (canAdd) {
+      primeKeyboard()
       setModal({ ownerId: owner.user_id, slot, mode: 'write', text: '' })
     } else {
       showToast('내 칭찬 스티커는 스스로 붙일 수 없어요')
