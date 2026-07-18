@@ -215,20 +215,26 @@ export default function PraiseStickers() {
           }
           // write / edit
           const text = modal.text || ''
+          const fruitName = variant === 'apple' ? '사과' : '포도알'
+          let ordinal
+          if (modal.mode === 'edit') {
+            const sorted = [...stickers].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+            ordinal = sorted.findIndex((s) => s.id === modal.sticker.id) + 1
+          } else ordinal = count + 1
           return (
             <div className="praise-modal">
+              <button type="button" className="praise-modal-x" aria-label="닫기" onClick={() => setModal(null)}>✕</button>
               {mini}
-              <div className="praise-modal-ttl">{modal.mode === 'edit' ? '칭찬 내용 수정' : `${owner?.name || '짝꿍'}에게 칭찬 남기기`}</div>
-              <div className="praise-modal-sub">{variant === 'grape' ? '예쁜 칭찬 포도알을 붙여줄게요' : '예쁜 칭찬 사과를 붙여줄게요'}</div>
-              <textarea className="praise-modal-ta" value={text} maxLength={100}
-                onChange={(e) => setModal((m) => ({ ...m, text: e.target.value.slice(0, 100) }))}
-                placeholder="예) 오늘 먼저 연락해줘서 고마워!" />
-              <div className="praise-modal-len">{text.length}/100</div>
-              <div className="praise-modal-actions">
-                <button type="button" className="praise-modal-cancel" onClick={() => setModal(null)}>취소</button>
-                <button type="button" className="praise-modal-confirm" style={{ background: cfg.accent, opacity: text.trim() && !busy ? 1 : .5 }}
-                  disabled={!text.trim() || busy} onClick={submit}>{modal.mode === 'edit' ? '저장' : '붙이기'}</button>
+              <div className="praise-modal-ttl">{modal.mode === 'edit' ? '칭찬 내용 수정' : '칭찬해요'}</div>
+              <div className="praise-modal-sub">{ordinal} 번째 칭찬 {fruitName}</div>
+              <div className="praise-modal-tawrap">
+                <textarea className="praise-modal-ta" value={text} maxLength={100}
+                  onChange={(e) => setModal((m) => ({ ...m, text: e.target.value.slice(0, 100) }))}
+                  placeholder="칭찬의 한마디를 남겨 주세요" />
+                <span className="praise-modal-len">{text.length}/100</span>
               </div>
+              <button type="button" className="praise-modal-pill" style={{ opacity: text.trim() && !busy ? 1 : .5 }}
+                disabled={!text.trim() || busy} onClick={submit}>{modal.mode === 'edit' ? '저장' : '붙이기'}</button>
             </div>
           )
         })()}
