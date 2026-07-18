@@ -159,8 +159,8 @@ export default function PraiseStickers() {
             {/* 데코 */}
             {variant === 'grape' ? (
               <>
-                <div style={{ position: 'absolute', top: T(-18), left: 'calc(52% )', width: D(73), height: T(64), background: 'linear-gradient(135deg,#7cc06a,#5a9e48)', borderRadius: '0 75% 10% 75%', transform: 'rotate(-16deg)', zIndex: 1 }} />
-                <svg viewBox="0 0 30 48" style={{ position: 'absolute', top: T(3), left: D(153), width: D(36), height: T(72), zIndex: 2 }}><path d="M22 3 C 15 15, 15 33, 20 45" fill="none" stroke="#7d4f28" strokeWidth="6" strokeLinecap="round" /></svg>
+                <div style={{ position: 'absolute', top: T(-14), left: '51%', width: D(73), height: T(64), background: 'linear-gradient(135deg,#7cc06a,#5a9e48)', borderRadius: '0 75% 10% 75%', transform: 'rotate(-16deg)', zIndex: 1 }} />
+                <svg viewBox="0 0 30 48" style={{ position: 'absolute', top: T(-16), left: D(163), width: D(38), height: T(60), zIndex: 2 }}><path d="M22 3 C 15 16, 15 32, 19 45" fill="none" stroke="#7d4f28" strokeWidth="6" strokeLinecap="round" /></svg>
               </>
             ) : (
               <>
