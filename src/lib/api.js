@@ -1556,6 +1556,17 @@ export async function useTimeMachine(noteId) {
   return data // 새 opened_at(timestamptz)
 }
 
+// ---- 관리자: 푸시 알림 메시지 템플릿 ----
+export async function listNotifTemplates() {
+  const { data, error } = await supabase.rpc('admin_list_notifs')
+  if (error) { if (error.code === 'PGRST202') return [] ; throw error }
+  return data ?? []
+}
+export async function updateNotifTemplate(key, title, body) {
+  const { error } = await supabase.rpc('admin_set_notif', { p_key: key, p_title: title, p_body: body })
+  if (error) throw error
+}
+
 // 관리자: 전체 사용자(연락처/생년월일 포함)
 export async function adminListUsers() {
   const { data, error } = await supabase.rpc('admin_list_users')

@@ -157,12 +157,13 @@ export default function Layout() {
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
   // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
-  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests'].includes(location.pathname)
+  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs'].includes(location.pathname)
   const adminSub = location.pathname.startsWith('/admin/') && !adminSection
   const adminSubTitle = (p) =>
     p.startsWith('/admin/members') ? (p.endsWith('/new') ? '계정 생성' : '회원 상세')
       : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 상세')
         : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 상세')
+          : p.startsWith('/admin/notifs') ? '알림 메시지 수정'
           : '관리자'
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'
@@ -690,6 +691,7 @@ export default function Layout() {
           <NavLink to="/admin/members">회원 관리</NavLink>
           <NavLink to="/admin/store">상점 관리</NavLink>
           <NavLink to="/admin/quests">퀘스트 관리</NavLink>
+          <NavLink to="/admin/notifs">알림 관리</NavLink>
         </nav>
       </header>
     )
