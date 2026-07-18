@@ -213,7 +213,8 @@ export default function Inventory() {
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
-      <ItemGuideModal id={guideItem} onClose={() => setGuideItem(null)}
+      <ItemGuideModal id={guideItem} name={guideItem ? itemName(guideItem, meta[guideItem]?.name || GUIDE[guideItem]?.name) : ''}
+        onClose={() => setGuideItem(null)}
         onUse={() => openUse(guideItem)}
         onGift={() => { const id = guideItem; setGuideItem(null); setGiftItemId(id) }} />
 
@@ -592,7 +593,7 @@ const GUIDE = {
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
-function ItemGuideModal({ id, onClose, onUse, onGift }) {
+function ItemGuideModal({ id, name, onClose, onUse, onGift }) {
   const cfg = id ? GUIDE[id] : null
   return (
     <Modal open={!!id} onClose={onClose} cardClassName="nc-link-modal">
@@ -600,7 +601,7 @@ function ItemGuideModal({ id, onClose, onUse, onGift }) {
         <div className="nc-link">
           <div className="nc-link-head">
             <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={cfg.emoji} className="nc-img" /></span>
-            <div className="nc-link-name">{cfg.name}</div>
+            <div className="nc-link-name">{name || cfg.name}</div>
           </div>
           <p className="tele-guide-label nc-mt">사용 방법</p>
           <p className="tele-guide-text">{cfg.text}</p>
