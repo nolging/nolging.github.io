@@ -91,7 +91,7 @@ export default function PraiseStickers() {
     } else if (canAdd) {
       setModal({ ownerId: owner.user_id, slot, mode: 'write', text: '' })
     } else {
-      showToast('내 칭찬판엔 짝꿍만 붙일 수 있어요 🫶')
+      showToast('내 칭찬 스티커는 스스로 붙일 수 없어요')
     }
   }
 
