@@ -1562,9 +1562,15 @@ export async function listNotifTemplates() {
   if (error) { if (error.code === 'PGRST202') return [] ; throw error }
   return data ?? []
 }
-export async function updateNotifTemplate(key, title, body) {
-  const { error } = await supabase.rpc('admin_set_notif', { p_key: key, p_title: title, p_body: body })
+export async function updateNotifTemplate(key, title, body, emoji) {
+  const { error } = await supabase.rpc('admin_set_notif', { p_key: key, p_title: title, p_body: body, p_emoji: emoji ?? '' })
   if (error) throw error
+}
+// 알림센터 아이콘 맵 (type/key → emoji). 미배포 시 빈 객체.
+export async function getNotifEmojis() {
+  const { data, error } = await supabase.rpc('notif_emojis')
+  if (error) { if (error.code === 'PGRST202') return {}; throw error }
+  return data || {}
 }
 
 // 관리자: 전체 사용자(연락처/생년월일 포함)

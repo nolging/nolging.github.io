@@ -9,6 +9,7 @@ export default function AdminNotifDetail() {
   const [tpl, setTpl] = useState(null)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [emoji, setEmoji] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -19,7 +20,7 @@ export default function AdminNotifDetail() {
       const rows = await listNotifTemplates()
       const t = rows.find((x) => x.key === key)
       if (!t) { setError('알림 템플릿을 찾을 수 없어요.'); return }
-      setTpl(t); setTitle(t.title || ''); setBody(t.body || '')
+      setTpl(t); setTitle(t.title || ''); setBody(t.body || ''); setEmoji(t.emoji || '')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [key])
   useEffect(() => { load() }, [load])
@@ -28,7 +29,7 @@ export default function AdminNotifDetail() {
     e.preventDefault(); setError('')
     if (!title.trim() || !body.trim()) { setError('제목과 본문을 입력해 주세요.'); return }
     setBusy(true)
-    try { await updateNotifTemplate(key, title.trim(), body.trim()); nav('/admin/notifs', { replace: true }) }
+    try { await updateNotifTemplate(key, title.trim(), body.trim(), emoji.trim()); nav('/admin/notifs', { replace: true }) }
     catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
@@ -42,13 +43,18 @@ export default function AdminNotifDetail() {
           <h3 className="card-title">{tpl.label}</h3>
           {tpl.vars && <p className="muted sm" style={{ margin: '0 0 10px' }}>사용 가능한 치환자 — {tpl.vars}</p>}
           <form onSubmit={save} className="form">
+            <label className="field field-narrow"><span>알림센터 이모지</span>
+              <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="예: 🎁" maxLength={4} autoCapitalize="none" /></label>
             <label className="field"><span>제목</span>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="알림 제목" /></label>
             <label className="field"><span>본문</span>
               <textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} placeholder="알림 본문" style={{ resize: 'vertical' }} /></label>
             <div className="admin-notif-preview">
-              <div className="admin-notif-preview-t">{title || '제목'}</div>
-              <div className="admin-notif-preview-b">{body || '본문'}</div>
+              <span className="admin-notif-preview-ico" aria-hidden="true">{emoji || '🔔'}</span>
+              <div>
+                <div className="admin-notif-preview-t">{title || '제목'}</div>
+                <div className="admin-notif-preview-b">{body || '본문'}</div>
+              </div>
             </div>
             <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
           </form>

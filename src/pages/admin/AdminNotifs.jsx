@@ -34,7 +34,7 @@ export default function AdminNotifs() {
             {rows.map((r) => (
               <li key={r.key}>
                 <button type="button" className="admin-row" onClick={() => nav(`/admin/notifs/${r.key}`)}>
-                  <span className="admin-row-emoji" aria-hidden="true">🔔</span>
+                  <span className="admin-row-emoji" aria-hidden="true">{r.emoji || '🔔'}</span>
                   <span className="admin-row-main">
                     {r.label}
                     <span className="muted sm" style={{ display: 'block' }}>{r.title}</span>

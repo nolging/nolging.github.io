@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteState,
+  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteState, getNotifEmojis,
 } from '../lib/api'
 import { resolveItemText } from '../lib/storeMeta'
 
@@ -122,6 +122,9 @@ export default function Notifications() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [emojiMap, setEmojiMap] = useState({}) // 관리자 설정 이모지 (type/key → emoji)
+
+  useEffect(() => { getNotifEmojis().then(setEmojiMap).catch(() => {}) }, [])
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -214,7 +217,7 @@ export default function Notifications() {
       ) : (
         <ul className="notif-list">
           {items.map((n) => (
-            <NotifRow key={n.id} n={n} icon={ICONS[n.type] || '🔔'} clickable={!!targetOf(n)}
+            <NotifRow key={n.id} n={n} icon={emojiMap[n.type] || ICONS[n.type] || '🔔'} clickable={!!targetOf(n)}
               timeText={timeAgo(n.created_at)} onOpen={() => open(n)} onDelete={() => remove(n.id)} />
           ))}
         </ul>
