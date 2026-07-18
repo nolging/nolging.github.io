@@ -635,10 +635,12 @@ function StickerUseModal({ item, coupleGroupId, onClose, onDone, navigate }) {
   return (
     <Modal open={!!item} onClose={onClose} cardClassName="nc-link-modal">
       {done ? (
-        <div className="st-done is-gift">
-          <div className="st-done-ico">🎉</div>
+        <div className="st-done">
+          <div className="st-done-ico">
+            <svg width="30" viewBox="0 0 24 24" fill="none" stroke="#4a9d6a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
           <div className="st-done-t">적용 완료!</div>
-          <div className="st-done-s">칭찬 {f.label}을(를) 적용했어요.<br />데이트의 칭찬 스티커에서 확인할 수 있어요.</div>
+          <div className="st-done-s">칭찬 스티커판을 적용했어요.<br />스티커를 모아 소원권으로 바꿔 보세요.</div>
           <button type="button" className="st-btn-buy st-btn-block" disabled={!coupleGroupId}
             onClick={() => { onClose(); if (coupleGroupId) navigate(`/groups/${coupleGroupId}/praise`) }}>스티커판 보러 가기</button>
           <button type="button" className="st-btn-text" onClick={onClose}>닫기</button>
