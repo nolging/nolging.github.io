@@ -76,11 +76,18 @@ Deno.serve(async (req) => {
     .from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')
   const bootstrap = (adminCount ?? 0) === 0
 
-  // ---- 상태 변경 / 삭제 (관리자 전용) ----
-  if (action === 'set-status' || action === 'delete' || action === 'set-role') {
+  // ---- 상태 변경 / 삭제 / 비밀번호 초기화 (관리자 전용) ----
+  if (action === 'set-status' || action === 'delete' || action === 'set-role' || action === 'set-password') {
     if (!(await callerIsAdmin())) return json({ error: '관리자 권한이 필요합니다.' }, 403)
     if (!p.userId) return json({ error: 'userId 가 필요합니다.' }, 400)
 
+    if (action === 'set-password') {
+      const pw = p.password ?? ''
+      if (pw.length < 6) return json({ error: '비밀번호는 6자 이상이어야 합니다.' }, 400)
+      const { error } = await admin.auth.admin.updateUserById(p.userId, { password: pw })
+      if (error) return json({ error: error.message }, 500)
+      return json({ ok: true })
+    }
     if (action === 'delete') {
       await admin.from('profiles').delete().eq('id', p.userId)
       await admin.auth.admin.deleteUser(p.userId).catch(() => {})

@@ -1508,6 +1508,10 @@ export async function adminDeleteUser(userId) {
 export async function adminSetRole(userId, role) {
   return invokeAdmin({ action: 'set-role', userId, role })
 }
+// 관리자: 비밀번호 초기화
+export async function adminSetPassword(userId, password) {
+  return invokeAdmin({ action: 'set-password', userId, password })
+}
 
 // ---- 칭찬 스티커 (커플 전용) ----
 // 스티커판 아이템 사용 → 색을 골라 내 칭찬판 활성(소모)

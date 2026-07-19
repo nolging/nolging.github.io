@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin } from '../../lib/api'
+import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin, adminSetPassword } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
 import { STATUS } from './adminMeta'
 
@@ -17,6 +17,7 @@ export default function AdminMemberDetail() {
 
   const [role, setRole] = useState('member')
   const [grant, setGrant] = useState({ sign: 1, amount: '', reason: '' })
+  const [pw, setPw] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -46,6 +47,14 @@ export default function AdminMemberDetail() {
     adminDeleteUser(userId)
       .then(() => nav('/admin/members', { replace: true }))
       .catch((err) => { setError(err.message); setBusy(false) })
+  }
+  async function resetPassword(e) {
+    e.preventDefault(); setError(''); setNotice('')
+    if (pw.trim().length < 6) { setError('비밀번호는 6자 이상이어야 해요.'); return }
+    if (!confirm(`'${user.nickname}' 님의 비밀번호를 초기화할까요?`)) return
+    setBusy(true)
+    try { await adminSetPassword(userId, pw.trim()); setNotice('비밀번호를 초기화했어요.'); setPw('') }
+    catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   async function submitGrant(e) {
     e.preventDefault(); setError(''); setNotice('')
@@ -117,6 +126,17 @@ export default function AdminMemberDetail() {
           <label className="field"><span>사유 (선택)</span>
             <input value={grant.reason} onChange={(e) => setGrant((g) => ({ ...g, reason: e.target.value }))} placeholder="예: 이벤트 보상" /></label>
           <button className="btn btn-primary" disabled={busy}>{busy ? '처리 중…' : '지급/차감'}</button>
+        </form>
+      </div>
+
+      {/* 비밀번호 초기화 */}
+      <div className="card">
+        <h3 className="card-title">비밀번호 초기화</h3>
+        <form onSubmit={resetPassword} className="form">
+          <label className="field"><span>새 비밀번호 *</span>
+            <input type="text" value={pw} autoCapitalize="none" autoCorrect="off"
+              onChange={(e) => setPw(e.target.value)} placeholder="6자 이상" /></label>
+          <button className="btn btn-primary" disabled={busy || pw.trim().length < 6}>{busy ? '처리 중…' : '비밀번호 변경'}</button>
         </form>
       </div>
 
