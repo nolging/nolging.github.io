@@ -12,7 +12,7 @@ export default function CreateTask() {
   const [members, setMembers] = useState([])
 
   // 약속/추억으로 바로 등록할 때 참여자 선택에 쓸 멤버 목록
-  useEffect(() => { listMemberCards(groupId).then(setMembers).catch(() => {}) }, [groupId])
+  useEffect(() => { listMemberCards(groupId).then((cs) => setMembers((cs || []).filter((m) => !m.is_left))).catch(() => {}) }, [groupId])
 
   return (
     <TaskForm

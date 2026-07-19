@@ -1416,6 +1416,8 @@ button.mlist-row:hover { background: #f6f5fa; }
 .md-profile .mem-av { box-shadow: 0 8px 22px rgba(25,23,34,.08); }
 .md-name { font-size: 22px; font-weight: 800; letter-spacing: -.5px; color: #191722; display: flex; align-items: center; gap: 8px; }
 .md-me { font-size: 12px; font-weight: 700; color: #7363e8; background: #eeebfe; border-radius: 999px; padding: 3px 10px; }
+.md-left-badge { margin-top: 8px; font-size: 12.5px; font-weight: 700; color: #8b8798; background: #f0eef4; border-radius: 999px; padding: 5px 14px; }
+.note-reply-off { text-align: center; font-size: 12.5px; color: #b0abc0; padding: 10px 0 2px; }
 .md-actions { display: flex; gap: 10px; width: 100%; margin-top: 2px; }
 .md-btn { flex: 1; height: 46px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
 .md-btn-primary { background: #191722; color: #fff; }

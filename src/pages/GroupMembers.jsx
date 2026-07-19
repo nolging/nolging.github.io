@@ -92,7 +92,7 @@ export default function GroupMembers() {
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
       ])
-      setMembers(cards); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
+      setMembers((cards || []).filter((m) => !m.is_left)); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
       if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])

@@ -8,13 +8,14 @@ const PROFILE_COLS = 'id, nickname, role, status, created_at'
 // ---- 그룹 ----------------------------------------------------
 
 export async function listMyGroups() {
-  const { data, error } = await supabase
-    .from('groups')
-    .select('*, group_members!inner(user_id, display_nickname, avatar_url)')
+  const q = (cols) => supabase.from('groups').select(`*, group_members!inner(${cols})`)
     .order('created_at', { ascending: false })
     .order('joined_at', { referencedTable: 'group_members', ascending: true })
+  let { data, error } = await q('user_id, display_nickname, avatar_url, left_at')
+  if (error) { ({ data, error } = await q('user_id, display_nickname, avatar_url')) } // left_at 미배포 폴백
   if (error) throw error
-  return data ?? []
+  // 탈퇴자(left_at) 는 각 그룹의 멤버 목록에서 제외
+  return (data ?? []).map((g) => ({ ...g, group_members: (g.group_members || []).filter((m) => !m.left_at) }))
 }
 
 export async function getGroup(groupId) {
@@ -276,9 +277,16 @@ export async function joinGroupWithProfile(code, userId, { display_nickname, ava
 }
 
 export async function leaveGroup(groupId, userId) {
-  const { error } = await supabase
-    .from('group_members').delete().eq('group_id', groupId).eq('user_id', userId)
-  if (error) throw error
+  // 소프트 탈퇴(left_at 기록) → 작성한 글/댓글/쪽지 보존. RPC 미배포 시 구 방식(하드 삭제) 폴백.
+  const { error } = await supabase.rpc('leave_group', { p_group_id: groupId, p_user_id: userId || null })
+  if (error) {
+    if (error.code === 'PGRST202' || /leave_group/.test(error.message || '')) {
+      const { error: e2 } = await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId)
+      if (e2) throw e2
+      return
+    }
+    throw error
+  }
 }
 
 // ---- 알림 카테고리별 푸시 설정 (없으면 전체 허용) ----------------
@@ -308,10 +316,14 @@ export async function listMemberCards(groupId) {
 
 // 그룹 멤버 uid → { name(표시 닉네임), avatar } 맵. presence 경합 없이 이름을 확정하는 용도.
 export async function getGroupMemberMap(groupId) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('group_members')
     .select('user_id, display_nickname, avatar_url')
     .eq('group_id', groupId)
+    .is('left_at', null)
+  if (error) { // left_at 미배포 폴백
+    ({ data, error } = await supabase.from('group_members').select('user_id, display_nickname, avatar_url').eq('group_id', groupId))
+  }
   if (error) throw error
   const map = {}
   ;(data ?? []).forEach((m) => {

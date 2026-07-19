@@ -218,6 +218,8 @@ export default function GroupDetail() {
   }, [members])
   const nameOf = (uid) => nameMap[uid]?.name || '알 수 없음'
   const decoOf = (uid) => decoMap[uid]
+  // 상단 멤버 아바타/카운트는 탈퇴자 제외(이름 해석용 nameMap 은 전체 유지)
+  const activeMembers = useMemo(() => members.filter((m) => !m.is_left), [members])
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -403,22 +405,22 @@ export default function GroupDetail() {
           </div>
         </div>
         <div className="gd-head-actions">
-          {members.length > 0 && (
+          {activeMembers.length > 0 && (
             isCouple ? (
               <button type="button" className="gd-members gd-members-couple"
                 aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
-                {members.slice(0, 2).map((m) => (
+                {activeMembers.slice(0, 2).map((m) => (
                   <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} deco={decoOf(m.user_id)} />
                 ))}
                 <span className="gd-couple-heart" aria-hidden="true">♥</span>
               </button>
             ) : (
-              <button type="button" className={`gd-members task-parts tile-members ${members.length > 1 ? 'multi' : ''}`}
+              <button type="button" className={`gd-members task-parts tile-members ${activeMembers.length > 1 ? 'multi' : ''}`}
                 aria-label="멤버 목록" title="멤버 목록" onClick={() => navigate(`/groups/${groupId}/members`)}>
-                {members.slice(0, 3).map((m) => (
+                {activeMembers.slice(0, 3).map((m) => (
                   <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={28} deco={decoOf(m.user_id)} />
                 ))}
-                {members.length - 3 > 0 && <span className="task-parts-more">+{members.length - 3}</span>}
+                {activeMembers.length - 3 > 0 && <span className="task-parts-more">+{activeMembers.length - 3}</span>}
               </button>
             )
           )}

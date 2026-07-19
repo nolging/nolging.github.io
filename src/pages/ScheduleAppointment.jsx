@@ -93,7 +93,7 @@ export default function ScheduleAppointment() {
     setLoading(true); setError('')
     try {
       const [g, t, m] = await Promise.all([getGroup(groupId), getTask(taskId), listMemberCards(groupId)])
-      setGroup(g); setTask(t); setMembers(m)
+      setGroup(g); setTask(t); setMembers((m || []).filter((x) => !x.is_left))
       setTitle(t.title || ''); setCategory(t.category || ''); setMediaInfo(t.media_info || null)
       setComment(t.category && !MEDIA_LOOKUP_CATS.includes(t.category) ? (t.description || '') : '')
 

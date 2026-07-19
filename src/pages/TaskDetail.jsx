@@ -178,7 +178,7 @@ export default function TaskDetail() {
     if (!mentionOpen) return []
     const q = mentionQuery.toLowerCase()
     return members
-      .filter((m) => m.user_id !== profile?.id && m.display_nickname)
+      .filter((m) => m.user_id !== profile?.id && m.display_nickname && !m.is_left)
       .filter((m) => !q || m.display_nickname.toLowerCase().includes(q))
       .slice(0, 6)
   }, [mentionOpen, mentionQuery, members, profile?.id])

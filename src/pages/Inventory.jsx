@@ -701,7 +701,7 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
           listMemberCards(coupleGroupId),
           nametagState(coupleGroupId).catch(() => null),
         ])
-        const p = (cards || []).find((c) => !c.is_self) || null
+        const p = (cards || []).find((c) => !c.is_self && !c.is_left) || null
         setPartner(p)
         const active = st?.active || null
         setUntil(active?.until || null)

@@ -103,6 +103,19 @@ export default function MemberDetail() {
   if (error && !member) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!member) return <div className="page"><div className="empty"><p className="muted">멤버를 찾을 수 없어요.</p></div></div>
 
+  if (member.is_left) {
+    return (
+      <div className="page md-page">
+        <div className="md-profile">
+          <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} deco={decoMap[member.user_id]} />
+          <div className="md-name">{member.display_nickname}</div>
+          <div className="md-left-badge">탈퇴한 멤버</div>
+        </div>
+        <div className="md-empty-hint" style={{ textAlign: 'center' }}>그룹을 나간 멤버예요.<br />남긴 글과 댓글은 그대로 남아 있어요.</div>
+      </div>
+    )
+  }
+
   const ott = Array.isArray(member.subscribed_ott) ? member.subscribed_ott : []
   const hasContact = !!member.contact
   const hasBirth = !!member.birthdate
