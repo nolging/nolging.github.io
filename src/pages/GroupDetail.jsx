@@ -6,7 +6,7 @@ import {
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
   regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit,
 } from '../lib/api'
-import { isAnnivToday } from '../lib/anniv'
+import { isAnnivToday, parseYMD } from '../lib/anniv'
 import {
   taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
 } from '../lib/constants'
@@ -98,6 +98,19 @@ const OwnerBadge = () => (
 )
 function birthLabel(s) {
   if (!s) return null
+  const [y, mo, d] = String(s).split('-')
+  return `${y}.${Number(mo)}.${Number(d)}`
+}
+// 커플 D-day: 기념일부터 오늘까지 며칠째(기념일=1일차)
+function daysSince(dateStr) {
+  const start = parseYMD(dateStr)
+  if (!start) return null
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.floor((today - start) / 86400000) + 1
+}
+function annivLabel(s) {
+  if (!s) return ''
   const [y, mo, d] = String(s).split('-')
   return `${y}.${Number(mo)}.${Number(d)}`
 }
@@ -357,6 +370,11 @@ export default function GroupDetail() {
   }
 
   const terms = taskTerms()
+  // 커플 그룹: 우측 패널을 데이트 페이지(커플 히어로)처럼 구성
+  const coupleMe = isCouple ? (activeMembers.find((m) => m.is_self) || activeMembers[0] || null) : null
+  const couplePartner = isCouple ? (activeMembers.find((m) => !m.is_self) || activeMembers[1] || null) : null
+  const coupleAnniv = group?.anniversary || claimDate || ''
+  const coupleDays = isCouple ? daysSince(coupleAnniv) : null
   const matchesCat = (t) => !WISH_CATEGORIES.includes(t.category) || catFilter.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
@@ -537,33 +555,56 @@ export default function GroupDetail() {
       )}
       </div>{/* /.gd-center */}
 
-      {/* 우측 고정 섹션 (PC 전용): 멤버 목록 */}
-      <aside className="gd-aside gd-aside-right" aria-label="멤버 목록">
-        <div className="gd-aside-head">멤버 {activeMembers.length}</div>
-        <div className="gd-mlist">
-          {activeMembers.map((m) => (
-            <button key={m.user_id} type="button" className="gd-mrow"
-              onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
-              <Avatar src={m.avatar_url} name={m.display_nickname} size={40} deco={decoOf(m.user_id)} />
-              <div className="gd-mrow-main">
-                <div className="gd-mrow-name">
-                  <span className="gd-mrow-nick">{m.display_nickname}</span>
-                  {m.is_self && <span className="mlist-me">나</span>}
-                  {m.role === 'owner' && <OwnerBadge />}
-                </div>
-                <div className="gd-mrow-meta muted">
-                  <span className={m.contact ? '' : 'hidden-v'}>{m.contact || '비공개'}</span>
-                  <span className="gd-mrow-dot" />
-                  <span className={birthLabel(m.birthdate) ? '' : 'hidden-v'}>{birthLabel(m.birthdate) || '비공개'}</span>
-                </div>
+      {/* 우측 고정 섹션 (PC 전용): 커플=데이트 히어로 / 그 외=멤버 목록 */}
+      <aside className={`gd-aside gd-aside-right ${isCouple ? 'gd-aside-couple' : ''}`} aria-label={isCouple ? '데이트' : '멤버 목록'}>
+        {isCouple ? (
+          <div className="gd-couple">
+            <div className="gd-couple-hero">
+              <button type="button" className="gd-couple-face" onClick={() => coupleMe && navigate(`/groups/${groupId}/members/${coupleMe.user_id}`)} disabled={!coupleMe}>
+                <Avatar src={coupleMe?.avatar_url} name={coupleMe?.display_nickname || '나'} size={76} deco={coupleMe && decoOf(coupleMe.user_id)} />
+                <span className="gd-couple-name">{coupleMe?.display_nickname || '나'}</span>
+              </button>
+              <span className="gd-couple-heart" aria-hidden="true">♥</span>
+              <button type="button" className="gd-couple-face" onClick={() => couplePartner && navigate(`/groups/${groupId}/members/${couplePartner.user_id}`)} disabled={!couplePartner}>
+                <Avatar src={couplePartner?.avatar_url} name={couplePartner?.display_nickname || '상대'} size={76} deco={couplePartner && decoOf(couplePartner.user_id)} />
+                <span className="gd-couple-name">{couplePartner?.display_nickname || '상대 없음'}</span>
+              </button>
+            </div>
+            {coupleDays != null && (
+              <div className="gd-couple-dday">
+                <div className="gd-couple-days">{coupleDays.toLocaleString('ko-KR')}<span> 일</span></div>
+                {coupleAnniv && <div className="gd-couple-anniv">{annivLabel(coupleAnniv)} ~ing</div>}
               </div>
+            )}
+            <button type="button" className="gd-couple-more" onClick={() => navigate(`/groups/${groupId}/members`)}>데이트 공간 열기</button>
+          </div>
+        ) : (
+          <>
+            <div className="gd-aside-head">멤버 {activeMembers.length}</div>
+            <div className="gd-mlist">
+              {activeMembers.map((m) => (
+                <button key={m.user_id} type="button" className="gd-mrow"
+                  onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
+                  <Avatar src={m.avatar_url} name={m.display_nickname} size={40} deco={decoOf(m.user_id)} />
+                  <div className="gd-mrow-main">
+                    <div className="gd-mrow-name">
+                      <span className="gd-mrow-nick">{m.display_nickname}</span>
+                      {m.is_self && <span className="mlist-me">나</span>}
+                      {m.role === 'owner' && <OwnerBadge />}
+                    </div>
+                    <div className="gd-mrow-meta muted">
+                      <span className={m.contact ? '' : 'hidden-v'}>{m.contact || '비공개'}</span>
+                      <span className="gd-mrow-dot" />
+                      <span className={birthLabel(m.birthdate) ? '' : 'hidden-v'}>{birthLabel(m.birthdate) || '비공개'}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button type="button" className="gd-invite-btn" onClick={() => setInviteOpen(true)}>
+              <InviteIcon /> 멤버 초대
             </button>
-          ))}
-        </div>
-        {!isCouple && (
-          <button type="button" className="gd-invite-btn" onClick={() => setInviteOpen(true)}>
-            <InviteIcon /> 멤버 초대
-          </button>
+          </>
         )}
       </aside>
 
