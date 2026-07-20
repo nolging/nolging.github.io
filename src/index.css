@@ -269,6 +269,47 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .premium-shop .desknav-me:hover { background: rgba(255,255,255,.08); }
 .premium-shop .desknav-me.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
 .premium-shop .desknav .brand-word { color: #f4f2fd; }
+
+/* PC 알림 드롭다운 (종 아이콘 클릭 시) */
+.desknav-notif { position: relative; }
+.notif-dd {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  width: 380px; max-width: calc(100vw - 32px); max-height: 70vh;
+  background: #fff; border: 1px solid #ececf0; border-radius: 14px;
+  box-shadow: 0 16px 44px rgba(25, 23, 34, .18);
+  z-index: 50; display: flex; flex-direction: column; overflow: hidden;
+  animation: notifDdIn .14s ease;
+}
+@keyframes notifDdIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.notif-dd-head {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid #f1f1f4;
+}
+.notif-dd-title { font-weight: 800; font-size: 15px; color: var(--text); }
+.notif-dd-allread {
+  background: none; border: none; padding: 4px 8px; border-radius: 8px;
+  color: var(--primary); font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.notif-dd-allread:hover { background: var(--primary-soft); }
+.notif-dd-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.notif-dd-empty { padding: 40px 16px; text-align: center; }
+.notif-dd-list { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.notif-dd-row {
+  position: relative; display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 12px; border-radius: 10px; background: transparent;
+}
+.notif-dd-row.clickable { cursor: pointer; }
+.notif-dd-row.clickable:hover { background: rgba(0,0,0,.035); }
+.notif-dd-row.unread { background: var(--primary-soft); }
+.notif-dd-row.unread.clickable:hover { background: color-mix(in srgb, var(--primary-soft) 80%, var(--primary) 12%); }
+.notif-dd-del {
+  flex: 0 0 auto; align-self: center; width: 30px; height: 30px; border-radius: 8px;
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .12s;
+}
+.notif-dd-row:hover .notif-dd-del { opacity: 1; }
+.notif-dd-del:hover { background: rgba(220, 53, 69, .12); color: #dc3545; }
 .content {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; /* 카드 스와이프 시 좌측 오버플로가 가로 스크롤 안 만들게 */

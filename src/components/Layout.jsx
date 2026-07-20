@@ -7,6 +7,7 @@ import Brand from './Brand'
 import PushPrompt from './PushPrompt'
 import MiniPlayer from './MiniPlayer'
 import BlurayPlayer from './BlurayPlayer'
+import NotifDropdown from './NotifDropdown'
 
 function GearIcon() {
   return (
@@ -301,6 +302,19 @@ export default function Layout() {
     return () => clearInterval(iv)
   }, [])
   useEffect(() => { refreshUnread() }, [location.pathname])
+
+  // PC 전용 알림 드롭다운: 종 아이콘 클릭 시 열림 (모바일은 알림 페이지로 이동)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const notifRef = useRef(null)
+  useEffect(() => {
+    if (!notifOpen) return
+    const onDocDown = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false) }
+    const onEsc = (e) => { if (e.key === 'Escape') setNotifOpen(false) }
+    document.addEventListener('pointerdown', onDocDown)
+    document.addEventListener('keydown', onEsc)
+    return () => { document.removeEventListener('pointerdown', onDocDown); document.removeEventListener('keydown', onEsc) }
+  }, [notifOpen])
+  useEffect(() => { setNotifOpen(false) }, [location.pathname])
 
   // 하단 탭 '쪽지' 점: 안 읽은 받은 쪽지가 있으면 표시
   const [noteUnread, setNoteUnread] = useState(0)
@@ -752,9 +766,14 @@ export default function Layout() {
               <NavLink to="/inventory">인벤토리</NavLink>
             </nav>
             <div className="desknav-right">
-              <NavLink to="/notifications" className="desknav-icon" aria-label="알림" title="알림">
-                <BellIcon />{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
-              </NavLink>
+              <div className="desknav-notif" ref={notifRef}>
+                <button type="button" className={`desknav-icon ${notifOpen ? 'active' : ''}`}
+                  aria-label="알림" title="알림" aria-haspopup="dialog" aria-expanded={notifOpen}
+                  onClick={() => setNotifOpen((o) => !o)}>
+                  <BellIcon />{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
+                </button>
+                {notifOpen && <NotifDropdown onClose={() => setNotifOpen(false)} onChange={refreshUnread} />}
+              </div>
               <NavLink to="/notes" className="desknav-icon" aria-label="쪽지" title="쪽지">
                 <span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span>
               </NavLink>

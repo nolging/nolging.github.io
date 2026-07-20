@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNoteState, getNotifEmojis,
+  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNotifEmojis,
 } from '../lib/api'
 import { resolveItemText } from '../lib/storeMeta'
+import { NOTIF_ICONS as ICONS, timeAgo, notifTarget as targetOf, navigateNotif } from '../lib/notifNav'
 
 function TrashIcon() {
   return (
@@ -85,37 +86,6 @@ function NotifRow({ n, icon, clickable, timeText, onOpen, onDelete }) {
   )
 }
 
-function timeAgo(iso) {
-  try {
-    const d = new Date(iso)
-    const diff = (Date.now() - d.getTime()) / 1000
-    if (diff < 60) return '방금'
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
-    if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`
-    return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-  } catch { return '' }
-}
-
-const ICONS = {
-  reply: '↩︎',
-  task_comment: '💬',
-  mention: '@',
-  new_task: '📝',
-  new_member: '👋',
-  accept: '🙌',
-  reminder: '⏰',
-  gift: '🎁',
-  wish: '🌟',
-  couple_ring: '💍',
-  friend_ring: '🤝',
-  cassette: '🎵',
-  link: '🔗',
-  video: '📹',
-  poke: '👉',
-  touch_call: '💋',
-}
-
 export default function Notifications() {
   const navigate = useNavigate()
   const { setRefreshHandler } = useOutletContext()
@@ -143,51 +113,12 @@ export default function Notifications() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
 
-  // 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권
-  const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video'])
-
-  function targetOf(n) {
-    if (NOTE_TYPES.has(n.type)) return '/notes'
-    if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
-    if (n.type === 'praise' && n.group_id) return `/groups/${n.group_id}/praise?mine=1`
-    if (n.task_id && n.group_id) {
-      const base = `/groups/${n.group_id}/tasks/${n.task_id}`
-      return n.comment_id ? `${base}?c=${n.comment_id}` : base
-    }
-    if (n.group_id) return `/groups/${n.group_id}`
-    return null
-  }
-
   async function open(n) {
-    const to = targetOf(n)
     if (!n.is_read) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
       try { await markNotificationRead(n.id) } catch { /* noop */ }
     }
-    if (to === '/notes') {
-      // 수령 상태에 따라 이동 목적지를 바꾼다:
-      //  - 커플 링 수락(claimed) → 링이 적용된 그룹 상세 페이지
-      //  - 커플 링 거절(보낸 사람) → 인벤토리(다시 사용 가능)
-      //  - 선물 수령(받는 사람) → 인벤토리(아이템 들어옴)
-      //  - 그 외(수령 전) → 받은 쪽지함
-      if ((n.type === 'gift' || n.type === 'couple_ring' || n.type === 'friend_ring') && n.note_id) {
-        try {
-          const note = await getNoteState(n.note_id)
-          if (note) {
-            const iAmRecipient = note.recipient_id === n.user_id
-            const iAmSender = note.sender_id === n.user_id
-            if ((n.type === 'couple_ring' || n.type === 'friend_ring') && note.claimed && n.group_id) {
-              navigate(`/groups/${n.group_id}`, { state: { from: 'notifications' } }); return
-            }
-            const toInventory = (iAmRecipient && note.claimed) || (iAmSender && note.rejected)
-            if (toInventory) { navigate('/inventory', { state: { from: 'notifications' } }); return }
-          }
-        } catch { /* 조회 실패 시 쪽지함으로 폴백 */ }
-      }
-      navigate('/notes', { state: { tab: 'received', from: 'notifications' } })
-      return
-    }
-    if (to) navigate(to, { state: { from: 'notifications' } })
+    await navigateNotif(n, navigate)
   }
 
   async function markAll() {
