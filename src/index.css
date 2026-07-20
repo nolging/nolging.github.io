@@ -227,7 +227,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .desknav-left { display: flex; gap: 6px; }
 .desknav-left a { padding: 7px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; font-size: 14px; }
 .desknav-left a:hover { background: rgba(0,0,0,.04); text-decoration: none; }
-.desknav-left a.active { background: var(--primary-soft); color: var(--primary); }
+.desknav-left a.active { color: var(--text); }
 .desknav-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 .desknav-me {
   margin-left: 4px; padding: 7px 12px; border-radius: 8px;
@@ -235,14 +235,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .desknav-me:hover { background: rgba(0,0,0,.04); text-decoration: none; }
-.desknav-me.active { background: var(--primary-soft); color: var(--primary); }
+.desknav-me.active { color: var(--text); }
 .desknav-icon {
   position: relative; width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; color: var(--muted);
 }
 .desknav-icon svg { width: 22px; height: 22px; }
 .desknav-icon:hover { background: rgba(0,0,0,.04); text-decoration: none; }
-.desknav-icon.active { color: var(--primary); background: var(--primary-soft); }
+.desknav-icon.active { color: var(--text); }
 .desknav-icon .nav-ico-wrap { position: relative; display: inline-flex; }
 .desknav-icon .nav-dot {
   position: absolute; top: 0; right: 0;
@@ -263,13 +263,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .premium-shop .desknav { background: transparent; }
 .premium-shop .desknav-left a { color: rgba(233,230,250,.55); }
 .premium-shop .desknav-left a:hover { background: rgba(255,255,255,.08); }
-.premium-shop .desknav-left a.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
+.premium-shop .desknav-left a.active { color: #fff; }
 .premium-shop .desknav-icon { color: rgba(233,230,250,.7); }
 .premium-shop .desknav-icon:hover { background: rgba(255,255,255,.08); }
-.premium-shop .desknav-icon.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
+.premium-shop .desknav-icon.active { color: #fff; }
 .premium-shop .desknav-me { color: #f4f2fd; }
 .premium-shop .desknav-me:hover { background: rgba(255,255,255,.08); }
-.premium-shop .desknav-me.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
+.premium-shop .desknav-me.active { color: #fff; }
 .premium-shop .desknav .brand-word { color: #f4f2fd; }
 
 /* PC 알림 드롭다운 (종 아이콘 클릭 시) */
