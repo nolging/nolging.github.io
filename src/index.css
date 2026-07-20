@@ -591,6 +591,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 내 그룹 검색줄: 좌측 돋보기 + 우측 원형 액션(만들기/가입) — 검색 열리면 인풋이 덮어 가림 */
 /* 내 그룹 인사 헤더 (시안) */
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* PC: 홈(내 그룹) 인사 헤더는 상단 내비게이션으로 대체 → 숨김 */
+@media (min-width: 641px) { .dash-head { display: none; } }
 .dash-greet-when { font-size: 13px; font-weight: 600; color: var(--primary); }
 .dash-greet-title { margin: 2px 0 0; font-size: 23px; font-weight: 800; letter-spacing: -.8px; color: var(--text); }
 .dash-bell { position: relative; display: inline-flex; color: #b0b0b8; flex-shrink: 0; }
