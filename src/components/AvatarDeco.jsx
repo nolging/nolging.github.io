@@ -107,40 +107,42 @@ function Blush() {
   )
 }
 
+// 픽셀 선글라스: 왼쪽 알(10w) + 상단 브릿지(3) + 오른쪽 알(10w), 5행. F=검정 W=흰 .=빈칸
+// (다리 없음. 사용자가 준 픽셀 도안 그대로)
+const PIXEL_L = ['FFFFFFFFFF', 'FWFWFFFFFF', '.FWFWFFFFF', '..FWFWFFF.', '...FFFFF..']
+const PIXEL_R = ['FFFFFFFFFF', 'WFWFFFFFFF', 'FWFWFFFFF.', '.FWFWFFF..', '..FFFFF...']
+const PIXEL_BR = ['FFF', '...', '...', '...', '...']
+const PIXEL_ROWS = PIXEL_L.map((l, i) => l + PIXEL_BR[i] + PIXEL_R[i])
+const PIXEL_PX = 3.2, PIXEL_COLS = 23
+const PIXEL_X0 = (100 - PIXEL_COLS * PIXEL_PX) / 2
+const PIXEL_Y0 = 44 - (PIXEL_ROWS.length * PIXEL_PX) / 2
+
 function PixelShades() {
-  // 8비트 픽셀 선글라스: 각진 검은 렌즈 2개 + 브릿지 + 팔, 흰 픽셀 하이라이트
-  return (
-    <g shapeRendering="crispEdges">
-      <g fill="#17171b">
-        <rect x="14" y="41" width="8" height="4" />
-        <rect x="78" y="41" width="8" height="4" />
-        <rect x="22" y="39" width="22" height="14" />
-        <rect x="44" y="41" width="12" height="4" />
-        <rect x="56" y="39" width="22" height="14" />
-      </g>
-      <g fill="#ffffff">
-        <rect x="25" y="42" width="4" height="4" />
-        <rect x="29" y="42" width="4" height="4" />
-        <rect x="25" y="46" width="4" height="4" />
-        <rect x="59" y="42" width="4" height="4" />
-        <rect x="63" y="42" width="4" height="4" />
-        <rect x="59" y="46" width="4" height="4" />
-      </g>
-    </g>
-  )
+  const cells = []
+  PIXEL_ROWS.forEach((row, r) => {
+    for (let c = 0; c < PIXEL_COLS; c++) {
+      const ch = row[c]
+      if (ch === '.') continue
+      cells.push(
+        <rect key={`${r}-${c}`} x={+(PIXEL_X0 + c * PIXEL_PX).toFixed(2)} y={+(PIXEL_Y0 + r * PIXEL_PX).toFixed(2)}
+          width={PIXEL_PX} height={PIXEL_PX} fill={ch === 'W' ? '#ffffff' : '#17171b'} />,
+      )
+    }
+  })
+  return <g shapeRendering="crispEdges">{cells}</g>
 }
 
 function AlienShades() {
-  // 왹져(외계인) 선글라스: 초록 프레임 + 안테나 + 검은 슬랜티드 아몬드 렌즈
+  // 왹져(외계인) 선글라스: 초록 외계인 프레임 + 뾰족한 귀 + 검은 슬랜티드 아몬드 렌즈 (다리 없음)
   return (
     <g>
-      <path d="M18 44 C18 35 27 33 37 36 C43 38 47 42 50 44 C53 42 57 38 63 36 C73 33 82 35 82 44 C82 52 74 56 66 54 C58 52 53 48 50 46 C47 48 42 52 34 54 C26 56 18 52 18 44 Z" fill="#35c14a" />
-      <path d="M26 36 C22 28 24 24 28 26 C31 28 31 33 30 37 Z" fill="#2aa93c" />
-      <path d="M74 36 C78 28 76 24 72 26 C69 28 69 33 70 37 Z" fill="#2aa93c" />
-      <g transform="rotate(-18 35 44)"><ellipse cx="35" cy="44" rx="9.5" ry="6.2" fill="#141414" /></g>
-      <g transform="rotate(18 65 44)"><ellipse cx="65" cy="44" rx="9.5" ry="6.2" fill="#141414" /></g>
-      <circle cx="32" cy="41.5" r="1.5" fill="#fff" opacity="0.85" />
-      <circle cx="62" cy="41.5" r="1.5" fill="#fff" opacity="0.85" />
+      <path d="M34 42 C26 30 20 20 26 14 C34 20 39 32 40 41 Z" fill="#35c14a" />
+      <path d="M66 42 C74 30 80 20 74 14 C66 20 61 32 60 41 Z" fill="#35c14a" />
+      <path d="M22 46 C20 37 30 34 40 39 C45 41 48 44 50 45 C52 44 55 41 60 39 C70 34 80 37 78 46 C79 55 69 60 59 56 C54 54 50 50 50 50 C50 50 46 54 41 56 C31 60 21 55 22 46 Z" fill="#35c14a" />
+      <g transform="rotate(-24 37 45)"><ellipse cx="37" cy="45" rx="10.5" ry="6.6" fill="#141414" /></g>
+      <g transform="rotate(24 63 45)"><ellipse cx="63" cy="45" rx="10.5" ry="6.6" fill="#141414" /></g>
+      <circle cx="33" cy="42.5" r="1.7" fill="#fff" opacity="0.85" />
+      <circle cx="59" cy="42.5" r="1.7" fill="#fff" opacity="0.85" />
     </g>
   )
 }
@@ -153,8 +155,8 @@ const PREVIEW_VB = {
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
-  'deco-pixel-shades': '12 37 76 20',
-  'deco-alien-shades': '14 22 72 40',
+  'deco-pixel-shades': '10 33 80 22',
+  'deco-alien-shades': '16 12 68 40',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
