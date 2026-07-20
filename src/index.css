@@ -410,14 +410,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-mrow-meta { display: flex; align-items: center; gap: 7px; font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gd-mrow-dot { width: 3px; height: 3px; border-radius: 50%; background: #cfccdb; flex-shrink: 0; }
 
-  /* 커플 그룹: 데이트 히어로 스타일 우측 패널 */
-  .gd-aside-couple { display: flex; flex-direction: column; align-items: center; }
-  .gd-couple { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; padding-top: 6px; }
-  .gd-couple-hero { display: flex; align-items: flex-start; justify-content: center; gap: 6px; width: 100%; }
-  .gd-couple-face { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 0; }
+  /* 그룹 상세: 좌측에 '위시 작성'이 있으므로 데스크톱에선 우하단 FAB 숨김 */
+  .gd-page .fab { display: none; }
+
+  /* 커플 그룹: 데이트 히어로 스타일 우측 패널(흰색 박스, 꾸미기 안 잘리게 overflow 허용) */
+  .gd-aside-couple { align-self: start; overflow: visible; }
+  .gd-couple-card { background: var(--surface); border-radius: 18px; padding: 32px 18px 20px; overflow: visible; }
+  .gd-couple { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+  .gd-couple-hero { display: flex; align-items: flex-start; justify-content: center; gap: 8px; width: 100%; }
+  .gd-couple-face { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; border: none; cursor: pointer; padding: 0; }
   .gd-couple-face:disabled { cursor: default; opacity: .85; }
   .gd-couple-name { max-width: 100%; font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gd-couple-heart { margin-top: 24px; color: #ec6a8f; font-size: 26px; line-height: 1; flex-shrink: 0; }
+  .gd-couple-heart { flex-shrink: 0; margin-top: 20px; }
   .gd-couple-dday { text-align: center; }
   .gd-couple-days { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: var(--text); }
   .gd-couple-days span { font-size: 15px; font-weight: 700; }
