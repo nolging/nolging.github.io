@@ -113,9 +113,9 @@ const PIXEL_L = ['FFFFFFFFFF', 'FWFWFFFFFF', '.FWFWFFFFF', '..FWFWFFF.', '...FFF
 const PIXEL_R = ['FFFFFFFFFF', 'WFWFFFFFFF', 'FWFWFFFFF.', '.FWFWFFF..', '..FFFFF...']
 const PIXEL_BR = ['FFF', '...', '...', '...', '...']
 const PIXEL_ROWS = PIXEL_L.map((l, i) => l + PIXEL_BR[i] + PIXEL_R[i])
-const PIXEL_PX = 3.2, PIXEL_COLS = 23
+const PIXEL_PX = 3.5, PIXEL_COLS = 23, PIXEL_CY = 46.5
 const PIXEL_X0 = (100 - PIXEL_COLS * PIXEL_PX) / 2
-const PIXEL_Y0 = 44 - (PIXEL_ROWS.length * PIXEL_PX) / 2
+const PIXEL_Y0 = PIXEL_CY - (PIXEL_ROWS.length * PIXEL_PX) / 2
 
 function PixelShades() {
   const cells = []
@@ -170,7 +170,7 @@ const PREVIEW_VB = {
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
-  'deco-pixel-shades': '10 33 80 22',
+  'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '18 28 64 38',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
