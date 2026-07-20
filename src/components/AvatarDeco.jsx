@@ -144,20 +144,21 @@ const football = (cx, cy, a, b, ty) => {
 function AlienShades() {
   // 왹져(외계인) 선글라스: 통통한 럭비공 초록 테 + 검은 렌즈.
   // 왼쪽 알은 오른쪽으로(치켜), 오른쪽 알은 왼쪽으로 45° 기울임. 브릿지는 직선으로 양 알에 닿음. 다리/귀 없음.
-  const A = 18.5, B = 9.5, TY = 4.5
+  const A = 21, B = 11, TY = 5, LC = 34, RC = 66
   return (
     <g>
-      <g transform="rotate(53 33 46)">
-        <path d={football(33, 46, A, B, TY)} fill="#35c14a" />
-        <path d={football(33, 46, A - 2.4, B - 2.1, TY)} fill="#141414" />
+      {/* 브릿지: 렌즈 뒤에 넓게 깔아 렌즈가 양끝을 덮게 → 틈 없이 이어짐 */}
+      <rect x="30" y="43" width="40" height="6" fill="#35c14a" />
+      <g transform={`rotate(53 ${LC} 46)`}>
+        <path d={football(LC, 46, A, B, TY)} fill="#35c14a" />
+        <path d={football(LC, 46, A - 2.6, B - 2.2, TY)} fill="#141414" />
       </g>
-      <g transform="rotate(-53 67 46)">
-        <path d={football(67, 46, A, B, TY)} fill="#35c14a" />
-        <path d={football(67, 46, A - 2.4, B - 2.1, TY)} fill="#141414" />
+      <g transform={`rotate(-53 ${RC} 46)`}>
+        <path d={football(RC, 46, A, B, TY)} fill="#35c14a" />
+        <path d={football(RC, 46, A - 2.6, B - 2.2, TY)} fill="#141414" />
       </g>
-      <rect x="46" y="43.5" width="8" height="5" fill="#35c14a" />
-      <circle cx="34" cy="39" r="1.7" fill="#fff" opacity="0.85" />
-      <circle cx="66" cy="39" r="1.7" fill="#fff" opacity="0.85" />
+      <circle cx={LC + 1} cy="39" r="1.7" fill="#fff" opacity="0.85" />
+      <circle cx={RC - 1} cy="39" r="1.7" fill="#fff" opacity="0.85" />
     </g>
   )
 }
@@ -171,7 +172,7 @@ const PREVIEW_VB = {
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
-  'deco-alien-shades': '18 28 64 38',
+  'deco-alien-shades': '17 27 66 38',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
