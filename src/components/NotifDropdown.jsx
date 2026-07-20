@@ -1,20 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNotifEmojis,
+  listNotifications, markNotificationRead, markAllNotificationsRead, getNotifEmojis,
 } from '../lib/api'
 import { resolveItemText } from '../lib/storeMeta'
 import { NOTIF_ICONS as ICONS, timeAgo, notifTarget as targetOf, navigateNotif } from '../lib/notifNav'
-
-function TrashIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  )
-}
 
 // PC 전용: 종 아이콘을 누르면 뜨는 알림 드롭다운.
 // 알림 페이지(Notifications.jsx)와 동일한 데이터/이동 로직을 공유한다(notifNav.js).
@@ -48,13 +38,6 @@ export default function NotifDropdown({ onClose, onChange }) {
   async function markAll() {
     setItems((prev) => prev.map((x) => ({ ...x, is_read: true })))
     try { await markAllNotificationsRead() } catch (err) { setError(err.message) }
-    onChange?.()
-  }
-
-  async function remove(e, id) {
-    e.stopPropagation()
-    setItems((prev) => prev.filter((x) => x.id !== id))
-    try { await deleteNotification(id) } catch (err) { setError(err.message) }
     onChange?.()
   }
 
@@ -93,8 +76,6 @@ export default function NotifDropdown({ onClose, onChange }) {
                     </div>
                     {n.body && <p className="notif-text">{resolveItemText(n.body)}</p>}
                   </div>
-                  <button type="button" className="notif-dd-del" aria-label="삭제" title="삭제"
-                    onClick={(e) => remove(e, n.id)}><TrashIcon /></button>
                 </li>
               )
             })}
