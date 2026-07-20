@@ -567,7 +567,7 @@ export default function GroupDetail() {
                 <button type="button" className="gd-couple-ava" onClick={() => coupleMe && navigate(`/groups/${groupId}/members/${coupleMe.user_id}`)} disabled={!coupleMe} aria-label={coupleMe?.display_nickname || '나'}>
                   <Avatar src={coupleMe?.avatar_url} name={coupleMe?.display_nickname || '나'} size={72} deco={coupleMe && decoOf(coupleMe.user_id)} />
                 </button>
-                <svg className="gd-couple-heart" viewBox="0 0 24 24" fill="#ec6a8f" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                <svg className="gd-couple-hheart" viewBox="0 0 24 24" fill="#ec6a8f" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
                 <button type="button" className="gd-couple-ava" onClick={() => couplePartner && navigate(`/groups/${groupId}/members/${couplePartner.user_id}`)} disabled={!couplePartner} aria-label={couplePartner?.display_nickname || '상대'}>
                   <Avatar src={couplePartner?.avatar_url} name={couplePartner?.display_nickname || '상대'} size={72} deco={couplePartner && decoOf(couplePartner.user_id)} />
                 </button>

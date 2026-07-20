@@ -421,7 +421,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-couple-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
   .gd-couple-ava { flex: 0 0 72px; width: 72px; height: 72px; background: none; border: none; padding: 0; cursor: pointer; overflow: visible; }
   .gd-couple-ava:disabled { cursor: default; opacity: .85; }
-  .gd-couple-heart {
+  .gd-couple-hheart {
     flex: 0 0 34px; width: 34px; height: 34px; display: block;
     filter: drop-shadow(0 6px 14px rgba(236, 106, 143, .45));
     transform-origin: center; animation: csx-beat 1.8s ease-in-out infinite;
