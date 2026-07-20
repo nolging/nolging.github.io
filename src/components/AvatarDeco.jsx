@@ -132,17 +132,24 @@ function PixelShades() {
   return <g shapeRendering="crispEdges">{cells}</g>
 }
 
+// 럭비공(아몬드) 렌즈 path: 좌우로 뾰족, 위/아래 곡선
+const almondPath = (l, r, b) => { const cx = (l + r) / 2; return `M${l} 45 Q${cx} ${45 - b} ${r} 45 Q${cx} ${45 + b} ${l} 45 Z` }
+
 function AlienShades() {
-  // 왹져(외계인) 선글라스: 초록 외계인 프레임 + 뾰족한 귀 + 검은 슬랜티드 아몬드 렌즈 (다리 없음)
+  // 왹져(외계인) 선글라스: 럭비공(🏈) 모양 초록 테 + 검은 렌즈, 오른쪽=🏈·왼쪽=좌우반전. 다리/귀 없음.
   return (
     <g>
-      <path d="M34 42 C26 30 20 20 26 14 C34 20 39 32 40 41 Z" fill="#35c14a" />
-      <path d="M66 42 C74 30 80 20 74 14 C66 20 61 32 60 41 Z" fill="#35c14a" />
-      <path d="M22 46 C20 37 30 34 40 39 C45 41 48 44 50 45 C52 44 55 41 60 39 C70 34 80 37 78 46 C79 55 69 60 59 56 C54 54 50 50 50 50 C50 50 46 54 41 56 C31 60 21 55 22 46 Z" fill="#35c14a" />
-      <g transform="rotate(-24 37 45)"><ellipse cx="37" cy="45" rx="10.5" ry="6.6" fill="#141414" /></g>
-      <g transform="rotate(24 63 45)"><ellipse cx="63" cy="45" rx="10.5" ry="6.6" fill="#141414" /></g>
-      <circle cx="33" cy="42.5" r="1.7" fill="#fff" opacity="0.85" />
-      <circle cx="59" cy="42.5" r="1.7" fill="#fff" opacity="0.85" />
+      <g transform="rotate(14 35 45)">
+        <path d={almondPath(21, 49, 8)} fill="#35c14a" />
+        <path d={almondPath(23.5, 46.5, 6.2)} fill="#141414" />
+      </g>
+      <g transform="rotate(-14 65 45)">
+        <path d={almondPath(51, 79, 8)} fill="#35c14a" />
+        <path d={almondPath(53.5, 76.5, 6.2)} fill="#141414" />
+      </g>
+      <path d="M46 44 Q50 41.5 54 44 Q50 47.5 46 44 Z" fill="#35c14a" />
+      <circle cx="31" cy="43" r="1.7" fill="#fff" opacity="0.85" />
+      <circle cx="61" cy="43" r="1.7" fill="#fff" opacity="0.85" />
     </g>
   )
 }
@@ -156,7 +163,7 @@ const PREVIEW_VB = {
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '10 33 80 22',
-  'deco-alien-shades': '16 12 68 40',
+  'deco-alien-shades': '16 30 68 30',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
