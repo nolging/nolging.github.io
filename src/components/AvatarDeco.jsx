@@ -140,12 +140,12 @@ function AlienShades() {
   return (
     <g>
       <g transform="rotate(14 35 45)">
-        <path d={almondPath(21, 49, 8)} fill="#35c14a" />
-        <path d={almondPath(23.5, 46.5, 6.2)} fill="#141414" />
+        <path d={almondPath(21, 49, 10)} fill="#35c14a" />
+        <path d={almondPath(23.5, 46.5, 8)} fill="#141414" />
       </g>
       <g transform="rotate(-14 65 45)">
-        <path d={almondPath(51, 79, 8)} fill="#35c14a" />
-        <path d={almondPath(53.5, 76.5, 6.2)} fill="#141414" />
+        <path d={almondPath(51, 79, 10)} fill="#35c14a" />
+        <path d={almondPath(53.5, 76.5, 8)} fill="#141414" />
       </g>
       <path d="M46 44 Q50 41.5 54 44 Q50 47.5 46 44 Z" fill="#35c14a" />
       <circle cx="31" cy="43" r="1.7" fill="#fff" opacity="0.85" />
@@ -163,7 +163,7 @@ const PREVIEW_VB = {
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '10 33 80 22',
-  'deco-alien-shades': '16 30 68 30',
+  'deco-alien-shades': '16 28 68 34',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
