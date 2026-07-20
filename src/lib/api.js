@@ -752,13 +752,16 @@ export async function listReceivedNotes(userId, limit = 15, offset = 0) {
   throw error
 }
 
-// 받은 쪽지 중 아직 확인 안 한(is_read=false) 개수
+// 받은 쪽지 중 아직 확인 안 한(is_read=false) 개수.
+// 익명 쪽지는 notes_select RLS 상 수신자가 직접 조회할 수 없어 select count 에서 빠진다.
+// → SECURITY DEFINER RPC(unread_note_count) 로 익명 포함 카운트. 미배포 시 직접 조회로 폴백.
 export async function unreadNoteCount(userId) {
   if (!userId) return 0
-  const { count, error } = await supabase
+  const { data, error } = await supabase.rpc('unread_note_count')
+  if (!error) return data || 0
+  const { count } = await supabase
     .from('notes').select('id', { count: 'exact', head: true })
     .eq('recipient_id', userId).eq('is_read', false)
-  if (error) return 0
   return count || 0
 }
 
