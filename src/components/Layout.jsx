@@ -749,6 +749,7 @@ export default function Layout() {
               <NavLink to="/" end>내 그룹</NavLink>
               <NavLink to="/schedule">일정</NavLink>
               <NavLink to="/store">상점</NavLink>
+              <NavLink to="/inventory">인벤토리</NavLink>
             </nav>
             <div className="desknav-right">
               <NavLink to="/notifications" className="desknav-icon" aria-label="알림" title="알림">
@@ -757,7 +758,7 @@ export default function Layout() {
               <NavLink to="/notes" className="desknav-icon" aria-label="쪽지" title="쪽지">
                 <span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span>
               </NavLink>
-              <NavLink to="/me" className="desknav-icon" aria-label="마이 페이지" title="마이 페이지"><MyIcon /></NavLink>
+              <NavLink to="/me" className="desknav-me" title="마이 페이지">{profile?.nickname || '마이 페이지'}</NavLink>
             </div>
           </div>
         </header>
