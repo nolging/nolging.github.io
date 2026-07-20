@@ -132,24 +132,32 @@ function PixelShades() {
   return <g shapeRendering="crispEdges">{cells}</g>
 }
 
-// 럭비공(아몬드) 렌즈 path: 좌우로 뾰족, 위/아래 곡선
-const almondPath = (l, r, b) => { const cx = (l + r) / 2; return `M${l} 45 Q${cx} ${45 - b} ${r} 45 Q${cx} ${45 + b} ${l} 45 Z` }
+// 럭비공(끝 살짝 둥근) 렌즈 path: 통통한 몸통 + 살짝 둥근 좌우 끝
+const football = (cx, cy, a, b, ty) => {
+  const rx = a * 0.5
+  return `M${cx - a} ${cy} C${cx - a} ${cy - ty} ${cx - rx} ${cy - b} ${cx} ${cy - b}`
+    + ` C${cx + rx} ${cy - b} ${cx + a} ${cy - ty} ${cx + a} ${cy}`
+    + ` C${cx + a} ${cy + ty} ${cx + rx} ${cy + b} ${cx} ${cy + b}`
+    + ` C${cx - rx} ${cy + b} ${cx - a} ${cy + ty} ${cx - a} ${cy} Z`
+}
 
 function AlienShades() {
-  // 왹져(외계인) 선글라스: 럭비공(🏈) 모양 초록 테 + 검은 렌즈, 오른쪽=🏈·왼쪽=좌우반전. 다리/귀 없음.
+  // 왹져(외계인) 선글라스: 통통한 럭비공 초록 테 + 검은 렌즈.
+  // 왼쪽 알은 오른쪽으로(치켜), 오른쪽 알은 왼쪽으로 45° 기울임. 브릿지는 직선으로 양 알에 닿음. 다리/귀 없음.
+  const A = 15, B = 12, TY = 5.5
   return (
     <g>
-      <g transform="rotate(14 35 45)">
-        <path d={almondPath(21, 49, 10)} fill="#35c14a" />
-        <path d={almondPath(23.5, 46.5, 8)} fill="#141414" />
+      <g transform="rotate(-45 33 46)">
+        <path d={football(33, 46, A, B, TY)} fill="#35c14a" />
+        <path d={football(33, 46, A - 2.4, B - 2.2, TY)} fill="#141414" />
       </g>
-      <g transform="rotate(-14 65 45)">
-        <path d={almondPath(51, 79, 10)} fill="#35c14a" />
-        <path d={almondPath(53.5, 76.5, 8)} fill="#141414" />
+      <g transform="rotate(45 67 46)">
+        <path d={football(67, 46, A, B, TY)} fill="#35c14a" />
+        <path d={football(67, 46, A - 2.4, B - 2.2, TY)} fill="#141414" />
       </g>
-      <path d="M46 44 Q50 41.5 54 44 Q50 47.5 46 44 Z" fill="#35c14a" />
-      <circle cx="31" cy="43" r="1.7" fill="#fff" opacity="0.85" />
-      <circle cx="61" cy="43" r="1.7" fill="#fff" opacity="0.85" />
+      <rect x="46" y="43.5" width="8" height="5" fill="#35c14a" />
+      <circle cx="30" cy="40" r="1.8" fill="#fff" opacity="0.85" />
+      <circle cx="64" cy="40" r="1.8" fill="#fff" opacity="0.85" />
     </g>
   )
 }
@@ -163,7 +171,7 @@ const PREVIEW_VB = {
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '10 33 80 22',
-  'deco-alien-shades': '16 28 68 34',
+  'deco-alien-shades': '18 31 64 34',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
