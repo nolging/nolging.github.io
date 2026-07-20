@@ -67,6 +67,20 @@ const GearIcon = () => (
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 )
+// PC 좌측 섹션: 유형 필터 / 멤버 초대 아이콘
+const FilterIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+)
+const InviteIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+    <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+  </svg>
+)
 // PC 우측 멤버 목록: 방장 왕관 배지
 const OwnerBadge = () => (
   <span className="mlist-owner" title="방장" aria-label="방장">
@@ -435,7 +449,17 @@ export default function GroupDetail() {
               <span className="gd-aside-mcount">멤버 {activeMembers.length}</span>
             </button>
           )}
-          <Link to={`/groups/${groupId}/settings/group`} className="gd-aside-set"><GearIcon /> 그룹 설정</Link>
+          <div className="gd-aside-acts">
+            <button type="button" className={`gd-aside-act ${catActive ? 'on' : ''}`} onClick={() => setFilterOpen(true)}>
+              <FilterIcon /> 유형 필터{catActive && <span className="gd-aside-actdot" aria-hidden="true" />}
+            </button>
+            {!isCouple && (
+              <button type="button" className="gd-aside-act" onClick={() => setInviteOpen(true)}>
+                <InviteIcon /> 멤버 초대
+              </button>
+            )}
+            <Link to={`/groups/${groupId}/settings/group`} className="gd-aside-act"><GearIcon /> 그룹 설정</Link>
+          </div>
         </div>
       </aside>
 

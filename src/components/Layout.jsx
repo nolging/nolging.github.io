@@ -407,8 +407,9 @@ export default function Layout() {
     )
   } else if (drawMatch) {
     // 그림판: 좌측 뒤로 — 멤버 목록(커플 공간)에서 왔으면 멤버 목록으로, 아니면 그룹으로
+    // topbar-keep: PC 에서도 '갤러리에 저장' 버튼을 위해 상단바 유지
     topbar = (
-      <header className="topbar">
+      <header className="topbar topbar-keep">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">낙서장</span>
         {headerSave && (
@@ -754,9 +755,9 @@ export default function Layout() {
         </div>
       )}
       {topbar}
-      {/* PC 전용 상단 내비게이션 (모바일 하단 탭을 상단으로) — .page 와 동일하게 1080px 중앙 정렬 */}
-      {showBottomNav && (
-        <header className="desknav">
+      {/* PC 전용 상단 내비게이션 (모바일 하단 탭을 상단으로) — 모든 페이지에서 항상 노출.
+          .page 와 동일하게 1080px 중앙 정렬(좌우 패딩은 바깥 .desknav 가 담당) */}
+      <header className="desknav">
           <div className="desknav-inner">
             <Link to="/" className="brand"><Brand /></Link>
             <nav className="desknav-left">
@@ -781,7 +782,6 @@ export default function Layout() {
             </div>
           </div>
         </header>
-      )}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
           style={{ top: ptrTop, transform: `translateY(${(refreshing ? 46 : pull) * 0.5 - 13}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
