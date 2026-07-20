@@ -383,6 +383,21 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-aside-act:hover { background: #e9e9ee; text-decoration: none; }
   .gd-aside-act.on { background: var(--primary-soft); color: var(--primary); }
   .gd-aside-actdot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); margin-left: auto; }
+  /* 위시 작성(먹색 CTA) */
+  .gd-aside-wish {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 11px 14px; border: none; border-radius: 12px; cursor: pointer;
+    background: var(--text); color: #fff; font-weight: 700; font-size: 13.5px; text-align: left;
+  }
+  .gd-aside-wish:hover { background: #2c2937; }
+  /* 우측 멤버 목록 하단: 멤버 초대 */
+  .gd-invite-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+    margin-top: 10px; padding: 11px 14px; border-radius: 12px;
+    border: 1px solid #e6e3ef; background: #fff; color: var(--text);
+    font-weight: 700; font-size: 13.5px; cursor: pointer;
+  }
+  .gd-invite-btn:hover { background: var(--surface); border-color: #d7d3e6; }
 
   /* 우측 멤버 목록 */
   .gd-aside-head { font-size: 13px; font-weight: 800; color: var(--muted); padding: 2px 6px 10px; }

@@ -67,6 +67,13 @@ const GearIcon = () => (
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 )
+// PC 좌측 섹션: 위시 작성(＋) 아이콘
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+)
 // PC 좌측 섹션: 유형 필터 / 멤버 초대 아이콘
 const FilterIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -450,14 +457,13 @@ export default function GroupDetail() {
             </button>
           )}
           <div className="gd-aside-acts">
+            <button type="button" className="gd-aside-wish"
+              onClick={() => navigate(`/groups/${groupId}/tasks/new`, { state: { groupType: group.group_type } })}>
+              <PlusIcon /> {terms.noun} 작성
+            </button>
             <button type="button" className={`gd-aside-act ${catActive ? 'on' : ''}`} onClick={() => setFilterOpen(true)}>
               <FilterIcon /> 유형 필터{catActive && <span className="gd-aside-actdot" aria-hidden="true" />}
             </button>
-            {!isCouple && (
-              <button type="button" className="gd-aside-act" onClick={() => setInviteOpen(true)}>
-                <InviteIcon /> 멤버 초대
-              </button>
-            )}
             <Link to={`/groups/${groupId}/settings/group`} className="gd-aside-act"><GearIcon /> 그룹 설정</Link>
           </div>
         </div>
@@ -554,6 +560,11 @@ export default function GroupDetail() {
             </button>
           ))}
         </div>
+        {!isCouple && (
+          <button type="button" className="gd-invite-btn" onClick={() => setInviteOpen(true)}>
+            <InviteIcon /> 멤버 초대
+          </button>
+        )}
       </aside>
 
       {/* 태스크 작성 버튼 (고정) */}
