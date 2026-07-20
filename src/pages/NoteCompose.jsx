@@ -233,8 +233,19 @@ export default function NoteCompose() {
 
   const isActive = (id) => (id === 'eraser' ? anonymous : useItem?.id === id)
 
+  // PC 팝업: 배경(백드롭) 클릭 시 닫기 (모바일은 일반 페이지라 무시)
+  function onBackdrop(e) {
+    if (e.target !== e.currentTarget) return
+    if (window.matchMedia?.('(min-width: 641px)')?.matches) navigate(-1)
+  }
+
   return (
-    <div className="page nc-page">
+    <div className="page nc-page" onClick={onBackdrop}>
+      {/* PC: 팝업(모달) 카드로 표시. 모바일: display:contents 로 기존 레이아웃 유지 */}
+      <div className="nc-card">
+      <button type="button" className="nc-close" onClick={() => navigate(-1)} aria-label="닫기" title="닫기">
+        <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
       {error && <div className="alert alert-error">{error}</div>}
 
       {/* To. */}
@@ -332,6 +343,7 @@ export default function NoteCompose() {
           {sending ? '보내는 중…' : '쪽지 보내기'}
         </button>
       </div>
+      </div>{/* /.nc-card */}
 
       {/* 사용 아이템 시트 */}
       <BottomSheet open={sheet === 'use'} onClose={() => setSheet(null)}>

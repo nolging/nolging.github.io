@@ -2923,6 +2923,31 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ===== 쪽지 쓰기 (시안) ===== */
 .nc-page { display: flex; flex-direction: column; gap: 13px; padding-bottom: 8px; }
+/* 쪽지 쓰기: 모바일은 일반 페이지(카드 래퍼는 투명), PC는 팝업(모달) */
+.nc-card { display: contents; }
+.nc-close { display: none; }
+@media (min-width: 641px) {
+  .nc-page {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    padding: 24px; box-sizing: border-box; overflow-y: auto;
+    background: rgba(25, 23, 34, .45);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  .nc-card {
+    display: flex; flex-direction: column; gap: 13px; position: relative;
+    width: 100%; max-width: 460px; max-height: calc(100vh - 48px);
+    overflow-y: auto; box-sizing: border-box;
+    background: var(--bg); border-radius: 20px; padding: 46px 22px 22px;
+    box-shadow: 0 24px 60px rgba(25, 23, 34, .3);
+  }
+  .nc-close {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 12px; right: 12px; width: 34px; height: 34px;
+    border: none; border-radius: 50%; background: var(--canvas); color: var(--muted); cursor: pointer; z-index: 1;
+  }
+  .nc-close:hover { background: #e9e9ee; color: var(--text); }
+}
 .nc-label { font-size: 13px; font-weight: 800; color: #4a4753; flex-shrink: 0; }
 .nc-placeholder { color: #b0b0b8; font-size: 13.5px; font-weight: 600; }
 .nc-to {
