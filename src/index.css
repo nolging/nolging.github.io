@@ -213,6 +213,52 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .topnav a.active { background: var(--primary-soft); color: var(--primary); }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .me { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* PC 전용 상단 내비게이션 (모바일 하단 탭을 상단바로) — 기본 숨김, 데스크톱에서만 노출 */
+.desknav { display: none; flex: 0 0 auto; background: var(--bg); z-index: 11; }
+.desknav-inner {
+  max-width: 1080px; width: 100%; margin: 0 auto;
+  padding: env(safe-area-inset-top) 24px 0; height: calc(58px + env(safe-area-inset-top));
+  box-sizing: border-box;
+  display: flex; align-items: center; gap: 20px;
+}
+.desknav-inner .brand { flex-shrink: 0; }
+.desknav-left { display: flex; gap: 6px; }
+.desknav-left a { padding: 7px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; font-size: 14px; }
+.desknav-left a:hover { background: rgba(0,0,0,.04); text-decoration: none; }
+.desknav-left a.active { background: var(--primary-soft); color: var(--primary); }
+.desknav-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.desknav-icon {
+  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--muted);
+}
+.desknav-icon svg { width: 22px; height: 22px; }
+.desknav-icon:hover { background: rgba(0,0,0,.04); text-decoration: none; }
+.desknav-icon.active { color: var(--primary); background: var(--primary-soft); }
+.desknav-icon .nav-ico-wrap { position: relative; display: inline-flex; }
+.desknav-icon .nav-dot {
+  position: absolute; top: 0; right: 0;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+}
+.desknav-icon .bell-badge {
+  position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px; background: var(--primary); color: #fff;
+  font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; box-sizing: border-box;
+}
+/* 데스크톱: 하단 탭 대신 상단 내비게이션 사용 */
+@media (min-width: 641px) {
+  .app-shell.has-nav > .desknav { display: flex; }
+  .app-shell.has-nav > .topbar { display: none; }
+}
+/* 프리미엄(다크) 상점에서의 상단 내비게이션 톤 보정 */
+.premium-shop .desknav { background: transparent; }
+.premium-shop .desknav-left a { color: rgba(233,230,250,.55); }
+.premium-shop .desknav-left a:hover { background: rgba(255,255,255,.08); }
+.premium-shop .desknav-left a.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
+.premium-shop .desknav-icon { color: rgba(233,230,250,.7); }
+.premium-shop .desknav-icon:hover { background: rgba(255,255,255,.08); }
+.premium-shop .desknav-icon.active { color: #c3b6ff; background: rgba(255,255,255,.1); }
+.premium-shop .desknav .brand-word { color: #f4f2fd; }
 .content {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; /* 카드 스와이프 시 좌측 오버플로가 가로 스크롤 안 만들게 */

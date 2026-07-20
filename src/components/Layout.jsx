@@ -740,6 +740,28 @@ export default function Layout() {
         </div>
       )}
       {topbar}
+      {/* PC 전용 상단 내비게이션 (모바일 하단 탭을 상단으로) — .page 와 동일하게 1080px 중앙 정렬 */}
+      {showBottomNav && (
+        <header className="desknav">
+          <div className="desknav-inner">
+            <Link to="/" className="brand"><Brand /></Link>
+            <nav className="desknav-left">
+              <NavLink to="/" end>내 그룹</NavLink>
+              <NavLink to="/schedule">일정</NavLink>
+              <NavLink to="/store">상점</NavLink>
+            </nav>
+            <div className="desknav-right">
+              <NavLink to="/notifications" className="desknav-icon" aria-label="알림" title="알림">
+                <BellIcon />{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
+              </NavLink>
+              <NavLink to="/notes" className="desknav-icon" aria-label="쪽지" title="쪽지">
+                <span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span>
+              </NavLink>
+              <NavLink to="/me" className="desknav-icon" aria-label="마이 페이지" title="마이 페이지"><MyIcon /></NavLink>
+            </div>
+          </div>
+        </header>
+      )}
       {(pull > 0 || refreshing) && (
         <div className={`ptr ${dragging ? 'ptr-drag' : ''}`}
           style={{ top: ptrTop, transform: `translateY(${(refreshing ? 46 : pull) * 0.5 - 13}px)`, opacity: refreshing ? 1 : Math.min(1, pull / 40) }}>
