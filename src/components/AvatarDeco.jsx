@@ -147,16 +147,16 @@ function AlienShades() {
   const A = 15, B = 12, TY = 5.5
   return (
     <g>
-      <g transform="rotate(-45 33 46)">
+      <g transform="rotate(45 33 46)">
         <path d={football(33, 46, A, B, TY)} fill="#35c14a" />
         <path d={football(33, 46, A - 2.4, B - 2.2, TY)} fill="#141414" />
       </g>
-      <g transform="rotate(45 67 46)">
+      <g transform="rotate(-45 67 46)">
         <path d={football(67, 46, A, B, TY)} fill="#35c14a" />
         <path d={football(67, 46, A - 2.4, B - 2.2, TY)} fill="#141414" />
       </g>
       <rect x="46" y="43.5" width="8" height="5" fill="#35c14a" />
-      <circle cx="30" cy="40" r="1.8" fill="#fff" opacity="0.85" />
+      <circle cx="36" cy="40" r="1.8" fill="#fff" opacity="0.85" />
       <circle cx="64" cy="40" r="1.8" fill="#fff" opacity="0.85" />
     </g>
   )
