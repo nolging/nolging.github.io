@@ -5,7 +5,7 @@
 // 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
-export const DECO_FACE = ['deco-blush', 'deco-anger']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
@@ -107,6 +107,44 @@ function Blush() {
   )
 }
 
+function PixelShades() {
+  // 8비트 픽셀 선글라스: 각진 검은 렌즈 2개 + 브릿지 + 팔, 흰 픽셀 하이라이트
+  return (
+    <g shapeRendering="crispEdges">
+      <g fill="#17171b">
+        <rect x="14" y="41" width="8" height="4" />
+        <rect x="78" y="41" width="8" height="4" />
+        <rect x="22" y="39" width="22" height="14" />
+        <rect x="44" y="41" width="12" height="4" />
+        <rect x="56" y="39" width="22" height="14" />
+      </g>
+      <g fill="#ffffff">
+        <rect x="25" y="42" width="4" height="4" />
+        <rect x="29" y="42" width="4" height="4" />
+        <rect x="25" y="46" width="4" height="4" />
+        <rect x="59" y="42" width="4" height="4" />
+        <rect x="63" y="42" width="4" height="4" />
+        <rect x="59" y="46" width="4" height="4" />
+      </g>
+    </g>
+  )
+}
+
+function AlienShades() {
+  // 왹져(외계인) 선글라스: 초록 프레임 + 안테나 + 검은 슬랜티드 아몬드 렌즈
+  return (
+    <g>
+      <path d="M18 44 C18 35 27 33 37 36 C43 38 47 42 50 44 C53 42 57 38 63 36 C73 33 82 35 82 44 C82 52 74 56 66 54 C58 52 53 48 50 46 C47 48 42 52 34 54 C26 56 18 52 18 44 Z" fill="#35c14a" />
+      <path d="M26 36 C22 28 24 24 28 26 C31 28 31 33 30 37 Z" fill="#2aa93c" />
+      <path d="M74 36 C78 28 76 24 72 26 C69 28 69 33 70 37 Z" fill="#2aa93c" />
+      <g transform="rotate(-18 35 44)"><ellipse cx="35" cy="44" rx="9.5" ry="6.2" fill="#141414" /></g>
+      <g transform="rotate(18 65 44)"><ellipse cx="65" cy="44" rx="9.5" ry="6.2" fill="#141414" /></g>
+      <circle cx="32" cy="41.5" r="1.5" fill="#fff" opacity="0.85" />
+      <circle cx="62" cy="41.5" r="1.5" fill="#fff" opacity="0.85" />
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -115,6 +153,8 @@ const PREVIEW_VB = {
   'deco-wolf': '12 -20 76 56',
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
+  'deco-pixel-shades': '12 37 76 20',
+  'deco-alien-shades': '14 22 72 40',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
@@ -127,6 +167,8 @@ export function DecoPreview({ id }) {
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
       {id === 'deco-anger' && <Anger />}
+      {id === 'deco-pixel-shades' && <PixelShades />}
+      {id === 'deco-alien-shades' && <AlienShades />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -144,7 +186,7 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
       </svg>
     )
   }
-  const hasFront = head === 'deco-sprout' || face === 'deco-blush' || face === 'deco-anger'
+  const hasFront = head === 'deco-sprout' || DECO_FACE.includes(face)
   if (!hasFront) return null
   return (
     <svg className="avatar-deco avatar-deco-front" viewBox="0 0 100 100" width="100%" height="100%"
@@ -152,6 +194,8 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
       {head === 'deco-sprout' && <Sprout />}
       {face === 'deco-blush' && <Blush />}
       {face === 'deco-anger' && <Anger />}
+      {face === 'deco-pixel-shades' && <PixelShades />}
+      {face === 'deco-alien-shades' && <AlienShades />}
     </svg>
   )
 }

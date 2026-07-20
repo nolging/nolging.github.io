@@ -18,7 +18,7 @@ const IMG_BG = {
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
   'sticker-grape': '#332c52', 'sticker-apple': '#332c52',
   'deco-sprout': '#eaf6ee', 'deco-jaguar': '#ecebf0', 'deco-wolf': '#eceef3', 'deco-blush': '#fdeef2',
-  'deco-anger': '#fdecec',
+  'deco-anger': '#fdecec', 'deco-pixel-shades': '#ecedf1', 'deco-alien-shades': '#e8f6ec',
   // 하트 뿅뿅 테마: 실제 적용 시 배경(연분홍 그라데이션)과 동일하게 → 위에 하트가 솟아오름
   'theme-heart': 'linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%)',
 }
