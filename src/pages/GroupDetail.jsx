@@ -59,6 +59,27 @@ const UndoIcon = () => (
     <polyline points="7 4 3 8 7 12" />
   </svg>
 )
+// 그룹 설정(톱니) — PC 좌측 섹션용
+const GearIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+)
+// PC 우측 멤버 목록: 방장 왕관 배지
+const OwnerBadge = () => (
+  <span className="mlist-owner" title="방장" aria-label="방장">
+    <svg width="12" height="11" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 17.5V8l4.4 3.4L12 5.5l4.6 5.9L21 8v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="#7363e8" />
+    </svg>
+  </span>
+)
+function birthLabel(s) {
+  if (!s) return null
+  const [y, mo, d] = String(s).split('-')
+  return `${y}.${Number(mo)}.${Number(d)}`
+}
 
 export default function GroupDetail() {
   const { groupId } = useParams()
@@ -395,6 +416,30 @@ export default function GroupDetail() {
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
       {annivToday && <Fireworks className="fw-over" />}
+
+      {/* 좌측 고정 섹션 (PC 전용): 그룹 정보 + 설정 */}
+      <aside className="gd-aside gd-aside-left" aria-label="그룹 정보">
+        <div className="gd-aside-card">
+          <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={64} radius={22} />
+          <h2 className="gd-aside-name">{group.name}</h2>
+          {group.description && <p className="gd-aside-desc muted">{group.description}</p>}
+          {activeMembers.length > 0 && (
+            <button type="button" className="gd-aside-members" onClick={() => navigate(`/groups/${groupId}/members`)}
+              aria-label="멤버 목록" title="멤버 목록">
+              <span className="gd-aside-avs">
+                {activeMembers.slice(0, 5).map((m) => (
+                  <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} deco={decoOf(m.user_id)} />
+                ))}
+                {activeMembers.length - 5 > 0 && <span className="task-parts-more">+{activeMembers.length - 5}</span>}
+              </span>
+              <span className="gd-aside-mcount">멤버 {activeMembers.length}</span>
+            </button>
+          )}
+          <Link to={`/groups/${groupId}/settings/group`} className="gd-aside-set"><GearIcon /> 그룹 설정</Link>
+        </div>
+      </aside>
+
+      <div className="gd-center">
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">
@@ -460,6 +505,32 @@ export default function GroupDetail() {
           </div>
         </div>
       )}
+      </div>{/* /.gd-center */}
+
+      {/* 우측 고정 섹션 (PC 전용): 멤버 목록 */}
+      <aside className="gd-aside gd-aside-right" aria-label="멤버 목록">
+        <div className="gd-aside-head">멤버 {activeMembers.length}</div>
+        <div className="gd-mlist">
+          {activeMembers.map((m) => (
+            <button key={m.user_id} type="button" className="gd-mrow"
+              onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
+              <Avatar src={m.avatar_url} name={m.display_nickname} size={40} deco={decoOf(m.user_id)} />
+              <div className="gd-mrow-main">
+                <div className="gd-mrow-name">
+                  <span className="gd-mrow-nick">{m.display_nickname}</span>
+                  {m.is_self && <span className="mlist-me">나</span>}
+                  {m.role === 'owner' && <OwnerBadge />}
+                </div>
+                <div className="gd-mrow-meta muted">
+                  <span className={m.contact ? '' : 'hidden-v'}>{m.contact || '비공개'}</span>
+                  <span className="gd-mrow-dot" />
+                  <span className={birthLabel(m.birthdate) ? '' : 'hidden-v'}>{birthLabel(m.birthdate) || '비공개'}</span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </aside>
 
       {/* 태스크 작성 버튼 (고정) */}
       <button className="fab" aria-label={`${terms.noun} 작성`} title={`${terms.noun} 작성`}
