@@ -112,7 +112,7 @@ function daysSince(dateStr) {
 function annivLabel(s) {
   if (!s) return ''
   const [y, mo, d] = String(s).split('-')
-  return `${y}.${Number(mo)}.${Number(d)}`
+  return `${y}.${String(Number(mo)).padStart(2, '0')}.${String(Number(d)).padStart(2, '0')}`
 }
 
 export default function GroupDetail() {
@@ -142,6 +142,7 @@ export default function GroupDetail() {
   const [regenBusy, setRegenBusy] = useState(false)
   const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES]) // 선택된 위시 유형. 기본=전체 체크
   const [filterOpen, setFilterOpen] = useState(false)
+  const [coupleMenu, setCoupleMenu] = useState({}) // 커플 우측 패널: 멍냥꽁냥/미니게임 펼침 상태
   const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
 
   // 유형 필터를 상단바(톱니 좌측)로 노출
@@ -375,6 +376,8 @@ export default function GroupDetail() {
   const couplePartner = isCouple ? (activeMembers.find((m) => !m.is_self) || activeMembers[1] || null) : null
   const coupleAnniv = group?.anniversary || claimDate || ''
   const coupleDays = isCouple ? daysSince(coupleAnniv) : null
+  const toggleCoupleMenu = (k) => setCoupleMenu((m) => ({ ...m, [k]: !m[k] }))
+  const goCouple = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
   const matchesCat = (t) => !WISH_CATEGORIES.includes(t.category) || catFilter.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
@@ -560,26 +563,52 @@ export default function GroupDetail() {
         {isCouple ? (
           <div className="gd-couple-card">
             <div className="gd-couple">
-              <div className="gd-couple-hero">
-                <button type="button" className="gd-couple-face" onClick={() => coupleMe && navigate(`/groups/${groupId}/members/${coupleMe.user_id}`)} disabled={!coupleMe}>
+              <div className="gd-couple-row gd-couple-avarow">
+                <button type="button" className="gd-couple-ava" onClick={() => coupleMe && navigate(`/groups/${groupId}/members/${coupleMe.user_id}`)} disabled={!coupleMe} aria-label={coupleMe?.display_nickname || '나'}>
                   <Avatar src={coupleMe?.avatar_url} name={coupleMe?.display_nickname || '나'} size={72} deco={coupleMe && decoOf(coupleMe.user_id)} />
-                  <span className="gd-couple-name">{coupleMe?.display_nickname || '나'}</span>
                 </button>
-                <button type="button" className="gd-couple-face" onClick={() => couplePartner && navigate(`/groups/${groupId}/members/${couplePartner.user_id}`)} disabled={!couplePartner}>
+                <svg className="gd-couple-heart" viewBox="0 0 24 24" fill="#ec6a8f" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                <button type="button" className="gd-couple-ava" onClick={() => couplePartner && navigate(`/groups/${groupId}/members/${couplePartner.user_id}`)} disabled={!couplePartner} aria-label={couplePartner?.display_nickname || '상대'}>
                   <Avatar src={couplePartner?.avatar_url} name={couplePartner?.display_nickname || '상대'} size={72} deco={couplePartner && decoOf(couplePartner.user_id)} />
-                  <span className="gd-couple-name">{couplePartner?.display_nickname || '상대 없음'}</span>
                 </button>
-                <span className="gd-couple-heart-wrap" aria-hidden="true">
-                  <svg className="gd-couple-heart" viewBox="0 0 24 24" fill="#ec6a8f"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
-                </span>
+              </div>
+              <div className="gd-couple-row gd-couple-names">
+                <span className="gd-couple-name">{coupleMe?.display_nickname || '나'}</span>
+                <span className="gd-couple-heart-gap" aria-hidden="true" />
+                <span className="gd-couple-name">{couplePartner?.display_nickname || '상대 없음'}</span>
               </div>
               {coupleDays != null && (
-                <div className="gd-couple-dday">
-                  <div className="gd-couple-days">{coupleDays.toLocaleString('ko-KR')}<span> 일</span></div>
-                  {coupleAnniv && <div className="gd-couple-anniv">{annivLabel(coupleAnniv)} ~ing</div>}
+                <div className="gd-couple-anniv-line">
+                  <b>{coupleDays.toLocaleString('ko-KR')} 일</b>
+                  {coupleAnniv && <span>{annivLabel(coupleAnniv)} ~ing</span>}
                 </div>
               )}
-              <button type="button" className="gd-couple-more" onClick={() => navigate(`/groups/${groupId}/members`)}>데이트 공간 열기</button>
+              <div className="gd-couple-menu">
+                <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('play')} aria-expanded={!!coupleMenu.play}>
+                  멍냥꽁냥
+                  <svg className={`gd-couple-chev ${coupleMenu.play ? 'open' : ''}`} width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </button>
+                {coupleMenu.play && (
+                  <div className="gd-couple-sub">
+                    <button type="button" onClick={() => goCouple('touch')}>우심뽀까</button>
+                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
+                    <button type="button" onClick={() => goCouple('praise')}>칭찬 스티커</button>
+                  </div>
+                )}
+                <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>
+                  미니 게임
+                  <svg className={`gd-couple-chev ${coupleMenu.game ? 'open' : ''}`} width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </button>
+                {coupleMenu.game && (
+                  <div className="gd-couple-sub">
+                    <button type="button" onClick={() => goCouple('catchmind')}>캐치 마인드</button>
+                    <button type="button" onClick={() => goCouple('davinci')}>다빈치 코드</button>
+                    <button type="button" onClick={() => goCouple('puzzle')}>퍼즐</button>
+                    <button type="button" onClick={() => goCouple('rps')}>가위바위보</button>
+                    <button type="button" onClick={() => goCouple('omok')}>오목</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (

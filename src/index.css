@@ -415,25 +415,33 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
   /* 커플 그룹: 데이트 히어로 스타일 우측 패널(흰색 박스, 꾸미기 안 잘리게 overflow 허용) */
   .gd-aside-couple { align-self: start; overflow: visible; }
-  .gd-couple-card { background: var(--surface); border-radius: 18px; padding: 32px 18px 20px; overflow: visible; }
-  .gd-couple { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
-  .gd-couple-hero { position: relative; display: flex; align-items: flex-start; justify-content: center; gap: 10px; width: 100%; }
-  .gd-couple-face { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; border: none; cursor: pointer; padding: 0; }
-  .gd-couple-face:disabled { cursor: default; opacity: .85; }
-  .gd-couple-name { max-width: 100%; font-size: 13.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* 하트: 두 아바타 사이 정중앙에 절대배치(세로=아바타 중심). 래퍼는 위치, 안쪽 SVG 는 두근거림 */
-  .gd-couple-heart-wrap { position: absolute; left: 50%; top: 36px; transform: translate(-50%, -50%); pointer-events: none; z-index: 1; }
+  .gd-couple-card { background: var(--surface); border-radius: 18px; padding: 30px 18px 18px; overflow: visible; }
+  .gd-couple { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  /* 아바타 행: 하트를 가운데 두고 세로 중앙 정렬(align-items:center) → 하트가 아바타 사이에 위치 */
+  .gd-couple-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+  .gd-couple-ava { flex: 0 0 72px; width: 72px; height: 72px; background: none; border: none; padding: 0; cursor: pointer; overflow: visible; }
+  .gd-couple-ava:disabled { cursor: default; opacity: .85; }
   .gd-couple-heart {
-    display: block; width: 34px; height: 34px;
+    flex: 0 0 34px; width: 34px; height: 34px; display: block;
     filter: drop-shadow(0 6px 14px rgba(236, 106, 143, .45));
     transform-origin: center; animation: csx-beat 1.8s ease-in-out infinite;
   }
-  .gd-couple-dday { text-align: center; }
-  .gd-couple-days { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: var(--text); }
-  .gd-couple-days span { font-size: 15px; font-weight: 700; }
-  .gd-couple-anniv { margin-top: 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
-  .gd-couple-more { margin-top: 2px; padding: 9px 16px; border: none; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 13px; cursor: pointer; }
-  .gd-couple-more:hover { filter: brightness(.97); }
+  .gd-couple-names { margin-top: 9px; }
+  .gd-couple-name { flex: 0 0 72px; width: 72px; text-align: center; font-size: 13px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gd-couple-heart-gap { flex: 0 0 34px; }
+  /* 기념일 한 줄: "102 일(먹색, 살짝 큼) 2026.04.10 ~ing(회색)" */
+  .gd-couple-anniv-line { margin-top: 14px; text-align: center; }
+  .gd-couple-anniv-line b { font-size: 17px; font-weight: 800; letter-spacing: -.3px; color: var(--text); }
+  .gd-couple-anniv-line span { margin-left: 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  /* 멍냥꽁냥 / 미니 게임 접이식 메뉴 */
+  .gd-couple-menu { width: 100%; margin-top: 16px; padding-top: 8px; border-top: 1px solid #efeef4; display: flex; flex-direction: column; gap: 2px; }
+  .gd-couple-menu-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 11px 8px; background: none; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--text); }
+  .gd-couple-menu-row:hover { background: var(--canvas); }
+  .gd-couple-chev { color: #b0b0b8; transition: transform .2s ease; }
+  .gd-couple-chev.open { transform: rotate(90deg); }
+  .gd-couple-sub { display: flex; flex-direction: column; gap: 1px; padding: 0 4px 6px; }
+  .gd-couple-sub button { text-align: left; padding: 9px 14px; background: none; border: none; border-radius: 8px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .gd-couple-sub button:hover { background: var(--canvas); color: var(--text); }
 
   /* 하트 테마: 좌우 섹션도 콘텐츠처럼 하트 위로 */
   .gd-themed .gd-aside { position: relative; z-index: 1; }
