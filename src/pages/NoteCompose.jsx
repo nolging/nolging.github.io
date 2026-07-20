@@ -8,6 +8,7 @@ import StoreItemImage from '../components/StoreItemImage'
 import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { imgBgOf, itemName } from '../lib/storeMeta'
+import { NOTE_CHANNEL } from '../lib/composeWindow'
 
 const MAX = 150
 
@@ -48,7 +49,17 @@ export default function NoteCompose() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const reply = location.state?.reply
+  // 팝업(브라우저 새 창) 모드 여부 — /notes/compose?popup=1 로 열림
+  const isPopup = new URLSearchParams(location.search).get('popup') === '1'
+  // 프리필: 인앱은 location.state, 팝업은 localStorage(nc-prefill) 로 전달(한 번만 읽고 제거)
+  const [prefill] = useState(() => {
+    if (location.state?.reply) return location.state
+    if (isPopup) {
+      try { const raw = localStorage.getItem('nc-prefill'); if (raw) { localStorage.removeItem('nc-prefill'); return JSON.parse(raw) || {} } } catch { /* noop */ }
+    }
+    return {}
+  })
+  const reply = prefill?.reply
 
   const [recipient, setRecipient] = useState(reply?.recipient || null)
   const [me, setMe] = useState(reply?.me || { name: '', avatar: null })
@@ -222,6 +233,12 @@ export default function NoteCompose() {
         groupId: recipient.groupId, recipientId: recipient.userId,
         body: body.trim(), anonymous, useItem, gifts,
       })
+      if (isPopup) {
+        // 여는 쪽(쪽지함)에 전송 완료를 알리고 팝업 창을 닫는다
+        try { const bc = new BroadcastChannel(NOTE_CHANNEL); bc.postMessage({ type: 'note-sent' }); bc.close() } catch { /* noop */ }
+        try { window.close() } catch { /* noop */ }
+        return
+      }
       navigate('/notes', { state: { tab: 'sent' } })
     } catch (err) { setError(err.message); setSending(false) }
   }
@@ -233,17 +250,22 @@ export default function NoteCompose() {
 
   const isActive = (id) => (id === 'eraser' ? anonymous : useItem?.id === id)
 
-  // PC 팝업: 배경(백드롭) 클릭 시 닫기 (모바일은 일반 페이지라 무시)
+  // 닫기: 팝업이면 창을 닫고, 인앱이면 뒤로가기
+  function closeCompose() {
+    if (isPopup) { try { window.close() } catch { /* noop */ } return }
+    navigate(-1)
+  }
+  // 인앱 모달: 배경(백드롭) 클릭 시 닫기 (모바일 일반 페이지/팝업 창에서는 무시)
   function onBackdrop(e) {
-    if (e.target !== e.currentTarget) return
+    if (isPopup || e.target !== e.currentTarget) return
     if (window.matchMedia?.('(min-width: 641px)')?.matches) navigate(-1)
   }
 
   return (
-    <div className="page nc-page" onClick={onBackdrop}>
-      {/* PC: 팝업(모달) 카드로 표시. 모바일: display:contents 로 기존 레이아웃 유지 */}
+    <div className={`page nc-page ${isPopup ? 'nc-popup' : ''}`} onClick={onBackdrop}>
+      {/* PC: 팝업 창(별도 브라우저 창) 또는 인앱 모달 카드. 모바일: display:contents 로 기존 레이아웃 유지 */}
       <div className="nc-card">
-      <button type="button" className="nc-close" onClick={() => navigate(-1)} aria-label="닫기" title="닫기">
+      <button type="button" className="nc-close" onClick={closeCompose} aria-label="닫기" title="닫기">
         <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
       </button>
       {error && <div className="alert alert-error">{error}</div>}

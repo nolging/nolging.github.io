@@ -50,6 +50,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/request-access" element={<RequestAccess />} />
 
+      {/* 쪽지 쓰기 팝업 창(레이아웃/상단바 없이 폼만) — PC 에서 window.open 으로 열림 */}
+      <Route path="/notes/compose" element={<ProtectedRoute><NoteCompose /></ProtectedRoute>} />
+
       <Route
         element={
           <ProtectedRoute>

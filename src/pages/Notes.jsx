@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { safeUrl } from '../lib/safeUrl'
 import Avatar from '../components/Avatar'
@@ -11,6 +11,7 @@ import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
 import { NOTES_TTL, PAGE, notesCache } from '../lib/notesCache'
+import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
 const isWater = (n) => !!n && n.timer_seconds != null && n.timer_seconds > 0
@@ -241,6 +242,21 @@ export default function Notes() {
     setRefreshHandler(() => refresh)
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, refresh])
+
+  // 쪽지 쓰기 팝업 창에서 전송 완료 시 목록/안읽음 갱신
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return
+    let bc
+    try {
+      bc = new BroadcastChannel(NOTE_CHANNEL)
+      bc.onmessage = (e) => {
+        if (e.data?.type !== 'note-sent') return
+        fetchNotes().catch(() => {})
+        refreshNoteUnread?.()
+      }
+    } catch { /* noop */ }
+    return () => { try { bc?.close() } catch { /* noop */ } }
+  }, [fetchNotes, refreshNoteUnread])
 
   // 물풍선 쪽지 모달: 처음 연 시각(opened_at) 기준으로 카운트다운 → 0 이 되면 터짐.
   // opened_at 은 서버에 최초 1회만 기록되고, 목록 데이터에 담겨 오므로 재열람/재접속에도 이어짐.
@@ -483,12 +499,10 @@ export default function Notes() {
 
   // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
   function replyTo(n) {
-    navigate('/notes/new', {
-      state: {
-        reply: {
-          recipient: { groupId: n.group_id, groupName: '', userId: n.sender_id, name: n.sender_name, avatar: n.sender_avatar },
-          me: { name: n.recipient_name, avatar: n.recipient_avatar },
-        },
+    openCompose(navigate, {
+      reply: {
+        recipient: { groupId: n.group_id, groupName: '', userId: n.sender_id, name: n.sender_name, avatar: n.sender_avatar },
+        me: { name: n.recipient_name, avatar: n.recipient_avatar },
       },
     })
   }
@@ -765,9 +779,9 @@ export default function Notes() {
         </div>
       </Modal>
 
-      <Link to="/notes/new" className="fab fab-above-nav" aria-label="쪽지 쓰기" title="쪽지 쓰기">
+      <button type="button" onClick={() => openCompose(navigate, null)} className="fab fab-above-nav" aria-label="쪽지 쓰기" title="쪽지 쓰기">
         <NoteFabIcon />
-      </Link>
+      </button>
     </div>
   )
 }

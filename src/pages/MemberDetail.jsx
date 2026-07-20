@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap } from '../lib/api'
+import { openCompose } from '../lib/composeWindow'
 import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
 
@@ -83,12 +84,10 @@ export default function MemberDetail() {
   }
 
   function sendNote() {
-    navigate('/notes/new', {
-      state: {
-        reply: {
-          recipient: { groupId, groupName: group?.name || '', userId, name: member.display_nickname, avatar: member.avatar_url },
-          me: { name: meCard?.display_nickname || '', avatar: meCard?.avatar_url || null },
-        },
+    openCompose(navigate, {
+      reply: {
+        recipient: { groupId, groupName: group?.name || '', userId, name: member.display_nickname, avatar: member.avatar_url },
+        me: { name: meCard?.display_nickname || '', avatar: meCard?.avatar_url || null },
       },
     })
   }

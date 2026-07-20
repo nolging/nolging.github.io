@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups } from '../lib/api'
+import { openCompose } from '../lib/composeWindow'
 import { GRADE_LABEL } from '../lib/membership'
 
 // 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
@@ -221,7 +222,10 @@ export default function MyProfile() {
   const challenge = (key) => {
     // 프리미엄 상점은 프리미엄 탭으로 진입
     if (key === 'r_premium_shop') { navigate('/store', { state: { from: '/me', premium: true } }); return }
-    navigate(questRoute(key) || '/', { state: { from: '/me' } })
+    const route = questRoute(key) || '/'
+    // 쪽지 쓰기 도전은 PC 에서 팝업 창으로
+    if (route === '/notes/new') { openCompose(navigate, null); return }
+    navigate(route, { state: { from: '/me' } })
   }
   const daily = quests?.daily || []
   // 랜덤 슬롯 정렬: ①완료(받기) → ②미완료(도전) → ③대기(타이머)
