@@ -466,8 +466,8 @@ export default function GroupDetail() {
           <h2 className="gd-aside-name">{group.name}</h2>
           {group.description && <p className="gd-aside-desc muted">{group.description}</p>}
           {activeMembers.length > 0 && (
-            <button type="button" className="gd-aside-members" onClick={() => navigate(`/groups/${groupId}/members`)}
-              aria-label="멤버 목록" title="멤버 목록">
+            /* 우측 패널에 멤버가 그대로 보이므로 좌측 아바타는 클릭해도 이동하지 않음(정보 표시용) */
+            <div className="gd-aside-members">
               <span className="gd-aside-avs">
                 {activeMembers.slice(0, 5).map((m) => (
                   <Avatar key={m.user_id} src={m.avatar_url} name={m.display_nickname} size={30} deco={decoOf(m.user_id)} />
@@ -475,7 +475,7 @@ export default function GroupDetail() {
                 {activeMembers.length - 5 > 0 && <span className="task-parts-more">+{activeMembers.length - 5}</span>}
               </span>
               <span className="gd-aside-mcount">멤버 {activeMembers.length}</span>
-            </button>
+            </div>
           )}
           <div className="gd-aside-acts">
             <button type="button" className="gd-aside-wish"

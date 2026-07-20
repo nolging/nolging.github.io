@@ -152,8 +152,11 @@ export default function Dashboard() {
             const isMember = members.some((m) => m.user_id === profile?.id)
             const premium = premiumSet.has(g.id)
             const friend = !premium && friendSet.has(g.id)
-            // 아바타 영역 클릭 → 카드 이동 대신 멤버 목록 페이지로
-            const goMembers = (e) => { e.preventDefault(); e.stopPropagation(); navigate(`/groups/${g.id}/members`) }
+            // 아바타 영역 클릭: 모바일은 멤버 목록으로, PC 는 카드 일부로 취급해 그룹 상세로(링크 기본 동작)
+            const goMembers = (e) => {
+              if (window.matchMedia?.('(min-width: 641px)')?.matches) return // PC: 링크가 그룹 상세로 이동
+              e.preventDefault(); e.stopPropagation(); navigate(`/groups/${g.id}/members`)
+            }
             const memberRow = members.length > 0 && (
               premium ? (
                 <span className="task-parts tile-members tile-members-couple tile-members-link" role="button" tabIndex={0}
