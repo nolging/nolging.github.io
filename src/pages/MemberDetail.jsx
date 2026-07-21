@@ -39,8 +39,11 @@ function LockIcon() {
   )
 }
 
-export default function MemberDetail() {
-  const { groupId, userId } = useParams()
+export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp, embedded = false, onClose }) {
+  // PC 모달로 뜰 땐 groupId/userId 를 props 로 받는다(라우트 파라미터 폴백).
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
+  const userId = userIdProp ?? params.userId
   const navigate = useNavigate()
   const [member, setMember] = useState(null)
   const [group, setGroup] = useState(null)
@@ -94,7 +97,7 @@ export default function MemberDetail() {
 
   async function kick() {
     if (!confirm(`${member.display_nickname} 님을 그룹에서 내보낼까요?`)) return
-    try { await leaveGroup(groupId, userId); navigate(`/groups/${groupId}/members`) }
+    try { await leaveGroup(groupId, userId); if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}/members`) }
     catch (err) { setError(err.message) }
   }
 

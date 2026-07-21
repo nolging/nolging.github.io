@@ -5,6 +5,9 @@ import { taskTerms } from '../lib/constants'
 import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
+import Modal from './Modal'
+import MemberDetail from '../pages/MemberDetail'
+import { MEMBER_EVENT } from '../lib/memberModal'
 import MiniPlayer from './MiniPlayer'
 import BlurayPlayer from './BlurayPlayer'
 import NotifDropdown from './NotifDropdown'
@@ -315,6 +318,15 @@ export default function Layout() {
     return () => { document.removeEventListener('pointerdown', onDocDown); document.removeEventListener('keydown', onEsc) }
   }, [notifOpen])
   useEffect(() => { setNotifOpen(false) }, [location.pathname])
+
+  // PC 전용: 멤버 아바타 클릭 시 멤버 상세를 모달로 (openMember 가 이벤트 발행)
+  const [memberModal, setMemberModal] = useState(null) // { groupId, userId }
+  useEffect(() => {
+    const on = (e) => setMemberModal(e.detail || null)
+    window.addEventListener(MEMBER_EVENT, on)
+    return () => window.removeEventListener(MEMBER_EVENT, on)
+  }, [])
+  useEffect(() => { setMemberModal(null) }, [location.pathname])
 
   // 하단 탭 '쪽지' 점: 안 읽은 받은 쪽지가 있으면 표시
   const [noteUnread, setNoteUnread] = useState(0)
@@ -805,6 +817,11 @@ export default function Layout() {
       )}
       {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}
       <div id="app-bottom" className="app-bottom" />
+      {memberModal && (
+        <Modal open onClose={() => setMemberModal(null)} cardClassName="member-modal">
+          <MemberDetail embedded groupId={memberModal.groupId} userId={memberModal.userId} onClose={() => setMemberModal(null)} />
+        </Modal>
+      )}
       <PushPrompt />
     </div>
   )

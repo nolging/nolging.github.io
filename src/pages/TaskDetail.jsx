@@ -9,6 +9,7 @@ import {
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
 import { resolveMentions, splitMentions } from '../lib/mentions'
+import { openMember } from '../lib/memberModal'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
@@ -229,7 +230,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
       if (!p.userId) return <span key={i} className="mention-chip">{p.mention}</span>
       return (
         <button type="button" key={i} className="mention-chip"
-          onClick={(e) => { e.stopPropagation(); navigate(`/groups/${groupId}/members/${p.userId}`, { state: { from: 'task' } }) }}>
+          onClick={(e) => { e.stopPropagation(); openMember(navigate, groupId, p.userId) }}>
           {p.mention}
         </button>
       )

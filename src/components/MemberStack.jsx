@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import Avatar from './Avatar'
+import { openMember } from '../lib/memberModal'
 
 // 겹쳐진 참여자 아바타 묶음 → 클릭 시 멤버 목록 드롭다운(아바타+닉네임). 한 명 고르면 그 멤버 상세로.
 // 참여자가 1명이면 드롭다운 없이 바로 그 멤버 상세로 이동. 카드/링크 안에서도 동작(전파 차단).
@@ -41,10 +42,10 @@ export default function MemberStack({ groupId, userIds = [], nameOf, avatarOf, d
 
   const toggle = (e) => {
     e.preventDefault(); e.stopPropagation()
-    if (ids.length <= 1) { if (ids[0]) navigate(`/groups/${groupId}/members/${ids[0]}`); return }
+    if (ids.length <= 1) { if (ids[0]) openMember(navigate, groupId, ids[0]); return }
     setOpen((v) => !v)
   }
-  const goMember = (uid) => (e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); navigate(`/groups/${groupId}/members/${uid}`) }
+  const goMember = (uid) => (e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); openMember(navigate, groupId, uid) }
 
   return (
     <>

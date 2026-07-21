@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest } from '../lib/api'
+import { openMember } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
@@ -185,7 +186,7 @@ export default function GroupMembers() {
     const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
     const face = (m, sub) => (
       <button type="button" className="csx-face"
-        onClick={() => m && navigate(`/groups/${groupId}/members/${m.user_id}`)} disabled={!m}>
+        onClick={() => m && openMember(navigate, groupId, m.user_id)} disabled={!m}>
         <MemberAvatar src={m?.avatar_url} name={m?.display_nickname || '?'} seed={m?.user_id || sub} size={104} deco={m ? decoMap[m.user_id] : undefined} />
         <span className="csx-face-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
       </button>
@@ -311,7 +312,7 @@ export default function GroupMembers() {
             <div key={m.user_id}>
               {i > 0 && <div className="mlist-div" />}
               <button type="button" className="mlist-row"
-                onClick={() => navigate(`/groups/${groupId}/members/${m.user_id}`)}>
+                onClick={() => openMember(navigate, groupId, m.user_id)}>
                 <MemberAvatar src={m.avatar_url} name={m.display_nickname} seed={m.user_id} size={46} deco={decoMap[m.user_id]} />
                 <div className="mlist-main">
                   <div className="mlist-name">
