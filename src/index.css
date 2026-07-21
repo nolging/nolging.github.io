@@ -1912,6 +1912,14 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* PC 멤버 상세 모달 */
 .modal-card.member-modal { max-width: 400px; padding: 20px 18px; }
 .member-modal .md-page { max-width: none; }
+/* 내 정보 모달: 우측 상단 톱니(내 정보 수정) */
+.md-gear {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--canvas); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+}
+.md-gear:hover { background: #e9e9ee; color: var(--text); }
 .modal-root.shown .modal-stack { transform: translateY(var(--kb-shift, 0px)); transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
 /* 카드 아래(바깥)에 별도 블록을 붙이는 경우(예: 비디오 TV 플레이어) — 카드+below 를 세로로 쌓아 함께 스크롤 */
 .modal-stack { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px;
