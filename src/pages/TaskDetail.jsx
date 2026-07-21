@@ -77,8 +77,11 @@ function formatTime(iso) {
   } catch { return '' }
 }
 
-export default function TaskDetail() {
-  const { groupId, taskId } = useParams()
+export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, onBack, embedded = false, openReview: openReviewProp = false }) {
+  // PC 그룹 상세의 가운데 영역에 임베드될 땐 taskId/groupId 를 props 로 받는다(라우트 파라미터 대신).
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
+  const taskId = taskIdProp ?? params.taskId
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -111,7 +114,7 @@ export default function TaskDetail() {
   const mentionRange = useRef(null) // 본문에서 @토큰 위치 { start, end }
 
   // ---- 추억 리뷰 서브탭(댓글/리뷰) ----
-  const [subTab, setSubTab] = useState(location.state?.openReview ? 'reviews' : 'comments')
+  const [subTab, setSubTab] = useState(location.state?.openReview || openReviewProp ? 'reviews' : 'comments')
   const [subDir, setSubDir] = useState('next')
   const [reviews, setReviews] = useState([])
   const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false, revealed: false })
@@ -410,7 +413,7 @@ export default function TaskDetail() {
   async function doDeleteTask() {
     setHeadMenu(false)
     if (!confirm('삭제하시겠습니까? 약속과 댓글도 함께 삭제됩니다.')) return
-    try { await deleteTask(taskId); navigate(`/groups/${groupId}`) } catch (err) { setError(err.message) }
+    try { await deleteTask(taskId); if (embedded && onBack) onBack(); else navigate(`/groups/${groupId}`) } catch (err) { setError(err.message) }
   }
   function goEditWish() {
     setHeadMenu(false)

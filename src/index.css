@@ -361,6 +361,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-page > .gd-center { min-height: 0; }
   /* 센터 헤더의 그룹 정보(gd-head)는 좌측 섹션으로 이동 → 센터에선 숨김 */
   .gd-center .gd-head { display: none; }
+  /* PC: 카드 클릭 시 가운데 영역에 상세를 임베드(스크롤 컨테이너) */
+  .gd-detail { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding: 0 2px; }
+  .gd-detail-back {
+    align-self: flex-start; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+    margin: 2px 0 2px; padding: 7px 12px 7px 8px; border: none; border-radius: 10px;
+    background: none; color: var(--muted); font-weight: 700; font-size: 13.5px; cursor: pointer;
+  }
+  .gd-detail-back:hover { background: var(--canvas); color: var(--text); }
+  /* 임베드된 상세: 폭 제한 해제(가운데 컬럼 폭에 맞춤) */
+  .gd-detail .task-detail { max-width: none; }
   .gd-aside { display: block; min-height: 0; }
   .gd-aside-left { align-self: start; }
   .gd-aside-right { align-self: stretch; overflow-y: auto; overscroll-behavior: contain; }

@@ -19,6 +19,7 @@ import Fireworks from '../components/Fireworks'
 import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
+import TaskDetail from './TaskDetail'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
 
@@ -143,6 +144,15 @@ export default function GroupDetail() {
   const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES]) // 선택된 위시 유형. 기본=전체 체크
   const [filterOpen, setFilterOpen] = useState(false)
   const [coupleMenu, setCoupleMenu] = useState({}) // 커플 우측 패널: 멍냥꽁냥/미니게임 펼침 상태
+  // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
+  const [detailTaskId, setDetailTaskId] = useState(null)
+  const [detailReview, setDetailReview] = useState(false)
+  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+  function openTask(t, { review = false } = {}) {
+    if (isDesktop()) { setDetailReview(review); setDetailTaskId(t.id) }
+    else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })
+  }
+  const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
   const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
 
   // 유형 필터를 상단바(톱니 좌측)로 노출
@@ -391,10 +401,10 @@ export default function GroupDetail() {
           <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar} decoOf={decoOf}
             participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
             reviewCount={reviewCounts[t.id] || 0} hasReviews={(reviewCounts[t.id] || 0) > 0}
-            onOpen={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type } })}
+            onOpen={() => openTask(t)}
             onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
-            onReview={() => navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group.group_type, openReview: true } })}
+            onReview={() => openTask(t, { review: true })}
             onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t, from: 'group', tab: t.status } })}
             onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
@@ -491,6 +501,16 @@ export default function GroupDetail() {
       </aside>
 
       <div className="gd-center">
+      {detailTaskId ? (
+        <div className="gd-detail">
+          <button type="button" className="gd-detail-back" onClick={() => { closeDetail(); refresh() }}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            목록으로
+          </button>
+          <TaskDetail key={detailTaskId} embedded groupId={groupId} taskId={detailTaskId} openReview={detailReview} onBack={() => { closeDetail(); refresh() }} />
+        </div>
+      ) : (
+      <>
       <div className="gd-sticky-head">
       <div className="gd-head">
         <div className="gd-title gd-title-row">
@@ -555,6 +575,8 @@ export default function GroupDetail() {
             {renderTaskList(ghostStatus)}
           </div>
         </div>
+      )}
+      </>
       )}
       </div>{/* /.gd-center */}
 
