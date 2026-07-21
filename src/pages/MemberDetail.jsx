@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap } from '../lib/api'
 import { openCompose } from '../lib/composeWindow'
+import { SETTINGS_EVENT } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
 
@@ -100,6 +101,13 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     try { await leaveGroup(groupId, userId); if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}/members`) }
     catch (err) { setError(err.message) }
   }
+  // 내 정보 수정: 그룹 상세가 마운트돼 있으면 가운데 임베드로 열고, 아니면 설정 페이지로 이동
+  function editMe() {
+    const ev = new CustomEvent(SETTINGS_EVENT, { detail: { groupId, view: 'me', handled: false } })
+    window.dispatchEvent(ev)
+    if (ev.detail.handled) onClose?.()
+    else navigate(`/groups/${groupId}/settings`)
+  }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !member) return <div className="page"><div className="alert alert-error">{error}</div></div>
@@ -129,7 +137,7 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     <div className="page md-page">
       {/* 내 정보(모달)일 때: 우측 상단 톱니(내 정보 수정) */}
       {embedded && member.is_self && (
-        <button type="button" className="md-gear" onClick={() => navigate(`/groups/${groupId}/settings`)}
+        <button type="button" className="md-gear" onClick={editMe}
           aria-label="내 정보 수정" title="내 정보 수정">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />

@@ -22,7 +22,7 @@ import BottomSheet from '../components/BottomSheet'
 import TaskDetail from './TaskDetail'
 import GroupConfigPage from './GroupConfigPage'
 import GroupSettingsPage from './GroupSettingsPage'
-import { openMember } from '../lib/memberModal'
+import { openMember, SETTINGS_EVENT } from '../lib/memberModal'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
 
@@ -167,6 +167,19 @@ export default function GroupDetail() {
     if (isDesktop()) { setDetailTaskId(null); setSettingsView(view) }
     else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
   }
+  // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시)
+  useEffect(() => {
+    const on = (e) => {
+      const d = e.detail || {}
+      if (d.view !== 'me' && d.view !== 'group') return
+      if (d.groupId && d.groupId !== groupId) return
+      if (!isDesktop()) return
+      d.handled = true
+      setDetailTaskId(null); setSettingsView(d.view)
+    }
+    window.addEventListener(SETTINGS_EVENT, on)
+    return () => window.removeEventListener(SETTINGS_EVENT, on)
+  }, [groupId])
   const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
   const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
 
