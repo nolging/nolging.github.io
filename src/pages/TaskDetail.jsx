@@ -551,9 +551,10 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const reviewComposeMode = isDone && subTab === 'reviews' && reviewMeta.is_participant && !reviewMeta.has_reviewed && writingReview
   const othersReviewCount = reviews.filter((rv) => rv.author_id !== profile?.id).length
   const hasOthersReviews = othersReviewCount > 0
-  // 리뷰 작성 권한(참여자·미작성) / 엿보기 가능(미열람 + 남 리뷰 존재)
+  // 리뷰 작성 권한(참여자·미작성) / 엿보기 가능(미열람 + 미작성 + 남 리뷰 존재)
+  // 내가 리뷰를 이미 작성했으면 남 리뷰가 그대로 공개되므로 엿보기 버튼은 띄우지 않는다.
   const canWrite = reviewMeta.is_participant && !reviewMeta.has_reviewed
-  const peekAvailable = !reviewMeta.revealed && hasOthersReviews
+  const peekAvailable = !reviewMeta.revealed && !reviewMeta.has_reviewed && hasOthersReviews
   // 리뷰 목록 하단 버튼바(작성/엿보기): 작성폼이 아닐 때
   const reviewListBar = isDone && subTab === 'reviews' && !reviewComposeMode && (canWrite || peekAvailable)
   // 리뷰 엿보기: 망원경 보유 시 기존 확인 로직, 미보유 시 안내 모달
