@@ -346,7 +346,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ===== 그룹 상세 3단 레이아웃 (PC 전용) ===== */
 /* 센터(탭+목록) 래퍼 — 모바일/데스크톱 공통 세로 플렉스 */
-.gd-center { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.gd-center { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; position: relative; }
+/* 유형 필터 동그란 버튼: 기본 숨김(모바일은 상단바 필터 사용), 데스크톱에서만 노출 */
+.gd-filter-fab { display: none; }
 /* 좌우 고정 섹션은 데스크톱에서만 노출 */
 .gd-aside { display: none; }
 @media (min-width: 641px) {
@@ -379,6 +381,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   /* 설정/내 정보 임베드: 바깥 컨테이너가 스크롤(내부 스크롤 영역 없음) */
   .gd-detail--scroll { overflow-y: auto; overscroll-behavior: contain; }
   .gd-detail--scroll .page { max-width: none; }
+  /* 유형 필터 동그란 아이콘 버튼(탭 우측 하단) */
+  .gd-filter-fab {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; right: 4px; bottom: 14px; z-index: 6;
+    width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+    background: #fff; color: var(--muted); box-shadow: 0 6px 18px rgba(25, 23, 34, .16);
+    transition: color .12s, background .12s;
+  }
+  .gd-filter-fab:hover { color: var(--text); }
+  .gd-filter-fab.on { background: var(--primary-soft); color: var(--primary); }
+  .gd-filter-dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 2px #fff; }
   .gd-aside { display: block; min-height: 0; }
   .gd-aside-left { align-self: start; }
   .gd-aside-right { align-self: stretch; overflow-y: auto; overscroll-behavior: contain; }

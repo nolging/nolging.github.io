@@ -507,9 +507,6 @@ export default function GroupDetail() {
               onClick={() => navigate(`/groups/${groupId}/tasks/new`, { state: { groupType: group.group_type } })}>
               <PlusIcon /> {terms.noun} 작성
             </button>
-            <button type="button" className={`gd-aside-act ${catActive ? 'on' : ''}`} onClick={() => setFilterOpen(true)}>
-              <FilterIcon /> 유형 필터{catActive && <span className="gd-aside-actdot" aria-hidden="true" />}
-            </button>
             {isOwner && (
               <button type="button" className="gd-aside-act" onClick={() => openSettings('group')}><GearIcon /> 그룹 설정</button>
             )}
@@ -604,6 +601,12 @@ export default function GroupDetail() {
           </div>
         </div>
       )}
+      {/* PC 전용: 탭 우측 하단 유형 필터(동그란 아이콘 버튼) */}
+      <button type="button" className={`gd-filter-fab ${catActive ? 'on' : ''}`}
+        onClick={() => setFilterOpen(true)} aria-label="유형 필터" title="유형 필터">
+        <FilterIcon />
+        {catActive && <span className="gd-filter-dot" aria-hidden="true" />}
+      </button>
       </>
       )}
       </div>{/* /.gd-center */}
