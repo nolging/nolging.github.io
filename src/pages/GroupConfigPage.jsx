@@ -5,8 +5,9 @@ import { getGroup, deleteGroup } from '../lib/api'
 import GroupSettings from '../components/GroupSettings'
 
 // 그룹 설정 페이지 (소유자 전용): 그룹명/유형/테마/공개 허용 + 그룹 삭제
-export default function GroupConfigPage() {
-  const { groupId } = useParams()
+export default function GroupConfigPage({ groupId: groupIdProp, embedded = false, onClose }) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
   const { profile } = useAuth()
   const navigate = useNavigate()
 
@@ -14,7 +15,7 @@ export default function GroupConfigPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const backToGroup = () => navigate(`/groups/${groupId}`)
+  const backToGroup = () => { if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}`) }
 
   const load = useCallback(async () => {
     setLoading(true); setError('')

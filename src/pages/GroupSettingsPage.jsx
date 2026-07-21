@@ -5,8 +5,9 @@ import { getGroup, getMyGroupMember, leaveGroup } from '../lib/api'
 import MySettings from '../components/MySettings'
 
 // 그룹 내 "설정" 페이지 (상단 내비게이션에 "설정" 표기)
-export default function GroupSettingsPage() {
-  const { groupId } = useParams()
+export default function GroupSettingsPage({ groupId: groupIdProp, embedded = false, onClose }) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
   const { profile } = useAuth()
   const navigate = useNavigate()
 
@@ -27,7 +28,7 @@ export default function GroupSettingsPage() {
     show_ott: !!member.show_ott,
     nick_locked_until: member.nick_locked_until || null,
   }
-  const backToGroup = () => navigate(`/groups/${groupId}`)
+  const backToGroup = () => { if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}`) }
 
   const load = useCallback(async () => {
     setLoading(true); setError('')

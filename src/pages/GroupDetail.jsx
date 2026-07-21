@@ -20,6 +20,8 @@ import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
 import TaskDetail from './TaskDetail'
+import GroupConfigPage from './GroupConfigPage'
+import GroupSettingsPage from './GroupSettingsPage'
 import { openMember } from '../lib/memberModal'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -90,6 +92,13 @@ const InviteIcon = () => (
     <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
   </svg>
 )
+// PC 좌측 섹션: 내 정보 수정 아이콘
+const UserGearIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+  </svg>
+)
 // PC 우측 멤버 목록: 방장 왕관 배지
 const OwnerBadge = () => (
   <span className="mlist-owner" title="방장" aria-label="방장">
@@ -148,10 +157,15 @@ export default function GroupDetail() {
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
   const [detailTaskId, setDetailTaskId] = useState(null)
   const [detailReview, setDetailReview] = useState(false)
+  const [settingsView, setSettingsView] = useState(null) // null | 'group' | 'me'
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
   function openTask(t, { review = false } = {}) {
-    if (isDesktop()) { setDetailReview(review); setDetailTaskId(t.id) }
+    if (isDesktop()) { setSettingsView(null); setDetailReview(review); setDetailTaskId(t.id) }
     else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })
+  }
+  function openSettings(view) {
+    if (isDesktop()) { setDetailTaskId(null); setSettingsView(view) }
+    else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
   }
   const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
   const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
@@ -496,7 +510,10 @@ export default function GroupDetail() {
             <button type="button" className={`gd-aside-act ${catActive ? 'on' : ''}`} onClick={() => setFilterOpen(true)}>
               <FilterIcon /> 유형 필터{catActive && <span className="gd-aside-actdot" aria-hidden="true" />}
             </button>
-            <Link to={`/groups/${groupId}/settings/group`} className="gd-aside-act"><GearIcon /> 그룹 설정</Link>
+            {isOwner && (
+              <button type="button" className="gd-aside-act" onClick={() => openSettings('group')}><GearIcon /> 그룹 설정</button>
+            )}
+            <button type="button" className="gd-aside-act" onClick={() => openSettings('me')}><UserGearIcon /> 내 정보 수정</button>
           </div>
         </div>
       </aside>
@@ -509,6 +526,16 @@ export default function GroupDetail() {
             목록으로
           </button>
           <TaskDetail key={detailTaskId} embedded groupId={groupId} taskId={detailTaskId} openReview={detailReview} onBack={() => { closeDetail(); refresh() }} />
+        </div>
+      ) : settingsView ? (
+        <div className="gd-detail gd-detail--scroll">
+          <button type="button" className="gd-detail-back" onClick={() => { setSettingsView(null); refresh() }}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            뒤로
+          </button>
+          {settingsView === 'group'
+            ? <GroupConfigPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />
+            : <GroupSettingsPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />}
         </div>
       ) : (
       <>

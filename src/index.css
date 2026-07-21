@@ -376,6 +376,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   /* 임베드 댓글 입력창: 가운데 컬럼 하단에 인라인(폭 = 가운데 영역) */
   .gd-embed-composer { flex: 0 0 auto; }
   .gd-embed-composer .composer { max-width: none; padding-bottom: 12px; }
+  /* 설정/내 정보 임베드: 바깥 컨테이너가 스크롤(내부 스크롤 영역 없음) */
+  .gd-detail--scroll { overflow-y: auto; overscroll-behavior: contain; }
+  .gd-detail--scroll .page { max-width: none; }
   .gd-aside { display: block; min-height: 0; }
   .gd-aside-left { align-self: start; }
   .gd-aside-right { align-self: stretch; overflow-y: auto; overscroll-behavior: contain; }
