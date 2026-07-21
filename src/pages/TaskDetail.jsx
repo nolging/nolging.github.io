@@ -156,6 +156,14 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
+  // 댓글 입력창(textarea) 높이를 내용에 맞춰 자동 조절 (엔터로 개행되면 늘어남)
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [body])
+
   // 방금 작성/수정한 댓글을 화면에 보이게 스크롤 + 강조 (애니메이션 후 해제)
   useEffect(() => {
     if (!highlightId) return
@@ -812,7 +820,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
               </div>
             )}
             <div className="composer-row">
-              <input ref={inputRef} value={body} onChange={onBodyChange}
+              <textarea ref={inputRef} className="composer-input" value={body} onChange={onBodyChange} rows={1}
                 onKeyDown={(e) => { if (e.key === 'Escape' && mentionOpen) { e.preventDefault(); setMentionOpen(false) } }}
                 placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
               <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
