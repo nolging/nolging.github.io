@@ -766,8 +766,8 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
         </div>
       </Modal>
 
-      {bottomEl && createPortal(
-        reviewComposeMode ? (
+      {(() => {
+        const composerContent = reviewComposeMode ? (
           <div className="composer review-save-bar">
             <button type="button" className="btn btn-primary review-save-btn"
               disabled={savingReview} onClick={saveReview}>
@@ -816,9 +816,12 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
               <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
             </div>
           </form>
-        ),
-        bottomEl,
-      )}
+        )
+        if (composerContent == null) return null
+        // PC 임베드: 앱 하단 슬롯 대신 가운데 컬럼(상세) 하단에 인라인 → 폭이 가운데 영역에 맞음
+        if (embedded) return <div className="gd-embed-composer">{composerContent}</div>
+        return bottomEl ? createPortal(composerContent, bottomEl) : null
+      })()}
     </div>
   )
 }
