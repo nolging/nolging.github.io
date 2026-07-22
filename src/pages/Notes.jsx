@@ -10,7 +10,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
-import { NOTES_TTL, PAGE, notesCache } from '../lib/notesCache'
+import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
 // 물풍선 폭탄 쪽지 판별/폭발 여부
@@ -126,12 +126,11 @@ export default function Notes() {
         setDecosByGroup({ ...decoCacheRef.current })
       }).catch(() => {})
   }, [])
-  // 동봉 아이템(선물 쪽지)만 조회해 기존 맵에 병합
-  const mergeItems = useCallback(async (rows) => {
-    const giftIds = rows.filter((n) => n.kind === 'gift').map((n) => n.id)
-    if (!giftIds.length) return
+  // 선물 쪽지 동봉 아이템(상세)은 목록에서 미리 조회하지 않고, 쪽지 모달을 열 때
+  // 해당 쪽지 것만 조회해 병합한다. (목록 재진입마다의 조회량을 줄이기 위함)
+  const fetchNoteItems = useCallback(async (noteId) => {
     try {
-      const ni = await listNoteItems(giftIds)
+      const ni = await listNoteItems([noteId])
       setNoteItems((prev) => { const m = { ...prev, ...ni }; notesCache.noteItems = m; return m })
     } catch { /* noop */ }
   }, [])
@@ -149,8 +148,7 @@ export default function Notes() {
     if (notesCache.uid !== user.id) { notesCache.uid = user.id; notesCache.decos = {}; decoCacheRef.current = notesCache.decos }
     notesCache.received = r; notesCache.sent = s; notesCache.recvMore = rr.hasMore; notesCache.sentMore = ss.hasMore; notesCache.at = Date.now()
     ensureDecos([...r, ...s])
-    const giftIds = [...r, ...s].filter((n) => n.kind === 'gift').map((n) => n.id)
-    try { const ni = await listNoteItems(giftIds); setNoteItems(ni); notesCache.noteItems = ni } catch { /* noop */ }
+    // 동봉 아이템(선물 쪽지 상세)은 여기서 조회하지 않는다 → 쪽지 모달 열 때 fetchNoteItems 로 조회.
   }, [user?.id, ensureDecos])
 
   // 더 과거 쪽지 조회(스크롤 하단 도달 시) — 현재 탭만 다음 페이지 append.
@@ -167,41 +165,44 @@ export default function Notes() {
         recvCntRef.current = off + res.rows.length // 서버 offset 전진(중복 제거와 무관)
         setReceived((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
         setRecvMore(res.hasMore)
-        ensureDecos(res.rows); await mergeItems(res.rows)
+        ensureDecos(res.rows)
       } else {
         const off = sentCntRef.current
         const res = await listSentNotes(user.id, PAGE, off)
         sentCntRef.current = off + res.rows.length
         setSent((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
         setSentMore(res.hasMore)
-        ensureDecos(res.rows); await mergeItems(res.rows)
+        ensureDecos(res.rows)
       }
     } finally { setLoadingMore(false) }
-  }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos, mergeItems])
+  }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
     try { await fetchNotes() } catch (err) { setError(err.message) }
   }
 
   // 최초 로드 — 스피너가 무한히 돌지 않도록 15초 안전장치 포함.
+  // 캐시가 있으면 즉시 표시해 빈 화면/스피너를 막되, 쪽지 페이지에 들어올 때마다 '항상'
+  // 백그라운드로 재조회해 읽음 상태(카드/하단 탭 점)를 최신화한다. (예전엔 60초 TTL 이내면
+  // 재조회를 건너뛰어, 모달로 읽은 뒤 다른 페이지 갔다 오면 점이 되살아나 보였다.)
   useEffect(() => {
     if (!user?.id) return
-    // 캐시가 신선하면(같은 유저·TTL 이내) 재조회 없이 즉시 표시 → 재진입 egress 절감.
-    if (notesCache.uid === user.id && Date.now() - notesCache.at < NOTES_TTL) {
+    let on = true
+    const hasCache = notesCache.uid === user.id && notesCache.at > 0
+    if (hasCache) {
       setReceived(notesCache.received); setSent(notesCache.sent); setNoteItems(notesCache.noteItems)
       setDecosByGroup({ ...notesCache.decos }); setRecvMore(notesCache.recvMore); setSentMore(notesCache.sentMore)
       recvCntRef.current = notesCache.received.length; sentCntRef.current = notesCache.sent.length
       setError(''); setLoading(false)
-      return
+    } else {
+      setLoading(true)
     }
-    let on = true
-    setLoading(true)
     const guard = setTimeout(() => {
-      if (on) { setError((e) => e || '네트워크가 불안정해요. 아래 다시 시도를 눌러 주세요.'); setLoading(false) }
+      if (on && !hasCache) { setError((e) => e || '네트워크가 불안정해요. 아래 다시 시도를 눌러 주세요.'); setLoading(false) }
     }, 15000)
     fetchNotes()
       .then(() => { if (on) setError('') })
-      .catch((err) => { if (on) setError(err.message || '쪽지를 불러오지 못했어요.') })
+      .catch((err) => { if (on && !hasCache) setError(err.message || '쪽지를 불러오지 못했어요.') })
       .finally(() => { if (on) { clearTimeout(guard); setLoading(false) } })
     return () => { on = false; clearTimeout(guard) }
   }, [user?.id, fetchNotes])
@@ -368,6 +369,7 @@ export default function Notes() {
       if (it._legacy) await claimGift(n.id)
       else await claimGiftItem(n.id, it.item_id)
       await load()
+      await fetchNoteItems(n.id)
       setOpen((o) => (o && o.id === n.id ? { ...o, ...(it._legacy ? { claimed: true, is_read: true } : {}) } : o))
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
@@ -380,6 +382,7 @@ export default function Notes() {
       if (noteItems[n.id]?.length) await claimGiftNoteAll(n.id)
       else await claimGift(n.id)
       await load()
+      await fetchNoteItems(n.id)
       setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true } : o))
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
@@ -473,9 +476,13 @@ export default function Notes() {
   function onCardClick(n) {
     if (suppressClickRef.current) { suppressClickRef.current = false; return }
     setOpen(n)
+    // 상세(동봉 아이템)는 목록이 아니라 여기서, 열린 쪽지 것만 조회
+    if (n.kind === 'gift') fetchNoteItems(n.id)
     // 받은 쪽지를 열면 읽음 처리(카드 점 제거 + 하단 탭 점 갱신)
     if (tab === 'received' && !n.is_read) {
       setReceived((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
+      // 모듈 캐시에도 읽음 반영 → 재진입 시 캐시 즉시표시 단계에서 점이 되살아나지 않게
+      notesCache.received = notesCache.received.map((x) => (x.id === n.id ? { ...x, is_read: true } : x))
       markNoteRead(n.id).then(() => refreshNoteUnread?.()).catch(() => {})
     }
   }
