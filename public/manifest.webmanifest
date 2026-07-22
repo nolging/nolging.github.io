@@ -1,7 +1,7 @@
 {
-  "name": "놀깅 · 그룹 태스크 관리",
+  "name": "놀깅",
   "short_name": "놀깅",
-  "description": "그룹별 태스크 관리 웹앱",
+  "description": "심심하면 놀기 신청",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
