@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap, touchQuest } from '../lib/api'
-import { repeatLabel, categoryStyle, WISH_CATEGORIES } from '../lib/constants'
+import { repeatLabel, resolveCategories, catMeta, catChipStyle, DEFAULT_WISH_CATEGORIES } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -122,18 +122,31 @@ export default function SchedulePage() {
   }
 
   // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크), 제목 검색(본문 돋보기)
-  const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES])
+  const [catOff, setCatOff] = useState([]) // 해제(제외)된 유형. 기본=전체 표시(빈 배열)
   const [groupFilter, setGroupFilter] = useState([]) // 그룹 로드 후 전체로 채움
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
   const scrollRef = useRef(null)
-  const toggleCat = (c) => setCatFilter((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
+  const toggleCat = (c) => setCatOff((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
   const toggleGroup = (id) => setGroupFilter((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
+  // 그룹별 유형 목록(스타일 조회용) + 보이는 유형 합집합(그룹마다 유형이 달라 union 으로 구성)
+  const groupCatsMap = useMemo(() => Object.fromEntries(myGroups.map((g) => [g.id, resolveCategories(g)])), [myGroups])
+  const allCats = useMemo(() => Object.values(groupCatsMap).flat(), [groupCatsMap])
+  const catNames = useMemo(() => {
+    const order = DEFAULT_WISH_CATEGORIES.map((c) => c.name)
+    const seen = []
+    appts.forEach((a) => { if (a.category && !seen.includes(a.category)) seen.push(a.category) })
+    return seen.sort((x, y) => {
+      const ix = order.indexOf(x), iy = order.indexOf(y)
+      return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy)
+    })
+  }, [appts])
+
   // 전체 체크가 기본 상태 → 하나라도 해제되면 "적용 중"(점 표시)
-  const catActive = catFilter.length < WISH_CATEGORIES.length
+  const catActive = catOff.length > 0
   const groupActive = groupFilter.length < myGroups.length
   const filterActive = catActive || groupActive
 
@@ -179,10 +192,10 @@ export default function SchedulePage() {
   const query = q.trim().toLowerCase()
   const myGroupIds = useMemo(() => new Set(myGroups.map((g) => g.id)), [myGroups])
   const shown = useMemo(() => appts.filter((a) =>
-    (!WISH_CATEGORIES.includes(a.category) || catFilter.includes(a.category)) &&
+    !catOff.includes(a.category) &&
     (!myGroupIds.has(a.group_id) || groupFilter.includes(a.group_id)) &&
     (!query || (a.title || '').toLowerCase().includes(query))
-  ), [appts, catFilter, groupFilter, myGroupIds, query])
+  ), [appts, catOff, groupFilter, myGroupIds, query])
 
   // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
   const daysWithAppt = useMemo(() => {
@@ -271,7 +284,7 @@ export default function SchedulePage() {
         <span className="cal-appt-time">{timeOf(a)}</span>
         <span className="cal-appt-body">
           <span className="cal-appt-head">
-            <CategoryChip category={a.category} />
+            <CategoryChip category={a.category} cats={groupCatsMap[a.group_id]} />
             <span className="task-name">{a.title}</span>
           </span>
           {a.repeat_rule && (
@@ -381,18 +394,18 @@ export default function SchedulePage() {
           <h3 className="sheet-title filter-title">필터 설정</h3>
           <button type="button" className="btn btn-ghost btn-sm"
             onClick={() => {
-              if (filterActive) { setCatFilter([...WISH_CATEGORIES]); setGroupFilter(myGroups.map((g) => g.id)) }
-              else { setCatFilter([]); setGroupFilter([]) }
+              if (filterActive) { setCatOff([]); setGroupFilter(myGroups.map((g) => g.id)) }
+              else { setCatOff([...catNames]); setGroupFilter([]) }
             }}>전체</button>
         </div>
 
         <div className="filter-section-label">유형</div>
         <div className="chip-row filter-chips">
-          {WISH_CATEGORIES.map((c) => {
-            const on = catFilter.includes(c)
+          {catNames.map((c) => {
+            const on = !catOff.includes(c)
             return (
               <button key={c} type="button" className={`chip ${on ? 'active' : ''}`}
-                style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
+                style={on ? catChipStyle(catMeta(allCats, c)) : undefined} onClick={() => toggleCat(c)}>{c}</button>
             )
           })}
         </div>

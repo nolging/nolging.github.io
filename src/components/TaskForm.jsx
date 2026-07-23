@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint, TASK_STATUSES, taskTerms } from '../lib/constants'
+import { DEFAULT_WISH_CATEGORIES, MEDIA_LOOKUP_CATS, workNoun, workSearchHint, TASK_STATUSES, taskTerms } from '../lib/constants'
 import MediaCard from './MediaCard'
 import WorkSearchSheet from './WorkSearchSheet'
 import ScheduleFields, { defaultSchedule, buildSchedulePayload } from './ScheduleFields'
@@ -8,7 +8,9 @@ import ScheduleFields, { defaultSchedule, buildSchedulePayload } from './Schedul
 // allowStatus=true 면 상단에 상태(위시/약속/추억) 탭이 나오고, 약속·추억 선택 시
 // 일정·참여자 입력이 함께 노출된다. (작성 화면 전용, 편집 화면에선 미사용)
 export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete, deleteLabel = '위시 삭제하기',
-  allowStatus = false, members = [], meId }) {
+  allowStatus = false, members = [], meId, categories }) {
+  // 그룹의 위시 유형 목록(없으면 기본 6종)
+  const cats = Array.isArray(categories) && categories.length ? categories : DEFAULT_WISH_CATEGORIES
   const [title, setTitle] = useState(initial.title || '')
   const [category, setCategory] = useState(initial.category || '')
   const [mediaInfo, setMediaInfo] = useState(initial.media_info || null)
@@ -86,14 +88,13 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
         <div className={`cg-field ${allowStatus ? 'cg-mt-22' : ''}`}>
           <div className="cg-label">위시 유형 <span className="cg-req">*</span></div>
           <div className="ts-chips">
-            {WISH_CATEGORIES.map((c) => {
-              const sel = category === c
-              const col = CATEGORY_COLORS[c] || CATEGORY_COLORS['기타']
+            {cats.map((c) => {
+              const sel = category === c.name
               return (
-                <button type="button" key={c} className={`ts-chip ${sel ? 'sel' : ''}`}
-                  style={sel ? { background: col.bg, color: col.fg, boxShadow: `inset 0 0 0 1.5px ${col.fg}` } : undefined}
-                  onClick={() => pickCategory(c)}>
-                  {sel && <span className="ts-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>}{c}
+                <button type="button" key={c.name} className={`ts-chip ${sel ? 'sel' : ''}`}
+                  style={sel ? { background: c.bg, color: c.fg, boxShadow: `inset 0 0 0 1.5px ${c.fg}` } : undefined}
+                  onClick={() => pickCategory(c.name)}>
+                  {sel && <span className="ts-chip-emoji" aria-hidden="true">{c.emoji}</span>}{c.name}
                 </button>
               )
             })}
@@ -157,7 +158,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
       </div>
 
       <WorkSearchSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
-        category={category} initialQuery={title} onPick={setMediaInfo} />
+        category={category} cats={cats} initialQuery={title} onPick={setMediaInfo} />
     </form>
   )
 }

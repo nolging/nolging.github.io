@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { updateGroup } from '../lib/api'
 import { CG_BGS, DEFAULT_CG_BG, lastGrapheme } from '../lib/cgForm'
+import { resolveCategories } from '../lib/constants'
 import CgToggle from './CgToggle'
+import WishCategoryEditor from './WishCategoryEditor'
 
 const POLICY_ROWS = [
   { key: 'contact', icon: '📞', iconBg: '#e6eefd', title: '연락처 공개 허용', sub: '멤버들의 연락처를 공개할 수 있어요', field: 'show_contact' },
@@ -19,6 +21,8 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
     show_contact: group.show_contact,
     show_birthdate: group.show_birthdate,
     show_ott: group.show_ott,
+    // 위시 유형: 저장된 값(없으면 기본 6종)으로 초기화 후 편집
+    wish_categories: resolveCategories(group).map((c) => ({ ...c })),
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +32,12 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
   async function save(e) {
     e.preventDefault()
     if (!form.name.trim()) { setNameErr('그룹명을 입력해 주세요.'); return }
+    // 위시 유형 검증: 이름 필수·중복 불가·최소 1개
+    const cats = form.wish_categories.map((c) => ({ ...c, name: c.name.trim() }))
+    if (cats.length === 0) { setError('위시 유형을 최소 1개 남겨 주세요.'); return }
+    if (cats.some((c) => !c.name)) { setError('위시 유형 이름을 모두 입력해 주세요.'); return }
+    const names = cats.map((c) => c.name)
+    if (new Set(names).size !== names.length) { setError('위시 유형 이름이 중복돼요.'); return }
     setBusy(true); setError('')
     try {
       const saved = await updateGroup(group.id, {
@@ -38,6 +48,7 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
         show_contact: form.show_contact,
         show_birthdate: form.show_birthdate,
         show_ott: form.show_ott,
+        wish_categories: cats,
       })
       onSaved(saved)
     } catch (err) { setError(err.message) } finally { setBusy(false) }
@@ -107,6 +118,13 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
             </div>
           ))}
         </div>
+
+        {/* 위시 유형 편집 */}
+        <div className="cg-section cg-mt-24">
+          <div className="cg-section-title">위시 유형</div>
+          <div className="cg-section-sub">그룹원이 위시를 올릴 때 고르는 유형이에요. 이모지·배지 색까지 바꿀 수 있어요.</div>
+        </div>
+        <WishCategoryEditor value={form.wish_categories} onChange={(next) => set({ wish_categories: next })} />
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">

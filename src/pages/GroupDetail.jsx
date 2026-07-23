@@ -8,7 +8,7 @@ import {
 } from '../lib/api'
 import { isAnnivToday, parseYMD } from '../lib/anniv'
 import {
-  taskTerms, TASK_STATUSES, WISH_CATEGORIES, formatWhen, repeatCycleText, categoryStyle, mediaCardLine,
+  taskTerms, TASK_STATUSES, resolveCategories, catMeta, catChipStyle, formatWhen, repeatCycleText, mediaCardLine,
 } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
@@ -151,7 +151,7 @@ export default function GroupDetail() {
   const [filter, setFilter] = useState(initialTab)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [regenBusy, setRegenBusy] = useState(false)
-  const [catFilter, setCatFilter] = useState(() => [...WISH_CATEGORIES]) // 선택된 위시 유형. 기본=전체 체크
+  const [catOff, setCatOff] = useState([]) // 해제(제외)된 위시 유형. 기본=전체 표시(빈 배열)
   const [filterOpen, setFilterOpen] = useState(false)
   const [coupleMenu, setCoupleMenu] = useState({}) // 커플 우측 패널: 멍냥꽁냥/미니게임 펼침 상태
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
@@ -181,7 +181,10 @@ export default function GroupDetail() {
     return () => window.removeEventListener(SETTINGS_EVENT, on)
   }, [groupId])
   const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
-  const catActive = catFilter.length < WISH_CATEGORIES.length // 전체 미선택=필터 적용 중
+  // 그룹별 위시 유형(없으면 기본 6종)
+  const cats = resolveCategories(group)
+  const catNames = cats.map((c) => c.name)
+  const catActive = catOff.length > 0 // 하나라도 해제됨=필터 적용 중
 
   // 유형 필터를 상단바(톱니 좌측)로 노출
   useEffect(() => {
@@ -197,7 +200,7 @@ export default function GroupDetail() {
   }, [setHeaderInvite, isCouple, loading])
 
   function toggleCat(c) {
-    setCatFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
+    setCatOff((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
   }
 
   // 탭 전환(슬라이드 방향 포함). next=왼쪽으로(다음 탭), prev=오른쪽으로(이전 탭)
@@ -416,7 +419,7 @@ export default function GroupDetail() {
   const coupleDays = isCouple ? daysSince(coupleAnniv) : null
   const toggleCoupleMenu = (k) => setCoupleMenu((m) => ({ ...m, [k]: !m[k] }))
   const goCouple = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
-  const matchesCat = (t) => !WISH_CATEGORIES.includes(t.category) || catFilter.includes(t.category)
+  const matchesCat = (t) => !catOff.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
   // 특정 상태(탭)의 카드 목록 렌더 (현재 pane 과 넘어오는 ghost pane 이 공용)
@@ -426,7 +429,7 @@ export default function GroupDetail() {
     return (
       <ul className="task-list">
         {list.map((t) => (
-          <TaskItem key={t.id} task={t} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar} decoOf={decoOf}
+          <TaskItem key={t.id} task={t} cats={cats} meId={profile.id} isOwner={isOwner} isAdmin={isAdmin} terms={terms} nameOf={nameOf} avatarOf={(u) => nameMap[u]?.avatar} decoOf={decoOf}
             participants={partsByTask[t.id] || []} commentCount={commentCounts[t.id] || 0}
             reviewCount={reviewCounts[t.id] || 0} hasReviews={(reviewCounts[t.id] || 0) > 0}
             onOpen={() => openTask(t)}
@@ -755,14 +758,14 @@ export default function GroupDetail() {
         <div className="filter-head">
           <h3 className="sheet-title filter-title">필터 설정</h3>
           <button type="button" className="btn btn-ghost btn-sm"
-            onClick={() => setCatFilter(catActive ? [...WISH_CATEGORIES] : [])}>전체</button>
+            onClick={() => setCatOff(catActive ? [] : [...catNames])}>전체</button>
         </div>
         <div className="chip-row filter-chips">
-          {WISH_CATEGORIES.map((c) => {
-            const on = catFilter.includes(c)
+          {catNames.map((c) => {
+            const on = !catOff.includes(c)
             return (
               <button key={c} type="button" className={`chip ${on ? 'active' : ''}`}
-                style={on ? categoryStyle(c) : undefined} onClick={() => toggleCat(c)}>{c}</button>
+                style={on ? catChipStyle(catMeta(cats, c)) : undefined} onClick={() => toggleCat(c)}>{c}</button>
             )
           })}
         </div>
@@ -771,7 +774,7 @@ export default function GroupDetail() {
   )
 }
 
-function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, decoOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
+function TaskItem({ task, cats, meId, isOwner, isAdmin, terms, nameOf, avatarOf, decoOf, participants, commentCount = 0, reviewCount = 0, hasReviews = false, onOpen, onAccept, onComplete, onReview, onEdit, onEditAppointment, onCancelAppointment, onRevertAppointment, onDelete }) {
   const { groupId } = useParams()
   const mine = task.assignee_id === meId
   const canManage = task.created_by === meId || isOwner || isAdmin
@@ -892,7 +895,7 @@ function TaskItem({ task, meId, isOwner, isAdmin, terms, nameOf, avatarOf, decoO
         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="task-head">
           <div className="task-headline">
-            <CategoryChip category={task.category} />
+            <CategoryChip category={task.category} cats={cats} />
             <span className="task-name">{task.title}</span>
           </div>
           <div className="task-head-right">

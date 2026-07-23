@@ -7,7 +7,7 @@ import {
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
 } from '../lib/api'
-import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen } from '../lib/constants'
+import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen, resolveCategories } from '../lib/constants'
 import { resolveMentions, splitMentions } from '../lib/mentions'
 import { openMember } from '../lib/memberModal'
 import CategoryChip from '../components/CategoryChip'
@@ -631,7 +631,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
     <div className="page task-detail">
       <div className="td-head">
         <div className="td-head-top">
-          <CategoryChip category={task.category} />
+          <CategoryChip category={task.category} cats={resolveCategories(group)} />
           <div className="td-head-right">
           {isScheduled && participants.length > 0 ? (
             <MemberStack groupId={groupId} userIds={participants} nameOf={nameOf} avatarOf={avatarOf} decoOf={decoOf} size={26} max={3} />

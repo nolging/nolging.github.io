@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createTask, createTaskScheduled, listMemberCards } from '../lib/api'
+import { createTask, createTaskScheduled, listMemberCards, getGroup } from '../lib/api'
+import { resolveCategories } from '../lib/constants'
 import TaskForm from '../components/TaskForm'
 
 export default function CreateTask() {
@@ -10,9 +11,12 @@ export default function CreateTask() {
   const navigate = useNavigate()
   const groupType = useLocation().state?.groupType
   const [members, setMembers] = useState([])
+  const [categories, setCategories] = useState(null) // 그룹 위시 유형(로드 전 null=기본)
 
   // 약속/추억으로 바로 등록할 때 참여자 선택에 쓸 멤버 목록
   useEffect(() => { listMemberCards(groupId).then((cs) => setMembers((cs || []).filter((m) => !m.is_left))).catch(() => {}) }, [groupId])
+  // 그룹별 위시 유형 로드
+  useEffect(() => { getGroup(groupId).then((g) => setCategories(resolveCategories(g))).catch(() => {}) }, [groupId])
 
   return (
     <TaskForm
@@ -21,6 +25,7 @@ export default function CreateTask() {
       allowStatus
       members={members}
       meId={profile.id}
+      categories={categories}
       onSubmit={async ({ status, schedule, ...values }) => {
         let task
         if (status === 'open') {

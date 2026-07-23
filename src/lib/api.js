@@ -46,10 +46,17 @@ export async function createGroup({ name, description, ownerId, groupType, theme
 }
 
 export async function updateGroup(groupId, patch) {
-  let res = await supabase.from('groups').update(patch).eq('id', groupId).select().single()
-  if (res.error && /emoji/i.test(res.error.message || '') && ('emoji' in patch || 'emoji_bg' in patch)) {
-    const { emoji, emoji_bg, ...rest } = patch // eslint-disable-line no-unused-vars
-    res = await supabase.from('groups').update(rest).eq('id', groupId).select().single()
+  const attempt = (p) => supabase.from('groups').update(p).eq('id', groupId).select().single()
+  let cur = patch
+  let res = await attempt(cur)
+  // 미배포(신규) 선택 컬럼 폴백: 오류 메시지에 컬럼명이 있으면 그 컬럼을 빼고 재시도(누적)
+  if (res.error && /wish_categories/i.test(res.error.message || '') && 'wish_categories' in cur) {
+    const { wish_categories, ...rest } = cur // eslint-disable-line no-unused-vars
+    cur = rest; res = await attempt(cur)
+  }
+  if (res.error && /emoji/i.test(res.error.message || '') && ('emoji' in cur || 'emoji_bg' in cur)) {
+    const { emoji, emoji_bg, ...rest } = cur // eslint-disable-line no-unused-vars
+    cur = rest; res = await attempt(cur)
   }
   if (res.error) throw res.error
   return res.data

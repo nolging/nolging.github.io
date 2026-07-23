@@ -22,6 +22,8 @@ alter table public.groups add column if not exists show_ott       boolean not nu
 -- 그룹 대표 이모지 + 이모지 배경색
 alter table public.groups add column if not exists emoji         text;
 alter table public.groups add column if not exists emoji_bg      text;
+-- 그룹별 위시 유형 목록 [{name,emoji,bg,fg}] (null=기본 6종). 쓰기는 groups_update(소유자)로 제한.
+alter table public.groups add column if not exists wish_categories jsonb;
 
 alter table public.groups drop constraint if exists groups_type_check;
 alter table public.groups add  constraint groups_type_check

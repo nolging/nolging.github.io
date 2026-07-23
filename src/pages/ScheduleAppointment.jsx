@@ -5,7 +5,7 @@ import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask,
   updateTask, updateTaskMedia,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, WISH_CATEGORIES, CATEGORY_COLORS, categoryEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
+import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
 import Avatar from '../components/Avatar'
 import MediaCard from '../components/MediaCard'
 import WorkSearchSheet from '../components/WorkSearchSheet'
@@ -199,7 +199,8 @@ export default function ScheduleAppointment() {
   if (error && !task) return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!task) return null
 
-  const col = CATEGORY_COLORS[category] || CATEGORY_COLORS['기타']
+  const cats = resolveCategories(group)
+  const col = catMeta(cats, category)
 
   return (
     <div className="page cg-page">
@@ -210,14 +211,13 @@ export default function ScheduleAppointment() {
             <div className="cg-field">
               <div className="cg-label">위시 유형 <span className="cg-req">*</span></div>
               <div className="ts-chips" style={{ marginTop: 10 }}>
-                {WISH_CATEGORIES.map((c) => {
-                  const sel = category === c
-                  const cc = CATEGORY_COLORS[c] || CATEGORY_COLORS['기타']
+                {cats.map((c) => {
+                  const sel = category === c.name
                   return (
-                    <button type="button" key={c} className={`ts-chip ${sel ? 'sel' : ''}`}
-                      style={sel ? { background: cc.bg, color: cc.fg, boxShadow: `inset 0 0 0 1.5px ${cc.fg}` } : undefined}
-                      onClick={() => pickCategory(c)}>
-                      {sel && <span className="ts-chip-emoji" aria-hidden="true">{categoryEmoji(c)}</span>}{c}
+                    <button type="button" key={c.name} className={`ts-chip ${sel ? 'sel' : ''}`}
+                      style={sel ? { background: c.bg, color: c.fg, boxShadow: `inset 0 0 0 1.5px ${c.fg}` } : undefined}
+                      onClick={() => pickCategory(c.name)}>
+                      {sel && <span className="ts-chip-emoji" aria-hidden="true">{c.emoji}</span>}{c.name}
                     </button>
                   )
                 })}
@@ -237,7 +237,7 @@ export default function ScheduleAppointment() {
           <div className="sc-wish">
             {category && (
               <span className="sc-wish-chip" style={{ background: col.bg, color: col.fg }}>
-                <span aria-hidden="true">{categoryEmoji(category)}</span>{category}
+                <span aria-hidden="true">{catChipEmoji(col)}</span>{category}
               </span>
             )}
             <span className="sc-wish-title">{title}</span>
@@ -375,7 +375,7 @@ export default function ScheduleAppointment() {
         </div>
 
         <WorkSearchSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
-          category={category} initialQuery={title} onPick={setMediaInfo} />
+          category={category} cats={cats} initialQuery={title} onPick={setMediaInfo} />
       </form>
     </div>
   )

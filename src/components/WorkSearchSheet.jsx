@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import BottomSheet from './BottomSheet'
 import { searchMedia, getMediaDetail } from '../lib/api'
-import { workNoun, categoryEmoji, categoryStyle } from '../lib/constants'
+import { workNoun, catMeta, catChipStyle, catChipEmoji } from '../lib/constants'
 
 function resultSub(it, category) {
   if (category === '독서') return it.author || ''
@@ -18,7 +18,8 @@ const SEARCH_WARN = {
 }
 
 // 작품/도서/게임 검색 바텀시트 (시안 11c). 선택 후 상세를 가져와 onPick(info).
-export default function WorkSearchSheet({ open, onClose, category, initialQuery = '', onPick }) {
+export default function WorkSearchSheet({ open, onClose, category, cats, initialQuery = '', onPick }) {
+  const meta = catMeta(cats, category)
   const [query, setQuery] = useState(initialQuery)
   const [results, setResults] = useState(null) // null=미검색
   const [selected, setSelected] = useState(null)
@@ -54,7 +55,7 @@ export default function WorkSearchSheet({ open, onClose, category, initialQuery 
       <div className="ws">
         <div className="ws-head">
           <div className="ws-title">{noun} 검색</div>
-          <span className="ws-cat" style={categoryStyle(category)}><span aria-hidden="true">{categoryEmoji(category)}</span>{category}</span>
+          <span className="ws-cat" style={catChipStyle(meta)}><span aria-hidden="true">{catChipEmoji(meta)}</span>{category}</span>
         </div>
 
         {SEARCH_WARN[category] && (
@@ -90,7 +91,7 @@ export default function WorkSearchSheet({ open, onClose, category, initialQuery 
                     className={`ws-item ${sel ? 'sel' : ''}`} onClick={() => setSelected(it)}>
                     {it.poster
                       ? <img src={it.poster} alt="" className="ws-item-poster" />
-                      : <span className="ws-item-poster ws-item-poster-empty" aria-hidden="true">{categoryEmoji(category)}</span>}
+                      : <span className="ws-item-poster ws-item-poster-empty" aria-hidden="true">{catChipEmoji(meta)}</span>}
                     <span className="ws-item-info">
                       <span className="ws-item-title">{it.title}</span>
                       {resultSub(it, category) && <span className="ws-item-sub">{resultSub(it, category)}</span>}

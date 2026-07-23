@@ -31,8 +31,18 @@ export function taskTerms() {
 // 진행 단계 순서 ("전체" 제외)
 export const TASK_STATUSES = ['open', 'accepted', 'done']
 
-// 위시 카테고리
-export const WISH_CATEGORIES = ['OTT', '영화', '게임', '독서', '운동', '기타']
+// 위시 카테고리(기본값) — 그룹이 커스터마이즈하지 않았을 때 사용.
+// 각 유형: { name, emoji, bg(배지 배경), fg(배지 글자) }
+export const DEFAULT_WISH_CATEGORIES = [
+  { name: 'OTT',  emoji: '📺', bg: '#eeebfe', fg: '#7363e8' }, // 보라
+  { name: '영화', emoji: '🎬', bg: '#e6eefd', fg: '#5578d0' }, // 블루
+  { name: '게임', emoji: '🎮', bg: '#fde8ee', fg: '#cf5e88' }, // 핑크
+  { name: '독서', emoji: '📚', bg: '#fdeee6', fg: '#d98a4e' }, // 오렌지
+  { name: '운동', emoji: '🏃', bg: '#e8f4ec', fg: '#4a9d6a' }, // 그린
+  { name: '기타', emoji: '✨', bg: '#eef0f2', fg: '#8b8798' }, // 그레이
+]
+// 이름 목록(기본) — 편집 전/폴백용
+export const WISH_CATEGORIES = DEFAULT_WISH_CATEGORIES.map((c) => c.name)
 
 // 화폐: 시스템 네이밍은 coin, UI 표기는 "츄르". 표기는 항상 이 헬퍼로 통일.
 export const COIN_UNIT = '츄르'
@@ -110,25 +120,52 @@ export function mediaCardLine(category, mi) {
   return parts.join(' | ')
 }
 
-// 카테고리별 파스텔 색 (배경/글자) — 칩으로 유형을 한눈에 구분
-export const CATEGORY_COLORS = {
-  OTT:  { bg: '#eeebfe', fg: '#7363e8' }, // 보라
-  영화: { bg: '#e6eefd', fg: '#5578d0' }, // 블루
-  게임: { bg: '#fde8ee', fg: '#cf5e88' }, // 핑크
-  독서: { bg: '#fdeee6', fg: '#d98a4e' }, // 오렌지
-  운동: { bg: '#e8f4ec', fg: '#4a9d6a' }, // 그린
-  기타: { bg: '#eef0f2', fg: '#8b8798' }, // 그레이
+// 유형 편집기에서 고를 수 있는 배지색 프리셋 (배경/글자 쌍)
+export const CATEGORY_COLOR_PRESETS = [
+  { bg: '#eeebfe', fg: '#7363e8' }, // 보라
+  { bg: '#e6eefd', fg: '#5578d0' }, // 블루
+  { bg: '#e6f6f8', fg: '#3d97a8' }, // 청록
+  { bg: '#e8f4ec', fg: '#4a9d6a' }, // 그린
+  { bg: '#fff4d6', fg: '#c99a24' }, // 옐로
+  { bg: '#fdeee6', fg: '#d98a4e' }, // 오렌지
+  { bg: '#fbe9e7', fg: '#c65b4e' }, // 레드
+  { bg: '#fde8ee', fg: '#cf5e88' }, // 핑크
+  { bg: '#eef0f2', fg: '#8b8798' }, // 그레이
+]
+// 삭제된/알 수 없는 유형의 중립 표시(회색)
+const NEUTRAL_META = { emoji: '🏷️', bg: '#eef0f2', fg: '#8b8798' }
+
+// group.wish_categories → 정규화된 유형 목록. 커스텀이 없으면 기본 6종.
+export function resolveCategories(group) {
+  const l = group?.wish_categories
+  if (Array.isArray(l)) {
+    const clean = l.filter((c) => c && typeof c.name === 'string' && c.name.trim())
+    if (clean.length) return clean
+  }
+  return DEFAULT_WISH_CATEGORIES
 }
-// 카테고리별 대표 이모지 (카드 칩 표기용)
-export const CATEGORY_EMOJI = {
-  OTT: '📺', 영화: '🎬', 게임: '🎮', 독서: '📚', 운동: '🏃', 기타: '✨',
+// 유형 이름 목록(그룹 기준)
+export function categoryNames(group) {
+  return resolveCategories(group).map((c) => c.name)
 }
+// 유형명 → 표시 메타. 첫 인자는 유형 목록(배열) 또는 group 객체 모두 허용.
+// 목록에 없는(삭제된) 이름은 중립(회색)으로 표시.
+export function catMeta(catsOrGroup, name) {
+  const list = Array.isArray(catsOrGroup) ? catsOrGroup : resolveCategories(catsOrGroup)
+  return list.find((c) => c.name === name) || { name, ...NEUTRAL_META }
+}
+export function catChipStyle(meta) {
+  return { background: meta.bg, color: meta.fg, borderColor: meta.bg }
+}
+export function catChipEmoji(meta) {
+  return meta.emoji || NEUTRAL_META.emoji
+}
+// (하위호환) 이름만으로 기본값 기준 스타일/이모지 — group 을 못 넘기는 소수 지점용
 export function categoryEmoji(cat) {
-  return CATEGORY_EMOJI[cat] || CATEGORY_EMOJI['기타']
+  return catChipEmoji(catMeta(DEFAULT_WISH_CATEGORIES, cat))
 }
 export function categoryStyle(cat) {
-  const c = CATEGORY_COLORS[cat] || CATEGORY_COLORS['기타']
-  return { background: c.bg, color: c.fg, borderColor: c.bg }
+  return catChipStyle(catMeta(DEFAULT_WISH_CATEGORIES, cat))
 }
 // 유형별 "작품" 명칭: OTT/영화=작품, 독서=도서, 게임=게임
 export function workNoun(cat) {
