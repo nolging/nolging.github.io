@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { useParams, useNavigate, useSearchParams, useOutletContext, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useLocation, useOutletContext, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
@@ -130,6 +130,7 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { setHeaderFilter, setHeaderInvite, setRefreshHandler } = useOutletContext()
 
   const [searchParams] = useSearchParams()
@@ -181,6 +182,15 @@ export default function GroupDetail() {
     return () => window.removeEventListener(SETTINGS_EVENT, on)
   }, [groupId])
   const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
+  // PC 임베드 상세에서 수정/일정저장 후 그룹으로 돌아오면(state.openTaskId) 가운데에 상세를 다시 연다.
+  // (모바일은 상세가 별도 페이지라 해당 없음.) 마운트 시 1회만 처리 + history state 정리.
+  useEffect(() => {
+    const oid = location.state?.openTaskId
+    if (!oid) return
+    if (isDesktop()) { setSettingsView(null); setDetailReview(false); setDetailTaskId(oid) }
+    navigate(`/groups/${groupId}`, { replace: true, state: {} }) // 뒤로가기/새로고침 시 재오픈 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // 그룹별 위시 유형(없으면 기본 6종)
   const cats = resolveCategories(group)
   const catNames = cats.map((c) => c.name)

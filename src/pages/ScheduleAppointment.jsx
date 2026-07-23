@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask,
@@ -61,6 +61,7 @@ export default function ScheduleAppointment() {
   const { groupId, taskId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const embed = useLocation().state?.embed // PC 임베드 상세에서 진입 → 저장 후 그룹 가운데로 복귀
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
@@ -191,7 +192,8 @@ export default function ScheduleAppointment() {
       }
       if (isReschedule) await rescheduleTask(payload)
       else await scheduleTask(payload)
-      navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
+      if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
+      else navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
     } catch (err) { setError(err.message); setSaving(false) }
   }
 

@@ -10,6 +10,7 @@ export default function TaskEdit() {
   const location = useLocation()
   const task = location.state?.task
   const groupType = location.state?.groupType
+  const embed = location.state?.embed // PC 임베드 상세에서 진입 → 저장 후 그룹 가운데로 복귀
   const [categories, setCategories] = useState(null)
 
   // 편집 대상 정보(목록에서 전달)가 없으면 그룹으로 되돌림
@@ -29,7 +30,8 @@ export default function TaskEdit() {
       submitLabel="저장"
       onSubmit={async (values) => {
         await updateTask(taskId, values)
-        navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType } })
+        if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
+        else navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType } })
       }}
     />
   )

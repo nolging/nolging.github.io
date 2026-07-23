@@ -104,6 +104,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
   const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
+  const [menuPos, setMenuPos] = useState(null)         // 댓글 ⋮ 메뉴 고정 위치(임베드 스크롤 클리핑 회피)
   const [headMenu, setHeadMenu] = useState(false)      // 상단 약속 ⋮ 메뉴
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
@@ -407,7 +408,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   // 상단 약속 메뉴 동작
   function goEditAppointment() {
     setHeadMenu(false)
-    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`)
+    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded } })
   }
   async function doCancelAppointment() {
     setHeadMenu(false)
@@ -426,7 +427,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   }
   function goEditWish() {
     setHeadMenu(false)
-    navigate(`/groups/${groupId}/tasks/${taskId}/edit`, { state: { task } })
+    navigate(`/groups/${groupId}/tasks/${taskId}/edit`, { state: { task, embed: embedded } })
   }
 
   // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
@@ -482,6 +483,20 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
     catch { setToast('복사에 실패했습니다') }
   }
 
+  // 댓글 ⋮ 메뉴 토글 — 버튼 위치를 기준으로 화면 고정(fixed) 좌표를 잡아, 임베드(PC)
+  // 상세의 스크롤 영역(overflow) 밖으로 잘리거나 가려지지 않게 한다.
+  function toggleCommentMenu(e, id) {
+    if (menuId === id) { setMenuId(null); return }
+    const r = e.currentTarget.getBoundingClientRect()
+    const openUp = r.bottom > window.innerHeight - 190 // 하단 근처면 위로 펼침
+    setMenuPos({
+      right: Math.max(8, Math.round(window.innerWidth - r.right)),
+      top: openUp ? 'auto' : Math.round(r.bottom + 4),
+      bottom: openUp ? Math.round(window.innerHeight - r.top + 4) : 'auto',
+    })
+    setMenuId(id)
+  }
+
   function renderCard(c, depth) {
     const canEdit = c.author_id === profile.id || isAdmin
     const canDelete = c.author_id === profile.id || isOwner || isAdmin
@@ -493,15 +508,16 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
             <span className="comment-author">{nameOf(c.author_id)}</span>
             <span className="comment-time">{formatTime(c.created_at)}</span>
             <div className="comment-menu-wrap">
-              <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+              <button className="comment-menu-btn" aria-label="더보기" onClick={(e) => toggleCommentMenu(e, c.id)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
                 </svg>
               </button>
-              {menuId === c.id && (
+              {menuId === c.id && menuPos && (
                 <>
                   <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                  <div className="menu-pop" role="menu">
+                  <div className="menu-pop menu-pop-fixed" role="menu"
+                    style={{ position: 'fixed', right: menuPos.right, top: menuPos.top, bottom: menuPos.bottom, zIndex: 1000 }}>
                     <button type="button" onClick={() => replyTo(c)}>답글 달기</button>
                     <button type="button" onClick={() => copyComment(c)}>댓글 복사</button>
                     {canEdit && <button type="button" onClick={() => startEdit(c)}>수정</button>}
