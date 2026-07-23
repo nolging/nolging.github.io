@@ -158,7 +158,14 @@ export default function GroupDetail() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [coupleMenu, setCoupleMenu] = useState({}) // 커플 우측 패널: 멍냥꽁냥/미니게임 펼침 상태
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
-  const [detailTaskId, setDetailTaskId] = useState(null)
+  // 임베드 상세는 URL에 안 담기므로, 재개 복구(장시간 자리비움 후 자동 새로고침) 시
+  // 상태를 잃고 목록으로 튕긴다 → sessionStorage 에 저장해 새로고침 후 복원.
+  const [detailTaskId, setDetailTaskId] = useState(() => {
+    try {
+      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+      return dt ? (sessionStorage.getItem(`gd-detail:${groupId}`) || null) : null
+    } catch { return null }
+  })
   const [detailReview, setDetailReview] = useState(false)
   const [settingsView, setSettingsView] = useState(null) // null | 'group' | 'me'
   const [editView, setEditView] = useState(null) // PC 가운데 편집 임베드: null | { kind:'wish'|'appointment', taskId }
@@ -193,6 +200,17 @@ export default function GroupDetail() {
     return () => window.removeEventListener(SETTINGS_EVENT, on)
   }, [groupId])
   const closeDetail = useCallback(() => { setDetailTaskId(null); setDetailReview(false) }, [])
+  // 임베드 상세 id 를 sessionStorage 와 동기화 → 재개 복구(자동 새로고침) 후 복원용.
+  // 언마운트(다른 페이지로 SPA 이동)에선 정리해 되살아남을 방지. 새로고침(page unload)에는
+  // React cleanup 이 실행되지 않으므로 저장값이 남아 복원된다.
+  useEffect(() => {
+    const key = `gd-detail:${groupId}`
+    try {
+      if (detailTaskId) sessionStorage.setItem(key, detailTaskId)
+      else sessionStorage.removeItem(key)
+    } catch { /* noop */ }
+    return () => { try { sessionStorage.removeItem(key) } catch { /* noop */ } }
+  }, [detailTaskId, groupId])
   // PC 임베드 상세에서 수정/일정저장 후 그룹으로 돌아오면(state.openTaskId) 가운데에 상세를 다시 연다.
   // (모바일은 상세가 별도 페이지라 해당 없음.) 마운트 시 1회만 처리 + history state 정리.
   useEffect(() => {

@@ -90,8 +90,15 @@ export default function SchedulePage() {
   const [myGroups, setMyGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  // PC: 카드 클릭 시 라우트 이동 없이 이 페이지 안에서 상세/편집을 임베드로 표시
-  const [detail, setDetail] = useState(null)     // { taskId, groupId }
+  // PC: 카드 클릭 시 라우트 이동 없이 이 페이지 안에서 상세/편집을 임베드로 표시.
+  // 임베드 상세는 URL 에 안 담기므로, 재개 복구(자동 새로고침) 후 복원되게 sessionStorage 사용.
+  const [detail, setDetail] = useState(() => {
+    try {
+      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+      const raw = dt ? sessionStorage.getItem('sched-detail') : null
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  })
   const [editView, setEditView] = useState(null) // { taskId, groupId } (약속/추억 편집)
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
 
@@ -187,6 +194,16 @@ export default function SchedulePage() {
       finally { setLoading(false) }
     })()
   }, [])
+
+  // 임베드 상세를 sessionStorage 와 동기화 → 재개 복구(자동 새로고침) 후 복원용.
+  // 언마운트(다른 페이지로 이동)에선 정리(되살아남 방지), 새로고침엔 유지되어 복원.
+  useEffect(() => {
+    try {
+      if (detail) sessionStorage.setItem('sched-detail', JSON.stringify(detail))
+      else sessionStorage.removeItem('sched-detail')
+    } catch { /* noop */ }
+    return () => { try { sessionStorage.removeItem('sched-detail') } catch { /* noop */ } }
+  }, [detail])
 
   // 임베드 상세/편집에서 돌아올 때 약속 목록만 조용히 갱신(필터·스피너 유지)
   const reload = useCallback(async () => {

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
@@ -44,6 +44,13 @@ import AdminQuestDetail from './pages/admin/AdminQuestDetail'
 import AdminNotifs from './pages/admin/AdminNotifs'
 import AdminNotifDetail from './pages/admin/AdminNotifDetail'
 
+// 그룹이 바뀌면 리마운트되게 key 부여 → 그룹별 임베드 상세 상태(sessionStorage 복원 포함)가
+// 다른 그룹으로 새지 않도록. (같은 그룹 내에선 리마운트 없음)
+function GroupDetailKeyed() {
+  const { groupId } = useParams()
+  return <GroupDetail key={groupId} />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -62,7 +69,7 @@ export default function App() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/groups/new" element={<CreateGroup />} />
-        <Route path="/groups/:groupId" element={<GroupDetail />} />
+        <Route path="/groups/:groupId" element={<GroupDetailKeyed />} />
         <Route path="/groups/:groupId/members" element={<GroupMembers />} />
         <Route path="/groups/:groupId/draw" element={<DrawBoard />} />
         <Route path="/groups/:groupId/touch" element={<TouchKiss />} />
