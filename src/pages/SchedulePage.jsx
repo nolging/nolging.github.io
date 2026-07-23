@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap, touchQuest } from '../lib/api'
 import { repeatLabel, resolveCategories, catMeta, catChipStyle, DEFAULT_WISH_CATEGORIES } from '../lib/constants'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
+import TaskDetail from './TaskDetail'
+import ScheduleAppointment from './ScheduleAppointment'
 
 const pad = (n) => String(n).padStart(2, '0')
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -88,6 +90,10 @@ export default function SchedulePage() {
   const [myGroups, setMyGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // PC: 카드 클릭 시 라우트 이동 없이 이 페이지 안에서 상세/편집을 임베드로 표시
+  const [detail, setDetail] = useState(null)     // { taskId, groupId }
+  const [editView, setEditView] = useState(null) // { taskId, groupId } (약속/추억 편집)
+  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
 
   // 일정 페이지 방문 → 랜덤 퀘스트 '일정 확인하기'
   useEffect(() => { touchQuest('r_schedule') }, [])
@@ -150,12 +156,13 @@ export default function SchedulePage() {
   const groupActive = groupFilter.length < myGroups.length
   const filterActive = catActive || groupActive
 
-  // 상단바 필터 버튼 동작/적용여부(점) 등록
+  // 상단바 필터 버튼 동작/적용여부(점) 등록. 임베드 상세/편집 중엔 필터 버튼 숨김.
   const { setHeaderFilter } = useOutletContext()
   useEffect(() => {
+    if (detail || editView) { setHeaderFilter?.(null); return () => setHeaderFilter?.(null) }
     setHeaderFilter?.({ onClick: () => setFilterOpen(true), active: filterActive })
     return () => setHeaderFilter?.(null)
-  }, [filterActive, setHeaderFilter])
+  }, [filterActive, setHeaderFilter, detail, editView])
 
   useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
   function openSearch() { setSearchOpen(true) }
@@ -179,6 +186,15 @@ export default function SchedulePage() {
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }
     })()
+  }, [])
+
+  // 임베드 상세/편집에서 돌아올 때 약속 목록만 조용히 갱신(필터·스피너 유지)
+  const reload = useCallback(async () => {
+    try {
+      const a = await listMyAppointments()
+      setAppts(a)
+      setMemberMap(await listGroupMembersBrief(a.map((x) => x.group_id)))
+    } catch { /* noop */ }
   }, [])
 
   // 약속의 참여자 표시정보 (그룹 내 아바타/닉네임)
@@ -280,7 +296,7 @@ export default function SchedulePage() {
     const extra = parts.length - 3
     return (
       <button key={a.id} type="button" className={`cal-appt ${a.status === 'done' ? 'done' : ''}`}
-        onClick={() => navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } })}>
+        onClick={() => { if (isDesktop()) { setEditView(null); setDetail({ taskId: a.id, groupId: a.group_id }) } else navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } }) }}>
         <span className="cal-appt-time">{timeOf(a)}</span>
         <span className="cal-appt-body">
           <span className="cal-appt-head">
@@ -298,6 +314,37 @@ export default function SchedulePage() {
           </span>
         )}
       </button>
+    )
+  }
+
+  // PC 임베드: 카드 클릭 시 이 페이지 안에서 상세/편집 표시(라우트 이동 없음)
+  if (editView) {
+    return (
+      <div className="page sched-page">
+        <div className="gd-detail gd-detail--scroll">
+          <button type="button" className="gd-detail-back" onClick={() => setEditView(null)}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            뒤로
+          </button>
+          <ScheduleAppointment embedded groupId={editView.groupId} taskId={editView.taskId}
+            onSaved={() => { setEditView(null); reload() }} />
+        </div>
+      </div>
+    )
+  }
+  if (detail) {
+    return (
+      <div className="page sched-page">
+        <div className="gd-detail">
+          <button type="button" className="gd-detail-back" onClick={() => { setDetail(null); reload() }}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            목록으로
+          </button>
+          <TaskDetail key={detail.taskId} embedded groupId={detail.groupId} taskId={detail.taskId}
+            onEdit={() => setEditView({ taskId: detail.taskId, groupId: detail.groupId })}
+            onBack={() => { setDetail(null); reload() }} />
+        </div>
+      </div>
     )
   }
 
