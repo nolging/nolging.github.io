@@ -398,6 +398,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
   /* 좌측 정보 카드 */
   .gd-aside-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; background: var(--surface); border-radius: 18px; }
+  .gd-aside-home { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; background: none; border: none; padding: 0; margin: 0; cursor: pointer; text-align: left; width: auto; }
+  .gd-aside-home:hover .gd-aside-name { text-decoration: underline; }
   .gd-aside-name { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.4px; line-height: 1.25; word-break: keep-all; }
   .gd-aside-desc { margin: 0; font-size: 13px; line-height: 1.45; }
   .gd-aside-members { display: flex; align-items: center; gap: 10px; margin-top: 2px; padding: 0; background: none; border: none; }

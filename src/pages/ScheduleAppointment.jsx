@@ -57,11 +57,15 @@ function SelectPill({ value, onChange, options }) {
   )
 }
 
-export default function ScheduleAppointment() {
-  const { groupId, taskId } = useParams()
+export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp, embedded = false, onSaved }) {
+  const params = useParams()
+  const groupId = gidProp ?? params.groupId
+  const taskId = tidProp ?? params.taskId
   const { profile } = useAuth()
   const navigate = useNavigate()
-  const embed = useLocation().state?.embed // PC 임베드 상세에서 진입 → 저장 후 그룹 가운데로 복귀
+  // embedded: GroupDetail 가운데에 임베드 렌더(라우트 이동 없음) → 저장 후 onSaved 콜백.
+  // embed(state): 풀페이지 진입이지만 PC 임베드 상세로 복귀해야 하는 경우.
+  const embed = useLocation().state?.embed
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
@@ -192,6 +196,7 @@ export default function ScheduleAppointment() {
       }
       if (isReschedule) await rescheduleTask(payload)
       else await scheduleTask(payload)
+      if (embedded) { onSaved?.(); return }
       if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
       else navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
     } catch (err) { setError(err.message); setSaving(false) }

@@ -78,7 +78,7 @@ function formatTime(iso) {
   } catch { return '' }
 }
 
-export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, onBack, embedded = false, openReview: openReviewProp = false }) {
+export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, onBack, onEdit, embedded = false, openReview: openReviewProp = false }) {
   // PC 그룹 상세의 가운데 영역에 임베드될 땐 taskId/groupId 를 props 로 받는다(라우트 파라미터 대신).
   const params = useParams()
   const groupId = groupIdProp ?? params.groupId
@@ -408,6 +408,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   // 상단 약속 메뉴 동작
   function goEditAppointment() {
     setHeadMenu(false)
+    if (embedded && onEdit) { onEdit('appointment'); return } // PC 임베드: 가운데에서 편집
     navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded } })
   }
   async function doCancelAppointment() {
@@ -427,6 +428,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   }
   function goEditWish() {
     setHeadMenu(false)
+    if (embedded && onEdit) { onEdit('wish'); return } // PC 임베드: 가운데에서 편집
     navigate(`/groups/${groupId}/tasks/${taskId}/edit`, { state: { task, embed: embedded } })
   }
 

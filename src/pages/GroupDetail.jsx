@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
-  regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit,
+  regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit, updateTask,
 } from '../lib/api'
 import { isAnnivToday, parseYMD } from '../lib/anniv'
 import {
@@ -22,6 +22,8 @@ import BottomSheet from '../components/BottomSheet'
 import TaskDetail from './TaskDetail'
 import GroupConfigPage from './GroupConfigPage'
 import GroupSettingsPage from './GroupSettingsPage'
+import TaskForm from '../components/TaskForm'
+import ScheduleAppointment from './ScheduleAppointment'
 import { openMember, SETTINGS_EVENT } from '../lib/memberModal'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -159,15 +161,23 @@ export default function GroupDetail() {
   const [detailTaskId, setDetailTaskId] = useState(null)
   const [detailReview, setDetailReview] = useState(false)
   const [settingsView, setSettingsView] = useState(null) // null | 'group' | 'me'
+  const [editView, setEditView] = useState(null) // PC 가운데 편집 임베드: null | { kind:'wish'|'appointment', taskId }
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
   function openTask(t, { review = false } = {}) {
-    if (isDesktop()) { setSettingsView(null); setDetailReview(review); setDetailTaskId(t.id) }
+    if (isDesktop()) { setSettingsView(null); setEditView(null); setDetailReview(review); setDetailTaskId(t.id) }
     else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })
   }
+  // 좌측 헤더(이모지/그룹명) 클릭 → 그룹 홈(위시 탭). 임베드 상세/편집/설정 닫고 위시 탭으로.
+  function goGroupHome() {
+    setDetailTaskId(null); setDetailReview(false); setEditView(null); setSettingsView(null)
+    setFilter('open')
+  }
   function openSettings(view) {
-    if (isDesktop()) { setDetailTaskId(null); setSettingsView(view) }
+    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(view) }
     else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
   }
+  // 임베드 상세에서 '수정' → 가운데를 편집 폼으로 전환(detailTaskId 유지 → 완료/취소 시 상세 복귀)
+  function openEdit(kind) { if (detailTaskId) setEditView({ kind, taskId: detailTaskId }) }
   // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시)
   useEffect(() => {
     const on = (e) => {
@@ -513,8 +523,10 @@ export default function GroupDetail() {
       {/* 좌측 고정 섹션 (PC 전용): 그룹 정보 + 설정 */}
       <aside className="gd-aside gd-aside-left" aria-label="그룹 정보">
         <div className="gd-aside-card">
-          <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={64} radius={22} />
-          <h2 className="gd-aside-name">{group.name}</h2>
+          <button type="button" className="gd-aside-home" onClick={goGroupHome} title={`${terms.noun} 탭으로`}>
+            <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={64} radius={22} />
+            <h2 className="gd-aside-name">{group.name}</h2>
+          </button>
           {group.description && <p className="gd-aside-desc muted">{group.description}</p>}
           {activeMembers.length > 0 && (
             /* 우측 패널에 멤버가 그대로 보이므로 좌측 아바타는 클릭해도 이동하지 않음(정보 표시용) */
@@ -542,13 +554,26 @@ export default function GroupDetail() {
       </aside>
 
       <div className="gd-center">
-      {detailTaskId ? (
+      {editView ? (
+        <div className="gd-detail gd-detail--scroll">
+          <button type="button" className="gd-detail-back" onClick={() => setEditView(null)}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            뒤로
+          </button>
+          {editView.kind === 'wish'
+            ? <TaskForm key={`edit-${editView.taskId}`} initial={tasks.find((t) => t.id === editView.taskId) || {}}
+                categories={cats} groupType={group.group_type} submitLabel="저장"
+                onSubmit={async (values) => { await updateTask(editView.taskId, values); setEditView(null); refresh() }} />
+            : <ScheduleAppointment embedded groupId={groupId} taskId={editView.taskId}
+                onSaved={() => { setEditView(null); refresh() }} />}
+        </div>
+      ) : detailTaskId ? (
         <div className="gd-detail">
           <button type="button" className="gd-detail-back" onClick={() => { closeDetail(); refresh() }}>
             <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
             목록으로
           </button>
-          <TaskDetail key={detailTaskId} embedded groupId={groupId} taskId={detailTaskId} openReview={detailReview} onBack={() => { closeDetail(); refresh() }} />
+          <TaskDetail key={detailTaskId} embedded groupId={groupId} taskId={detailTaskId} openReview={detailReview} onEdit={openEdit} onBack={() => { closeDetail(); refresh() }} />
         </div>
       ) : settingsView ? (
         <div className="gd-detail gd-detail--scroll">
