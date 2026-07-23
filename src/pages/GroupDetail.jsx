@@ -176,8 +176,9 @@ export default function GroupDetail() {
     if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(view) }
     else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
   }
-  // 임베드 상세에서 '수정' → 가운데를 편집 폼으로 전환(detailTaskId 유지 → 완료/취소 시 상세 복귀)
-  function openEdit(kind) { if (detailTaskId) setEditView({ kind, taskId: detailTaskId }) }
+  // '수정' → 가운데를 편집 폼으로 전환. 상세에서 오면 detailTaskId, 카드 스와이프에서
+  // 오면 해당 카드 id 를 대상으로. (완료/취소 시 detailTaskId 있으면 상세, 없으면 목록 복귀)
+  function openEdit(kind, taskId = detailTaskId) { if (taskId) setEditView({ kind, taskId }) }
   // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시)
   useEffect(() => {
     const on = (e) => {
@@ -456,8 +457,8 @@ export default function GroupDetail() {
             onAccept={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
             onComplete={() => { if (confirm('완료하시겠습니까?')) runAction(() => completeTask(t.id)) }}
             onReview={() => openTask(t, { review: true })}
-            onEdit={() => navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t, from: 'group', tab: t.status } })}
-            onEditAppointment={() => navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } })}
+            onEdit={() => { if (isDesktop()) openEdit('wish', t.id); else navigate(`/groups/${groupId}/tasks/${t.id}/edit`, { state: { groupType: group.group_type, task: t, from: 'group', tab: t.status } }) }}
+            onEditAppointment={() => { if (isDesktop()) openEdit('appointment', t.id); else navigate(`/groups/${groupId}/tasks/${t.id}/schedule`, { state: { from: 'group', tab: t.status, groupType: group.group_type } }) }}
             onCancelAppointment={() => { if (confirm('약속을 취소하고 위시로 되돌릴까요?')) runAction(() => cancelAppointment(t.id)) }}
             onRevertAppointment={() => { if (confirm('이 추억을 약속으로 되돌릴까요?')) runAction(() => revertToAppointment(t.id)) }}
             onDelete={() => { if (confirm('삭제하시겠습니까?')) runAction(() => deleteTask(t.id)) }} />
