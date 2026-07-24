@@ -149,8 +149,9 @@ export function AuthProvider({ children }) {
     const reload = () => { try { window.location.reload() } catch { /* noop */ } }
 
     const softRecover = async () => {
-      // 8초 내 세션 확인 실패(락/연결 고착)면 새로고침으로 회복
-      const hard = setTimeout(reload, 8000)
+      // 4초 내 세션 확인 실패(락/연결 고착)면 새로고침으로 회복. (정상 갱신 네트워크
+      // 왕복은 통상 이보다 빠르고, 고착은 사실상 무한이라 4초로도 안전히 구분됨)
+      const hard = setTimeout(reload, 4000)
       try {
         const { data, error } = await supabase.auth.getSession()
         clearTimeout(hard)
