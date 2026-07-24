@@ -133,12 +133,14 @@ export function AuthProvider({ children }) {
   // 핵심: setInterval 은 백그라운드에서 스로틀(크롬은 ~60s/회)되거나 정지되므로,
   // '타이머 간격'만 보면 몇 시간을 백그라운드에 둔 탭은 매 틱 간격이 임계값보다 작아
   // 재개를 놓친다. 그래서 visibilitychange 로 측정한 '실제 숨김 지속시간'을 기준으로
-  // 감지하고(스로틀 무관), 자리비움 길이에 따라 세션 재검증(소프트) 또는
-  // 새로고침(하드)으로 회복한다. 시간점프 감지는 visibility 이벤트가 안 오는
-  // 환경(일부 iOS PWA/절전)을 위한 보조 수단으로 유지한다.
+  // 감지하고(스로틀 무관), 1분+ 자리비운 뒤엔 세션 재검증(소프트)만 한다. 시간 기준
+  // 하드 리로드는 두지 않고, 정말로 락/연결이 고착돼 세션 확인이 4초 내 안 끝날 때만
+  // 새로고침한다. 시간점프 감지는 visibility 이벤트가 안 오는 환경(일부 iOS PWA/절전)
+  // 보조 수단으로 유지한다.
   useEffect(() => {
-    const SOFT_MS = 60000    // 1분 이상 비활성 후 재개 → 세션 재검증
-    const HARD_MS = 3600000  // 60분 이상 비활성/절전 후 재개 → 새로고침으로 클린 회복
+    const SOFT_MS = 60000    // 1분 이상 비활성 후 재개 → 세션 재검증(소프트)
+    // 시간 기준 하드 리로드는 두지 않는다. 자리비운 시간과 무관하게 소프트 재검증만 하고,
+    // 실제로 락/연결이 고착돼 세션 확인이 4초 내 안 끝날 때만 softRecover 가 새로고침한다.
     // lastSeen = '앱이 실제로 살아 돌아가고 있던' 마지막 시각.
     // 프리즈/절전 중엔 아래 tick 이 돌지 않고, 백그라운드(숨김)에선 lastSeen 을 갱신하지
     // 않으므로, 다시 보일 때의 gap 이 곧 '자리 비운 시간' 이 된다. 이렇게 하면
@@ -173,8 +175,7 @@ export function AuthProvider({ children }) {
       lastSeen = now
       if (gap < SOFT_MS || recovering) return
       recovering = true
-      if (gap >= HARD_MS) reload()   // 오래 비움 → 새로고침으로 클린 회복
-      else softRecover()             // 중간 → 세션 재검증(실패 시 새로고침)
+      softRecover() // 자리비움 길이와 무관하게 소프트 재검증(고착이면 내부 4초 폴백이 새로고침)
     }
 
     const iv = setInterval(check, 5000)
