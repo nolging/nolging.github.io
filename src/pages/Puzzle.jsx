@@ -65,6 +65,7 @@ export default function Puzzle() {
   const [exitOpen, setExitOpen] = useState(false)
   const [doneOpen, setDoneOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const [snapTips, setSnapTips] = useState([])   // 맞춘 사람 라벨 [{id,x,y,name}]
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -92,10 +93,22 @@ export default function Puzzle() {
   const moveRaf = useRef(0)
   const movePend = useRef(null)
   const toastT = useRef(0)
+  const tipTimers = useRef({})
 
   const showToast = useCallback((m) => {
     setToast(m); clearTimeout(toastT.current)
     toastT.current = setTimeout(() => setToast(''), 1800)
+  }, [])
+
+  // 조각이 맞물린 자리에 '누가 맞췄는지' 작은 라벨을 잠깐 띄운다(본인·상대 모두에게)
+  const showSnapTip = useCallback((tip) => {
+    if (!tip || typeof tip.x !== 'number') return
+    const id = uuid()
+    setSnapTips((t) => [...t.slice(-4), { ...tip, id }])
+    tipTimers.current[id] = setTimeout(() => {
+      setSnapTips((t) => t.filter((x) => x.id !== id))
+      delete tipTimers.current[id]
+    }, 2600)
   }, [])
 
   useEffect(() => {
@@ -155,6 +168,7 @@ export default function Puzzle() {
     ch.on('broadcast', { event: 'reset' }, () => { setPuzzle(null); setPos({}); setAspect(0); setBase(0); doneRef.current = false; setDoneOpen(false) })
     ch.on('broadcast', { event: 'time' }, ({ payload }) => { if (typeof payload?.ms === 'number') setBase(payload.ms) })
     ch.on('broadcast', { event: 'chat' }, ({ payload }) => setChat((c) => [...c.slice(-80), payload]))
+    ch.on('broadcast', { event: 'snap' }, ({ payload }) => showSnapTip(payload))
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState(), m = {}
       for (const k of Object.keys(st)) m[k] = { name: st[k][0]?.name || '멤버' }
@@ -173,9 +187,13 @@ export default function Puzzle() {
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
     })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { try { await ch.track({ uid, name: myName.current }) } catch { /* noop */ } } })
-    return () => { alive = false; clearTimeout(toastT.current); supabase.removeChannel(ch); chanRef.current = null }
+    return () => {
+      alive = false; clearTimeout(toastT.current)
+      Object.values(tipTimers.current).forEach(clearTimeout); tipTimers.current = {}
+      supabase.removeChannel(ch); chanRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId, uid, setBase])
+  }, [groupId, uid, setBase, showSnapTip])
 
   // 채팅 자동 스크롤: scrollIntoView 는 조상(대기실·화면)까지 스크롤해 fixed 레이아웃에서
   // 채팅 영역이 화면 밖으로 밀릴 수 있다 → 채팅 컨테이너의 scrollTop 만 직접 조정.
@@ -319,7 +337,7 @@ export default function Puzzle() {
     const tol = Math.min(L.wN, L.hN) * 0.35
     const NB = [[0, 1], [0, -1], [1, 0], [-1, 0]]
     // 잡은 그룹이 다른 그룹과 올바른 위치로 인접하면 스냅(정렬)
-    let snapped = false
+    let snapped = false, snapAt = null   // snapAt: 실제로 맞물린 조각 id(라벨을 띄울 자리)
     const mem = members_(d.g, p)
     for (const id of mem) {
       const [pr, pc] = id.split('-').map(Number)
@@ -329,7 +347,7 @@ export default function Puzzle() {
         const nb = p[`${nr}-${nc}`]; if (!nb || nb.g === d.g) continue
         const relx = (pc - nc) * L.wN, rely = (pr - nr) * L.hN
         const ex = (p[id].x - nb.x) - relx, ey = (p[id].y - nb.y) - rely
-        if (Math.hypot(ex, ey) < tol) { for (const m of mem) p[m] = { ...p[m], x: p[m].x - ex, y: p[m].y - ey }; snapped = true; break }
+        if (Math.hypot(ex, ey) < tol) { for (const m of mem) p[m] = { ...p[m], x: p[m].x - ex, y: p[m].y - ey }; snapped = true; snapAt = id; break }
       }
       if (snapped) break
     }
@@ -360,6 +378,15 @@ export default function Puzzle() {
     const np = normalizeGroups(p, L)   // 합쳐진 그룹 내부 좌표를 격자 정위치로 확정(유격 0)
     setPos(np)
     chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(np).map((id) => ({ id, ...np[id] })) } })
+    // 맞물렸으면 '누가 맞췄는지' 라벨을 그 자리에 잠깐 띄우고 상대에게도 알린다
+    if (snapped) {
+      const anchor = np[snapAt || mem[0]]
+      if (anchor) {
+        const tip = { x: anchor.x, y: anchor.y, name: myName.current }
+        showSnapTip(tip)
+        chanRef.current?.send({ type: 'broadcast', event: 'snap', payload: tip })
+      }
+    }
     persistSoon()
   }
 
@@ -491,6 +518,16 @@ export default function Puzzle() {
                 width={puzzle.cols * L.wN * playW} height={puzzle.rows * L.hN * playW} clipPath={`url(#clip-${groupId}-${pc.id})`} preserveAspectRatio="none" />
               <path d={d} fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1" />
             </svg>
+          )
+        })}
+        {/* 방금 맞물린 자리에 '누가 맞췄는지' 라벨(2.6초). 조각 몸통 위쪽에 붙이고,
+            위쪽 공간이 부족하면(판 최상단 조각) 몸통 아래로 뒤집어 표시한다. */}
+        {L && playW > 0 && snapTips.map((t) => {
+          const top = t.y + L.offN, cx = t.x + L.offN + L.wN / 2
+          const below = top < L.hN * 0.5
+          return (
+            <span key={t.id} className={`pz-snaptip${below ? ' below' : ''}`}
+              style={{ left: cx * playW, top: (below ? top + L.hN : top) * playW }}>{t.name}</span>
           )
         })}
       </div>

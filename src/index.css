@@ -3738,6 +3738,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pz-piece { position: absolute; left: 0; top: 0; overflow: visible; touch-action: none; cursor: grab;
   will-change: transform; backface-visibility: hidden; }
 .pz-piece:active { cursor: grabbing; }
+/* 맞물린 조각 위에 뜨는 '맞춘 사람' 라벨 */
+.pz-snaptip { position: absolute; z-index: 200; pointer-events: none; white-space: nowrap;
+  background: rgba(25,23,34,.88); color: #fff; font-size: 10.5px; font-weight: 800;
+  padding: 3px 8px; border-radius: 999px; box-shadow: 0 4px 12px rgba(25,23,34,.25);
+  transform: translate(-50%, -132%); animation: pz-tip-in .22s ease; }
+.pz-snaptip.below { transform: translate(-50%, 32%); }   /* 위쪽 조각은 아래에 표시(잘림 방지) */
+/* transform 은 클래스가 결정하므로 애니메이션은 opacity 만 다룬다 */
+@keyframes pz-tip-in { from { opacity: 0 } to { opacity: 1 } }
 
 /* ---- 모달 / 토스트 ---- */
 .pz-modal-back { position: absolute; inset: 0; background: rgba(25,23,34,.68); display: flex; flex-direction: column;
