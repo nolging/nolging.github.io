@@ -399,7 +399,7 @@ export default function Puzzle() {
                 m.sys ? (
                   <div key={m.id} className="pz-chat-sys">{m.text}</div>
                 ) : m.uid === uid ? (
-                  <div key={m.id} className="pz-chat-row me"><span className="pz-bubble me">{m.text}</span></div>
+                  <div key={m.id} className="pz-chat-row pz-me"><span className="pz-bubble pz-me">{m.text}</span></div>
                 ) : (
                   <div key={m.id} className="pz-chat-row">
                     <Avatar src={members[m.uid]?.avatar} name={m.name} size={26} />
