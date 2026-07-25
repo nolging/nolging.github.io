@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Avatar from '../components/Avatar'
 import { supabase } from '../lib/supabase'
 import { buildEdges, piecePath, normalizeGroups, arrangeLoosePieces } from '../lib/jigsaw'
 import { uploadPuzzleImage, deletePuzzleImageByUrl } from '../lib/storage'
@@ -9,9 +10,15 @@ import { getGroupPuzzle, saveGroupPuzzle, updatePuzzlePositions, deleteGroupPuzz
 // 조각 수 옵션 (시안): 25~81
 const GRIDS = [{ n: 5, l: '25' }, { n: 6, l: '36' }, { n: 7, l: '49' }, { n: 8, l: '64' }, { n: 9, l: '81' }]
 const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
+// 툴바 표기(시안): 3:51 — 분은 0 없이, 초는 두 자리
 const mmss = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000))
-  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+// 완성 모달 표기(시안): 3분 51초
+const hhmm = (ms) => {
+  const s = Math.max(0, Math.floor(ms / 1000))
+  return `${Math.floor(s / 60)}분 ${s % 60}초`
 }
 
 const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18" /></svg>
@@ -80,6 +87,7 @@ export default function Puzzle() {
   const doneRef = useRef(false)
   const finalMsRef = useRef(0)    // 완성 시점의 최종 시간
 
+  const seenRef = useRef(new Set())   // 입장 알림 중복 방지
   const drag = useRef(null)
   const saveT = useRef(0)
   const moveRaf = useRef(0)
@@ -147,6 +155,18 @@ export default function Puzzle() {
       const st = ch.presenceState(), m = {}
       for (const k of Object.keys(st)) m[k] = { name: st[k][0]?.name || '멤버' }
       setPeers(m)
+    })
+    ch.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      if (key === uid || seenRef.current.has(key)) return
+      seenRef.current.add(key)
+      const nm = newPresences?.[0]?.name || '멤버'
+      setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 등장! 🐾` }])
+    })
+    ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      if (key === uid) return
+      seenRef.current.delete(key)
+      const nm = leftPresences?.[0]?.name || '멤버'
+      setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
     })
     ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { try { await ch.track({ uid, name: myName.current }) } catch { /* noop */ } } })
     return () => { alive = false; clearTimeout(toastT.current); supabase.removeChannel(ch); chanRef.current = null }
@@ -347,13 +367,14 @@ export default function Puzzle() {
         <div className="pz-lobby">
           <div className="pz-chat">
             <div className="pz-chat-scroll">
-              <div className="pz-chat-sys">사진을 골라 퍼즐을 만들어 보세요</div>
               {chat.map((m) => (
-                m.uid === uid ? (
+                m.sys ? (
+                  <div key={m.id} className="pz-chat-sys">{m.text}</div>
+                ) : m.uid === uid ? (
                   <div key={m.id} className="pz-chat-row me"><span className="pz-bubble me">{m.text}</span></div>
                 ) : (
                   <div key={m.id} className="pz-chat-row">
-                    <span className="pz-chat-av">{(m.name || '?').slice(0, 1)}</span>
+                    <Avatar src={members[m.uid]?.avatar} name={m.name} size={26} />
                     <div className="pz-chat-msg"><span className="pz-chat-nm">{m.name}</span><span className="pz-bubble">{m.text}</span></div>
                   </div>
                 )
@@ -476,7 +497,7 @@ export default function Puzzle() {
             <div className="pz-done-s">{total}조각을 모두 맞췄어요</div>
             <div className="pz-done-img" style={{ backgroundImage: `url(${puzzle.image})` }} />
             <div className="pz-done-stats">
-              <div><div className="pz-stat-k">걸린 시간</div><div className="pz-stat-v">{mmss(finalMsRef.current || elapsed)}</div></div>
+              <div><div className="pz-stat-k">걸린 시간</div><div className="pz-stat-v">{hhmm(finalMsRef.current || elapsed)}</div></div>
               <div className="pz-stat-div" />
               <div><div className="pz-stat-k">함께한 멤버</div><div className="pz-stat-v">{peerCount}명</div></div>
             </div>
