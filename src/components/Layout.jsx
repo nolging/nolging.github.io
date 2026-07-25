@@ -439,13 +439,9 @@ export default function Layout() {
       </header>
     )
   } else if (puzzleMatch) {
-    // 함께 퍼즐: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
-    topbar = (
-      <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">퍼즐</span>
-      </header>
-    )
+    // 함께 퍼즐: 페이지가 자체 헤더(뒤로·퍼즐·접속 인원·종료)를 그리므로 Layout 상단바는 숨김
+    // (숨기지 않으면 헤더가 두 겹이 되고 접속 인원 배지가 상단바에 가려진다)
+    topbar = null
   } else if (catchMatch) {
     // 캐치마인드: 페이지가 자체 헤더(대기실/게임)를 그리므로 Layout 상단바는 숨김
     topbar = null

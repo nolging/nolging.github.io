@@ -49,6 +49,7 @@ export default function Puzzle() {
   const navigate = useNavigate()
   const uid = profile?.id
 
+  const rootRef = useRef(null)
   const wrapRef = useRef(null)
   const chanRef = useRef(null)
   const chatEndRef = useRef(null)
@@ -171,6 +172,18 @@ export default function Puzzle() {
   }, [groupId, uid, setBase])
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+
+  // 키보드가 올라오면 화면(fixed)이 키보드에 가려지지 않게 실제 보이는 높이에 맞춘다
+  useEffect(() => {
+    const vv = window.visualViewport; if (!vv) return
+    const fit = () => {
+      const el = rootRef.current; if (!el) return
+      el.style.height = `${vv.height}px`; el.style.top = `${vv.offsetTop || 0}px`
+    }
+    fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
+    const t = setTimeout(fit, 300)
+    return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); clearTimeout(t) }
+  }, [puzzle])
 
   const peerUids = useMemo(() => {
     const s = new Set(Object.keys(peers)); if (uid) s.add(uid)
@@ -363,7 +376,7 @@ export default function Puzzle() {
   // ===== 대기실 =====
   if (!puzzle) {
     return (
-      <div className="pz-root">
+      <div className="pz-root" ref={rootRef}>
         {head(false)}
         <div className="pz-lobby">
           <div className="pz-chat">
@@ -383,7 +396,9 @@ export default function Puzzle() {
               <div ref={chatEndRef} />
             </div>
             <form className="pz-chat-input" onSubmit={sendChat}>
-              <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+              <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
+                onFocus={() => rootRef.current?.classList.add('pz-kbd')}
+                onBlur={() => setTimeout(() => rootRef.current?.classList.remove('pz-kbd'), 150)} />
               <button type="submit" className="pz-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
             </form>
           </div>
@@ -432,7 +447,7 @@ export default function Puzzle() {
 
   // ===== 퍼즐판 =====
   return (
-    <div className="pz-root">
+    <div className="pz-root" ref={rootRef}>
       {head(true)}
       <div className="pz-tools">
         <button type="button" className="pz-thumb" style={{ backgroundImage: `url(${puzzle.image})` }}

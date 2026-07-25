@@ -3655,6 +3655,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ---- 대기실 ---- */
 .pz-lobby { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+/* 키보드가 올라오면(pz-kbd) 대기실은 채팅만 남겨 입력창이 키보드 위에 보이게 */
+.pz-root.pz-kbd .pz-sec, .pz-root.pz-kbd .pz-foot { display: none !important; }
+.pz-root.pz-kbd .pz-chat { flex: 1 1 auto; min-height: 0; margin-bottom: 12px; }
 .pz-chat { margin: 16px 20px 0; background: #f4f3f7; border-radius: 20px; padding: 13px; box-sizing: border-box;
   flex: 1; min-height: 180px; display: flex; flex-direction: column; }
 .pz-chat-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
