@@ -10,15 +10,12 @@ import { getGroupPuzzle, saveGroupPuzzle, updatePuzzlePositions, deleteGroupPuzz
 // 조각 수 옵션 (시안): 25~81
 const GRIDS = [{ n: 5, l: '25' }, { n: 6, l: '36' }, { n: 7, l: '49' }, { n: 8, l: '64' }, { n: 9, l: '81' }]
 const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
-// 툴바 표기(시안): 3:51 — 분은 0 없이, 초는 두 자리
+// 진행 시간 표기: 03:51, 한 시간을 넘기면 01:03:51
 const mmss = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000))
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
-}
-// 완성 모달 표기(시안): 3분 51초
-const hhmm = (ms) => {
-  const s = Math.max(0, Math.floor(ms / 1000))
-  return `${Math.floor(s / 60)}분 ${s % 60}초`
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
+  const mm = String(m).padStart(2, '0'), ss = String(sec).padStart(2, '0')
+  return h > 0 ? `${String(h).padStart(2, '0')}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
 const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18" /></svg>
@@ -251,8 +248,12 @@ export default function Puzzle() {
     e?.preventDefault?.()
     const text = draft.trim(); if (!text) return
     const m = { id: uuid(), uid, name: myName.current, text }
-    chanRef.current?.send({ type: 'broadcast', event: 'chat', payload: m })
+    // 내 화면에는 먼저 반영하고(전송 실패와 무관하게 보이도록), 전송은 실패해도 삼킨다.
     setChat((c) => [...c.slice(-80), m]); setDraft('')
+    try {
+      const p = chanRef.current?.send({ type: 'broadcast', event: 'chat', payload: m })
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+    } catch { /* 채널이 아직 준비되지 않았거나 전송 실패 — 내 화면에는 이미 표시됨 */ }
   }
 
   // ---- 조각 정렬: '아무도 옮기지 않은' 조각만 빈 공간에 겹치지 않게 정리 ----
@@ -497,7 +498,7 @@ export default function Puzzle() {
             <div className="pz-done-s">{total}조각을 모두 맞췄어요</div>
             <div className="pz-done-img" style={{ backgroundImage: `url(${puzzle.image})` }} />
             <div className="pz-done-stats">
-              <div><div className="pz-stat-k">걸린 시간</div><div className="pz-stat-v">{hhmm(finalMsRef.current || elapsed)}</div></div>
+              <div><div className="pz-stat-k">걸린 시간</div><div className="pz-stat-v">{mmss(finalMsRef.current || elapsed)}</div></div>
               <div className="pz-stat-div" />
               <div><div className="pz-stat-k">함께한 멤버</div><div className="pz-stat-v">{peerCount}명</div></div>
             </div>
