@@ -94,6 +94,11 @@ export default function Puzzle() {
   const movePend = useRef(null)
   const toastT = useRef(0)
   const tipTimers = useRef({})
+  // 다른 사람이 잡고 있는 조각(그룹) 잠금: uid -> { g, name, at }
+  // 렌더에 쓰지 않으므로(잡는 순간에만 조회) state 가 아니라 ref — 남의 드래그로 리렌더되지 않는다.
+  const locks = useRef({})
+  const grabKeep = useRef(0)
+  const LOCK_TTL = 12000   // grab/이동 신호가 이 시간 넘게 없으면 잠금 해제(탭 종료·끊김 대비)
 
   const showToast = useCallback((m) => {
     setToast(m); clearTimeout(toastT.current)
@@ -160,12 +165,19 @@ export default function Puzzle() {
     chanRef.current = ch
     ch.on('broadcast', { event: 'start' }, ({ payload }) => {
       setPuzzle({ image: payload.image, cols: payload.cols, rows: payload.rows, seed: payload.seed })
-      setPos(payload.positions || {}); setAspect(0); setBase(0); doneRef.current = false; setDoneOpen(false)
+      setPos(payload.positions || {}); setAspect(0); setBase(0); doneRef.current = false; setDoneOpen(false); locks.current = {}
     })
     ch.on('broadcast', { event: 'upd' }, ({ payload }) => {
+      // 드래그 중 이동 신호에는 by/g 가 실려 온다 → 잠금 갱신(별도 keepalive 없이도 유지)
+      if (payload?.by && payload.by !== uid) locks.current[payload.by] = { g: payload.g, name: payload.name || '멤버', at: Date.now() }
       setPos((p) => { const n = { ...p }; for (const q of payload.pieces) n[q.id] = { x: q.x, y: q.y, g: q.g, m: q.m }; return n })
     })
-    ch.on('broadcast', { event: 'reset' }, () => { setPuzzle(null); setPos({}); setAspect(0); setBase(0); doneRef.current = false; setDoneOpen(false) })
+    ch.on('broadcast', { event: 'grab' }, ({ payload }) => {
+      if (!payload?.uid || payload.uid === uid) return
+      locks.current[payload.uid] = { g: payload.g, name: payload.name || '멤버', at: Date.now() }
+    })
+    ch.on('broadcast', { event: 'drop' }, ({ payload }) => { if (payload?.uid) delete locks.current[payload.uid] })
+    ch.on('broadcast', { event: 'reset' }, () => { setPuzzle(null); setPos({}); setAspect(0); setBase(0); doneRef.current = false; setDoneOpen(false); locks.current = {} })
     ch.on('broadcast', { event: 'time' }, ({ payload }) => { if (typeof payload?.ms === 'number') setBase(payload.ms) })
     ch.on('broadcast', { event: 'chat' }, ({ payload }) => setChat((c) => [...c.slice(-80), payload]))
     ch.on('broadcast', { event: 'snap' }, ({ payload }) => showSnapTip(payload))
@@ -183,6 +195,7 @@ export default function Puzzle() {
     ch.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
       if (key === uid) return
       seenRef.current.delete(key)
+      delete locks.current[key]   // 나간 사람이 잡고 있던 조각은 즉시 풀어 준다
       const nm = leftPresences?.[0]?.name || '멤버'
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
     })
@@ -190,6 +203,9 @@ export default function Puzzle() {
     return () => {
       alive = false; clearTimeout(toastT.current)
       Object.values(tipTimers.current).forEach(clearTimeout); tipTimers.current = {}
+      clearInterval(grabKeep.current); grabKeep.current = 0
+      if (drag.current) ch.send({ type: 'broadcast', event: 'drop', payload: { uid } })   // 잡은 채로 나가도 풀어 준다
+      locks.current = {}
       supabase.removeChannel(ch); chanRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,7 +320,12 @@ export default function Puzzle() {
   // ---- 조각 정렬: '아무도 옮기지 않은' 조각만 빈 공간에 겹치지 않게 정리 ----
   function arrangeLoose() {
     if (!L) return
-    const { pos: p, placed, loose } = arrangeLoosePieces(posRef.current, L)
+    // 다른 사람이 지금 잡고 있는 조각도 '건드린 조각'으로 보고 정렬 대상에서 뺀다
+    let src = posRef.current
+    const now = Date.now(), held = new Set()
+    for (const k in locks.current) { const l = locks.current[k]; if (k !== uid && now - l.at < LOCK_TTL) held.add(l.g) }
+    if (held.size) { src = { ...src }; for (const id in src) if (held.has(src[id].g)) src[id] = { ...src[id], m: 1 } }
+    const { pos: p, placed, loose } = arrangeLoosePieces(src, L)
     if (!loose) { showToast('정리할 조각이 없어요'); return }
     setPos(p)
     chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(p).map((id) => ({ id, ...p[id] })) } })
@@ -314,23 +335,42 @@ export default function Puzzle() {
 
   // ---- 드래그(그룹 단위) ----
   function members_(g, p = posRef.current) { return Object.keys(p).filter((id) => p[id].g === g) }
+  // 그 그룹을 지금 잡고 있는 '다른 사람' (없으면 null)
+  function holderOf(g) {
+    const now = Date.now()
+    for (const k in locks.current) {
+      const l = locks.current[k]
+      if (k === uid) continue
+      if (now - l.at >= LOCK_TTL) { delete locks.current[k]; continue }
+      if (l.g === g) return l
+    }
+    return null
+  }
+  function sendGrab(g) { chanRef.current?.send({ type: 'broadcast', event: 'grab', payload: { uid, name: myName.current, g } }) }
   function onPointerDown(e, id) {
     if (done) return
-    e.currentTarget.setPointerCapture?.(e.pointerId)
     const g = pos[id].g
+    const h = holderOf(g)
+    if (h) { showToast(`${h.name} 님이 움직이고 있어요`); return }   // 남이 잡고 있는 조각은 못 움직임
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 이미 놓인 포인터 — 캡처 없이 진행 */ }
     const start = {}; for (const m of members_(g)) start[m] = { x: pos[m].x, y: pos[m].y }
     drag.current = { g, ox: e.clientX, oy: e.clientY, start }
     setActiveG(g)
+    sendGrab(g)   // 움직이지 않고 잡고만 있어도 다른 사람 화면에서 잠기도록
+    clearInterval(grabKeep.current)
+    grabKeep.current = setInterval(() => { if (drag.current) sendGrab(drag.current.g); else { clearInterval(grabKeep.current); grabKeep.current = 0 } }, 5000)
   }
   function onPointerMove(e) {
     const d = drag.current; if (!d || !playW) return
     const dx = (e.clientX - d.ox) / playW, dy = (e.clientY - d.oy) / playW
     setPos((p) => { const n = { ...p }; for (const m in d.start) n[m] = { ...n[m], x: d.start[m].x + dx, y: d.start[m].y + dy, m: 1 }; return n })
     movePend.current = Object.keys(d.start).map((m) => ({ id: m, x: d.start[m].x + dx, y: d.start[m].y + dy, g: d.g, m: 1 }))
-    if (!moveRaf.current) moveRaf.current = requestAnimationFrame(() => { moveRaf.current = 0; const m = movePend.current; if (m) chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: m } }) })
+    if (!moveRaf.current) moveRaf.current = requestAnimationFrame(() => { moveRaf.current = 0; const m = movePend.current; if (m) chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: m, by: uid, name: myName.current, g: d.g } }) })
   }
   function onPointerUp() {
     const d = drag.current; drag.current = null; setActiveG(null)
+    clearInterval(grabKeep.current); grabKeep.current = 0
+    if (d) chanRef.current?.send({ type: 'broadcast', event: 'drop', payload: { uid } })   // 잠금 해제
     if (!d || !L || !puzzle) return
     const { cols, rows } = puzzle
     const p = { ...posRef.current }
