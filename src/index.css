@@ -3660,7 +3660,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pz-root.pz-kbd .pz-chat { flex: 1 1 auto; min-height: 0; margin-bottom: 12px; }
 .pz-chat { margin: 16px 20px 0; background: #f4f3f7; border-radius: 20px; padding: 13px; box-sizing: border-box;
   flex: 1; min-height: 180px; display: flex; flex-direction: column; }
-.pz-chat-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+.pz-chat-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px;
+  overscroll-behavior: contain; }
+/* 세로 flex 컨테이너 안에서 메시지가 눌려 0 높이가 되지 않게(모바일에서 발생) */
+.pz-chat-scroll > * { flex-shrink: 0; }
 .pz-chat-sys { align-self: center; background: #e7e5f0; color: #8b8798; font-size: 11px; font-weight: 700;
   border-radius: 999px; padding: 4px 12px; margin-bottom: 2px; }
 .pz-chat-row { display: flex; align-items: flex-start; gap: 7px; }

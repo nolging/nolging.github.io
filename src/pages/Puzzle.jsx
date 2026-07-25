@@ -53,7 +53,7 @@ export default function Puzzle() {
   const inputRef = useRef(null)
   const wrapRef = useRef(null)
   const chanRef = useRef(null)
-  const chatEndRef = useRef(null)
+  const chatScrollRef = useRef(null)
   const [playW, setPlayW] = useState(0)
   const [puzzle, setPuzzle] = useState(null)     // {image, cols, rows, seed}
   const [pos, setPos] = useState({})              // id -> {x,y,g,m}
@@ -128,6 +128,11 @@ export default function Puzzle() {
       if (!alive) return
       setMembers(mm)
       if (mm[uid]?.name) myName.current = mm[uid].name
+      // 내 입장도 채팅에 표시(캐치마인드와 동일) — 혼자 들어와도 알림이 보인다
+      if (!seenRef.current.has(uid)) {
+        seenRef.current.add(uid)
+        setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }])
+      }
     }).catch(() => {})
     getGroupPuzzle(groupId).then((row) => {
       if (!alive) return
@@ -172,7 +177,12 @@ export default function Puzzle() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, uid, setBase])
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+  // 채팅 자동 스크롤: scrollIntoView 는 조상(대기실·화면)까지 스크롤해 fixed 레이아웃에서
+  // 채팅 영역이 화면 밖으로 밀릴 수 있다 → 채팅 컨테이너의 scrollTop 만 직접 조정.
+  useEffect(() => {
+    const el = chatScrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [chat])
 
   // 키보드가 올라오면 화면(fixed)이 키보드에 가려지지 않게 실제 보이는 높이에 맞춘다.
   // 키보드 여부는 focus/blur 가 아니라 '보이는 높이'로 판정 — blur 시점에 레이아웃이
@@ -384,7 +394,7 @@ export default function Puzzle() {
         {head(false)}
         <div className="pz-lobby">
           <div className="pz-chat">
-            <div className="pz-chat-scroll">
+            <div className="pz-chat-scroll" ref={chatScrollRef}>
               {chat.map((m) => (
                 m.sys ? (
                   <div key={m.id} className="pz-chat-sys">{m.text}</div>
@@ -397,7 +407,6 @@ export default function Puzzle() {
                   </div>
                 )
               ))}
-              <div ref={chatEndRef} />
             </div>
             <form className="pz-chat-input" onSubmit={sendChat}>
               <input ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)}
