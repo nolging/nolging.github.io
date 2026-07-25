@@ -592,7 +592,7 @@ export default function Davinci() {
             {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
             {!placing && myTurn && (v.phase === 'guess' ? sel != null : (v.phase === 'decide' && decidePick != null)) && (
               <div className="dv-guess">
-                <div className="dv-guess-q">선택한 {pickPos + 1}번째 타일은 무엇일까요?{v.phase === 'decide' && <span className="dv-guess-cancel"> · 같은 타일을 다시 누르면 선택 취소</span>}</div>
+                <div className="dv-guess-q">선택한 {pickPos + 1}번째 타일은 무엇일까요?</div>
                 <div className="dv-vals">
                   {Array.from({ length: 12 }).map((_, n) => (
                     <button key={n} type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === String(n) ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
