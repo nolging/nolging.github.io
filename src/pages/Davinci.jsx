@@ -517,10 +517,11 @@ export default function Davinci() {
     chanRef.current?.send({ type: 'broadcast', event: 'rematch', payload: { uid, name: me.name } })
     act('reset')
   }
-  // 정답 후: 이어서 추측할 상대 타일을 고름. 같은 타일을 다시 누르면 취소하고 턴을 넘긴다.
+  // 정답 후: 이어서 추측할 상대 타일을 고름. 같은 타일을 다시 누르면 '선택만' 해제한다.
+  // (턴 넘기기는 아래 '멈추고 턴 넘기기' 버튼을 직접 눌렀을 때만 — 취소가 곧 턴 종료가 되지 않게)
   function onDecidePick(i) {
     setErr('')
-    if (decidePick === i) { setDecidePick(null); act('decide', { cont: false }); return } // 취소 → 멈추고 턴 넘기기
+    if (decidePick === i) { setDecidePick(null); setGuessVal(null); return } // 선택 취소(턴 유지)
     setDecidePick(i); setGuessVal(null)
   }
   // 이어서: decide(cont) 로 추측 단계 전환 후 곧바로 그 타일을 추측 제출
@@ -589,10 +590,9 @@ export default function Davinci() {
                 : <button type="button" className="dv-cbtn on" disabled={busy} onClick={() => act('confirm')}>{v.myHand.some((t) => t.j) ? '배치 완료' : '확인'}</button>
             )}
             {placing && <button type="button" className={`dv-cbtn ${jokerSlot != null ? 'on' : ''}`} disabled={jokerSlot == null || busy} onClick={() => act('place', { slot: jokerSlot })}>{jokerSlot != null ? '이 자리로 확정' : '자리를 고르면 확정할 수 있어요'}</button>}
-            {!placing && myTurn && v.phase === 'decide' && decidePick == null && <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>}
             {!placing && myTurn && (v.phase === 'guess' ? sel != null : (v.phase === 'decide' && decidePick != null)) && (
               <div className="dv-guess">
-                <div className="dv-guess-q">선택한 {pickPos + 1}번째 타일은 무엇일까요?{v.phase === 'decide' && <span className="dv-guess-cancel"> · 같은 타일을 다시 누르면 취소</span>}</div>
+                <div className="dv-guess-q">선택한 {pickPos + 1}번째 타일은 무엇일까요?{v.phase === 'decide' && <span className="dv-guess-cancel"> · 같은 타일을 다시 누르면 선택 취소</span>}</div>
                 <div className="dv-vals">
                   {Array.from({ length: 12 }).map((_, n) => (
                     <button key={n} type="button" className={`dv-val ${tgtBlack ? 'blk' : 'wht'} ${guessVal === String(n) ? 'on' : guessVal != null ? 'dim' : ''}`} onClick={() => setGuessVal(String(n))}>{n}</button>
@@ -602,6 +602,10 @@ export default function Davinci() {
                 <button type="button" className={`dv-cbtn ${tgtBlack ? 'blk' : 'wht'} ${guessVal != null ? 'on' : ''}`} disabled={guessVal == null || busy}
                   onClick={() => (v.phase === 'decide' ? continueAndGuess(pickPos, guessVal) : act('guess', { pos: sel, val: guessVal }))}>추측하기</button>
               </div>
+            )}
+            {/* 턴 넘기기는 항상 이 버튼으로만(타일을 고른 상태에서도 바로 멈출 수 있게) */}
+            {!placing && myTurn && v.phase === 'decide' && (
+              <button type="button" className="dv-cbtn ghost" disabled={busy} onClick={() => act('decide', { cont: false })}>멈추고 턴 넘기기</button>
             )}
           </div>
         )}
