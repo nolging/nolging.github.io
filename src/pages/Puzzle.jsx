@@ -50,6 +50,7 @@ export default function Puzzle() {
   const uid = profile?.id
 
   const rootRef = useRef(null)
+  const inputRef = useRef(null)
   const wrapRef = useRef(null)
   const chanRef = useRef(null)
   const chatEndRef = useRef(null)
@@ -173,12 +174,15 @@ export default function Puzzle() {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
 
-  // 키보드가 올라오면 화면(fixed)이 키보드에 가려지지 않게 실제 보이는 높이에 맞춘다
+  // 키보드가 올라오면 화면(fixed)이 키보드에 가려지지 않게 실제 보이는 높이에 맞춘다.
+  // 키보드 여부는 focus/blur 가 아니라 '보이는 높이'로 판정 — blur 시점에 레이아웃이
+  // 급변하면 전송 버튼 탭이 취소될 수 있어서(모바일), 실제 키보드가 내려갈 때만 복원한다.
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
     const fit = () => {
       const el = rootRef.current; if (!el) return
       el.style.height = `${vv.height}px`; el.style.top = `${vv.offsetTop || 0}px`
+      el.classList.toggle('pz-kbd', vv.height < window.innerHeight * 0.75)
     }
     fit(); vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit)
     const t = setTimeout(fit, 300)
@@ -396,10 +400,11 @@ export default function Puzzle() {
               <div ref={chatEndRef} />
             </div>
             <form className="pz-chat-input" onSubmit={sendChat}>
-              <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="메시지 보내기" maxLength={100} enterKeyHint="send"
-                onFocus={() => rootRef.current?.classList.add('pz-kbd')}
-                onBlur={() => setTimeout(() => rootRef.current?.classList.remove('pz-kbd'), 150)} />
-              <button type="submit" className="pz-send" aria-label="전송" onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
+              <input ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)}
+                placeholder="메시지 보내기" maxLength={100} enterKeyHint="send" />
+              {/* type=button + onClick: submit 합성이나 mousedown preventDefault 로 탭이 삼켜지지 않게 */}
+              <button type="button" className="pz-send" aria-label="전송"
+                onClick={() => { sendChat(); inputRef.current?.focus() }}><SendIcon /></button>
             </form>
           </div>
 
