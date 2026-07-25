@@ -63,6 +63,23 @@ function rev(start, segs) {
   return out
 }
 
+// 같은 그룹(맞물린 조각들)은 항상 격자 정위치여야 한다 — 그룹의 앵커 조각을 기준으로
+// 상대 위치를 재계산해 어긋남(유격)을 제거. 예전 버전이 어긋난 채 저장한 판도 열면 교정된다.
+// pos: { "r-c": {x, y, g} }, L: { wN, hN } (정규화 셀 크기)
+export function normalizeGroups(pos, L) {
+  if (!L) return pos
+  const out = { ...pos }
+  const anchor = {}   // g -> {r, c, x, y}
+  for (const id of Object.keys(out).sort()) {
+    const p = out[id]; if (!p) continue
+    const [r, c] = id.split('-').map(Number)
+    const a = anchor[p.g]
+    if (!a) { anchor[p.g] = { r, c, x: p.x, y: p.y }; continue }
+    out[id] = { ...p, x: a.x + (c - a.c) * L.wN, y: a.y + (r - a.r) * L.hN }
+  }
+  return out
+}
+
 // 한 조각의 로컬 좌표 경로. 셀 좌상단 (off,off).
 export function piecePath(pr, pc, cols, rows, w, h, tb, edges) {
   const off = Math.ceil(tb) + 1

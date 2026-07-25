@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { buildEdges, piecePath } from '../lib/jigsaw'
+import { buildEdges, piecePath, normalizeGroups } from '../lib/jigsaw'
 import { uploadPuzzleImage, deletePuzzleImageByUrl } from '../lib/storage'
 import { getGroupPuzzle, saveGroupPuzzle, updatePuzzlePositions, deleteGroupPuzzle } from '../lib/api'
 
@@ -62,6 +62,17 @@ export default function Puzzle() {
 
   const edges = useMemo(() => puzzle ? buildEdges(puzzle.cols, puzzle.rows, puzzle.seed) : null, [puzzle])
   const L = useMemo(() => puzzle && aspect ? layout(puzzle.cols, puzzle.rows, aspect) : null, [puzzle, aspect])
+
+  // 레이아웃이 준비되면 저장/수신된 좌표의 그룹 내부 어긋남을 한 번 교정(예전 판 호환)
+  useEffect(() => {
+    if (!L) return
+    const cur = posRef.current
+    if (!Object.keys(cur).length) return
+    const np = normalizeGroups(cur, L)
+    for (const k in np) {
+      if (Math.abs(np[k].x - cur[k].x) > 1e-9 || Math.abs(np[k].y - cur[k].y) > 1e-9) { setPos(np); return }
+    }
+  }, [L, pos])
 
   useEffect(() => {
     if (!groupId || !uid) return
@@ -153,7 +164,9 @@ export default function Puzzle() {
       if (snapped) break
     }
     if (snapped) {
-      // 정렬된 상태에서 인접·정위치인 서로 다른 그룹들을 하나로 합침
+      // 인접·근접한 서로 다른 그룹을 합칠 때, 위치까지 '정확히' 맞춘 뒤 합친다.
+      // (예전엔 g 만 합치고 좌표를 그대로 둬서 tol(셀의 35%) 만큼 어긋난 채 한 그룹이 되고,
+      //  이후 같은 그룹이라 다시 정렬되지 않아 계단처럼 유격이 남았다.)
       let changed = true
       while (changed) {
         changed = false
@@ -163,13 +176,22 @@ export default function Puzzle() {
             const nr = pr + dr, nc = pc + dc; if (nr >= rows || nc >= cols) continue
             const a = p[id], b = p[`${nr}-${nc}`]; if (!b || a.g === b.g) continue
             const ex = (a.x - b.x) - (pc - nc) * L.wN, ey = (a.y - b.y) - (pr - nr) * L.hN
-            if (Math.hypot(ex, ey) < tol) { const keep = Math.min(a.g, b.g), drop = Math.max(a.g, b.g); for (const k in p) if (p[k].g === drop) p[k] = { ...p[k], g: keep }; changed = true }
+            if (Math.hypot(ex, ey) >= tol) continue
+            // 방금 드래그한 그룹(d.g)은 사용자가 놓은 자리에 그대로 두고 상대 그룹을 끌어당긴다
+            const ag = a.g, bg = b.g
+            if (bg === d.g) {   // b 가 앵커 → a 그룹을 b 에 맞춤
+              for (const k in p) if (p[k].g === ag) p[k] = { ...p[k], x: p[k].x - ex, y: p[k].y - ey, g: bg }
+            } else {            // a 가 앵커 → b 그룹을 a 에 맞춤
+              for (const k in p) if (p[k].g === bg) p[k] = { ...p[k], x: p[k].x + ex, y: p[k].y + ey, g: ag }
+            }
+            changed = true
           }
         }
       }
     }
-    setPos(p)
-    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(p).map((id) => ({ id, ...p[id] })) } })
+    const np = normalizeGroups(p, L)   // 합쳐진 그룹 내부 좌표를 격자 정위치로 확정(유격 0)
+    setPos(np)
+    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(np).map((id) => ({ id, ...np[id] })) } })
     persistSoon()
   }
 
@@ -226,23 +248,21 @@ export default function Puzzle() {
       <div className="pz-wrap" ref={wrapRef} style={{ height: L && playW ? L.playHN * playW : undefined }}
         onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         {!aspect && <img src={puzzle.image} alt="" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} onLoad={(e) => setAspect(e.target.naturalWidth / e.target.naturalHeight)} />}
-        {L && playW > 0 && (() => {
-          const gcount = {}; for (const k in pos) gcount[pos[k].g] = (gcount[pos[k].g] || 0) + 1
-          return pieces.map((pc) => {
-            const p = pos[pc.id]; if (!p) return null
-            const { d, off, sw } = pc.pp
-            const loose = gcount[p.g] === 1 // 아직 안 맞춰진 낱개 조각만 그림자
-            return (
-              <svg key={pc.id} className={`pz-piece ${loose ? 'loose' : ''}`} width={sw} height={pc.pp.sh}
-                style={{ left: p.x * playW, top: p.y * playW, zIndex: activeG === p.g ? 100 : 10 }}
-                onPointerDown={(e) => onPointerDown(e, pc.id)}>
-                <defs><clipPath id={`clip-${groupId}-${pc.id}`}><path d={d} /></clipPath></defs>
-                <image href={puzzle.image} x={off - pc.c * L.wN * playW} y={off - pc.r * L.hN * playW}
-                  width={puzzle.cols * L.wN * playW} height={puzzle.rows * L.hN * playW} clipPath={`url(#clip-${groupId}-${pc.id})`} preserveAspectRatio="none" />
-              </svg>
-            )
-          })
-        })()}
+        {L && playW > 0 && pieces.map((pc) => {
+          const p = pos[pc.id]; if (!p) return null
+          const { d, off, sw } = pc.pp
+          return (
+            // 위치는 transform(translate3d) 으로 — left/top 재배치는 iOS 에서 잔상(repaint 누락)이 남는다
+            <svg key={pc.id} className="pz-piece" width={sw} height={pc.pp.sh}
+              style={{ transform: `translate3d(${p.x * playW}px, ${p.y * playW}px, 0)`, zIndex: activeG === p.g ? 100 : 10 }}
+              onPointerDown={(e) => onPointerDown(e, pc.id)}>
+              <defs><clipPath id={`clip-${groupId}-${pc.id}`}><path d={d} /></clipPath></defs>
+              <image href={puzzle.image} x={off - pc.c * L.wN * playW} y={off - pc.r * L.hN * playW}
+                width={puzzle.cols * L.wN * playW} height={puzzle.rows * L.hN * playW} clipPath={`url(#clip-${groupId}-${pc.id})`} preserveAspectRatio="none" />
+              <path d={d} fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1" />
+            </svg>
+          )
+        })}
         {showRef && (
           <button type="button" className="pz-ref" onClick={() => setShowRef(false)}><img src={puzzle.image} alt="완성 그림" /></button>
         )}
