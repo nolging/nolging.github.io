@@ -74,8 +74,22 @@ export default function Davinci() {
 
   const refresh = useCallback(async () => {
     const mid = matchRef.current; if (!mid) return
-    try { const r = await davinci('view', { matchId: mid }); setV(r); serverSeatsRef.current = r.seats } catch { /* noop */ }
-  }, [])
+    try {
+      const r = await davinci('view', { matchId: mid })
+      serverSeatsRef.current = r.seats
+      setV((prev) => {
+        // 내 자리 선택이 아직 서버 반영 중이면(in-flight) 내 자리 의도는 로컬 값을 유지 →
+        // 주기 재조회가 방금 누른 선택을 되돌리지 않게. (상대 자리는 서버 값 그대로 반영)
+        if (prev && prev.status === 'lobby' && r.status === 'lobby' && seatInflight.current) {
+          const mine = (prev.seats || []).indexOf(uid)
+          const seats = (r.seats || [null, null]).map((s) => (s === uid ? null : s))
+          if (mine >= 0) seats[mine] = uid
+          return { ...r, seats }
+        }
+        return r
+      })
+    } catch { /* noop */ }
+  }, [uid])
 
   const act = useCallback(async (action, payload = {}) => {
     const mid = matchRef.current; if (!mid && action !== 'open') return
@@ -194,7 +208,11 @@ export default function Davinci() {
       if (payload?.uid !== uid) { setToast(`${payload?.name || '상대'} 님이 한 판 더 하고 싶대요`); setTimeout(() => setToast(''), 4000) }
     })
     ch.on('presence', { event: 'join' }, ({ key }) => {
-      if (key === uid || seenPeers.current.has(key)) return
+      if (key === uid) return
+      // 상대가 (재)입장하면 서로 최신 상태로 맞춘다: 나는 서버에서 다시 읽고(refresh),
+      // 상대도 내 최신 상태를 읽도록 sync 를 보낸다(브로드캐스트 유실/구독 지연 복구).
+      refresh(); ping()
+      if (seenPeers.current.has(key)) return
       seenPeers.current.add(key)
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: key }])
     })
@@ -208,7 +226,12 @@ export default function Davinci() {
       setTimeout(() => refresh(), 1100)
     })
     ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(), m = {}; for (const k of Object.keys(st)) { if (k === uid) continue; const bal = st[k][0]?.bal; if (typeof bal === 'number') m[k] = bal } setPeerBals(m) })
-    ch.subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {}) })
+    // 구독 완료(첫 연결·재연결) 시에도 상태를 다시 맞춘다 → 구독 전에 온 변경을 놓치지 않게
+    ch.subscribe((s) => {
+      if (s !== 'SUBSCRIBED') return
+      ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {})
+      setTimeout(() => { refresh(); ping() }, 150)
+    })
     return () => {
       alive = false; aliveRef.current = false
       // 대기실에서 게임 시작 전에 벗어나면 내 자리를 서버에서도 해제
@@ -216,7 +239,19 @@ export default function Davinci() {
       if (cur && cur.status === 'lobby' && cur.seats?.includes(uid) && matchRef.current) davinci('unseat', { matchId: matchRef.current }).catch(() => {})
       supabase.removeChannel(ch); chanRef.current = null
     }
-  }, [groupId, uid, refresh, pushChat])
+  }, [groupId, uid, refresh, pushChat, ping])
+
+  // 브로드캐스트가 유실돼도(구독 지연·일시 끊김) 상태가 어긋난 채 남지 않도록 주기적으로 재조회.
+  // 화면이 보일 때만 호출하고, 종료된 대국은 폴링하지 않는다.
+  useEffect(() => {
+    const st = v?.status
+    if (!st || st === 'ended') return
+    const ms = st === 'lobby' ? 3000 : 5000
+    const iv = setInterval(() => { if (document.visibilityState === 'visible') refresh() }, ms)
+    const onVis = () => { if (document.visibilityState === 'visible') refresh() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVis) }
+  }, [v?.status, refresh])
 
   // 키보드 위에 입력창 유지 + 채팅 자동 스크롤
   useEffect(() => {
