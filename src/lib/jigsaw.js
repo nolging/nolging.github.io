@@ -80,6 +80,34 @@ export function normalizeGroups(pos, L) {
   return out
 }
 
+// 조각 정렬: '아무도 옮기지 않은' 조각(m=0)만 빈 칸에 겹치지 않게 정리한다.
+// 누군가 옮긴 조각(m=1)이 차지한 칸은 피하고, 그 조각들은 그대로 둔다.
+// 반환: { pos, placed(정렬한 개수), loose(정렬 대상 개수) }
+export function arrangeLoosePieces(pos, L) {
+  const p = { ...pos }
+  const ids = Object.keys(p)
+  const loose = ids.filter((id) => !p[id].m)
+  if (!L || !loose.length) return { pos: p, placed: 0, loose: loose.length }
+  const cw = L.wN + L.offN, ch = L.hN + L.offN     // 톡(요철) 여유를 포함한 한 칸
+  const cols = Math.max(1, Math.floor(1 / cw))
+  const rowsN = Math.max(1, Math.floor(L.playHN / ch))
+  const occ = new Set()
+  for (const id of ids) {
+    const q = p[id]; if (!q.m) continue
+    const c0 = Math.floor(q.x / cw), r0 = Math.floor(q.y / ch)
+    for (let dr = 0; dr <= 1; dr++) for (let dc = 0; dc <= 1; dc++) occ.add(`${r0 + dr}-${c0 + dc}`)
+  }
+  let k = 0
+  for (let r = 0; r < rowsN && k < loose.length; r++) {
+    for (let c = 0; c < cols && k < loose.length; c++) {
+      if (occ.has(`${r}-${c}`)) continue
+      const id = loose[k++]
+      p[id] = { ...p[id], x: c * cw, y: r * ch }     // m 은 0 그대로(다시 정렬 가능)
+    }
+  }
+  return { pos: p, placed: k, loose: loose.length }
+}
+
 // 한 조각의 로컬 좌표 경로. 셀 좌상단 (off,off).
 export function piecePath(pr, pc, cols, rows, w, h, tb, edges) {
   const off = Math.ceil(tb) + 1

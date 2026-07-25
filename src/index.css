@@ -3636,53 +3636,135 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-puzzle-btn:hover { background: #dbe6fc; }
 .gd-puzzle-btn span { font-size: 18px; line-height: 1; }
 
-.pz-setup { display: flex; flex-direction: column; gap: 16px; }
-.pz-peers { align-self: center; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
-  background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: #6f6a80;
-  box-shadow: 0 2px 10px rgba(25,23,34,.05); }
-.pz-drop { display: block; border: 1.5px dashed #cfc8ea; border-radius: 20px; background: #faf9ff; cursor: pointer;
-  overflow: hidden; min-height: 200px; display: flex; align-items: center; justify-content: center; }
-.pz-drop:hover { background: #f5f2ff; }
-.pz-drop-img { width: 100%; max-height: 340px; object-fit: contain; display: block; }
-.pz-drop-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; }
-.pz-drop-t { font-size: 14px; font-weight: 700; color: #7363e8; }
-.pz-grid-label { font-size: 14px; font-weight: 800; color: #191722; margin-bottom: 10px; }
-.pz-grid-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pz-grid-opts6 { grid-template-columns: repeat(3, 1fr); }
-.pz-grid-btn { border: 1.5px solid #ece9f3; background: #fff; border-radius: 14px; padding: 13px; font-size: 13.5px;
-  font-weight: 700; color: #6f6a80; cursor: pointer; }
-.pz-grid-btn.on { border-color: #7363e8; background: #eeebfe; color: #7363e8; }
-.pz-start { font-family: inherit; width: 100%; height: 54px; border: none; border-radius: 999px; background: #191722;
-  color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
-.pz-start:hover { background: #2c2938; }
-.pz-start:active { transform: scale(.985); }
-.pz-start:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; transform: none; }
+/* ================= 퍼즐 (시안 적용) ================= */
+/* 오목·캐치마인드처럼 전체화면(자체 헤더 사용) */
+.pz-root { position: fixed; inset: 0; background: #fdfcfe; display: flex; flex-direction: column;
+  box-sizing: border-box; overflow: hidden; z-index: 50; }
+/* 헤더 */
+.pz-head { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 14px) 20px 0; flex-shrink: 0; }
+.pz-hbtn { width: 36px; height: 36px; border: none; border-radius: 50%; background: #f3f3f5; color: #191722;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
+.pz-hbtn:hover { background: #e9e9ee; }
+.pz-title { font-size: 22px; font-weight: 800; letter-spacing: -.7px; color: #191722; }
+.pz-live { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800;
+  color: #6b6777; background: #f3f3f5; border-radius: 999px; padding: 6px 11px; flex-shrink: 0; cursor: default; }
+.pz-live-dot { width: 5px; height: 5px; border-radius: 50%; background: #2e9e5b; display: inline-block;
+  animation: pz-live 1.8s ease-in-out infinite; }
+@keyframes pz-live { 0%, 100% { opacity: 1 } 50% { opacity: .3 } }
 
-.pz-page { display: flex; flex-direction: column; gap: 10px; }
-.pz-bar { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.pz-bar .pz-peers { align-self: auto; }
-.pz-thumb { margin-left: auto; width: 42px; height: 42px; flex-shrink: 0; padding: 0; border: 2px solid #fff;
-  border-radius: 10px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(25,23,34,.15); }
-.pz-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pz-reset { width: 38px; height: 38px; flex-shrink: 0; border: none; border-radius: 12px; background: #f4f3f7;
-  color: #47444f; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.pz-reset:hover { background: #ecebf0; }
-.pz-wrap { position: relative; width: 100%; background: #f1eff5; border-radius: 18px;
-  overflow: hidden; touch-action: none; box-shadow: inset 0 1px 4px rgba(25,23,34,.05); }
+/* ---- 대기실 ---- */
+.pz-lobby { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+.pz-chat { margin: 16px 20px 0; background: #f4f3f7; border-radius: 20px; padding: 13px; box-sizing: border-box;
+  flex: 1; min-height: 180px; display: flex; flex-direction: column; }
+.pz-chat-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+.pz-chat-sys { align-self: center; background: #e7e5f0; color: #8b8798; font-size: 11px; font-weight: 700;
+  border-radius: 999px; padding: 4px 12px; margin-bottom: 2px; }
+.pz-chat-row { display: flex; align-items: flex-start; gap: 7px; }
+.pz-chat-row.me { flex-direction: row-reverse; }
+.pz-chat-av { width: 26px; height: 26px; border-radius: 50%; background: #fde8ee; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #cf5e88; flex-shrink: 0; }
+.pz-chat-msg { display: flex; flex-direction: column; gap: 3px; min-width: 0; align-items: flex-start; }
+.pz-chat-nm { font-size: 10.5px; font-weight: 700; color: #8b8798; padding-left: 3px; }
+.pz-bubble { padding: 8px 11px; font-size: 12.5px; color: #191722; line-height: 1.4; background: #fff;
+  border-radius: 4px 14px 14px 14px; word-break: break-word; }
+.pz-bubble.me { background: #e5e1fb; border-radius: 14px 4px 14px 14px; }
+.pz-chat-input { margin-top: 11px; display: flex; align-items: center; gap: 8px; background: #fff;
+  border-radius: 999px; padding: 9px 9px 9px 14px; flex-shrink: 0; }
+.pz-chat-input input { font-family: inherit; flex: 1; border: none; background: transparent; outline: none;
+  font-size: 13px; color: #191722; padding: 0; min-width: 0; min-height: 0; }
+.pz-send { width: 28px; height: 28px; border: none; border-radius: 50%; background: #7363e8; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+
+.pz-sec { margin: 16px 20px 0; flex-shrink: 0; }
+.pz-sec-hd { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.pz-sec-t { font-size: 12.5px; font-weight: 800; color: #191722; margin-bottom: 8px; }
+.pz-sec-hd .pz-sec-t { margin-bottom: 0; }
+.pz-sec-sub { font-size: 10.5px; color: #a9a4b8; }
+.pz-drop { height: 130px; border-radius: 18px; border: 2px dashed #d8d5e4; background: #faf9fc; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; box-sizing: border-box; }
+.pz-drop:hover { background: #f4f3f7; border-color: #bfb8dd; }
+.pz-drop-plus { width: 38px; height: 38px; border-radius: 50%; background: #efedf7; display: inline-flex;
+  align-items: center; justify-content: center; color: #7363e8; font-size: 23px; line-height: 1; margin-bottom: 2px; }
+.pz-drop-t { font-size: 12.5px; font-weight: 800; color: #7363e8; }
+.pz-drop-s { font-size: 10.5px; color: #a9a4b8; }
+.pz-photo { position: relative; height: 130px; border-radius: 18px; background-size: cover; background-position: center;
+  box-shadow: 0 3px 12px rgba(25,23,34,.1); }
+.pz-photo-change { position: absolute; right: 9px; bottom: 9px; height: 29px; padding: 0 13px; border-radius: 999px;
+  background: rgba(25,23,34,.6); color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; }
+.pz-grid-opts { display: flex; gap: 6px; }
+.pz-grid-btn { flex: 1; height: 54px; border: none; border-radius: 14px; cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: #f3f3f5; color: #6b6777; transition: background .15s; padding: 0; }
+.pz-grid-btn.on { background: #191722; color: #fff; box-shadow: 0 4px 14px rgba(25,23,34,.22); }
+.pz-grid-n { font-size: 14.5px; font-weight: 800; }
+.pz-grid-s { font-size: 9.5px; font-weight: 700; opacity: .62; }
+.pz-err { margin: 12px 20px 0; }
+.pz-foot { margin: auto 20px 0; padding: 16px 0 26px; flex-shrink: 0; }
+.pz-cta { font-family: inherit; width: 100%; height: 54px; border: none; border-radius: 999px; background: #191722;
+  color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+.pz-cta:hover { background: #2c2938; }
+.pz-cta:active { transform: scale(.99); }
+.pz-cta.off, .pz-cta:disabled { background: #ecebf0; color: #b6b3c0; cursor: default; transform: none; font-weight: 700; }
+
+/* ---- 퍼즐판 ---- */
+.pz-tools { margin: 14px 16px 0; display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.pz-thumb { position: relative; width: 44px; height: 44px; border: none; border-radius: 11px; cursor: pointer;
+  flex-shrink: 0; padding: 0; background-size: cover; background-position: center; box-shadow: 0 2px 8px rgba(25,23,34,.16); }
+.pz-thumb:hover { transform: scale(1.05); }
+.pz-thumb-ex { position: absolute; right: 3px; bottom: 3px; width: 16px; height: 16px; border-radius: 5px;
+  background: rgba(25,23,34,.62); display: inline-flex; align-items: center; justify-content: center; }
+.pz-tool { width: 40px; height: 40px; border: none; border-radius: 50%; background: #f3f3f5; color: #6b6777;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
+.pz-tool:hover { background: #e9e9ee; }
+.pz-tool:active { transform: scale(.95); }
+.pz-timer { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; color: #191722;
+  font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+/* 조각을 흩뿌릴 공간이 화면보다 클 수 있어(정규화 좌표 유지) 판은 스크롤 영역 안에 둔다 */
+.pz-board-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.pz-wrap { position: relative; width: auto; background: #f2f1f6; border-radius: 18px; margin: 12px 12px calc(env(safe-area-inset-bottom) + 20px);
+  box-sizing: border-box; overflow: hidden; touch-action: none; flex-shrink: 0; }
 /* left/top 대신 transform 으로 배치 + 레이어 승격 → iOS 이동 잔상 방지.
    filter(drop-shadow) 는 이동 시 잔상의 원인이라 쓰지 않고, 조각 구분은 흰 테두리(stroke)로 한다. */
 .pz-piece { position: absolute; left: 0; top: 0; overflow: visible; touch-action: none; cursor: grab;
   will-change: transform; backface-visibility: hidden; }
 .pz-piece:active { cursor: grabbing; }
-.pz-ref { position: absolute; inset: 0; margin: 0; padding: 20px; border: none; z-index: 90; cursor: zoom-out;
-  background: rgba(25,23,34,.45); display: flex; align-items: center; justify-content: center; }
-.pz-ref img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-.pz-done { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(25,23,34,.32); z-index: 100; }
-.pz-done-card { background: #fff; border-radius: 22px; padding: 26px 28px; text-align: center; font-size: 40px;
-  box-shadow: 0 12px 40px rgba(25,23,34,.25); display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.pz-done-t { font-size: 18px; font-weight: 800; color: #191722; }
-.pz-done-btn { margin-top: 12px; width: auto; padding: 0 22px; height: 46px; font-size: 14.5px; }
+
+/* ---- 모달 / 토스트 ---- */
+.pz-modal-back { position: absolute; inset: 0; background: rgba(25,23,34,.68); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px; padding: 26px; box-sizing: border-box; z-index: 60; }
+.pz-modal-back.dim { background: rgba(25,23,34,.5); }
+.pz-photo-big { width: 100%; aspect-ratio: 1; border-radius: 20px; background-size: cover; background-position: center;
+  box-shadow: 0 22px 54px rgba(0,0,0,.4); animation: pz-modal .22s ease; }
+.pz-modal-close { height: 44px; padding: 0 26px; border: none; border-radius: 999px; background: #fff; color: #191722;
+  font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+@keyframes pz-modal { 0% { transform: scale(.92); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+.pz-card { width: 100%; max-width: 300px; background: #fff; border-radius: 24px; padding: 24px 20px 20px;
+  box-sizing: border-box; box-shadow: 0 22px 54px rgba(25,23,34,.32); animation: pz-modal .2s ease; text-align: center; }
+.pz-card.done { max-width: 310px; border-radius: 26px; padding: 26px 22px 20px; }
+.pz-card-t { font-size: 16px; font-weight: 800; color: #191722; }
+.pz-card-s { margin-top: 7px; font-size: 12.5px; line-height: 1.6; color: #8b8798; }
+.pz-card-btns { display: flex; gap: 9px; margin-top: 18px; }
+.pz-btn { flex: 1; height: 46px; border: none; border-radius: 999px; font-family: inherit; font-size: 14px;
+  font-weight: 700; cursor: pointer; }
+.pz-btn.ghost { background: #f0eef4; color: #6b6777; }
+.pz-btn.dark { background: #191722; color: #fff; font-weight: 800; }
+.pz-btn.dark:hover { background: #2c2938; }
+.pz-btn.wide { flex: 1.2; }
+.pz-card.done .pz-btn { height: 48px; }
+.pz-done-emoji { font-size: 34px; line-height: 1; }
+.pz-done-t { margin-top: 8px; font-size: 19px; font-weight: 800; color: #191722; }
+.pz-done-s { margin-top: 5px; font-size: 12.5px; color: #8b8798; }
+.pz-done-img { margin: 16px auto 0; width: 150px; height: 150px; border-radius: 18px; background-size: cover;
+  background-position: center; box-shadow: 0 8px 22px rgba(25,23,34,.2); }
+.pz-done-stats { margin-top: 16px; display: flex; justify-content: center; gap: 18px; }
+.pz-stat-k { font-size: 10.5px; color: #a9a4b8; font-weight: 700; }
+.pz-stat-v { margin-top: 2px; font-size: 14px; font-weight: 800; color: #191722; }
+.pz-stat-div { width: 1px; background: #eceaf3; }
+.pz-toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: rgba(25,23,34,.9);
+  color: #fff; font-size: 12px; font-weight: 600; padding: 10px 16px; border-radius: 999px; z-index: 90;
+  white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.25); animation: pz-toast .22s ease; }
+@keyframes pz-toast { 0% { transform: translate(-50%, 10px); opacity: 0 } 100% { transform: translate(-50%, 0); opacity: 1 } }
 
 /* ============ 캐치마인드 (프리미엄 그룹 실시간 그림 맞히기) ============ */
 .cs-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

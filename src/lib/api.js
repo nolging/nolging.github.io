@@ -171,8 +171,12 @@ export async function getGroupPuzzle(groupId) {
   return data
 }
 export async function saveGroupPuzzle(groupId, p) {
-  const row = { group_id: groupId, image: p.image, cols: p.cols, rows: p.rows, seed: p.seed, positions: p.positions || {} }
-  const { error } = await supabase.from('group_puzzles').upsert(row)
+  const row = { group_id: groupId, image: p.image, cols: p.cols, rows: p.rows, seed: p.seed, positions: p.positions || {}, elapsed_ms: 0 }
+  let { error } = await supabase.from('group_puzzles').upsert(row)
+  if (error && /elapsed_ms/i.test(error.message || '')) {   // 컬럼 미배포 폴백
+    const { elapsed_ms, ...rest } = row // eslint-disable-line no-unused-vars
+    ;({ error } = await supabase.from('group_puzzles').upsert(rest))
+  }
   if (error) {
     if (error.code === '42P01') throw new Error('퍼즐 기능이 아직 DB에 설정되지 않았습니다. (group_puzzles 테이블을 먼저 적용해 주세요)')
     throw error
@@ -181,6 +185,13 @@ export async function saveGroupPuzzle(groupId, p) {
 export async function updatePuzzlePositions(groupId, positions) {
   const { error } = await supabase.from('group_puzzles').update({ positions }).eq('group_id', groupId)
   if (error && error.code !== '42P01') throw error
+}
+// 퍼즐 진행 시간(누적 ms) 저장 — 퍼즐판 접속자 중 대표 1명이 주기적으로 호출.
+// 모두 나가면 아무도 호출하지 않아 시간이 자연히 멈춘다. (컬럼 미배포면 조용히 무시)
+export async function updatePuzzleElapsed(groupId, elapsedMs) {
+  const { error } = await supabase.from('group_puzzles')
+    .update({ elapsed_ms: Math.max(0, Math.round(elapsedMs)) }).eq('group_id', groupId)
+  if (error && error.code !== '42P01' && !/elapsed_ms/i.test(error.message || '')) throw error
 }
 export async function deleteGroupPuzzle(groupId) {
   const { error } = await supabase.from('group_puzzles').delete().eq('group_id', groupId)

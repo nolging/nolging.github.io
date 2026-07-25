@@ -269,6 +269,8 @@ create table if not exists public.group_puzzles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- 퍼즐판에 사람이 있는 동안만 누적되는 진행 시간(ms). 모두 나가면 멈춤(재입장 시 이어서).
+alter table public.group_puzzles add column if not exists elapsed_ms bigint not null default 0;
 alter table public.group_puzzles enable row level security;
 drop policy if exists gp_all on public.group_puzzles;
 create policy gp_all on public.group_puzzles for all
