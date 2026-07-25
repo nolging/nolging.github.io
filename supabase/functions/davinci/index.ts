@@ -313,10 +313,10 @@ Deno.serve(async (req) => {
         for (const pl of s.players) {
           const drawn = deck.splice(0, 4)
           const hand = drawn.filter((t) => !t.j).sort((x, y) => tileKey(x) - tileKey(y))
-          // 조커도 처음부터 손패에 포함(개수 항상 4장). 기본 위치는 랜덤 → 소유자가 정렬 단계에서 옮김.
-          for (const jt of drawn.filter((t) => t.j)) hand.splice(Math.floor(Math.random() * (hand.length + 1)), 0, { ...jt, up: false })
+          // 조커는 초기 배치 없이 '배치 대기(toPlace)' 로 둔다 → 소유자가 setup 단계에서
+          // 나머지 타일 사이의 굵은 선을 골라 직접 위치를 정한다(랜덤 배치 없음).
           s.hands[pl.uid] = hand
-          s.toPlace[pl.uid] = []
+          s.toPlace[pl.uid] = drawn.filter((t) => t.j).map((jt) => ({ tile: { ...jt, up: false }, up: false, reason: 'setup' }))
         }
         s.deck = deck
         s.first = a   // 선공 = 0번 자리
@@ -348,6 +348,7 @@ Deno.serve(async (req) => {
       // 정렬 확정 (양쪽 모두 확정하면 대국 시작)
       if (action === 'confirm') {
         if (s.phase !== 'setup') throw new Error('지금은 확인할 수 없어요.')
+        if ((s.toPlace[caller] || []).length) throw new Error('조커를 먼저 배치해 주세요.')
         s.setupDone = s.setupDone || {}
         s.setupDone[caller] = true
         if (s.players.every((pl) => s.setupDone[pl.uid])) { s.turn = s.first; beginTurn(s) }
@@ -356,6 +357,17 @@ Deno.serve(async (req) => {
       // 뽑은 조커를 추측 전에 선배치(위치만 예약, 실제 삽입은 턴 종료 시) → 추측 단계로.
       // 몇 번째 조커든 뽑은 조커(s.drawn) 기준으로 처리한다.
       if (action === 'place') {
+        // setup 단계: 초기 조커를 손패의 고른 자리에 직접 삽입(랜덤 배치 없음)
+        if (s.phase === 'setup') {
+          if (s.setupDone?.[caller]) throw new Error('이미 배치를 확정했어요.')
+          const q = s.toPlace[caller] || []
+          if (!q.length) throw new Error('배치할 조커가 없어요.')
+          const slot = Math.max(0, Math.min(s.hands[caller].length, Math.floor(Number(p.slot))))
+          const item = q.shift()
+          s.hands[caller].splice(slot, 0, { ...item.tile, up: false })
+          s.toPlace[caller] = q
+          return
+        }
         if (!(s.drawn && s.drawn.uid === caller && s.drawn.tile.j && !s.drawn.placed)) throw new Error('배치할 조커가 없어요.')
         const slot = Math.max(0, Math.min(s.hands[caller].length, Math.floor(Number(p.slot))))
         s.drawn.slot = slot; s.drawn.placed = true
