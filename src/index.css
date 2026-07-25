@@ -3669,8 +3669,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pz-reset:hover { background: #ecebf0; }
 .pz-wrap { position: relative; width: 100%; background: #f1eff5; border-radius: 18px;
   overflow: hidden; touch-action: none; box-shadow: inset 0 1px 4px rgba(25,23,34,.05); }
-.pz-piece { position: absolute; overflow: visible; touch-action: none; cursor: grab;
-  filter: drop-shadow(0 1px 2px rgba(25,23,34,.28)); }
+.pz-piece { position: absolute; overflow: visible; touch-action: none; cursor: grab; }
+/* 낱개(안 맞춰진) 조각만 그림자 → 집는 느낌. 합쳐진 조각은 그림자 없이 이음새 없이 붙음 */
+.pz-piece.loose { filter: drop-shadow(0 1px 2px rgba(25,23,34,.28)); }
 .pz-piece:active { cursor: grabbing; }
 .pz-ref { position: absolute; inset: 0; margin: 0; padding: 20px; border: none; z-index: 90; cursor: zoom-out;
   background: rgba(25,23,34,.45); display: flex; align-items: center; justify-content: center; }
@@ -4076,12 +4077,23 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .cm-live { position: absolute; top: 12px; left: 14px; font-size: 11px; font-weight: 800; color: #e5484d; background: #fdeaee; border-radius: 999px; padding: 4px 10px; z-index: 2; }
 .cm-canvas { width: 100%; height: 100%; background: #fff; border-radius: 20px; display: block; object-fit: contain; }
-.cm-pens { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 7px;
-  background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 10px; box-shadow: 0 2px 10px rgba(0,0,0,.1); z-index: 3; }
-.cm-pen { width: 24px; height: 24px; border-radius: 50%; border: none; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+/* 그리기 툴바: 한 줄(굵기 3 · 색상 스크롤 · 휴지통), 모두 원형 */
+.cm-tools { position: absolute; bottom: 10px; left: 8px; right: 8px; display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.95); border-radius: 999px; padding: 6px 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); z-index: 3; }
+.cm-widths { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.cm-width { width: 30px; height: 30px; flex: 0 0 auto; border: none; border-radius: 50%; background: #f3f3f5; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center; }
+.cm-width.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3px #47444f; }
+.cm-width-dot { background: #47444f; border-radius: 50%; display: block; }
+.cm-swatches { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; padding: 2px 1px;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.cm-swatches::-webkit-scrollbar { display: none; }
+.cm-pen { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; border: none; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
 .cm-pen.wht { box-shadow: inset 0 0 0 1.5px #d7d4e0; }
-.cm-pen.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #47444f; }
-.cm-pen-clear { font-family: inherit; border: none; background: #f3f3f5; color: #47444f; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cm-pen.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3px #47444f; }
+.cm-pen-clear { width: 34px; height: 34px; flex: 0 0 auto; border: none; border-radius: 50%; background: #fdeaee; color: #e5484d; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center; }
+.cm-pen-clear:active { transform: scale(.92); }
 .cm-chat2 { margin: 12px 16px 0; background: #f4f3f7; border-radius: 20px; padding: 12px; display: flex; flex-direction: column;
   flex: 0 0 auto; height: 34%; min-height: 150px; margin-bottom: calc(env(safe-area-inset-bottom) + 12px); }
 .cm-chat2-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }

@@ -239,7 +239,8 @@ export default function Inventory() {
         qty={1} onSend={inventoryGiftSend}
         excludeGroupIds={giftItemId === 'friend-ring' ? [...new Set([...coupleGroupIds, ...friendGroupIds])] : []} />
 
-      <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
+      <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin}
+        count={displayGroups.find((g) => g.id === 'nyangpito')?.count || 0} />
 
       <ThemeModal open={!!themeItem} onClose={() => setThemeItem(null)} myId={user?.id}
         item={themeItem} onDone={reload} />
@@ -406,31 +407,43 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
 }
 
 // ---- 냥피또: 스크래치 복권 ----
-function ScratchModal({ open, onClose, onDone, refreshCoin }) {
+function ScratchModal({ open, onClose, onDone, refreshCoin, count = 0 }) {
   const [prize, setPrize] = useState(null)      // null=아직 미확정(긁기/확인 전)
   const [revealed, setRevealed] = useState(false)
   const [committed, setCommitted] = useState(false) // 실제 사용됨(긁기 시작 또는 결과 확인)
   const [forceReveal, setForceReveal] = useState(false)
   const [error, setError] = useState('')
+  const [used, setUsed] = useState(0)           // 이번 세션에서 소모한 냥피또 수
+  const [cardKey, setCardKey] = useState(0)     // 다음 장 긁기용 카드 리마운트 key
+  const openCountRef = useRef(0)                 // 모달 열 때의 보유 개수(세션 중 고정)
   const rollingRef = useRef(false)
 
   useEffect(() => {
-    if (open) { setPrize(null); setRevealed(false); setCommitted(false); setForceReveal(false); setError(''); rollingRef.current = false }
+    if (open) { setPrize(null); setRevealed(false); setCommitted(false); setForceReveal(false); setError(''); setUsed(0); setCardKey(0); openCountRef.current = count; rollingRef.current = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  // 실제 사용: 냥피또 1개 소모 + 당첨 계산(서버). 최초 1회만.
+  const remaining = Math.max(0, openCountRef.current - used) // 이 장 소모 후 남은 개수
+
+  // 실제 사용: 냥피또 1개 소모 + 당첨 계산·적립(서버). 다 긁으면 버튼 없이 자동 적립됨.
   const roll = useCallback(async () => {
     if (rollingRef.current) return
     rollingRef.current = true
     setCommitted(true)
     try {
       const p = await scratchNyangpito()
-      setPrize(p)
+      setPrize(p); setUsed((u) => u + 1); refreshCoin?.()
     } catch (e) {
       setError(e.message)
     }
-  }, [])
+  }, [refreshCoin])
 
+  // 이어서 다음 냥피또 긁기: 카드 리셋
+  function scratchNext() {
+    if (remaining <= 0) return
+    setPrize(null); setRevealed(false); setForceReveal(false); rollingRef.current = false
+    setCardKey((k) => k + 1)
+  }
   async function finish() {
     try { await onDone() } catch { /* noop */ }
     refreshCoin?.()
@@ -438,11 +451,8 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
   }
   // 배경 클릭 등으로 닫기: 사용했으면 정리(갱신 후 닫기), 안 했으면 그냥 닫기(미사용)
   function handleClose() { if (committed) finish(); else onClose() }
-  // 결과 확인 버튼: 아직 안 긁었으면 사용+공개, 이미 공개면 닫기
-  async function confirmBtn() {
-    if (!revealed) { await roll(); setForceReveal(true); return }
-    await finish()
-  }
+  // 안 긁고 바로 확인: 사용+공개
+  async function revealNow() { await roll(); setForceReveal(true) }
 
   const known = prize != null
   const win = known && prize > 0
@@ -458,7 +468,7 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
           </>
         ) : (
           <>
-            <ScratchCard onStart={roll} onReveal={() => setRevealed(true)} reveal={forceReveal}>
+            <ScratchCard key={cardKey} onStart={roll} onReveal={() => setRevealed(true)} reveal={forceReveal}>
               {known ? (
                 <div className={`scratch-result ${win ? '' : 'lose'}`}>
                   <span className="scratch-emoji">{win ? '🍬' : '🐾'}</span>
@@ -473,11 +483,13 @@ function ScratchModal({ open, onClose, onDone, refreshCoin }) {
               )}
             </ScratchCard>
             {revealed ? (
-              <button type="button" className="btn btn-block btn-primary" onClick={confirmBtn}>
-                {win ? `${prize}츄르 받기` : '확인'}
-              </button>
+              remaining > 0 ? (
+                <button type="button" className="btn btn-block btn-primary" onClick={scratchNext}>이어서 긁기 · {remaining}장 남음</button>
+              ) : (
+                <button type="button" className="btn btn-block btn-primary" onClick={finish}>확인</button>
+              )
             ) : (
-              <button type="button" className="scratch-reveal-link" onClick={confirmBtn}>결과 바로 확인 &gt;</button>
+              <button type="button" className="scratch-reveal-link" onClick={revealNow}>결과 바로 확인 &gt;</button>
             )}
           </>
         )}

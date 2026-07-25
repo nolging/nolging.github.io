@@ -1,9 +1,12 @@
 -- =============================================================
---  랜덤 퀘스트 '냥피또 긁기'(r_nyangpito) 완료 판정 수정
---  - 기존: coin_ledger 에 ref_type='nyangpito'(=당첨) 기록이 있어야 완료
---    → 꽝(당첨금 0, 약 40%)이면 원장 기록이 없어 '긁어도 완료 안 됨' 버그.
---  - 수정: '냥피또를 긁었는가'(user_items 에서 nyangpito 가 used 로 소모됨)로 판정.
---    당첨/꽝과 무관하게 한 번 긁으면 완료.
+--  랜덤 퀘스트 'r_item_note'(쪽지 강화 아이템 사용) 완료 판정 수정
+--  - 기존: item_id 가 있거나 kind in (...,'gift') → '아이템 선물(gift_owned_item)'
+--    로 쪽지를 보내도 완료되던 문제.
+--  - 수정: '아이템 선물'(kind='gift')은 제외하고, 강화 아이템을 '사용'해 쪽지를
+--    보냈을 때만 완료:
+--      선물상자(link)/이어폰(cassette)/비디오(video)/블루레이(bluray) → kind
+--      지우개 → 익명(anonymous=true)
+--      물풍선 폭탄 → 타이머(timer_seconds is not null)
 --  적용: Supabase SQL Editor 에 그대로 실행.
 -- =============================================================
 
@@ -16,6 +19,7 @@ begin
     when 'visit'       then exists(select 1 from public.profiles where id = v_uid and last_group_visit_at >= p_since)
     when 'note'        then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since)
     when 'r_wish'      then exists(select 1 from public.tasks where created_by = v_uid and created_at >= p_since)
+    -- 강화 아이템 '사용'만 인정(아이템 선물 kind='gift' 는 제외)
     when 'r_item_note' then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since
                                      and coalesce(kind, '') <> 'gift'
                                      and (kind in ('cassette','video','bluray','link') or anonymous = true or timer_seconds is not null))

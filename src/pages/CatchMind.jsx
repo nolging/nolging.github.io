@@ -6,7 +6,11 @@ import { getGroupMemberMap, getCatchWords, setCatchWords, settleCatchmind, getMy
 import Modal from '../components/Modal'
 import { CATCH_WORDS, normWord, wordLen } from '../lib/catchWords'
 
-const TURNS = 5, TURN_SEC = 75, REVEAL_MS = 2800, HINT_AT = 10
+const TURNS = 10, TURN_SEC = 75, REVEAL_MS = 2800, HINT_AT = 10
+const ROUND_MIN = 2, ROUND_MAX = 20
+// 펜 굵기 3단계(정규화 폭) + 표시용 점 크기(px)
+const PEN_WIDTHS = [{ w: 0.01, dot: 6 }, { w: 0.02, dot: 9 }, { w: 0.035, dot: 13 }]
+const PEN_COLORS = ['#191722', '#e5484d', '#f5860a', '#f2c94c', '#4a9d6a', '#3b82f6', '#7363e8', '#e055a0', '#8b5e3c', '#ffffff']
 const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
 
 const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
@@ -21,6 +25,7 @@ function chosung(word) {
 const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
 const CloseIcon = () => <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 const SendIcon = () => <svg width="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
+const TrashIcon = () => <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
 const PersonIcon = () => <svg width="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
 function Av({ name, avatar, size = 40 }) {
   return avatar
@@ -42,10 +47,10 @@ export default function CatchMind() {
   const [peers, setPeers] = useState({})
   const peersRef = useRef(peers); peersRef.current = peers
 
-  const [g, setGraw] = useState({ phase: 'lobby', players: [], turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: null, bet: 5 })
+  const [g, setGraw] = useState({ phase: 'lobby', players: [], turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: null, bet: 5, rounds: TURNS })
   const gRef = useRef(g)
   const setG = useCallback((up) => setGraw((p) => { const n = typeof up === 'function' ? up(p) : up; gRef.current = n; return n }), [])
-  const [lob, setLob] = useState({ participants: [], ready: [], bet: 5, seats: [null, null] })
+  const [lob, setLob] = useState({ participants: [], ready: [], bet: 5, seats: [null, null], rounds: TURNS })
   const lobRef = useRef(lob); lobRef.current = lob
   const [isCouple, setIsCouple] = useState(false)
   const isCoupleRef = useRef(false); isCoupleRef.current = isCouple
@@ -54,7 +59,8 @@ export default function CatchMind() {
   const [newWord, setNewWord] = useState('')
   const [savingWord, setSavingWord] = useState(false)
   const [wordErr, setWordErr] = useState('')
-  const [chat, setChat] = useState([])
+  const [chat, setChat] = useState([])       // 대기실 채팅(등장/퇴장/로비 대화)
+  const [gameChat, setGameChat] = useState([]) // 게임 중 채팅(정답/시스템) — 대기실엔 안 보임
   const [now, setNow] = useState(Date.now())
   const [guess, setGuess] = useState('')
   const [draft, setDraft] = useState('')
@@ -62,6 +68,7 @@ export default function CatchMind() {
   const wordsRef = useRef(words); wordsRef.current = words
   const [awarded, setAwarded] = useState(null)
   const [pen, setPen] = useState('#191722')
+  const [penW, setPenW] = useState(PEN_WIDTHS[1].w)
 
   const wordRef = useRef('')
   const usedRef = useRef(new Set())
@@ -135,26 +142,26 @@ export default function CatchMind() {
 
   const apply = useCallback((type, pl) => {
     if (type === 'lobby') {
-      setLob({ participants: pl.participants || [], ready: pl.ready || [], bet: pl.bet ?? 5, seats: pl.seats || [null, null] })
+      setLob({ participants: pl.participants || [], ready: pl.ready || [], bet: pl.bet ?? 5, seats: pl.seats || [null, null], rounds: pl.rounds ?? TURNS })
     } else if (type === 'lobby_req') {
       if (gRef.current.phase === 'lobby') broadcastLobby(lobRef.current)
     } else if (type === 'chat') {
       pushChat(pl)
     } else if (type === 'game_start') {
       usedRef.current = new Set(); endedRef.current = -1; setAwarded(null)
-      setChat([{ id: 'gs', sys: true, text: '게임 시작! 그림으로 제시어를 맞혀 보세요.' }])
-      setG((st) => ({ ...st, phase: 'play', players: pl.players, turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: pl.gameId, bet: pl.bet ?? 0 }))
+      setGameChat([{ id: 'gs', sys: true, text: '게임 시작! 그림으로 제시어를 맞혀 보세요.' }])
+      setG((st) => ({ ...st, phase: 'play', players: pl.players, turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: pl.gameId, bet: pl.bet ?? 0, rounds: pl.rounds || TURNS }))
       setTimeout(() => startTurnRef.current(1, pl.players), 400)
     } else if (type === 'turn_start') {
       clearTimeout(timerRef.current); clearCanvas()
       const drawerName = (gRef.current.players.find((p) => p.uid === pl.drawer) || {}).name || '누군가'
       setG((st) => ({ ...st, turn: pl.turn, drawer: pl.drawer, endsAt: pl.endsAt, hintLen: pl.hintLen, cho: pl.cho || [], reveal: null }))
-      setChat((c) => [...c, { id: `t${pl.turn}`, sys: true, text: `${pl.turn} 라운드 · ${drawerName} 님이 그리는 중` }])
+      setGameChat((c) => [...c, { id: `t${pl.turn}`, sys: true, text: `${pl.turn} 라운드 · ${drawerName} 님이 그리는 중` }])
       if (pl.drawer === uid) timerRef.current = setTimeout(() => endTurnRef.current(null), Math.max(0, pl.endsAt - Date.now()))
     } else if (type === 'stroke') {
       if (pl.clear) clearCanvas(); else drawSeg(pl.pts, pl.color, pl.w, 0)
     } else if (type === 'guess') {
-      setChat((c) => [...c, { id: pl.id, guess: true, uid: pl.uid, name: pl.name, text: pl.text }])
+      setGameChat((c) => [...c, { id: pl.id, guess: true, uid: pl.uid, name: pl.name, text: pl.text }])
       if (gRef.current.drawer === uid && endedRef.current !== gRef.current.turn && normWord(pl.text) === normWord(wordRef.current)) endTurnRef.current(pl.uid)
     } else if (type === 'turn_end') {
       if (endedRef.current === pl.turn) return
@@ -162,8 +169,8 @@ export default function CatchMind() {
       usedRef.current.add(normWord(pl.word))
       const winnerName = pl.winner ? (gRef.current.players.find((p) => p.uid === pl.winner) || {}).name : null
       setG((st) => { const scores = { ...st.scores }; if (pl.winner) scores[pl.winner] = (scores[pl.winner] || 0) + 1; return { ...st, scores, reveal: { word: pl.word, winner: pl.winner } } })
-      setChat((c) => [...c, { id: `e${pl.turn}`, sys: true, ok: !!winnerName, text: winnerName ? `🎉 ${winnerName} 님 정답! (제시어: ${pl.word})` : `⏰ 시간 초과 — 제시어: ${pl.word}` }])
-      setTimeout(() => { const players = gRef.current.players; if (pl.turn >= TURNS) endGame(gRef.current.scores, players); else startTurnRef.current(pl.turn + 1, players) }, REVEAL_MS)
+      setGameChat((c) => [...c, { id: `e${pl.turn}`, sys: true, ok: !!winnerName, text: winnerName ? `🎉 ${winnerName} 님 정답! (제시어: ${pl.word})` : `⏰ 시간 초과 — 제시어: ${pl.word}` }])
+      setTimeout(() => { const players = gRef.current.players; if (pl.turn >= (gRef.current.rounds || TURNS)) endGame(gRef.current.scores, players); else startTurnRef.current(pl.turn + 1, players) }, REVEAL_MS)
     } else if (type === 'award') {
       setAwarded(pl)
     }
@@ -212,7 +219,7 @@ export default function CatchMind() {
   }, [groupId, uid, emit])
 
   useEffect(() => { if (g.phase !== 'play' || !g.endsAt) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [g.phase, g.endsAt])
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat])
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ block: 'end' }) }, [chat, gameChat])
   useEffect(() => {
     const vv = window.visualViewport; if (!vv) return
     const fit = () => { const el = playRef.current; if (!el) return; el.style.height = vv.height + 'px'; el.style.top = (vv.offsetTop || 0) + 'px' }
@@ -225,7 +232,7 @@ export default function CatchMind() {
   function cDown(e) {
     if (!meDrawer || g.reveal) return
     e.currentTarget.setPointerCapture?.(e.pointerId)
-    const p = cPos(e); drawing.current = { pts: [p], color: pen, w: pen === '#ffffff' ? 0.05 : 0.012 }
+    const p = cPos(e); drawing.current = { pts: [p], color: pen, w: pen === '#ffffff' ? Math.max(0.05, penW * 2.5) : penW }
     drawSeg([p], drawing.current.color, drawing.current.w, 0); emit('stroke', { pts: [p], color: drawing.current.color, w: drawing.current.w })
   }
   function cMove(e) { const d = drawing.current; if (!d) return; const p = cPos(e); const from = d.pts.length; d.pts.push(p); drawSeg(d.pts, d.color, d.w, from); emit('stroke', { pts: d.pts.slice(from - 1), color: d.color, w: d.w }) }
@@ -277,6 +284,7 @@ export default function CatchMind() {
     } catch (e) { setWordErr(e.message) } finally { setSavingWord(false) }
   }
   function changeBet(d) { setLob((l) => { const bet = Math.max(0, Math.min(capFromBals(), (l.bet || 0) + d)); const n = { ...l, bet }; broadcastLobby(n); return n }) }
+  function changeRounds(d) { setLob((l) => { const rounds = Math.max(ROUND_MIN, Math.min(ROUND_MAX, (l.rounds || TURNS) + d)); const n = { ...l, rounds }; broadcastLobby(n); return n }) }
   function sendLobbyChat(e) {
     e?.preventDefault?.(); const text = draft.trim(); if (!text) return
     const m = { id: uuid(), uid, text }; emit('chat', m); pushChat(m); setDraft('')
@@ -286,7 +294,7 @@ export default function CatchMind() {
       const s = lobRef.current.seats || []
       if (!(s[0] && s[1] && s[0] !== s[1])) { alert('두 자리가 다 차야 시작할 수 있어요.'); return }
       const players = [s[0], s[1]].map((u) => ({ uid: u, name: memberName(u), avatar: memberAvatar(u) }))
-      const payload = { players, gameId: uuid(), bet: lobRef.current.bet || 0 }
+      const payload = { players, gameId: uuid(), bet: lobRef.current.bet || 0, rounds: lobRef.current.rounds || TURNS }
       emit('game_start', payload); apply('game_start', payload)
       return
     }
@@ -294,7 +302,7 @@ export default function CatchMind() {
     const playerUids = partUids.filter((u) => readySet.has(u))
     if (playerUids.length < 2) { alert('참여자 두 명 이상이 준비해야 시작할 수 있어요.'); return }
     const players = playerUids.map((u) => ({ uid: u, name: memberName(u), avatar: memberAvatar(u) }))
-    const payload = { players, gameId: uuid(), bet: lobRef.current.bet || 0 }
+    const payload = { players, gameId: uuid(), bet: lobRef.current.bet || 0, rounds: lobRef.current.rounds || TURNS }
     emit('game_start', payload); apply('game_start', payload)
   }
   function backToLobby(rejoin) {
@@ -349,6 +357,14 @@ export default function CatchMind() {
         </form>
       </div>
     )
+    const roundsBox = (
+      <div className="om-bet cm-rounds">
+        <div className="om-bet-l"><div className="om-bet-t">라운드 수</div><div className="om-bet-s">몇 판 그릴까요 🎨</div></div>
+        <button type="button" className="om-bet-btn" onClick={() => changeRounds(-1)} disabled={(lob.rounds || TURNS) <= ROUND_MIN} aria-label="줄이기">−</button>
+        <span className="om-bet-val">{lob.rounds || TURNS}</span>
+        <button type="button" className="om-bet-btn" onClick={() => changeRounds(1)} disabled={(lob.rounds || TURNS) >= ROUND_MAX} aria-label="늘리기">+</button>
+      </div>
+    )
     return (
       <div className="om-root cm-lobby" ref={playRef}>
         <div className="om-head">
@@ -363,7 +379,6 @@ export default function CatchMind() {
         {isCouple ? (
           <div className="om-seats">
             <div className="om-seats-row">{seat(0)}{seat(1)}</div>
-            <div className="om-seats-hint">빈 자리를 <b>탭</b>해서 참여하세요 · 먼저 그리기부터 시작해요</div>
           </div>
         ) : isSmall ? (
           <div className="cm-cards">
@@ -391,6 +406,7 @@ export default function CatchMind() {
             </div>
           </div>
         )}
+        {roundsBox}
         <div className="om-bet">
           <div className="om-bet-l"><div className="om-bet-t">츄르 베팅</div><div className="om-bet-s">1등이 다 가져가요 🐾</div></div>
           <button type="button" className="om-bet-btn" onClick={() => changeBet(-5)} aria-label="줄이기">−</button>
@@ -482,28 +498,36 @@ export default function CatchMind() {
         <span className="cm-drawpill">{meDrawer ? '내가 그리는 중' : `${nameOf(g.drawer)} 님이 그리는 중`}</span>
       </div>
       <div className="cm-roundbar">
-        <span className="cm-round">라운드 <b>{g.turn}/{TURNS}</b></span>
+        <span className="cm-round">라운드 <b>{g.turn}/{g.rounds || TURNS}</b></span>
         <span className="cm-blanks">{blanks}</span>
         <span className={`cm-timer ${remain <= HINT_AT ? 'hot' : ''}`}>⏱ {Math.floor(remain / 60)}:{String(remain % 60).padStart(2, '0')}</span>
       </div>
 
       <div className="cm-canvas-card">
-        <span className="cm-live">● 실시간</span>
         <canvas ref={canvasRef} className="cm-canvas" onPointerDown={cDown} onPointerMove={cMove} onPointerUp={cUp} onPointerCancel={cUp}
           style={{ touchAction: 'none', cursor: meDrawer && !g.reveal ? 'crosshair' : 'default' }} />
         {meDrawer && !g.reveal && (
-          <div className="cm-pens">
-            {['#191722', '#e5484d', '#3b82f6', '#4a9d6a', '#f5860a', '#ffffff'].map((c) => (
-              <button key={c} type="button" className={`cm-pen ${pen === c ? 'on' : ''} ${c === '#ffffff' ? 'wht' : ''}`} style={{ background: c }} onClick={() => setPen(c)} aria-label="펜 색" />
-            ))}
-            <button type="button" className="cm-pen-clear" onClick={() => { clearCanvas(); emit('stroke', { clear: true }) }}>지우기</button>
+          <div className="cm-tools">
+            <div className="cm-widths">
+              {PEN_WIDTHS.map((pw) => (
+                <button key={pw.w} type="button" className={`cm-width ${penW === pw.w ? 'on' : ''}`} onClick={() => setPenW(pw.w)} aria-label="펜 굵기">
+                  <span className="cm-width-dot" style={{ width: pw.dot, height: pw.dot }} />
+                </button>
+              ))}
+            </div>
+            <div className="cm-swatches">
+              {PEN_COLORS.map((c) => (
+                <button key={c} type="button" className={`cm-pen ${pen === c ? 'on' : ''} ${c === '#ffffff' ? 'wht' : ''}`} style={{ background: c }} onClick={() => setPen(c)} aria-label="펜 색" />
+              ))}
+            </div>
+            <button type="button" className="cm-pen-clear" onClick={() => { clearCanvas(); emit('stroke', { clear: true }) }} aria-label="전체 지우기"><TrashIcon /></button>
           </div>
         )}
       </div>
 
       <div className="cm-chat2">
         <div className="cm-chat2-scroll">
-          {chat.map((m) => m.sys
+          {gameChat.map((m) => m.sys
             ? <div key={m.id} className={`cm-sys ${m.ok ? 'ok' : ''}`}>{m.text}</div>
             : <div key={m.id} className="cm-guess"><b>{m.name}</b> {m.text}</div>)}
           <div ref={chatEndRef} />

@@ -226,20 +226,23 @@ export default function Puzzle() {
       <div className="pz-wrap" ref={wrapRef} style={{ height: L && playW ? L.playHN * playW : undefined }}
         onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         {!aspect && <img src={puzzle.image} alt="" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} onLoad={(e) => setAspect(e.target.naturalWidth / e.target.naturalHeight)} />}
-        {L && playW > 0 && pieces.map((pc) => {
-          const p = pos[pc.id]; if (!p) return null
-          const { d, off, sw } = pc.pp
-          return (
-            <svg key={pc.id} className="pz-piece" width={sw} height={pc.pp.sh}
-              style={{ left: p.x * playW, top: p.y * playW, zIndex: activeG === p.g ? 100 : 10 }}
-              onPointerDown={(e) => onPointerDown(e, pc.id)}>
-              <defs><clipPath id={`clip-${groupId}-${pc.id}`}><path d={d} /></clipPath></defs>
-              <image href={puzzle.image} x={off - pc.c * L.wN * playW} y={off - pc.r * L.hN * playW}
-                width={puzzle.cols * L.wN * playW} height={puzzle.rows * L.hN * playW} clipPath={`url(#clip-${groupId}-${pc.id})`} preserveAspectRatio="none" />
-              <path d={d} fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1" />
-            </svg>
-          )
-        })}
+        {L && playW > 0 && (() => {
+          const gcount = {}; for (const k in pos) gcount[pos[k].g] = (gcount[pos[k].g] || 0) + 1
+          return pieces.map((pc) => {
+            const p = pos[pc.id]; if (!p) return null
+            const { d, off, sw } = pc.pp
+            const loose = gcount[p.g] === 1 // 아직 안 맞춰진 낱개 조각만 그림자
+            return (
+              <svg key={pc.id} className={`pz-piece ${loose ? 'loose' : ''}`} width={sw} height={pc.pp.sh}
+                style={{ left: p.x * playW, top: p.y * playW, zIndex: activeG === p.g ? 100 : 10 }}
+                onPointerDown={(e) => onPointerDown(e, pc.id)}>
+                <defs><clipPath id={`clip-${groupId}-${pc.id}`}><path d={d} /></clipPath></defs>
+                <image href={puzzle.image} x={off - pc.c * L.wN * playW} y={off - pc.r * L.hN * playW}
+                  width={puzzle.cols * L.wN * playW} height={puzzle.rows * L.hN * playW} clipPath={`url(#clip-${groupId}-${pc.id})`} preserveAspectRatio="none" />
+              </svg>
+            )
+          })
+        })()}
         {showRef && (
           <button type="button" className="pz-ref" onClick={() => setShowRef(false)}><img src={puzzle.image} alt="완성 그림" /></button>
         )}
