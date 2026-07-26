@@ -108,54 +108,36 @@ function Blush() {
 }
 
 function BubbleGum() {
-  // 입 위치(아바타 아래쪽 중앙)에서 부는 풍선껌. 커졌다 작아지는 건 CSS(.avd-gum).
-  // transform-origin 이 입 쪽(위)이라 껌이 입에서 바깥으로 부풀어 오른다.
+  // 입 위치에서 부는 풍선껌. 테두리 없이 거의 흰 하늘색 + 반투명이라 프로필 사진의
+  // 입이 살짝 비쳐 보인다. 가장자리만 조금 진하게(비눗방울 느낌).
+  // 커졌다 작아지는 건 CSS(.avd-gum) — transform-origin 이 입 쪽(위)이다.
   return (
-    <g>
-      {/* 입에 물린 껌 조각 */}
-      <ellipse cx="50" cy="62.5" rx="4.6" ry="2.6" fill="#f27ba8" />
-      <g className="avd-gum">
-        <circle cx="50" cy="72.5" r="10.5" fill="#f98fb8" stroke="#e56d9b" strokeWidth="0.9" />
-        {/* 하이라이트 */}
-        <ellipse cx="46" cy="68.4" rx="3.1" ry="2.1" fill="#fff" fillOpacity="0.55" transform="rotate(-28 46 68.4)" />
-        <circle cx="54.4" cy="76.6" r="1.2" fill="#fff" fillOpacity="0.35" />
-      </g>
+    <g className="avd-gum">
+      <defs>
+        <radialGradient id="avdGum" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#f2faff" stopOpacity="0.26" />
+          <stop offset="70%" stopColor="#eaf6ff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#d7ecfd" stopOpacity="0.78" />
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="70" r="11" fill="url(#avdGum)" />
+      <ellipse cx="45.4" cy="65.4" rx="3.1" ry="2" fill="#ffffff" fillOpacity="0.55"
+        transform="rotate(-28 45.4 65.4)" />
     </g>
   )
 }
 
-// 반창고: 볼 곡면에 붙은 것처럼 완만하게 휜 띠. 곡선(2차 베지에) 위에 굵은 stroke 를
-// 얹어 그리므로, 띠 자체가 곡선을 따라 휘고 양 끝은 둥글게 마감된다.
-const BAND = { p0: [68, 67.5], p1: [80, 69.5], p2: [92, 57] }   // 오른쪽 끝이 살짝 위로
-const bandAt = (t) => {
-  const { p0, p1, p2 } = BAND, u = 1 - t
-  const x = u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0]
-  const y = u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]
-  const dx = 2 * u * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0])
-  const dy = 2 * u * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
-  const L = Math.hypot(dx, dy) || 1
-  return { x, y, nx: -dy / L, ny: dx / L }   // 법선 = 띠 두께 방향
-}
+// 반창고: 곧은 띠를 기울여 오른쪽 끝만 살짝 올라가게. 띠·패드·통기공이 한 그룹으로
+// 같이 회전하므로 안쪽 구성까지 항상 같은 각도로 맞는다.
 function Bandage() {
-  const { p0, p1, p2 } = BAND
-  const d = `M${p0[0]} ${p0[1]} Q${p1[0]} ${p1[1]} ${p2[0]} ${p2[1]}`
-  const pad0 = bandAt(0.36), pad1 = bandAt(0.64)
-  const hole = (t, s) => {
-    const q = bandAt(t)
-    return <circle key={`${t},${s}`} cx={+(q.x + q.nx * s).toFixed(2)} cy={+(q.y + q.ny * s).toFixed(2)}
-      r="0.8" fill="#d9925f" opacity="0.8" />
-  }
+  const CX = 82, CY = 64, W = 27, H = 9
+  const x = CX - W / 2, y = CY - H / 2
+  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.8" fill="#d9925f" opacity="0.8" />
   return (
-    <g fill="none" strokeLinecap="round">
-      <path d={d} stroke="#e0a074" strokeWidth="10" />
-      <path d={d} stroke="#f8c69e" strokeWidth="8.4" />
-      {/* 가운데 흡수 패드 */}
-      <line x1={+pad0.x.toFixed(2)} y1={+pad0.y.toFixed(2)} x2={+pad1.x.toFixed(2)} y2={+pad1.y.toFixed(2)}
-        stroke="#fdeada" strokeWidth="4.6" />
-      {/* 통기공 */}
-      <g stroke="none">
-        {[[0.13, -1.9], [0.13, 1.9], [0.23, 0], [0.87, -1.9], [0.87, 1.9], [0.77, 0]].map(([t, s]) => hole(t, s))}
-      </g>
+    <g transform={`rotate(-24 ${CX} ${CY})`}>
+      <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#f8c69e" stroke="#e0a074" strokeWidth="1" />
+      <rect x={CX - 6} y={y + 1.9} width="12" height={H - 3.8} rx="1.5" fill="#fdeada" />
+      {[[-10.6, -1.9], [-10.6, 1.9], [-8, 0], [10.6, -1.9], [10.6, 1.9], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
     </g>
   )
 }
@@ -226,8 +208,8 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
-  'deco-bandage': '61 50 38 25',
-  'deco-gum': '36 57 28 28',
+  'deco-bandage': '64 51 36 24',
+  'deco-gum': '37 57 26 26',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
