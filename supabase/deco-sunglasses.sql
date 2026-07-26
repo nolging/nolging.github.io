@@ -1,7 +1,7 @@
 -- =============================================================
 --  프로필 꾸미기(얼굴 장식) 추가: 픽셀 선글라스 / 왹져 선글라스
 --  · 눈 위치에 그려지는 face 슬롯(기존 홍조/빠직과 동일 슬롯 → 상호 배타)
---  · 우선 관리자 전용 노출(admin_only = true)
+--  · 픽셀 선글라스 = 정식 오픈(admin_only = false) / 왹져 선글라스 = 관리자 전용
 --  적용: Supabase SQL Editor 에 그대로 실행.
 -- =============================================================
 
@@ -12,9 +12,9 @@ returns text language sql immutable as $$
               when p_item_id like 'deco-%' then 'head' else null end;
 $$;
 
--- 아이템 등록 (프리미엄 상점 · 아바타 꾸미기 · 우선 관리자 전용)
+-- 아이템 등록 (프리미엄 상점 · 아바타 꾸미기)
 insert into public.store_items (id, name, price, emoji, description, premium, tier, admin_only, sort_order, is_active) values
-  ('deco-pixel-shades', '픽셀 선글라스', 20, '🕶️', '시력 포기 간지 폭풍 썬구리', true, null, true, 35, true),
+  ('deco-pixel-shades', '픽셀 선글라스', 20, '🕶️', '시력 포기 간지 폭풍 썬구리', true, null, false, 35, true),
   ('deco-alien-shades', '왹져 선글라스', 20, '👽', '간지 포기 인싸 썬구리',       true, null, true, 36, true)
 on conflict (id) do update set
   name = excluded.name, price = excluded.price, emoji = excluded.emoji, description = excluded.description,
