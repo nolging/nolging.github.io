@@ -108,9 +108,9 @@ function Blush() {
 }
 
 function BubbleGum() {
-  // 입 위치에서 부는 풍선껌. 테두리 없이 거의 흰 하늘색 + 반투명이라 프로필 사진의
-  // 입이 살짝 비쳐 보인다. 가장자리만 조금 진하게(비눗방울 느낌).
-  // 커졌다 작아지는 건 CSS(.avd-gum) — transform-origin 이 입 쪽(위)이다.
+  // 입 아래쪽에서 부는 풍선껌. 테두리 없이 거의 흰 하늘색 + 반투명이라 프로필 사진이
+  // 살짝 비쳐 보인다. 가장자리만 조금 진하게(비눗방울 느낌).
+  // 커졌다 작아지는 건 CSS(.avd-gum) — 중심점은 풍선 가운데.
   return (
     <g className="avd-gum">
       <defs>
@@ -120,9 +120,9 @@ function BubbleGum() {
           <stop offset="100%" stopColor="#d7ecfd" stopOpacity="0.78" />
         </radialGradient>
       </defs>
-      <circle cx="50" cy="70" r="11" fill="url(#avdGum)" />
-      <ellipse cx="45.4" cy="65.4" rx="3.1" ry="2" fill="#ffffff" fillOpacity="0.55"
-        transform="rotate(-28 45.4 65.4)" />
+      <circle cx="50" cy="81" r="11" fill="url(#avdGum)" />
+      <ellipse cx="45.4" cy="76.4" rx="3.1" ry="2" fill="#ffffff" fillOpacity="0.55"
+        transform="rotate(-28 45.4 76.4)" />
     </g>
   )
 }
@@ -209,7 +209,7 @@ const PREVIEW_VB = {
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
   'deco-bandage': '64 51 36 24',
-  'deco-gum': '37 57 26 26',
+  'deco-gum': '37 68 26 26',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
