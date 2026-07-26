@@ -894,12 +894,15 @@ export async function purchaseItem(itemId, qty = 1) {
 
 // 내 인벤토리. 미사용(active) + 커플 링의 장착(used)/수락 대기(pending)까지. user_items 미배포 시 빈 배열.
 export async function listInventory(userId) {
-  const { data, error } = await supabase
+  const cols = 'id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at, used_at'
+  const q = (sel) => supabase
     .from('user_items')
-    .select('id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, created_at, used_at')
+    .select(sel)
     .eq('user_id', userId)
     .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
     .order('created_at', { ascending: false })
+  let { data, error } = await q(`${cols}, deco_tf`)
+  if (error?.code === '42703') ({ data, error } = await q(cols)) // deco_tf 미배포 폴백
   if (error) {
     if (error.code === '42P01') return []
     throw error
@@ -1020,7 +1023,8 @@ export async function unapplyAvatarDeco(itemId) {
     throw error
   }
 }
-// 그룹 멤버들의 장착 데코 → { [userId]: { head, face } }. 미배포/실패 시 빈 객체.
+// 그룹 멤버들의 장착 데코 → { [userId]: { head, face, headTf, faceTf } }. 미배포/실패 시 빈 객체.
+// headTf/faceTf 는 그룹 프로필 사진에 맞춘 위치·크기·각도 조정값({s,x,y,r}) — 없으면 undefined.
 export async function getGroupDecoMap(groupId) {
   if (!groupId) return {}
   const { data, error } = await supabase.rpc('list_group_avatar_decos', { p_group_id: groupId })
@@ -1029,9 +1033,22 @@ export async function getGroupDecoMap(groupId) {
   const FACE = new Set(['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum'])
   for (const r of data ?? []) {
     const slot = FACE.has(r.item_id) ? 'face' : 'head'
-    ;(map[r.user_id] = map[r.user_id] || {})[slot] = r.item_id
+    const m = (map[r.user_id] = map[r.user_id] || {})
+    m[slot] = r.item_id
+    if (r.tf) m[slot === 'face' ? 'faceTf' : 'headTf'] = r.tf
   }
   return map
+}
+
+// 데코 조정값 저장. tf=null 이면 기본 위치로 초기화. 미배포 시 안내 메시지.
+export async function setAvatarDecoTf(itemId, groupId, tf) {
+  const { error } = await supabase.rpc('set_avatar_deco_tf', { p_item_id: itemId, p_group_id: groupId, p_tf: tf ?? null })
+  if (error) {
+    if (error.code === 'PGRST202' || /set_avatar_deco_tf/.test(error.message || '')) {
+      throw new Error('꾸미기 조정 기능이 아직 DB에 설정되지 않았습니다. (deco-transform.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
 }
 
 // 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).

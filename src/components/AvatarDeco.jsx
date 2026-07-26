@@ -211,6 +211,31 @@ const PREVIEW_VB = {
   'deco-bandage': '64 51 36 24',
   'deco-gum': '36 67 28 28',
 }
+// 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
+// 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
+export function decoAnchor(id) {
+  const vb = PREVIEW_VB[id]
+  if (!vb) return [50, 50]
+  const [x, y, w, h] = vb.split(' ').map(Number)
+  return [x + w / 2, y + h / 2]
+}
+
+// 그룹 프로필 사진에 맞춘 조정값 → SVG transform.
+// 기준점에서 회전·확대한 뒤 이동. (translate 를 먼저 쓰면 회전에 끌려 위치가 틀어진다)
+export const DECO_TF0 = { s: 1, x: 0, y: 0, r: 0 }
+export function decoTransform(id, tf) {
+  if (!tf) return undefined
+  const s = Number(tf.s) || 1, x = Number(tf.x) || 0, y = Number(tf.y) || 0, r = Number(tf.r) || 0
+  if (s === 1 && x === 0 && y === 0 && r === 0) return undefined
+  const [ax, ay] = decoAnchor(id)
+  return `translate(${x} ${y}) translate(${ax} ${ay}) rotate(${r}) scale(${s}) translate(${-ax} ${-ay})`
+}
+// 조정값이 있을 때만 그룹으로 감싼다(없으면 DOM 을 늘리지 않음)
+const Tf = ({ id, tf, children }) => {
+  const t = decoTransform(id, tf)
+  return t ? <g transform={t}>{children}</g> : children
+}
+
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB[id] || '0 0 100 100'
@@ -231,15 +256,30 @@ export function DecoPreview({ id }) {
   )
 }
 
+// 슬롯별 장식 본체 (조정값 적용은 호출부에서 <Tf> 로 감싼다)
+const HeadArt = ({ head }) => (
+  head === 'deco-sprout' ? <Sprout />
+    : head === 'deco-jaguar' ? <CatEars />
+      : head === 'deco-wolf' ? <WolfEars /> : null
+)
+const FaceArt = ({ face }) => (
+  face === 'deco-blush' ? <Blush />
+    : face === 'deco-anger' ? <Anger />
+      : face === 'deco-pixel-shades' ? <PixelShades />
+        : face === 'deco-alien-shades' ? <AlienShades />
+          : face === 'deco-bandage' ? <Bandage />
+            : face === 'deco-gum' ? <BubbleGum /> : null
+)
+
 // layer: 'back'(귀 — 아바타 뒤) | 'front'(새싹·홍조 — 아바타 앞)
-export default function AvatarDeco({ head, face, layer = 'front' }) {
+// headTf/faceTf: 그룹 프로필 사진에 맞춘 { s, x, y, r } 조정값(선택)
+export default function AvatarDeco({ head, face, layer = 'front', headTf, faceTf }) {
   if (layer === 'back') {
     if (!isEars(head)) return null
     return (
       <svg className="avatar-deco avatar-deco-back" viewBox="0 0 100 100" width="100%" height="100%"
         preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        {head === 'deco-jaguar' && <CatEars />}
-        {head === 'deco-wolf' && <WolfEars />}
+        <Tf id={head} tf={headTf}><HeadArt head={head} /></Tf>
       </svg>
     )
   }
@@ -248,13 +288,8 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
   return (
     <svg className="avatar-deco avatar-deco-front" viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {head === 'deco-sprout' && <Sprout />}
-      {face === 'deco-blush' && <Blush />}
-      {face === 'deco-anger' && <Anger />}
-      {face === 'deco-pixel-shades' && <PixelShades />}
-      {face === 'deco-alien-shades' && <AlienShades />}
-      {face === 'deco-bandage' && <Bandage />}
-      {face === 'deco-gum' && <BubbleGum />}
+      {head === 'deco-sprout' && <Tf id={head} tf={headTf}><Sprout /></Tf>}
+      {DECO_FACE.includes(face) && <Tf id={face} tf={faceTf}><FaceArt face={face} /></Tf>}
     </svg>
   )
 }

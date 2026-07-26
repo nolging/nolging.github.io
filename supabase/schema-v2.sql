@@ -1534,12 +1534,15 @@ create table if not exists public.user_items (
   group_id     uuid references public.groups(id) on delete set null,            -- 선물 맥락 그룹
   status       text not null default 'active' check (status in ('active', 'used', 'pending')),
   used_at      timestamptz,
-  created_at   timestamptz not null default now()
+  created_at   timestamptz not null default now(),
+  deco_tf      jsonb                                                             -- 프로필 꾸미기 조정값 { s, x, y, r }
 );
 -- 기존 설치 대상: 커플 링 '수락 대기(pending)' 상태 허용하도록 제약 갱신
 alter table public.user_items drop constraint if exists user_items_status_check;
 alter table public.user_items add  constraint user_items_status_check
   check (status in ('active', 'used', 'pending'));
+-- 기존 설치 대상: 프로필 꾸미기 위치·크기·각도 조정값 (deco-transform.sql 참고)
+alter table public.user_items add column if not exists deco_tf jsonb;
 create index if not exists idx_user_items_owner on public.user_items(user_id, status, created_at desc);
 alter table public.user_items enable row level security;
 

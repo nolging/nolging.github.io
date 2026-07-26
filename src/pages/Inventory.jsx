@@ -4,11 +4,12 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
-import { decoSlot } from '../components/AvatarDeco'
+import { decoSlot, DECO_TF0 } from '../components/AvatarDeco'
+import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -133,7 +134,8 @@ export default function Inventory() {
     }
     else if (g.id.startsWith('deco-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
-      setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '', appliedGroupId: appliedRow?.group_id || null })
+      setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '',
+        appliedGroupId: appliedRow?.group_id || null, tf: appliedRow?.deco_tf || null })
     }
     else setNotice(`${g.name}은(는) 아직 사용 준비 중이에요 🐾`)
   }
@@ -259,12 +261,16 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   const [groupId, setGroupId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [tf, setTf] = useState(DECO_TF0)       // 위치·크기·각도 조정값
 
   const applied = !!item?.appliedGroupId
 
+  // 이 모달은 닫혀도 언마운트되지 않으므로(open=false 로만 바뀜) 열 때마다 상태를 초기화한다.
+  // 특히 busy 를 되돌리지 않으면 다음에 열었을 때 버튼이 "적용 중…" 으로 멈춘다.
   useEffect(() => {
     if (!open) return
-    setGroupId(item?.appliedGroupId || ''); setError('')
+    setGroupId(item?.appliedGroupId || ''); setError(''); setBusy(false)
+    setTf(item?.tf ? clampTf(item.tf) : { ...DECO_TF0 })
     Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
       .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
       .catch((e) => setError(e.message))
@@ -277,17 +283,38 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   const appliedGroup = groups.find((g) => g.id === item?.appliedGroupId)
   const target = eligible.find((g) => g.id === groupId)
   const changed = groupId && groupId !== item?.appliedGroupId
+  // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
+  const tfChanged = !changed && JSON.stringify(clampTf(tf)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0))
+
+  // 그룹을 바꾸면(사진이 다르므로) 조정값을 기본으로 되돌린다
+  useEffect(() => { if (changed) setTf({ ...DECO_TF0 }) }, [changed])
+
+  // 그룹별로 프로필 사진·닉네임이 다를 수 있어, 선택한 그룹의 내 것을 편집기에 쓴다
+  const me = useMemo(
+    () => (groups.find((g) => g.id === groupId)?.group_members || []).find((m) => m.user_id === myId),
+    [groups, groupId, myId],
+  )
 
   async function apply() {
     if (!target) { setError('그룹을 선택해 주세요.'); return }
     setBusy(true); setError('')
-    try { await applyAvatarDeco(item.id, target.id); await onDone(); onClose() }
-    catch (e) { setError(e.message); setBusy(false) }
+    try {
+      if (changed || !applied) await applyAvatarDeco(item.id, target.id)
+      // 조정값 저장은 "그 그룹에 장착 중" 이어야 가능해 적용 뒤에 호출한다.
+      // 기본값이고 저장된 값도 없으면 호출을 건너뛴다(조정 기능 미배포 DB 호환).
+      const v = clampTf(tf)
+      if (!isTf0(v) || !isTf0(item?.tf)) await setAvatarDecoTf(item.id, target.id, isTf0(v) ? null : v)
+      await onDone(); onClose()
+    } catch (e) {
+      setError(e.message)
+      await onDone().catch(() => { })   // 장착은 됐을 수 있으니 목록은 갱신
+    } finally { setBusy(false) }
   }
   async function unapply() {
     setBusy(true); setError('')
     try { await unapplyAvatarDeco(item.id); await onDone(); onClose() }
-    catch (e) { setError(e.message); setBusy(false) }
+    catch (e) { setError(e.message) }
+    finally { setBusy(false) }
   }
 
   return (
@@ -312,9 +339,15 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
           </select>
         </label>
 
+        {/* item 은 모달이 닫히는 순간 null 이 되므로 반드시 함께 확인한다 */}
+        {item && target && (
+          <DecoAdjuster itemId={item.id} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
+            seed={myId} tf={tf} onChange={setTf} />
+        )}
+
         <button type="button" className="btn btn-primary btn-block" onClick={apply}
-          disabled={busy || !target || (applied && !changed)}>
-          {busy ? '적용 중…' : applied ? '이 그룹으로 변경' : '적용하기'}
+          disabled={busy || !target || (applied && !changed && !tfChanged)}>
+          {busy ? '적용 중…' : changed ? '이 그룹으로 변경' : applied ? '조정 저장' : '적용하기'}
         </button>
         {applied && (
           <button type="button" className="btn btn-danger btn-block" onClick={unapply} disabled={busy}>
@@ -336,9 +369,10 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
 
   const applied = !!item?.appliedGroupId
 
+  // 닫혀도 언마운트되지 않으므로 열 때마다 초기화(busy 를 안 되돌리면 버튼이 멈춘다)
   useEffect(() => {
     if (!open) return
-    setGroupId(item?.appliedGroupId || ''); setError('')
+    setGroupId(item?.appliedGroupId || ''); setError(''); setBusy(false)
     Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
       .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
       .catch((e) => setError(e.message))
@@ -360,7 +394,8 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
       await applyGroupTheme(target.id, themeId)
       await onDone()
       onClose()
-    } catch (e) { setError(e.message); setBusy(false) }
+    } catch (e) { setError(e.message) }
+    finally { setBusy(false) }
   }
 
   async function unapply() {
@@ -369,7 +404,8 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
       await unapplyGroupTheme(themeId)
       await onDone()
       onClose()
-    } catch (e) { setError(e.message); setBusy(false) }
+    } catch (e) { setError(e.message) }
+    finally { setBusy(false) }
   }
 
   return (
