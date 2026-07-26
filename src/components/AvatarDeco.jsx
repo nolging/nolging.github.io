@@ -110,14 +110,14 @@ function Blush() {
 function Bandage() {
   // 오른쪽 볼에 붙인 데일밴드. 살구색 띠 + 가운데 흡수 패드 + 좌우 통기공.
   // 볼 위치는 홍조(Blush)의 오른쪽 볼(cx 81, cy 64)보다 살짝 안쪽·위로.
-  const CX = 79, CY = 64, W = 27, H = 11
+  const CX = 82, CY = 64, W = 27, H = 9
   const x = CX - W / 2, y = CY - H / 2
-  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.9" fill="#d9925f" opacity="0.8" />
+  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.8" fill="#d9925f" opacity="0.8" />
   return (
     <g transform={`rotate(-20 ${CX} ${CY})`}>
       <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#f8c69e" stroke="#e0a074" strokeWidth="1" />
-      <rect x={CX - 6} y={y + 2.3} width="12" height={H - 4.6} rx="1.8" fill="#fdeada" />
-      {[[-10.6, -2.4], [-10.6, 2.4], [-8, 0], [10.6, -2.4], [10.6, 2.4], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
+      <rect x={CX - 6} y={y + 1.9} width="12" height={H - 3.8} rx="1.5" fill="#fdeada" />
+      {[[-10.6, -1.9], [-10.6, 1.9], [-8, 0], [10.6, -1.9], [10.6, 1.9], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
     </g>
   )
 }
@@ -188,7 +188,7 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
-  'deco-bandage': '62 52 34 24',
+  'deco-bandage': '66 53 32 22',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
