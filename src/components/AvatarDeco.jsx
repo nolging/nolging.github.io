@@ -1,11 +1,11 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)  → 하나만
-//  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) → 하나만
+//  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) | deco-gum(풍선껌) → 하나만
 // 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
 // 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
-export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
@@ -107,17 +107,55 @@ function Blush() {
   )
 }
 
-function Bandage() {
-  // 오른쪽 볼에 붙인 데일밴드. 살구색 띠 + 가운데 흡수 패드 + 좌우 통기공.
-  // 볼 위치는 홍조(Blush)의 오른쪽 볼(cx 81, cy 64)보다 살짝 안쪽·위로.
-  const CX = 82, CY = 64, W = 27, H = 9
-  const x = CX - W / 2, y = CY - H / 2
-  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.8" fill="#d9925f" opacity="0.8" />
+function BubbleGum() {
+  // 입 위치(아바타 아래쪽 중앙)에서 부는 풍선껌. 커졌다 작아지는 건 CSS(.avd-gum).
+  // transform-origin 이 입 쪽(위)이라 껌이 입에서 바깥으로 부풀어 오른다.
   return (
-    <g transform={`rotate(-20 ${CX} ${CY})`}>
-      <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#f8c69e" stroke="#e0a074" strokeWidth="1" />
-      <rect x={CX - 6} y={y + 1.9} width="12" height={H - 3.8} rx="1.5" fill="#fdeada" />
-      {[[-10.6, -1.9], [-10.6, 1.9], [-8, 0], [10.6, -1.9], [10.6, 1.9], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
+    <g>
+      {/* 입에 물린 껌 조각 */}
+      <ellipse cx="50" cy="62.5" rx="4.6" ry="2.6" fill="#f27ba8" />
+      <g className="avd-gum">
+        <circle cx="50" cy="72.5" r="10.5" fill="#f98fb8" stroke="#e56d9b" strokeWidth="0.9" />
+        {/* 하이라이트 */}
+        <ellipse cx="46" cy="68.4" rx="3.1" ry="2.1" fill="#fff" fillOpacity="0.55" transform="rotate(-28 46 68.4)" />
+        <circle cx="54.4" cy="76.6" r="1.2" fill="#fff" fillOpacity="0.35" />
+      </g>
+    </g>
+  )
+}
+
+// 반창고: 볼 곡면에 붙은 것처럼 완만하게 휜 띠. 곡선(2차 베지에) 위에 굵은 stroke 를
+// 얹어 그리므로, 띠 자체가 곡선을 따라 휘고 양 끝은 둥글게 마감된다.
+const BAND = { p0: [68, 67.5], p1: [80, 69.5], p2: [92, 57] }   // 오른쪽 끝이 살짝 위로
+const bandAt = (t) => {
+  const { p0, p1, p2 } = BAND, u = 1 - t
+  const x = u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0]
+  const y = u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]
+  const dx = 2 * u * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0])
+  const dy = 2 * u * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
+  const L = Math.hypot(dx, dy) || 1
+  return { x, y, nx: -dy / L, ny: dx / L }   // 법선 = 띠 두께 방향
+}
+function Bandage() {
+  const { p0, p1, p2 } = BAND
+  const d = `M${p0[0]} ${p0[1]} Q${p1[0]} ${p1[1]} ${p2[0]} ${p2[1]}`
+  const pad0 = bandAt(0.36), pad1 = bandAt(0.64)
+  const hole = (t, s) => {
+    const q = bandAt(t)
+    return <circle key={`${t},${s}`} cx={+(q.x + q.nx * s).toFixed(2)} cy={+(q.y + q.ny * s).toFixed(2)}
+      r="0.8" fill="#d9925f" opacity="0.8" />
+  }
+  return (
+    <g fill="none" strokeLinecap="round">
+      <path d={d} stroke="#e0a074" strokeWidth="10" />
+      <path d={d} stroke="#f8c69e" strokeWidth="8.4" />
+      {/* 가운데 흡수 패드 */}
+      <line x1={+pad0.x.toFixed(2)} y1={+pad0.y.toFixed(2)} x2={+pad1.x.toFixed(2)} y2={+pad1.y.toFixed(2)}
+        stroke="#fdeada" strokeWidth="4.6" />
+      {/* 통기공 */}
+      <g stroke="none">
+        {[[0.13, -1.9], [0.13, 1.9], [0.23, 0], [0.87, -1.9], [0.87, 1.9], [0.77, 0]].map(([t, s]) => hole(t, s))}
+      </g>
     </g>
   )
 }
@@ -188,7 +226,8 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
-  'deco-bandage': '66 53 32 22',
+  'deco-bandage': '61 50 38 25',
+  'deco-gum': '36 57 28 28',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
@@ -204,6 +243,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-pixel-shades' && <PixelShades />}
       {id === 'deco-alien-shades' && <AlienShades />}
       {id === 'deco-bandage' && <Bandage />}
+      {id === 'deco-gum' && <BubbleGum />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -232,6 +272,7 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
       {face === 'deco-pixel-shades' && <PixelShades />}
       {face === 'deco-alien-shades' && <AlienShades />}
       {face === 'deco-bandage' && <Bandage />}
+      {face === 'deco-gum' && <BubbleGum />}
     </svg>
   )
 }
