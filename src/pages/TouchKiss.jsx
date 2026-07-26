@@ -8,6 +8,12 @@ import Avatar from '../components/Avatar'
 
 // 두 손가락(입술)이 맞닿으면 진동+효과. 실시간은 Supabase Broadcast.
 const PULSE_MS = 520        // 닿아 있는 동안 진동+이펙트 반복 간격
+// Broadcast 는 유실될 수 있고 재접속 시 지난 메시지를 다시 주지 않는다.
+// 그래서 (1) 누르고 있는 동안은 같은 자리라도 계속 알리고 (2) 소식이 끊긴 상대는
+// 손을 뗀 것으로 간주해 지운다 → 한 번 놓친 이벤트가 영구 불일치로 남지 않는다.
+const BEAT_MS = 400         // 누르고 있는 동안 위치 재전송 간격
+const PEER_TTL = 1400       // 이 시간 동안 소식 없으면 손 뗀/나간 것으로 처리 (BEAT 의 3.5배)
+const SWEEP_MS = 250        // 만료 검사 간격
 // "하트 뿅뿅" 테마 하트 색 — 맞닿을 때 뿅뿅 솟는 하트
 const HEART_COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
 const RISERS = [
@@ -38,6 +44,30 @@ export default function TouchKiss() {
   const [partner, setPartner] = useState(null) // 부를 상대 {uid, name}
   const [callState, setCallState] = useState('idle') // idle | sending | done
   const meRef = useRef(me); meRef.current = me
+  // 전송용 내 신원(렌더마다 갱신) — sendFinger 를 매번 새로 만들지 않으려고 ref 로 둔다
+  const idRef = useRef(null)
+  idRef.current = { uid, name: profile?.login_id || '' }
+
+  // 내 손가락 상태를 즉시 브로드캐스트. rAF 를 거치지 않으므로 화면이 가려진
+  // 상태(백그라운드)에서도 확실히 나간다.
+  const sendFinger = useCallback((p) => {
+    const { uid: u, name } = idRef.current || {}
+    if (!u) return
+    chanRef.current?.send({
+      type: 'broadcast', event: 'finger',
+      payload: { uid: u, name, x: p.x, y: p.y, down: !!p.down },
+    })
+  }, [])
+
+  // 누르고 있던 손가락을 "놓음" 으로 확정 + 통보 (rAF 대기 없이)
+  const releaseNow = useCallback(() => {
+    const p = pendRef.current
+    if (!p?.down) return
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
+    pendRef.current = { x: p.x, y: p.y, down: false }
+    setMe(null)
+    sendFinger({ x: p.x, y: p.y, down: false })
+  }, [sendFinger])
 
   // 그룹의 상대 멤버(부르기 대상) 확정
   useEffect(() => {
@@ -73,9 +103,11 @@ export default function TouchKiss() {
     })
     chanRef.current = ch
     ch.on('broadcast', { event: 'finger' }, ({ payload: pl }) => {
+      if (!pl?.uid || pl.uid === uid) return
       setPeers((prev) => {
         const next = { ...prev }
-        if (pl.down) next[pl.uid] = { x: pl.x, y: pl.y, name: pl.name }
+        // t = 마지막 소식 시각. 만료 검사(sweep)의 기준.
+        if (pl.down) next[pl.uid] = { x: pl.x, y: pl.y, name: pl.name, t: Date.now() }
         else delete next[pl.uid]
         return next
       })
@@ -85,6 +117,9 @@ export default function TouchKiss() {
       const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
       setPeerCount(Math.max(1, list.length))
       setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
+      // 나간 사람의 입술은 즉시 치운다. 단 presence 가 아직 비어 있는 순간
+      // (구독 직후) 에는 방금 받은 브로드캐스트를 지워 버리지 않도록 건너뛴다.
+      if (Object.keys(st).length === 0) return
       setPeers((prev) => {
         const next = {}
         for (const k of Object.keys(prev)) if (st[k]) next[k] = prev[k]
@@ -99,16 +134,63 @@ export default function TouchKiss() {
         if (m) meta = { uid, name: m.display_nickname || profile?.login_id || '', avatar: m.avatar_url || null }
       } catch { /* noop */ }
       try { await ch.track(meta) } catch { /* noop */ }
+      // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
+      if (pendRef.current?.down) sendFinger(pendRef.current)
     })
-    return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, profile?.login_id])
+    return () => {
+      // 나가면서 누르고 있었다면 "놓음" 을 먼저 알려, 상대 화면에 입술이 남지 않게
+      if (pendRef.current?.down) { try { sendFinger({ ...pendRef.current, down: false }) } catch { /* noop */ } }
+      try { ch.untrack() } catch { /* noop */ }
+      supabase.removeChannel(ch); chanRef.current = null
+    }
+  }, [groupId, uid, profile?.login_id, sendFinger])
+
+  // ---- 누르고 있는 동안 같은 자리라도 계속 알림 ----
+  // 이벤트 하나가 유실되거나 상대가 뒤늦게 들어와도 한 박자 안에 맞춰진다.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const p = pendRef.current
+      if (p?.down) sendFinger(p)
+    }, BEAT_MS)
+    return () => clearInterval(iv)
+  }, [sendFinger])
+
+  // ---- 소식이 끊긴 상대 정리 ----
+  // "놓음" 메시지가 유실되거나 상대가 앱을 그냥 닫아도 입술이 남지 않게.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setPeers((prev) => {
+        const now = Date.now()
+        let drop = false
+        const next = {}
+        for (const [k, v] of Object.entries(prev)) {
+          if (now - (v.t || 0) < PEER_TTL) next[k] = v
+          else drop = true
+        }
+        return drop ? next : prev   // 변화 없으면 같은 객체 → 불필요한 렌더 방지
+      })
+    }, SWEEP_MS)
+    return () => clearInterval(iv)
+  }, [])
+
+  // ---- 화면을 벗어나면 누르고 있던 손가락을 놓은 것으로 알림 ----
+  // 백그라운드에서는 rAF 가 돌지 않아 pointerup 이 전달되지 않을 수 있다.
+  useEffect(() => {
+    const onVis = () => { if (document.hidden) releaseNow() }
+    window.addEventListener('pagehide', releaseNow)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('pagehide', releaseNow)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [releaseNow])
 
   // ---- 내 손가락 위치 전송(rAF 스로틀) ----
   function sendPending() {
     rafRef.current = 0
     const p = pendRef.current; if (!p) return
     setMe(p.down ? { x: p.x, y: p.y } : null)
-    chanRef.current?.send({ type: 'broadcast', event: 'finger', payload: { uid, name: profile?.login_id || '', x: p.x, y: p.y, down: p.down } })
+    sendFinger(p)
   }
   function scheduleSend(p) {
     pendRef.current = p
@@ -127,8 +209,12 @@ export default function TouchKiss() {
     const n = norm(e); scheduleSend({ ...n, down: true })
   }
   function onUp() {
+    // 놓는 건 rAF 를 기다리지 않고 바로 보낸다. 놓자마자 페이지를 벗어나거나
+    // 앱이 백그라운드로 가면 rAF 가 실행되지 않아 상대 화면에 입술이 남는다.
+    if (pendRef.current?.down) { releaseNow(); return }
     const last = pendRef.current || { x: 0.5, y: 0.5 }
-    scheduleSend({ x: last.x, y: last.y, down: false })
+    pendRef.current = { x: last.x, y: last.y, down: false }
+    setMe(null)
   }
 
   // ---- 충돌 판정 + 진동/이펙트 ----
