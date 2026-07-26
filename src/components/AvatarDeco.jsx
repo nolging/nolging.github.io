@@ -1,11 +1,11 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)  → 하나만
-//  - face: deco-blush(양 볼 홍조·앞)
+//  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) → 하나만
 // 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
 // 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
-export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
@@ -107,6 +107,21 @@ function Blush() {
   )
 }
 
+function Bandage() {
+  // 오른쪽 볼에 붙인 데일밴드. 살구색 띠 + 가운데 흡수 패드 + 좌우 통기공.
+  // 볼 위치는 홍조(Blush)의 오른쪽 볼(cx 81, cy 64)보다 살짝 안쪽·위로.
+  const CX = 76, CY = 64, W = 27, H = 11
+  const x = CX - W / 2, y = CY - H / 2
+  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.9" fill="#d9925f" opacity="0.8" />
+  return (
+    <g transform={`rotate(-20 ${CX} ${CY})`}>
+      <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#f8c69e" stroke="#e0a074" strokeWidth="1" />
+      <rect x={CX - 6} y={y + 2.3} width="12" height={H - 4.6} rx="1.8" fill="#fdeada" />
+      {[[-10.6, -2.4], [-10.6, 2.4], [-8, 0], [10.6, -2.4], [10.6, 2.4], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
+    </g>
+  )
+}
+
 // 픽셀 선글라스: 왼쪽 알(10w) + 상단 브릿지(3) + 오른쪽 알(10w), 5행. F=검정 W=흰 .=빈칸
 // (다리 없음. 사용자가 준 픽셀 도안 그대로)
 const PIXEL_L = ['FFFFFFFFFF', 'FWFWFFFFFF', '.FWFWFFFFF', '..FWFWFFF.', '...FFFFF..']
@@ -173,6 +188,7 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
+  'deco-bandage': '59 52 34 24',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
@@ -187,6 +203,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-anger' && <Anger />}
       {id === 'deco-pixel-shades' && <PixelShades />}
       {id === 'deco-alien-shades' && <AlienShades />}
+      {id === 'deco-bandage' && <Bandage />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -214,6 +231,7 @@ export default function AvatarDeco({ head, face, layer = 'front' }) {
       {face === 'deco-anger' && <Anger />}
       {face === 'deco-pixel-shades' && <PixelShades />}
       {face === 'deco-alien-shades' && <AlienShades />}
+      {face === 'deco-bandage' && <Bandage />}
     </svg>
   )
 }
