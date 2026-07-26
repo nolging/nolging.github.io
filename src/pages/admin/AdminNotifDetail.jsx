@@ -63,7 +63,7 @@ export default function AdminNotifDetail() {
             <div className="field field-narrow"><label htmlFor="nt-emoji">알림센터 이모지</label>
               <input id="nt-emoji" defaultValue={emoji} onChange={(e) => setEmoji(e.target.value)}
                 placeholder="예: 🎁" maxLength={16} autoCapitalize="none" /></div>
-            <div className="field"><span>이모지 배경색</span>
+            <div className="field"><label htmlFor="nt-bg">이모지 배경색</label>
               <div className="an-bg-row">
                 {BG_PRESETS.map((c) => (
                   <button key={c} type="button" className={`an-bg-swatch ${sameColor(bg, c) ? 'active' : ''}`}

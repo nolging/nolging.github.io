@@ -49,25 +49,26 @@ export default function AdminQuestDetail() {
         <p className="muted sm" style={{ margin: '0 0 10px' }}>
           ID는 완료 판정 키예요. 새 ID로 추가하면 목록엔 뜨지만, 완료 처리는 개발자가 코드로 구현해야 동작해요.
         </p>
-        <form onSubmit={save} className="form">
-          <label className="field"><span>ID *</span>
-            <input value={form.id} onChange={setField('id')} placeholder="예: r_wish" disabled={editing} autoCapitalize="none" /></label>
-          <label className="field"><span>제목 *</span>
-            <input value={form.title} onChange={setField('title')} placeholder="예: 위시 작성하기" /></label>
-          <label className="field"><span>내용</span>
-            <textarea rows={2} value={form.body} onChange={setField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></label>
+        {/* label 은 htmlFor 로만 연결하고 텍스트 입력은 defaultValue (관리자 폼 공통 규칙) */}
+        <form onSubmit={save} className="form" key={id || 'new'}>
+          <div className="field"><label htmlFor="q-id">ID *</label>
+            <input id="q-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: r_wish" disabled={editing} autoCapitalize="none" /></div>
+          <div className="field"><label htmlFor="q-title">제목 *</label>
+            <input id="q-title" defaultValue={form.title} onChange={setField('title')} placeholder="예: 위시 작성하기" /></div>
+          <div className="field"><label htmlFor="q-body">내용</label>
+            <textarea id="q-body" rows={2} defaultValue={form.body} onChange={setField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></div>
           <div className="field-row">
-            <label className="field field-narrow"><span>이모지</span>
-              <input value={form.emoji} onChange={setField('emoji')} placeholder="예: ⭐" maxLength={16} autoCapitalize="none" /></label>
-            <label className="field field-narrow"><span>보상(츄르) *</span>
-              <input type="number" inputMode="numeric" min="0" value={form.reward} onChange={setField('reward')} placeholder="예: 2" /></label>
-            <label className="field field-narrow"><span>정렬</span>
-              <input type="number" inputMode="numeric" value={form.sort_order} onChange={setField('sort_order')} placeholder="예: 1" /></label>
+            <div className="field field-narrow"><label htmlFor="q-emoji">이모지</label>
+              <input id="q-emoji" defaultValue={form.emoji} onChange={setField('emoji')} placeholder="예: ⭐" maxLength={16} autoCapitalize="none" /></div>
+            <div className="field field-narrow"><label htmlFor="q-reward">보상(츄르) *</label>
+              <input id="q-reward" type="number" inputMode="numeric" min="0" defaultValue={form.reward} onChange={setField('reward')} placeholder="예: 2" /></div>
+            <div className="field field-narrow"><label htmlFor="q-sort">정렬</label>
+              <input id="q-sort" type="number" inputMode="numeric" defaultValue={form.sort_order} onChange={setField('sort_order')} placeholder="예: 1" /></div>
           </div>
-          <label className="field"><span>대상 등급</span>
-            <select value={form.grade} onChange={setField('grade')}>
+          <div className="field"><label htmlFor="q-grade">대상 등급</label>
+            <select id="q-grade" value={form.grade} onChange={setField('grade')}>
               {QUEST_GRADES.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
-            </select></label>
+            </select></div>
           <label className="chk"><input type="checkbox" checked={form.active} onChange={setField('active')} /> 활성(랜덤 풀에 포함)</label>
           <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '퀘스트 추가'}</button>
         </form>

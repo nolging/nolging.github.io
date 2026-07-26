@@ -26,20 +26,21 @@ export default function AdminMemberNew() {
       {error && <div className="alert alert-error">{error}</div>}
       <div className="card">
         <h3 className="card-title">계정 생성</h3>
+        {/* label 은 htmlFor 로만 연결하고 텍스트 입력은 defaultValue (관리자 폼 공통 규칙) */}
         <form onSubmit={handleCreate} className="form">
-          <label className="field"><span>아이디 *</span>
-            <input value={form.nickname} onChange={set('nickname')} placeholder="영문 소문자/숫자/._-" autoCapitalize="none" /></label>
-          <label className="field"><span>비밀번호 *</span>
-            <input type="text" value={form.password} onChange={set('password')} placeholder="6자 이상" /></label>
-          <label className="field"><span>역할</span>
-            <select value={form.role} onChange={set('role')}>
+          <div className="field"><label htmlFor="mn-nick">아이디 *</label>
+            <input id="mn-nick" defaultValue={form.nickname} onChange={set('nickname')} placeholder="영문 소문자/숫자/._-" autoCapitalize="none" /></div>
+          <div className="field"><label htmlFor="mn-pw">비밀번호 *</label>
+            <input id="mn-pw" type="text" defaultValue={form.password} onChange={set('password')} placeholder="6자 이상" /></div>
+          <div className="field"><label htmlFor="mn-role">역할</label>
+            <select id="mn-role" value={form.role} onChange={set('role')}>
               <option value="member">멤버</option>
               <option value="admin">관리자</option>
-            </select></label>
-          <label className="field"><span>연락처 (선택)</span>
-            <input value={form.contact} onChange={set('contact')} placeholder="010-1234-5678" /></label>
-          <label className="field"><span>생년월일 (선택)</span>
-            <input type="date" value={form.birthdate} onChange={set('birthdate')} /></label>
+            </select></div>
+          <div className="field"><label htmlFor="mn-contact">연락처 (선택)</label>
+            <input id="mn-contact" defaultValue={form.contact} onChange={set('contact')} placeholder="010-1234-5678" /></div>
+          <div className="field"><label htmlFor="mn-birth">생년월일 (선택)</label>
+            <input id="mn-birth" type="date" defaultValue={form.birthdate} onChange={set('birthdate')} /></div>
           <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '생성 중…' : '계정 생성'}</button>
         </form>
       </div>

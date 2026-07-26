@@ -4395,12 +4395,6 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ===== 관리자 페이지 ===== */
 .admin-page .card { margin-bottom: 14px; }
-/* iOS 사파리는 글꼴이 16px 보다 작은 입력창을 탭하면 페이지를 강제로 확대한다
-   (maximum-scale=1 은 iOS 10 부터 무시됨). 확대되면 고정 위치인 앱 셸이
-   화면 밖으로 밀려 입력한 글자가 보이지 않을 수 있어, 관리자 폼은 16px 로 둔다. */
-.admin-page .form input:not([type="checkbox"]):not([type="radio"]),
-.admin-page .form textarea,
-.admin-page .form select { font-size: 16px; }
 .admin-topbar { gap: 8px; }
 .admin-tabs { display: flex; gap: 3px; flex: 1; min-width: 0; }
 .admin-tabs a {

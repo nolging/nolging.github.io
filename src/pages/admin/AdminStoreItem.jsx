@@ -60,26 +60,29 @@ export default function AdminStoreItem() {
       {notice && <div className="alert alert-success">{notice}</div>}
       <div className="card">
         <h3 className="card-title">{editing ? '아이템 수정' : '아이템 추가'}</h3>
-        <form onSubmit={save} className="form">
-          <label className="field"><span>ID *</span>
-            <input value={form.id} onChange={setField('id')} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" /></label>
-          <label className="field"><span>이름 *</span>
-            <input value={form.name} onChange={setField('name')} placeholder="예: 소원권" /></label>
+        {/* 입력창을 label 로 감싸지 않고 htmlFor 로 연결 + value 대신 defaultValue.
+            (iOS 에서 label 안의 컨트롤은 탭이 이중 처리되고, 제어 입력은 리렌더가
+             입력값을 되돌릴 수 있다. key 로 아이템마다 리마운트해 값을 새로 채운다) */}
+        <form onSubmit={save} className="form" key={id || 'new'}>
+          <div className="field"><label htmlFor="si-id">ID *</label>
+            <input id="si-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" /></div>
+          <div className="field"><label htmlFor="si-name">이름 *</label>
+            <input id="si-name" defaultValue={form.name} onChange={setField('name')} placeholder="예: 소원권" /></div>
           <div className="field-row">
-            <label className="field field-narrow"><span>이모지</span>
-              <input value={form.emoji} onChange={setField('emoji')} placeholder="🎁" /></label>
-            <label className="field field-narrow"><span>가격 *</span>
-              <input type="number" inputMode="numeric" min="0" value={form.price} onChange={setField('price')} placeholder="예: 300" /></label>
-            <label className="field field-narrow"><span>정렬</span>
-              <input type="number" inputMode="numeric" value={form.sortOrder} onChange={setField('sortOrder')} placeholder="예: 5" /></label>
+            <div className="field field-narrow"><label htmlFor="si-emoji">이모지</label>
+              <input id="si-emoji" defaultValue={form.emoji} onChange={setField('emoji')} placeholder="🎁" maxLength={16} /></div>
+            <div className="field field-narrow"><label htmlFor="si-price">가격 *</label>
+              <input id="si-price" type="number" inputMode="numeric" min="0" defaultValue={form.price} onChange={setField('price')} placeholder="예: 300" /></div>
+            <div className="field field-narrow"><label htmlFor="si-sort">정렬</label>
+              <input id="si-sort" type="number" inputMode="numeric" defaultValue={form.sortOrder} onChange={setField('sortOrder')} placeholder="예: 5" /></div>
           </div>
-          <label className="field"><span>노출 위치</span>
-            <select value={form.kind} onChange={setField('kind')}>
+          <div className="field"><label htmlFor="si-kind">노출 위치</label>
+            <select id="si-kind" value={form.kind} onChange={setField('kind')}>
               {ITEM_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
-            </select></label>
-          <label className="field"><span>설명</span>
-            <textarea rows={3} value={form.description} onChange={setField('description')}
-              placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></label>
+            </select></div>
+          <div className="field"><label htmlFor="si-desc">설명</label>
+            <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
+              placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label className="chk"><input type="checkbox" checked={form.giftOnly} onChange={setField('giftOnly')} /> 선물 전용(구매 불가)</label>
             <label className="chk"><input type="checkbox" checked={form.isActive} onChange={setField('isActive')} /> 활성(상점 노출)</label>
