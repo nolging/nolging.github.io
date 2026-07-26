@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, getNotifEmojis,
+  listNotifications, markNotificationRead, markAllNotificationsRead, getNotifStyles,
 } from '../lib/api'
 import { resolveItemText } from '../lib/storeMeta'
 import { NOTIF_ICONS as ICONS, timeAgo, notifTarget as targetOf, navigateNotif } from '../lib/notifNav'
@@ -13,9 +13,9 @@ export default function NotifDropdown({ onClose, onChange }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [emojiMap, setEmojiMap] = useState({})
+  const [styleMap, setStyleMap] = useState({})
 
-  useEffect(() => { getNotifEmojis().then(setEmojiMap).catch(() => {}) }, [])
+  useEffect(() => { getNotifStyles().then(setStyleMap).catch(() => {}) }, [])
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -63,7 +63,7 @@ export default function NotifDropdown({ onClose, onChange }) {
                 <li key={n.id}
                   className={`notif-dd-row ${n.is_read ? '' : 'unread'} ${clickable ? 'clickable' : ''}`}
                   onClick={() => clickable && open(n)}>
-                  <span className={`notif-icon notif-ic-${n.type}`} aria-hidden="true">{emojiMap[n.type] || ICONS[n.type] || '🔔'}</span>
+                  <span className={`notif-icon notif-ic-${n.type}`} style={styleMap[n.type]?.bg ? { background: styleMap[n.type].bg } : undefined} aria-hidden="true">{styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'}</span>
                   <div className="notif-body">
                     <div className="notif-top">
                       <div className="notif-line">

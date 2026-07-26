@@ -18,6 +18,8 @@ export const NOTIF_ICONS = {
   video: '📹',
   poke: '👉',
   touch_call: '💋',
+  ledboard: '📟',
+  nametag: '🏷️',
 }
 
 export function timeAgo(iso) {

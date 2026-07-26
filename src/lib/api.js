@@ -1599,15 +1599,28 @@ export async function listNotifTemplates() {
   if (error) { if (error.code === 'PGRST202') return [] ; throw error }
   return data ?? []
 }
-export async function updateNotifTemplate(key, title, body, emoji) {
-  const { error } = await supabase.rpc('admin_set_notif', { p_key: key, p_title: title, p_body: body, p_emoji: emoji ?? '' })
-  if (error) throw error
+export async function updateNotifTemplate(key, title, body, emoji, emojiBg) {
+  const args = { p_key: key, p_title: title, p_body: body, p_emoji: emoji ?? '' }
+  const { error } = await supabase.rpc('admin_set_notif', { ...args, p_emoji_bg: emojiBg ?? '' })
+  if (!error) return
+  // emoji_bg 인자 미배포(구버전 함수) → 배경색 없이 저장
+  if (error.code === 'PGRST202') {
+    const { error: e2 } = await supabase.rpc('admin_set_notif', args)
+    if (e2) throw e2
+    return
+  }
+  throw error
 }
-// 알림센터 아이콘 맵 (type/key → emoji). 미배포 시 빈 객체.
-export async function getNotifEmojis() {
-  const { data, error } = await supabase.rpc('notif_emojis')
-  if (error) { if (error.code === 'PGRST202') return {}; throw error }
-  return data || {}
+// 알림센터 아이콘 맵 (type/key → { emoji, bg }). 미배포 시 emoji 만 있는 구버전으로 폴백.
+export async function getNotifStyles() {
+  const { data, error } = await supabase.rpc('notif_styles')
+  if (!error) return data || {}
+  if (error.code !== 'PGRST202') throw error
+  const { data: em, error: e2 } = await supabase.rpc('notif_emojis')
+  if (e2) { if (e2.code === 'PGRST202') return {}; throw e2 }
+  const out = {}
+  for (const k in (em || {})) out[k] = { emoji: em[k] }
+  return out
 }
 
 // 관리자: 전체 사용자(연락처/생년월일 포함)

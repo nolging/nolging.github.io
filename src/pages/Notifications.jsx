@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
-  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNotifEmojis,
+  listNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, getNotifStyles,
 } from '../lib/api'
 import { resolveItemText } from '../lib/storeMeta'
 import { NOTIF_ICONS as ICONS, timeAgo, notifTarget as targetOf, navigateNotif } from '../lib/notifNav'
@@ -17,7 +17,7 @@ function TrashIcon() {
 }
 
 // 알림 카드 한 줄. 왼쪽으로 밀면 삭제 버튼이 나온다(위시 카드와 동일 동작).
-function NotifRow({ n, icon, clickable, timeText, onOpen, onDelete }) {
+function NotifRow({ n, icon, iconBg, clickable, timeText, onOpen, onDelete }) {
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const drag = useRef(null)
@@ -70,7 +70,7 @@ function NotifRow({ n, icon, clickable, timeText, onOpen, onDelete }) {
         style={{ transform: `translateX(${dx}px)` }}
         onClick={handleClick} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <span className={`notif-icon notif-ic-${n.type}`} aria-hidden="true">{icon}</span>
+        <span className={`notif-icon notif-ic-${n.type}`} style={iconBg ? { background: iconBg } : undefined} aria-hidden="true">{icon}</span>
         <div className="notif-body">
           <div className="notif-top">
             <div className="notif-line">
@@ -94,9 +94,9 @@ export default function Notifications() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [emojiMap, setEmojiMap] = useState({}) // 관리자 설정 이모지 (type/key → emoji)
+  const [styleMap, setStyleMap] = useState({}) // 관리자 설정 이모지/배경색 (type/key → { emoji, bg })
 
-  useEffect(() => { getNotifEmojis().then(setEmojiMap).catch(() => {}) }, [])
+  useEffect(() => { getNotifStyles().then(setStyleMap).catch(() => {}) }, [])
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -152,7 +152,7 @@ export default function Notifications() {
       ) : (
         <ul className="notif-list">
           {items.map((n) => (
-            <NotifRow key={n.id} n={n} icon={emojiMap[n.type] || ICONS[n.type] || '🔔'} clickable={!!targetOf(n)}
+            <NotifRow key={n.id} n={n} icon={styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'} iconBg={styleMap[n.type]?.bg} clickable={!!targetOf(n)}
               timeText={timeAgo(n.created_at)} onOpen={() => open(n)} onDelete={() => remove(n.id)} />
           ))}
         </ul>
