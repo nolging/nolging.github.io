@@ -1564,9 +1564,12 @@ button.mention-chip:active { opacity: .6; }
 @keyframes avd-twitch { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-9deg); } 92% { transform: rotate(5deg); } 96% { transform: rotate(-2deg); } }
 @keyframes avd-blush { 0%, 100% { opacity: .42; } 50% { opacity: 1; } }
 @keyframes avd-spark { 0%, 100% { transform: scale(.5); opacity: .25; } 50% { transform: scale(1.1); opacity: 1; } }
-/* 풍선껌: 부풀었다 작아지기. 중심점은 풍선 가운데 → 사방으로 고르게 커진다 */
-.avd-gum { animation: avd-gum 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes avd-gum { 0%, 100% { transform: scale(.55); } 8% { transform: scale(.6); } 55% { transform: scale(1.15); } 70% { transform: scale(1.1); } }
+/* 풍선껌: 부풀었다 작아지기. 중심점은 풍선 가운데 → 사방으로 고르게 커진다.
+   양 끝(최소·최대)에서 멈칫하지 않게 (1) 반동 키프레임을 걷어내 0/50/100 만 남기고
+   (2) 이징도 양 끝 기울기가 0 이 아닌 곡선을 써서 최대·최소에서 속도가 죽지 않게 한다.
+   (ease-in-out 계열은 양 끝 기울기가 0 → 그 지점에서 잠깐 멈춘 것처럼 보인다) */
+.avd-gum { animation: avd-gum 3.4s cubic-bezier(.3, .15, .7, .85) infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes avd-gum { 0%, 100% { transform: scale(.55); } 50% { transform: scale(1.15); } }
 @media (prefers-reduced-motion: reduce) { .avd-sway, .avd-twitch-l, .avd-twitch-r, .avd-blush, .avd-spark, .avd-anger, .avd-gum { animation: none; } }
 .member-list li { align-items: flex-start; }
 .member-info { flex: 1; min-width: 0; }

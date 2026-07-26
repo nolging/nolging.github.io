@@ -108,20 +108,21 @@ function Blush() {
 }
 
 function BubbleGum() {
-  // 입 아래쪽에서 부는 풍선껌. 테두리 없이 거의 흰 하늘색 + 반투명이라 프로필 사진이
-  // 살짝 비쳐 보인다. 가장자리만 조금 진하게(비눗방울 느낌).
+  // 입 아래쪽에서 부는 풍선껌. 테두리 없이 거의 흰 하늘색.
+  // 프로필 사진이 비쳐 얼룩처럼 보이지 않게 불투명하게 채우고, 유리구슬 느낌은
+  // 가장자리로 갈수록 진해지는 방사형 그라데이션 + 하이라이트로 낸다.
   // 커졌다 작아지는 건 CSS(.avd-gum) — 중심점은 풍선 가운데.
   return (
     <g className="avd-gum">
       <defs>
         <radialGradient id="avdGum" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f2faff" stopOpacity="0.4" />
-          <stop offset="70%" stopColor="#eaf6ff" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="#d7ecfd" stopOpacity="0.9" />
+          <stop offset="0%" stopColor="#fbfdff" />
+          <stop offset="70%" stopColor="#eef7ff" />
+          <stop offset="100%" stopColor="#cfe4fa" />
         </radialGradient>
       </defs>
       <circle cx="50" cy="81" r="11" fill="url(#avdGum)" />
-      <ellipse cx="45.4" cy="76.4" rx="3.1" ry="2" fill="#ffffff" fillOpacity="0.55"
+      <ellipse cx="45.4" cy="76.4" rx="3.1" ry="2" fill="#ffffff" fillOpacity="0.9"
         transform="rotate(-28 45.4 76.4)" />
     </g>
   )
