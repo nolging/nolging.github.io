@@ -69,6 +69,10 @@ Deno.serve(async (req) => {
       url = `/groups/${record.group_id}/touch` // 우심뽀까 알림 → 우심뽀까 페이지
     } else if (record.type === 'praise' && record.group_id) {
       url = `/groups/${record.group_id}/praise?mine=1` // 스티커판 완성 → 내 칭찬 스티커판
+    } else if (record.type === 'nametag' && record.group_id) {
+      url = `/groups/${record.group_id}/members` // 연인이 내 이름 변경 → 데이트 페이지
+    } else if (record.type === 'ledboard' && record.group_id) {
+      url = `/groups/${record.group_id}` // 연인이 전광판 게재 → 그룹 홈
     } else if (record.task_id && record.group_id) {
       url = `/groups/${record.group_id}/tasks/${record.task_id}`
       if (record.comment_id) url += `?c=${record.comment_id}` // 알림 유발 댓글로 포커스

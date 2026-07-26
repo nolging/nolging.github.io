@@ -42,6 +42,8 @@ export function notifTarget(n) {
   if (NOTE_TYPES.has(n.type)) return '/notes'
   if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
   if (n.type === 'praise' && n.group_id) return `/groups/${n.group_id}/praise?mine=1`
+  if (n.type === 'nametag' && n.group_id) return `/groups/${n.group_id}/members`   // 명찰 → 데이트 페이지
+  if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
   if (n.task_id && n.group_id) {
     const base = `/groups/${n.group_id}/tasks/${n.task_id}`
     return n.comment_id ? `${base}?c=${n.comment_id}` : base
