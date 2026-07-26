@@ -115,9 +115,9 @@ function BubbleGum() {
     <g className="avd-gum">
       <defs>
         <radialGradient id="avdGum" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#f2faff" stopOpacity="0.26" />
-          <stop offset="70%" stopColor="#eaf6ff" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#d7ecfd" stopOpacity="0.78" />
+          <stop offset="0%" stopColor="#f2faff" stopOpacity="0.4" />
+          <stop offset="70%" stopColor="#eaf6ff" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#d7ecfd" stopOpacity="0.9" />
         </radialGradient>
       </defs>
       <circle cx="50" cy="81" r="11" fill="url(#avdGum)" />
@@ -209,7 +209,7 @@ const PREVIEW_VB = {
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
   'deco-bandage': '64 51 36 24',
-  'deco-gum': '37 68 26 26',
+  'deco-gum': '36 67 28 28',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {

@@ -1566,7 +1566,7 @@ button.mention-chip:active { opacity: .6; }
 @keyframes avd-spark { 0%, 100% { transform: scale(.5); opacity: .25; } 50% { transform: scale(1.1); opacity: 1; } }
 /* 풍선껌: 부풀었다 작아지기. 중심점은 풍선 가운데 → 사방으로 고르게 커진다 */
 .avd-gum { animation: avd-gum 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes avd-gum { 0%, 100% { transform: scale(.3); } 8% { transform: scale(.34); } 55% { transform: scale(1); } 70% { transform: scale(.96); } }
+@keyframes avd-gum { 0%, 100% { transform: scale(.55); } 8% { transform: scale(.6); } 55% { transform: scale(1.15); } 70% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .avd-sway, .avd-twitch-l, .avd-twitch-r, .avd-blush, .avd-spark, .avd-anger, .avd-gum { animation: none; } }
 .member-list li { align-items: flex-start; }
 .member-info { flex: 1; min-width: 0; }
