@@ -4541,6 +4541,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nametag-target { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .nametag-left { font-size: 12px; font-weight: 700; color: #8b8798; }
 .nametag-input { text-align: center; }
+/* 변경하기: 먹색 + 입력창과의 간격 축소(모달 gap 16px 만 남김) */
+.nametag-modal .st-btn-buy { background: #191722; }
+.nametag-modal .st-btn-block { margin-top: 0; }
 
 /* ---- 위시 유형 편집기 (그룹 설정, 소유자 전용) ---- */
 .wc-editor { margin-top: 12px; }
