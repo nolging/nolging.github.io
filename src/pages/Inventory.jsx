@@ -702,10 +702,13 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const inFlight = useRef(false)   // 실제 요청 중인지(멈춘 busy 와 구분)
 
+  // 이 컴포넌트는 항상 마운트된 채 open 만 토글되므로(내부 Modal 만 언마운트),
+  // 다시 열 때 이전 '변경 중…'(busy) 상태가 남아 버튼이 계속 비활성화되지 않게 초기화한다.
   useEffect(() => {
     if (!open) return
-    setError(''); setLoading(true)
+    setError(''); setLoading(true); setBusy(false); inFlight.current = false
     ;(async () => {
       try {
         if (!coupleGroupId) { setError('커플 그룹을 찾을 수 없어요.'); setLoading(false); return }
@@ -726,9 +729,11 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
 
   async function submit() {
     if (!nick.trim()) { setError('변경할 이름을 입력해 주세요.'); return }
-    setBusy(true); setError('')
+    if (inFlight.current) return
+    setBusy(true); setError(''); inFlight.current = true
     try { await useNameTag(coupleGroupId, nick.trim()); await onDone?.(); onClose() }
-    catch (e) { setError(e.message); setBusy(false) }
+    catch (e) { setError(e.message) }
+    finally { inFlight.current = false; setBusy(false) }   // 성공 시에도 반드시 해제
   }
 
   return (
@@ -743,7 +748,12 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
               {leftH > 0 && <span className="nametag-left">사용 중 · 약 {leftH}시간 남음</span>}
             </div>
             <input className="cg-input nametag-input" value={nick} maxLength={12}
-              onChange={(e) => { setNick(e.target.value); if (error) setError('') }}
+              onChange={(e) => {
+                setNick(e.target.value)
+                if (error) setError('')
+                // 요청이 끝났는데도 busy 가 남아 있으면(멈춘 상태) 이름을 고치는 순간 다시 활성화
+                if (busy && !inFlight.current) setBusy(false)
+              }}
               placeholder="바꿀 이름을 입력하세요" />
             <button type="button" className="st-btn-buy st-btn-block" style={{ opacity: nick.trim() && !busy ? 1 : .5 }}
               disabled={!nick.trim() || busy} onClick={submit}>{busy ? '변경 중…' : '변경하기'}</button>
