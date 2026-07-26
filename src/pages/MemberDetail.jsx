@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap } from '../lib/api'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag } from '../lib/api'
+import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 import { openCompose } from '../lib/composeWindow'
 import { SETTINGS_EVENT } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
@@ -33,6 +34,14 @@ function PokeHand() {
     </svg>
   )
 }
+function PencilIcon() {
+  return (
+    <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  )
+}
 function LockIcon() {
   return (
     <svg width="16" viewBox="0 0 24 24" fill="none" stroke="#c9c6d6" strokeWidth="2"
@@ -56,17 +65,25 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [decoMap, setDecoMap] = useState({})
+  // 명찰: 내가 이 멤버의 닉네임을 잠근 상태면 여기서도 바로 이름을 바꿀 수 있다
+  const [nameLock, setNameLock] = useState(null)   // { until } | null
+  const [nickEdit, setNickEdit] = useState(false)
+  const [nickDraft, setNickDraft] = useState('')
+  const [nickBusy, setNickBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, couple, friend, decos] = await Promise.all([
+      const [cards, g, couple, friend, decos, ntState] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
+        nametagState(groupId).catch(() => null),
       ])
+      const act = ntState?.active
+      setNameLock(act && act.target_id === userId && nametagActive(act.until) ? { until: act.until } : null)
       setDecoMap(decos || {})
       const self = cards.find((m) => m.is_self)
       setMember(cards.find((m) => m.user_id === userId) || null)
@@ -77,6 +94,7 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, userId])
   useEffect(() => { load() }, [load])
+  useCountdownTick(!!nameLock)   // 남은 시간(23:59) 표기 갱신
 
   async function poke() {
     if (poking) return
@@ -100,6 +118,14 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     if (!confirm(`${member.display_nickname} 님을 그룹에서 내보낼까요?`)) return
     try { await leaveGroup(groupId, userId); if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}/members`) }
     catch (err) { setError(err.message) }
+  }
+  // 명찰로 잠근 상대의 닉네임을 이 화면에서 바로 변경
+  async function saveNick() {
+    const v = nickDraft.trim()
+    if (!v || nickBusy) return
+    setNickBusy(true); setError('')
+    try { await useNameTag(groupId, v); setNickEdit(false); await load() }
+    catch (err) { setError(err.message) } finally { setNickBusy(false) }
   }
   // 내 정보 수정: 그룹 상세가 마운트돼 있으면 가운데 임베드로 열고, 아니면 설정 페이지로 이동
   function editMe() {
@@ -148,7 +174,29 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
       {/* 프로필 */}
       <div className="md-profile">
         <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} deco={decoMap[member.user_id]} />
-        <div className="md-name">{member.display_nickname}{member.is_self && <span className="md-me">나</span>}</div>
+        {nickEdit ? (
+          <div className="md-name-edit">
+            <input className="cg-input md-name-input" value={nickDraft} maxLength={12} autoFocus
+              onChange={(e) => setNickDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') saveNick(); if (e.key === 'Escape') setNickEdit(false) }}
+              placeholder="바꿀 이름" />
+            <button type="button" className="md-name-ok" disabled={!nickDraft.trim() || nickBusy} onClick={saveNick}>확인</button>
+            <button type="button" className="md-name-cancel" disabled={nickBusy} onClick={() => setNickEdit(false)}>취소</button>
+          </div>
+        ) : (
+          <div className="md-name">
+            {member.display_nickname}
+            {member.is_self && <span className="md-me">나</span>}
+            {/* 명찰 사용 중(내가 잠근 상대)일 때만 닉네임 옆에 연필 */}
+            {nameLock && !member.is_self && (
+              <button type="button" className="md-name-pencil" onClick={() => { setNickDraft(member.display_nickname || ''); setNickEdit(true) }}
+                aria-label="이름 바꾸기" title={`명찰 사용 중 · ${hhmmLeft(nameLock.until)} 남음`}><PencilIcon /></button>
+            )}
+          </div>
+        )}
+        {nameLock && !member.is_self && !nickEdit && (
+          <div className="md-name-lock">🏷️ 명찰 사용 중 · {hhmmLeft(nameLock.until)} 남음</div>
+        )}
         {!member.is_self && (
           <div className="md-actions">
             <button type="button" className="md-btn md-btn-primary" onClick={sendNote}><PaperPlane /> 쪽지 보내기</button>

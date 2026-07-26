@@ -14,6 +14,7 @@ import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
 import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
+import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MAX_WISH = 300
 const NAME_TAG_MS = 24 * 3600 * 1000
@@ -725,7 +726,8 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
     })()
   }, [open, coupleGroupId, myId])
 
-  const leftH = until && new Date(until) > new Date() ? Math.max(1, Math.ceil((new Date(until) - new Date()) / 3600000)) : 0
+  const active = nametagActive(until)
+  useCountdownTick(open && active)   // 남은 시간(23:59) 표기 갱신
 
   async function submit() {
     if (!nick.trim()) { setError('변경할 이름을 입력해 주세요.'); return }
@@ -745,7 +747,7 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
           <>
             <div className="nametag-target">
               <Avatar src={partner?.avatar_url} name={partner?.display_nickname || '짝꿍'} size={76} />
-              {leftH > 0 && <span className="nametag-left">사용 중 · 약 {leftH}시간 남음</span>}
+              {active && <span className="nametag-left">사용 중 · {hhmmLeft(until)} 남음</span>}
             </div>
             <input className="cg-input nametag-input" value={nick} maxLength={12}
               onChange={(e) => {

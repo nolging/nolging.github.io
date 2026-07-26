@@ -4,6 +4,7 @@ import { deleteAvatarByUrl } from '../lib/storage'
 import AvatarEditor from './AvatarEditor'
 import GroupBadge from './GroupBadge'
 import CgToggle from './CgToggle'
+import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MEMBER_ROWS = [
   { key: 'contact', icon: '📞', iconBg: '#e6eefd', title: '그룹 내 연락처 공개', sub: '내 연락처를 이 그룹 멤버에게 공개해요', lockedSub: '그룹에서 연락처 공개를 비허용했어요', groupField: 'show_contact', field: 'show_contact' },
@@ -26,9 +27,8 @@ export default function MySettings({ group, me, onSaved, secondary }) {
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   // 명찰 효과로 내 닉네임이 잠긴 경우 → 닉네임만 수정 불가
-  const nickLockedUntil = me?.nick_locked_until ? new Date(me.nick_locked_until) : null
-  const nickLocked = !!nickLockedUntil && nickLockedUntil > new Date()
-  const lockLeftH = nickLocked ? Math.max(1, Math.ceil((nickLockedUntil - new Date()) / 3600000)) : 0
+  const nickLocked = nametagActive(me?.nick_locked_until)
+  useCountdownTick(nickLocked)   // 남은 시간(23:59) 표기 갱신
 
   async function save() {
     if (!form.display_nickname.trim()) { setNickErr('닉네임을 입력해 주세요.'); return }
@@ -69,7 +69,7 @@ export default function MySettings({ group, me, onSaved, secondary }) {
               placeholder="이 그룹에서 불릴 이름" />
           </div>
           {nickLocked
-            ? <span className="field-error">🏷️ 명찰 효과로 지금은 닉네임을 바꿀 수 없어요. (약 {lockLeftH}시간 남음)</span>
+            ? <span className="field-error">🏷️ 명찰 효과로 지금은 닉네임을 바꿀 수 없어요. ({hhmmLeft(me?.nick_locked_until)} 남음)</span>
             : nickErr && <span className="field-error">{nickErr}</span>}
         </div>
 
