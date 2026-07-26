@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
-import { shellMetrics, isEditing } from '../lib/shellFit'
+import { attachShellFit } from '../lib/shellFit'
 import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount } from '../lib/api'
 import Brand from './Brand'
 import PushPrompt from './PushPrompt'
@@ -369,57 +369,7 @@ export default function Layout() {
   // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
   // → 하단 입력창이 키보드 위로 올라오고, 본문은 그 영역 안에 맞춰진다.
   const shellRef = useRef(null)
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const apply = () => {
-      const el = shellRef.current
-      if (!el) return
-      // 기준 전체 높이는 innerHeight/clientHeight 중 큰 값(키보드에 따라 한쪽이 줄 수 있음).
-      const m = shellMetrics({
-        vvHeight: vv.height, vvOffsetTop: vv.offsetTop,
-        innerHeight: window.innerHeight, clientHeight: document.documentElement.clientHeight,
-        editing: isEditing(document.activeElement),
-      })
-      el.style.height = m.height   // 키보드 없으면 '' → CSS(height:100%) 복귀
-      el.style.top = m.top
-      // 키보드가 올라오면 하단 탭은 원래 위치(키보드 뒤)에 두는 대신 숨겨,
-      // 키보드 위로 따라 올라오지 않게 한다.
-      el.classList.toggle('kb-open', m.kbOpen)
-      // body 로 포탈된 바텀시트(.sheet)가 키보드 뒤로 가려지지 않게 하단 인셋 노출
-      document.documentElement.style.setProperty('--kb-inset', `${m.kbInset}px`)
-    }
-    // 복귀(백그라운드→포그라운드) 직후엔 측정값이 아직 갱신되지 않을 수 있어 몇 번 더 재측정
-    const timers = []
-    const remeasure = () => {
-      apply()
-      timers.push(setTimeout(apply, 60), setTimeout(apply, 250), setTimeout(apply, 600))
-    }
-    vv.addEventListener('resize', apply)
-    vv.addEventListener('scroll', apply)
-    // 포커스가 축소 조건에 들어가므로 포커스 변화에도 다시 계산한다
-    document.addEventListener('focusin', remeasure)
-    document.addEventListener('focusout', remeasure)
-    document.addEventListener('visibilitychange', remeasure)
-    window.addEventListener('pageshow', remeasure)
-    window.addEventListener('focus', remeasure)
-    window.addEventListener('orientationchange', remeasure)
-    apply()
-    return () => {
-      vv.removeEventListener('resize', apply)
-      vv.removeEventListener('scroll', apply)
-      document.removeEventListener('focusin', remeasure)
-      document.removeEventListener('focusout', remeasure)
-      document.removeEventListener('visibilitychange', remeasure)
-      window.removeEventListener('pageshow', remeasure)
-      window.removeEventListener('focus', remeasure)
-      window.removeEventListener('orientationchange', remeasure)
-      timers.forEach(clearTimeout)
-      const el = shellRef.current
-      if (el) { el.style.height = ''; el.style.top = '' }
-      document.documentElement.style.removeProperty('--kb-inset')
-    }
-  }, [])
+  useEffect(() => attachShellFit(() => shellRef.current), [])
 
 
   let topbar
