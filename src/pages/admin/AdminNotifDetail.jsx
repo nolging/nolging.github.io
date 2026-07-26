@@ -54,7 +54,7 @@ export default function AdminNotifDetail() {
           {tpl.vars && <p className="muted sm" style={{ margin: '0 0 10px' }}>사용 가능한 치환자 — {tpl.vars}</p>}
           <form onSubmit={save} className="form">
             <label className="field field-narrow"><span>알림센터 이모지</span>
-              <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="예: 🎁" maxLength={4} autoCapitalize="none" /></label>
+              <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="예: 🎁" maxLength={16} autoCapitalize="none" /></label>
             <div className="field"><span>이모지 배경색</span>
               <div className="an-bg-row">
                 {BG_PRESETS.map((c) => (

@@ -58,7 +58,7 @@ export default function AdminQuestDetail() {
             <textarea rows={2} value={form.body} onChange={setField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></label>
           <div className="field-row">
             <label className="field field-narrow"><span>이모지</span>
-              <input value={form.emoji} onChange={setField('emoji')} placeholder="예: ⭐" maxLength={4} autoCapitalize="none" /></label>
+              <input value={form.emoji} onChange={setField('emoji')} placeholder="예: ⭐" maxLength={16} autoCapitalize="none" /></label>
             <label className="field field-narrow"><span>보상(츄르) *</span>
               <input type="number" inputMode="numeric" min="0" value={form.reward} onChange={setField('reward')} placeholder="예: 2" /></label>
             <label className="field field-narrow"><span>정렬</span>
