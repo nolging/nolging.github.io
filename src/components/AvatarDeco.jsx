@@ -110,7 +110,7 @@ function Blush() {
 function Bandage() {
   // 오른쪽 볼에 붙인 데일밴드. 살구색 띠 + 가운데 흡수 패드 + 좌우 통기공.
   // 볼 위치는 홍조(Blush)의 오른쪽 볼(cx 81, cy 64)보다 살짝 안쪽·위로.
-  const CX = 76, CY = 64, W = 27, H = 11
+  const CX = 79, CY = 64, W = 27, H = 11
   const x = CX - W / 2, y = CY - H / 2
   const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.9" fill="#d9925f" opacity="0.8" />
   return (
@@ -188,7 +188,7 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '17 27 66 38',
-  'deco-bandage': '59 52 34 24',
+  'deco-bandage': '62 52 34 24',
 }
 const EAR_CIRCLE = { 'deco-jaguar': '#24222b', 'deco-wolf': '#726c7a' }
 export function DecoPreview({ id }) {
