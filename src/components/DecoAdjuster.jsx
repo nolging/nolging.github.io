@@ -117,9 +117,7 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
           headTf={slot === 'head' ? cur : undefined} faceTf={slot === 'face' ? cur : undefined} layer="front" />
       </div>
 
-      <p className="deco-adj-hint">
-        한 손가락으로 옮기고, 두 손가락으로 오므려 크기를, 돌려서 각도를 맞춰요.
-      </p>
+      <p className="deco-adj-hint">손가락으로도 위치, 크기, 각도 조정 가능해요.</p>
 
       <div className="deco-adj-ctrl">
         <button type="button" onClick={() => apply({ s: cur.s - 0.1 })} aria-label="작게">－</button>
@@ -129,10 +127,10 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <button type="button" onClick={() => apply({ r: cur.r - 10 })} aria-label="왼쪽으로 회전">↺</button>
         <span className="deco-adj-val">{Math.round(cur.r)}°</span>
         <button type="button" onClick={() => apply({ r: cur.r + 10 })} aria-label="오른쪽으로 회전">↻</button>
+        <i className="deco-adj-sep" />
+        <button type="button" className="deco-adj-reset" onClick={() => onChange({ ...DECO_TF0 })}
+          disabled={isTf0(cur)}>초기화</button>
       </div>
-      {/* 좁은 화면에서 알약 안에 다 안 들어가므로 초기화는 아래 텍스트 버튼으로 */}
-      <button type="button" className="deco-adj-reset" onClick={() => onChange({ ...DECO_TF0 })}
-        disabled={isTf0(cur)}>원래대로</button>
     </div>
   )
 }
