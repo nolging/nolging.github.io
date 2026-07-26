@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listNotifTemplates, updateNotifTemplate } from '../../lib/api'
 
@@ -18,6 +18,9 @@ export default function AdminNotifDetail() {
   const [body, setBody] = useState('')
   const [emoji, setEmoji] = useState('')
   const [bg, setBg] = useState('')
+  const bgRef = useRef(null)
+  // 배경색은 스와치로도 바뀌므로, 비제어 입력창의 표시값을 함께 맞춘다
+  const pickBg = (c) => { setBg(c); if (bgRef.current) bgRef.current.value = c }
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -52,25 +55,31 @@ export default function AdminNotifDetail() {
         <div className="card">
           <h3 className="card-title">{tpl.label}</h3>
           {tpl.vars && <p className="muted sm" style={{ margin: '0 0 10px' }}>사용 가능한 치환자 — {tpl.vars}</p>}
-          <form onSubmit={save} className="form">
-            <label className="field field-narrow"><span>알림센터 이모지</span>
-              <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="예: 🎁" maxLength={16} autoCapitalize="none" /></label>
+          {/* 입력창을 label 로 감싸지 않고 htmlFor 로 연결한다 — iOS 에서 label 안의
+              입력창은 탭이 이중 처리돼(라벨→컨트롤) 포커스가 곧바로 풀릴 수 있다.
+              또 value(제어) 대신 defaultValue 를 쓰고 key 로 템플릿마다 리마운트해,
+              리렌더가 사용자가 입력한 내용을 되돌리지 못하게 한다. */}
+          <form onSubmit={save} className="form" key={tpl.key}>
+            <div className="field field-narrow"><label htmlFor="nt-emoji">알림센터 이모지</label>
+              <input id="nt-emoji" defaultValue={emoji} onChange={(e) => setEmoji(e.target.value)}
+                placeholder="예: 🎁" maxLength={16} autoCapitalize="none" /></div>
             <div className="field"><span>이모지 배경색</span>
               <div className="an-bg-row">
                 {BG_PRESETS.map((c) => (
                   <button key={c} type="button" className={`an-bg-swatch ${sameColor(bg, c) ? 'active' : ''}`}
-                    style={{ background: c }} onClick={() => setBg(c)} aria-label={c} title={c} />
+                    style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
                 ))}
                 <button type="button" className={`an-bg-swatch an-bg-none ${bg ? '' : 'active'}`}
-                  onClick={() => setBg('')} aria-label="기본" title="기본(타입별 기본 색)">기본</button>
+                  onClick={() => pickBg('')} aria-label="기본" title="기본(타입별 기본 색)">기본</button>
               </div>
-              <input className="an-bg-hex" value={bg} onChange={(e) => setBg(e.target.value)}
+              <input id="nt-bg" ref={bgRef} className="an-bg-hex" defaultValue={bg} onChange={(e) => setBg(e.target.value)}
                 placeholder="#RRGGBB (비우면 기본)" maxLength={7} autoCapitalize="none" spellCheck={false} />
             </div>
-            <label className="field"><span>제목</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="알림 제목" /></label>
-            <label className="field"><span>본문</span>
-              <textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} placeholder="알림 본문" style={{ resize: 'vertical' }} /></label>
+            <div className="field"><label htmlFor="nt-title">제목</label>
+              <input id="nt-title" defaultValue={title} onChange={(e) => setTitle(e.target.value)} placeholder="알림 제목" /></div>
+            <div className="field"><label htmlFor="nt-body">본문</label>
+              <textarea id="nt-body" rows={3} defaultValue={body} onChange={(e) => setBody(e.target.value)}
+                placeholder="알림 본문" style={{ resize: 'vertical' }} /></div>
             <div className="admin-notif-preview">
               <span className="admin-notif-preview-ico" style={bg ? { background: bg } : undefined} aria-hidden="true">{emoji || '🔔'}</span>
               <div>
