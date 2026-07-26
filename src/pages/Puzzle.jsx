@@ -170,7 +170,7 @@ export default function Puzzle() {
     ch.on('broadcast', { event: 'upd' }, ({ payload }) => {
       // 드래그 중 이동 신호에는 by/g 가 실려 온다 → 잠금 갱신(별도 keepalive 없이도 유지)
       if (payload?.by && payload.by !== uid) locks.current[payload.by] = { g: payload.g, name: payload.name || '멤버', at: Date.now() }
-      setPos((p) => { const n = { ...p }; for (const q of payload.pieces) n[q.id] = { x: q.x, y: q.y, g: q.g, m: q.m }; return n })
+      setPos((p) => { const n = { ...p }; for (const q of payload.pieces) n[q.id] = { x: q.x, y: q.y, g: q.g, m: q.m, t: q.t || 0 }; return n })
     })
     ch.on('broadcast', { event: 'grab' }, ({ payload }) => {
       if (!payload?.uid || payload.uid === uid) return
@@ -354,8 +354,14 @@ export default function Puzzle() {
     if (h) { showToast(`${h.name} 님이 움직이고 있어요`); return }   // 남이 잡고 있는 조각은 못 움직임
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 이미 놓인 포인터 — 캡처 없이 진행 */ }
     const start = {}; for (const m of members_(g)) start[m] = { x: pos[m].x, y: pos[m].y }
-    drag.current = { g, ox: e.clientX, oy: e.clientY, start }
+    // 건드린 순서(t): 기존 최대값+1 — 시계가 아니라 공유된 좌표에서 계산하므로 두 기기가 같은 순서를 본다
+    let t = 0; for (const k in pos) if ((pos[k].t || 0) > t) t = pos[k].t || 0
+    t += 1
+    drag.current = { g, ox: e.clientX, oy: e.clientY, start, t }
     setActiveG(g)
+    // 움직이지 않고 탭만 해도 z-order 가 올라가도록 즉시 반영 + 상대에게도 알림
+    setPos((p) => { const n = { ...p }; for (const m in start) n[m] = { ...n[m], t }; return n })
+    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(start).map((m) => ({ id: m, ...pos[m], t })), by: uid, name: myName.current, g } })
     sendGrab(g)   // 움직이지 않고 잡고만 있어도 다른 사람 화면에서 잠기도록
     clearInterval(grabKeep.current)
     grabKeep.current = setInterval(() => { if (drag.current) sendGrab(drag.current.g); else { clearInterval(grabKeep.current); grabKeep.current = 0 } }, 5000)
@@ -364,7 +370,7 @@ export default function Puzzle() {
     const d = drag.current; if (!d || !playW) return
     const dx = (e.clientX - d.ox) / playW, dy = (e.clientY - d.oy) / playW
     setPos((p) => { const n = { ...p }; for (const m in d.start) n[m] = { ...n[m], x: d.start[m].x + dx, y: d.start[m].y + dy, m: 1 }; return n })
-    movePend.current = Object.keys(d.start).map((m) => ({ id: m, x: d.start[m].x + dx, y: d.start[m].y + dy, g: d.g, m: 1 }))
+    movePend.current = Object.keys(d.start).map((m) => ({ id: m, x: d.start[m].x + dx, y: d.start[m].y + dy, g: d.g, m: 1, t: d.t }))
     if (!moveRaf.current) moveRaf.current = requestAnimationFrame(() => { moveRaf.current = 0; const m = movePend.current; if (m) chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: m, by: uid, name: myName.current, g: d.g } }) })
   }
   function onPointerUp() {
@@ -437,6 +443,22 @@ export default function Puzzle() {
       arr.push({ id: `${r}-${c}`, r, c, pp: piecePath(r, c, puzzle.cols, puzzle.rows, wpx, hpx, tbpx, edges) })
     return arr
   }, [puzzle, edges, L, playW])
+
+  // 그룹별 z-order: 큰 덩어리가 항상 뒤(작은 조각이 큰 덩어리에 가려지지 않게).
+  // 크기가 같으면 나중에 건드린 그룹(t 가 큰 쪽)이 앞으로.
+  const zOf = useMemo(() => {
+    const size = {}, touch = {}
+    for (const id in pos) {
+      const g = pos[id].g
+      size[g] = (size[g] || 0) + 1
+      touch[g] = Math.max(touch[g] || 0, pos[id].t || 0)
+    }
+    const gs = Object.keys(size).sort((a, b) =>
+      (size[b] - size[a]) || ((touch[a] || 0) - (touch[b] || 0)) || (Number(a) - Number(b)))
+    const z = {}
+    gs.forEach((g, i) => { z[g] = 10 + i })   // 앞쪽일수록 큰 값
+    return z
+  }, [pos])
 
   const liveBadge = (
     <span className="pz-live" title={peerNames}><span className="pz-live-dot" />{peerCount}명 접속 중</span>
@@ -551,7 +573,7 @@ export default function Puzzle() {
           return (
             // 위치는 transform(translate3d) 으로 — left/top 재배치는 iOS 에서 잔상(repaint 누락)이 남는다
             <svg key={pc.id} className="pz-piece" width={sw} height={pc.pp.sh}
-              style={{ transform: `translate3d(${p.x * playW}px, ${p.y * playW}px, 0)`, zIndex: activeG === p.g ? 100 : 10 }}
+              style={{ transform: `translate3d(${p.x * playW}px, ${p.y * playW}px, 0)`, zIndex: activeG === p.g ? 1000 : (zOf[p.g] ?? 10) }}
               onPointerDown={(e) => onPointerDown(e, pc.id)}>
               <defs><clipPath id={`clip-${groupId}-${pc.id}`}><path d={d} /></clipPath></defs>
               <image href={puzzle.image} x={off - pc.c * L.wN * playW} y={off - pc.r * L.hN * playW}

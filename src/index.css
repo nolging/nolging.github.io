@@ -3731,7 +3731,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
 /* 조각을 흩뿌릴 공간이 화면보다 클 수 있어(정규화 좌표 유지) 판은 스크롤 영역 안에 둔다 */
 .pz-board-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.pz-wrap { position: relative; width: auto; background: #f2f1f6; border-radius: 18px; margin: 12px 12px calc(env(safe-area-inset-bottom) + 20px);
+/* isolation: 조각 z-index(그룹 크기별 10~1000)를 판 안에 가둬서 모달·토스트보다 위로 못 올라오게 */
+.pz-wrap { position: relative; isolation: isolate; width: auto; background: #f2f1f6; border-radius: 18px; margin: 12px 12px calc(env(safe-area-inset-bottom) + 20px);
   box-sizing: border-box; overflow: hidden; touch-action: none; flex-shrink: 0; }
 /* left/top 대신 transform 으로 배치 + 레이어 승격 → iOS 이동 잔상 방지.
    filter(drop-shadow) 는 이동 시 잔상의 원인이라 쓰지 않고, 조각 구분은 흰 테두리(stroke)로 한다. */
