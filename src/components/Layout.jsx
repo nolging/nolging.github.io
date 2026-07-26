@@ -5,6 +5,7 @@ import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
 import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount } from '../lib/api'
 import Brand from './Brand'
+import PawIcon from './PawIcon'
 import PushPrompt from './PushPrompt'
 import Modal from './Modal'
 import MemberDetail from '../pages/MemberDetail'
@@ -640,7 +641,7 @@ export default function Layout() {
         {fromMe && <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading topbar-title-lg">깜냥이 상점</span>
         <span className="coin-pill push-right" aria-label="보유 츄르">
-          <span className="coin-pill-paw" aria-hidden="true">🐾</span>
+          <PawIcon className="coin-pill-paw" />
           <span className="coin-pill-num">{coin == null ? '' : coin.toLocaleString('ko-KR')}</span>
         </span>
         <Link to="/inventory" className="btn btn-ghost btn-sm icon-btn store-inv-btn" aria-label="인벤토리" title="인벤토리"><CubeIcon /></Link>

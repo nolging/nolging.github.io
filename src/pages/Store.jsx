@@ -4,18 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import GiftItemModal from '../components/GiftItemModal'
 import StoreItemImage from '../components/StoreItemImage'
+import PawIcon from '../components/PawIcon'
 import { decoSlot } from '../components/AvatarDeco'
 import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 
-const PawIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <circle cx="7" cy="7" r="2.4" /><circle cx="12" cy="5.4" r="2.4" /><circle cx="17" cy="7" r="2.4" />
-    <path d="M12 10c3.4 0 6 2.4 6 5.2 0 2-1.7 3.3-3.4 2.7-1-.4-1.7-.6-2.6-.6s-1.6.2-2.6.6C7.7 18.5 6 17.2 6 15.2 6 12.4 8.6 10 12 10Z" />
-  </svg>
-)
 export default function Store() {
   const { refreshCoin, setStorePremium } = useOutletContext()
   const { user, isAdmin } = useAuth()

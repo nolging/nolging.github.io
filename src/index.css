@@ -500,15 +500,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .coin-label { font-size: 14px; font-weight: 600; opacity: .92; }
 .coin-amount { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
 
-/* 마이 페이지 상단바: 츄르 알약 버튼 (🐾 + 숫자) */
+/* 상점 상단바: 츄르 잔액 알약 (발바닥 + 숫자). 배경은 옆 인벤토리 버튼(.topbar .icon-btn)과 동일 */
 .coin-pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 13px; min-height: 32px; border-radius: 999px;
-  background: #efecfe; color: var(--primary); text-decoration: none;
+  background: var(--canvas); color: var(--primary); text-decoration: none;
   font-weight: 800; font-size: 14px; line-height: 1;
 }
 .coin-pill:hover { text-decoration: none; }
-.coin-pill-paw { font-size: 14px; }
+.coin-pill-paw { width: 14px; height: 14px; flex-shrink: 0; }
 .coin-pill-num { font-variant-numeric: tabular-nums; min-width: 8px; }
 
 /* 마이 페이지: 내 정보 조회 카드 */
@@ -2186,7 +2186,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .premium-shop .topbar-heading { color: #f4f2fd; }
 .premium-shop .topbar .icon-btn.store-inv-btn { background: rgba(255,255,255,.12); color: #efecfb; }
 .premium-shop .topbar .icon-btn.store-inv-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
-.premium-shop .coin-pill { background: #7363e8; color: #fff; }
+/* 프리미엄 상점(어두운 배경)에서도 잔액 알약 배경을 인벤토리 버튼과 맞춘다 */
+.premium-shop .coin-pill { background: rgba(255, 255, 255, .12); color: #fff; }
 .premium-shop .content { background: transparent; position: relative; z-index: 1; }
 .premium-shop .store-page.is-premium { background: transparent; }
 /* 하단 플로팅 탭: 흰 테두리·흰 페이드 제거하고 반투명 다크 + 블러로 자연스럽게 */
