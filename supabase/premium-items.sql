@@ -3,13 +3,13 @@
 --   · 명찰(커플 전용): 24시간 동안 연인의 그룹 닉네임을 내 마음대로 설정.
 --       사용 순간부터 24h. 그동안 상대는 자기 닉네임 수정 불가(다른 정보는 가능). 만료 시 원복.
 --   · 타임머신: 물풍선 폭탄이 터진 쪽지를 처음 열었을 때로 1회 되돌림(타이머 재시작).
---   · 일단 프리미엄 상점에서 "관리자만" 노출(admin_only). 이미지는 store 에 등록돼 있음.
+--   · 프리미엄 상점에 정식 오픈(admin_only = false). 이미지는 store 에 등록돼 있음.
 --  적용: Supabase SQL Editor 에 그대로 실행.
 -- =============================================================
 
--- 1) 상점 노출 플래그(관리자 전용 프리미엄). 이미 admin 페이지에서 등록해 둔 행을 갱신.
-update public.store_items set is_active = true, admin_only = true, premium = true, tier = 'couple' where id = 'name-tag';
-update public.store_items set is_active = true, admin_only = true, premium = true, tier = null     where id = 'time-machine';
+-- 1) 상점 노출 플래그(프리미엄, 일반 사용자에게도 노출). 이미 admin 페이지에서 등록해 둔 행을 갱신.
+update public.store_items set is_active = true, admin_only = false, premium = true, tier = 'couple' where id = 'name-tag';
+update public.store_items set is_active = true, admin_only = false, premium = true, tier = null     where id = 'time-machine';
 
 -- 2) group_members: 명찰 닉네임 오버라이드
 alter table public.group_members add column if not exists nick_original     text;
