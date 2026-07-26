@@ -617,8 +617,8 @@ const GUIDE = {
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
   'sticker-grape': { name: '칭찬 포도알',   emoji: '🍇', text: '포도송이 디자인의 스티커판이에요.\n포도알 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
   'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
-  'name-tag':  { name: '명찰',     emoji: '🏷️', text: '24시간 동안 연인의 이름을 내 마음대로 바꿀 수 있어요.\n사용하기를 눌러 새 이름을 정해 보세요.', canUse: true },
-  'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터진 쪽지를 터지기 전으로 한 번 되돌려요.\n받은 쪽지함에서 터진 쪽지를 열어 사용해요.', canUse: false },
+  'name-tag':  { name: '명찰',     emoji: '🏷️', text: '연인의 이름을 내 마음대로 바꿔요.\n첫 변경 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
+  'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터지기 전으로 한 번 되돌려요.\n젖어 버린 쪽지에 사용해 보세요.', canUse: false },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
