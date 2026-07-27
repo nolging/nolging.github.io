@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getGroupMemberMap } from '../lib/api'
 import Avatar from '../components/Avatar'
-import { MAJOR, SPREADS, compat, shuffleDeck } from '../lib/tarot'
+import { MAJOR, SPREADS, compat, shuffleDeck, todayKey } from '../lib/tarot'
 
 // 타로 카페 — 혼자 뽑기(오늘의 카드 / 세 장)와, 둘이 동시에 접속했을 때의 궁합.
 //
@@ -30,10 +30,31 @@ export default function TarotCafe() {
   const [me, setMe] = useState({ name: profile?.login_id || '나', avatar: null })
   const [flipping, setFlipping] = useState(false)
   const [shuffling, setShuffling] = useState(false)
+  const [dailyCard, setDailyCard] = useState(null)  // 오늘 뽑아 하루 고정된 "오늘의 카드"
 
   const spread = SPREADS[mode] || SPREADS.one
   const need = mode === 'duo' ? 1 : spread.need
   const done = picks.length >= need
+  const dailyLocked = mode === 'one' && !!dailyCard
+
+  // ---- "오늘의 카드" 하루 고정 (기기별 localStorage, DB 없이) ----
+  const dailyKey = `tarot:daily:${groupId}:${uid}`
+  const loadDaily = useCallback(() => {
+    try {
+      const o = JSON.parse(localStorage.getItem(dailyKey) || 'null')
+      return o?.date === todayKey() ? o.card : null
+    } catch { return null }
+  }, [dailyKey])
+  const saveDaily = useCallback((card) => {
+    try { localStorage.setItem(dailyKey, JSON.stringify({ date: todayKey(), card })) } catch { /* noop */ }
+  }, [dailyKey])
+
+  // 진입 시 오늘 이미 뽑은 카드가 있으면 그대로 복원(부채 대신 결과부터 보여 줌)
+  useEffect(() => {
+    if (!uid) return
+    const c = loadDaily()
+    if (c) { setDailyCard(c); setMode('one'); setPicks([c]) }
+  }, [uid, loadDaily])
 
   // 최신 값을 채널 콜백에서 읽기 위한 ref (effect 는 한 번만 돌기 때문)
   const meRef = useRef(me); meRef.current = me
@@ -109,7 +130,12 @@ export default function TarotCafe() {
   function changeMode(m) {
     if (m === mode) return
     setMode(m)
-    reset(m)
+    // 오늘의 카드는 하루 고정 → 다시 섞지 않고 이미 뽑은 카드를 그대로 보여 준다
+    if (m === 'one' && dailyCard) {
+      setPicks([dailyCard]); setTaken([]); publish({ mode: m, pick: null })
+    } else {
+      reset(m)
+    }
   }
   function pick(slot) {
     if (done || taken.includes(slot) || shuffling) return
@@ -117,6 +143,7 @@ export default function TarotCafe() {
     const next = [...picks, card]
     setPicks(next); setTaken((t) => [...t, slot])
     setFlipping(true); setTimeout(() => setFlipping(false), 620)
+    if (mode === 'one') { saveDaily(card); setDailyCard(card) }  // 오늘의 카드 고정
     if (mode === 'duo') publish({ mode, pick: card })
   }
 
@@ -252,9 +279,12 @@ export default function TarotCafe() {
         </div>
       )}
 
-      {(done || taken.length > 0) && (
-        <button type="button" className="tr-again" onClick={() => reset()}>다시 섞어서 뽑기</button>
-      )}
+      {/* 오늘의 카드는 하루 고정 → 다시 뽑기 대신 안내. 그 외 모드는 다시 섞기 가능 */}
+      {dailyLocked && done
+        ? <p className="tr-daily-note">🌙 오늘의 카드는 내일 다시 뽑을 수 있어요</p>
+        : (done || taken.length > 0) && (
+          <button type="button" className="tr-again" onClick={() => reset()}>다시 섞어서 뽑기</button>
+        )}
     </div>
   )
 }

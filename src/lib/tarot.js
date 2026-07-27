@@ -75,6 +75,11 @@ export const MAJOR = [
 
 export const EL_KO = { fire: '불', earth: '흙', air: '공기', water: '물' }
 
+// 오늘 날짜 키(로컬 기준 YYYY-MM-DD). "오늘의 카드" 하루 고정에 쓴다.
+export function todayKey(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export const SPREADS = {
   one: { key: 'one', need: 1, label: '오늘의 카드', slots: ['오늘'] },
   three: { key: 'three', need: 3, label: '세 장', slots: ['지나온 것', '지금', '다가올 것'] },

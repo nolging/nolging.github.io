@@ -1606,8 +1606,15 @@ button.mention-chip:active { opacity: .6; }
 }
 
 /* ---- 타로 카페 ---- */
-.tarot-page { background: radial-gradient(120% 70% at 50% 0%, #2c2455 0%, #1c1836 55%, #171430 100%);
-  min-height: 100%; padding: 18px 16px 28px; box-sizing: border-box; color: #ece8f7; }
+/* 프리미엄 상점처럼 상단바·좌우 여백까지 한 톤으로. 그라데이션을 쉘 전체에 깔고,
+   상단바·content 는 투명하게 비워 뒤 배경이 그대로 비치게 한다. */
+.app-shell.tarot-view { background: radial-gradient(130% 60% at 50% 0%, #2c2455 0%, #1c1836 52%, #12102a 100%); }
+.tarot-view .topbar { background: transparent; border-bottom: none; }
+.tarot-view .topbar-heading { color: #f4f2fd; }
+.tarot-view .topbar .icon-btn { background: rgba(255, 255, 255, .1); color: #efecfb; }
+.tarot-view .topbar .icon-btn:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+.tarot-view .content { background: transparent; padding: 0; }
+.tarot-page { background: transparent; min-height: 100%; padding: 8px 16px 28px; box-sizing: border-box; color: #ece8f7; }
 .tr-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #b6afd0; }
 .tr-soon-ico { font-size: 40px; }
 .tr-head { text-align: center; }
@@ -1689,6 +1696,7 @@ button.mention-chip:active { opacity: .6; }
   background: rgba(255, 255, 255, .1); color: #ece8f7; font-size: 13px; font-weight: 800;
   border-radius: 999px; padding: 11px 20px; }
 .tr-again:hover { background: rgba(255, 255, 255, .16); }
+.tr-daily-note { margin: 26px auto 0; text-align: center; font-size: 12px; font-weight: 700; color: #9a92b8; }
 
 .member-list li { align-items: flex-start; }
 .member-info { flex: 1; min-width: 0; }

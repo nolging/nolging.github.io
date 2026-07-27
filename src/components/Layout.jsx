@@ -738,7 +738,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''} ${tarotMatch ? 'tarot-view' : ''}`} ref={shellRef}>
       {storePremium && (
         <div className="premium-backdrop" aria-hidden="true">
           {PREM_STARS.map(([l, t, s, c, d, dl], i) => (
