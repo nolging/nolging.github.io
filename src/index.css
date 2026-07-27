@@ -1666,6 +1666,11 @@ button.mention-chip:active { opacity: .6; }
 .tr-cardwrap { position: relative; width: 92px; max-width: 30vw; }
 .tr-spread.cols-3 .tr-cardwrap { width: 84px; }
 .tr-cardwrap.rev .tr-glyph { transform-box: fill-box; transform-origin: center; transform: rotate(180deg); }
+/* 카드 그림 이미지: 프레임을 꽉 채우고, 역방향이면 그림 전체가 180° 회전 */
+.tr-face-img { width: 100%; aspect-ratio: 100 / 156; border-radius: 10px; overflow: hidden;
+  background: #fffaf0; box-shadow: 0 0 0 2px #b79a5b inset; }
+.tr-cardimg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tr-cardwrap.rev .tr-cardimg { transform: rotate(180deg); }
 .tr-revtag { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
   background: #b79a5b; color: #241f45; font-size: 9.5px; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
 .tr-wait { width: 92px; opacity: .5; }

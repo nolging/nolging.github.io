@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getGroupMemberMap } from '../lib/api'
+import { getGroupMemberMap, listTarotCards } from '../lib/api'
 import Avatar from '../components/Avatar'
 import { MAJOR, SPREADS, compat, shuffleDeck, todayKey } from '../lib/tarot'
 
@@ -31,6 +31,19 @@ export default function TarotCafe() {
   const [flipping, setFlipping] = useState(false)
   const [shuffling, setShuffling] = useState(false)
   const [dailyCard, setDailyCard] = useState(null)  // 오늘 뽑아 하루 고정된 "오늘의 카드"
+  const [cards, setCards] = useState(MAJOR)          // 카드 데이터(DB, 실패 시 하드코딩 폴백)
+
+  // DB에서 카드 로드. 실패하면 MAJOR 폴백을 그대로 쓴다(양쪽 기기 순서 동일해야 궁합 인덱스 일치).
+  // 카드 수가 폴백과 다르면(관리자가 비활성화 등) 그 수에 맞춰 덱을 다시 섞어 인덱스 범위를 맞춘다.
+  useEffect(() => {
+    let on = true
+    listTarotCards().then((list) => {
+      if (!on || !list.length) return
+      setCards(list)
+      if (list.length !== MAJOR.length) { setDeck(shuffleDeck(list.length)); setPicks([]); setTaken([]) }
+    }).catch(() => { })
+    return () => { on = false }
+  }, [])
 
   const spread = SPREADS[mode] || SPREADS.one
   const need = mode === 'duo' ? 1 : spread.need
@@ -147,7 +160,7 @@ export default function TarotCafe() {
     if (mode === 'duo') publish({ mode, pick: card })
   }
 
-  const pair = mode === 'duo' && picks[0] && partner?.pick ? compat(picks[0], partner.pick) : null
+  const pair = mode === 'duo' && picks[0] && partner?.pick ? compat(picks[0], partner.pick, cards) : null
 
   if (!isAdmin) {
     return (
@@ -226,15 +239,15 @@ export default function TarotCafe() {
             {picks.map((c, k) => (
               <div key={k} className="tr-slotwrap">
                 <span className="tr-slot-label">{spread.slots[k]}</span>
-                <CardFace c={c} />
+                <CardFace m={cards[c.i]} rev={c.rev} />
               </div>
             ))}
           </div>
           <div className="tr-read">
             {picks.map((c, k) => (
               <div key={k} className="tr-read-row">
-                <b>{spread.slots[k]} · {MAJOR[c.i].ko}{c.rev ? ' (역)' : ''}</b>
-                <span>{c.rev ? MAJOR[c.i].rev : MAJOR[c.i].up}</span>
+                <b>{spread.slots[k]} · {cards[c.i].ko}{c.rev ? ' (역)' : ''}</b>
+                <span>{c.rev ? cards[c.i].rev : cards[c.i].up}</span>
               </div>
             ))}
           </div>
@@ -246,12 +259,12 @@ export default function TarotCafe() {
           <div className="tr-duo">
             <div className="tr-slotwrap">
               <span className="tr-slot-label">{me.name}</span>
-              <CardFace c={picks[0]} />
+              <CardFace m={cards[picks[0].i]} rev={picks[0].rev} />
             </div>
             <span className="tr-duo-x">＋</span>
             <div className="tr-slotwrap">
               <span className="tr-slot-label">{partner?.name || '상대'}</span>
-              {partner?.pick ? <CardFace c={partner.pick} /> : <CardBack className="tr-wait" />}
+              {partner?.pick ? <CardFace m={cards[partner.pick.i]} rev={partner.pick.rev} /> : <CardBack className="tr-wait" />}
             </div>
           </div>
 
@@ -264,12 +277,12 @@ export default function TarotCafe() {
               <p className="tr-score-note">{pair.note}</p>
               <div className="tr-read">
                 <div className="tr-read-row">
-                  <b>{me.name} · {MAJOR[picks[0].i].ko}{picks[0].rev ? ' (역)' : ''}</b>
-                  <span>{picks[0].rev ? MAJOR[picks[0].i].rev : MAJOR[picks[0].i].up}</span>
+                  <b>{me.name} · {cards[picks[0].i].ko}{picks[0].rev ? ' (역)' : ''}</b>
+                  <span>{picks[0].rev ? cards[picks[0].i].rev : cards[picks[0].i].up}</span>
                 </div>
                 <div className="tr-read-row">
-                  <b>{partner.name} · {MAJOR[partner.pick.i].ko}{partner.pick.rev ? ' (역)' : ''}</b>
-                  <span>{partner.pick.rev ? MAJOR[partner.pick.i].rev : MAJOR[partner.pick.i].up}</span>
+                  <b>{partner.name} · {cards[partner.pick.i].ko}{partner.pick.rev ? ' (역)' : ''}</b>
+                  <span>{partner.pick.rev ? cards[partner.pick.i].rev : cards[partner.pick.i].up}</span>
                 </div>
               </div>
             </div>
@@ -304,19 +317,26 @@ function CardBack({ className = '' }) {
   )
 }
 
-// 카드 앞면 — 번호 / 그림 / 이름. 역방향이면 그림이 뒤집힌다.
-function CardFace({ c }) {
-  const m = MAJOR[c.i]
+// 카드 앞면 — 카드 그림 이미지(m.image)가 있으면 그걸 꽉 채워 쓰고, 없으면 이모지 도안.
+// 역방향이면 그림이 180° 뒤집힌다(이미지·이모지 공통).
+function CardFace({ m, rev }) {
+  if (!m) return null
   return (
-    <div className={`tr-cardwrap${c.rev ? ' rev' : ''}`}>
-      <svg className="tr-card tr-face" viewBox="0 0 100 156" aria-hidden="true">
-        <rect x="1" y="1" width="98" height="154" rx="10" fill="#fffaf0" stroke="#b79a5b" strokeWidth="2" />
-        <rect x="7" y="7" width="86" height="142" rx="7" fill="none" stroke="#e0cfa2" strokeWidth="1" />
-        <text x="50" y="24" textAnchor="middle" className="tr-num">{m.r}</text>
-        <text x="50" y="92" textAnchor="middle" className="tr-glyph">{m.emoji}</text>
-        <text x="50" y="132" textAnchor="middle" className="tr-name">{m.ko}</text>
-      </svg>
-      {c.rev && <span className="tr-revtag">역방향</span>}
+    <div className={`tr-cardwrap${rev ? ' rev' : ''}`}>
+      {m.image ? (
+        <div className="tr-card tr-face tr-face-img">
+          <img className="tr-cardimg" src={m.image} alt="" loading="lazy" />
+        </div>
+      ) : (
+        <svg className="tr-card tr-face" viewBox="0 0 100 156" aria-hidden="true">
+          <rect x="1" y="1" width="98" height="154" rx="10" fill="#fffaf0" stroke="#b79a5b" strokeWidth="2" />
+          <rect x="7" y="7" width="86" height="142" rx="7" fill="none" stroke="#e0cfa2" strokeWidth="1" />
+          <text x="50" y="24" textAnchor="middle" className="tr-num">{m.r}</text>
+          <text x="50" y="92" textAnchor="middle" className="tr-glyph">{m.emoji}</text>
+          <text x="50" y="132" textAnchor="middle" className="tr-name">{m.ko}</text>
+        </svg>
+      )}
+      {rev && <span className="tr-revtag">역방향</span>}
     </div>
   )
 }

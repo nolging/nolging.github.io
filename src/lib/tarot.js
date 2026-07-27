@@ -1,6 +1,10 @@
 // 타로 카페 — 메이저 아르카나 22장 + 궁합 계산.
 // 궁합은 "두 장의 카드"만으로 정해지는 순수 함수라, 두 기기에서 각각 계산해도
 // 반드시 같은 값이 나온다(서버 없이 동기화되는 이유).
+//
+// 카드 데이터는 DB(tarot_cards 테이블)로 옮겨졌다. 아래 MAJOR 는 DB 미배포/조회 실패
+// 시의 폴백이자 시드 원본이다. compat() 은 카드 배열을 인자로 받아, 앱이 DB에서 불러온
+// 카드(문구·이미지가 수정됐을 수 있음)로도 동일하게 계산된다.
 
 // el: 원소(불/흙/공기/물) — 전통적인 점성 대응. love: 연애 친화도 0~10.
 // up/rev: 정방향 / 역방향 해석. 커플 앱이라 연애 쪽으로 결을 맞췄다.
@@ -98,8 +102,9 @@ function rand(n) {
   }
   return Math.floor(Math.random() * n)
 }
-export function shuffleDeck() {
-  const d = MAJOR.map((_, i) => ({ i, rev: rand(2) === 1 }))
+// count: 덱에 넣을 카드 수(기본 22). DB에서 불러온 카드 수에 맞춰 인덱스 범위를 고정.
+export function shuffleDeck(count = MAJOR.length) {
+  const d = Array.from({ length: count }, (_, i) => ({ i, rev: rand(2) === 1 }))
   for (let k = d.length - 1; k > 0; k--) { const j = rand(k + 1);[d[k], d[j]] = [d[j], d[k]] }
   return d
 }
@@ -132,9 +137,11 @@ const EL_ORDER = ['fire', 'earth', 'air', 'water']
 const elPair = (a, b) => (EL_ORDER.indexOf(a) <= EL_ORDER.indexOf(b) ? [a, b] : [b, a])
 
 // 두 장으로 궁합 산출. 인자 순서를 바꿔도 점수·등급·문구가 모두 같다(양쪽 기기 동일).
-export function compat(a, b) {
+// cards: 활성 카드 배열(DB 또는 폴백). a.i/b.i 는 그 배열의 인덱스.
+export function compat(a, b, cards = MAJOR) {
   if (!a || !b) return null
-  const A = MAJOR[a.i], B = MAJOR[b.i]
+  const A = cards[a.i], B = cards[b.i]
+  if (!A || !B) return null
   const bonus = elBonus(A.el, B.el)
   let s = (A.love + B.love) * 4          // 0~80
   s += bonus                             // -4~+10

@@ -1051,6 +1051,21 @@ export async function setAvatarDecoTf(itemId, groupId, tf) {
   }
 }
 
+// 타로 카드 목록(tarot_cards). sort_order 순서 그대로 → 덱 인덱스가 양쪽 기기에서 일치.
+// tarot.js 의 MAJOR 모양으로 매핑. 미배포(42P01)/실패 시 빈 배열 → 프론트가 하드코딩 폴백 사용.
+export async function listTarotCards() {
+  const { data, error } = await supabase
+    .from('tarot_cards')
+    .select('rank, name, name_en, emoji, image_url, element, love, meaning_up, meaning_rev, is_active')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  if (error) return []
+  return (data ?? []).map((c) => ({
+    r: c.rank, ko: c.name, en: c.name_en, emoji: c.emoji, image: c.image_url || null,
+    el: c.element, love: c.love, up: c.meaning_up, rev: c.meaning_rev,
+  }))
+}
+
 // 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).
 export async function scratchNyangpito() {
   const { data, error } = await supabase.rpc('scratch_nyangpito')

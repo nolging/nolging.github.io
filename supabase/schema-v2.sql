@@ -2488,3 +2488,24 @@ begin
 end;
 $$;
 grant execute on function public.unapply_group_theme(text) to authenticated;
+
+-- =============================================================
+--  타로 카페 카드 (tarot_cards) — 전체 DDL 은 supabase/tarot-cards.sql 참고
+--  카드 데이터(메이저 아르카나 22장). image_url 은 카드 그림 이미지(선택).
+-- =============================================================
+create table if not exists public.tarot_cards (
+  id          text primary key,
+  sort_order  int  not null,
+  rank        text not null,
+  name        text not null,
+  name_en     text,
+  emoji       text,
+  image_url   text,
+  element     text not null check (element in ('fire', 'earth', 'air', 'water')),
+  love        int  not null check (love between 0 and 10),
+  meaning_up  text not null,
+  meaning_rev text not null,
+  is_active   boolean not null default true,
+  updated_at  timestamptz not null default now()
+);
+alter table public.tarot_cards enable row level security;  -- 조회: 로그인 사용자 / 쓰기: 관리자 (tarot-cards.sql)
