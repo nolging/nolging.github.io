@@ -14,6 +14,12 @@ const PULSE_MS = 520        // 닿아 있는 동안 진동+이펙트 반복 간�
 const BEAT_MS = 400         // 누르고 있는 동안 위치 재전송 간격
 const PEER_TTL = 1400       // 이 시간 동안 소식 없으면 손 뗀/나간 것으로 처리 (BEAT 의 3.5배)
 const SWEEP_MS = 250        // 만료 검사 간격
+// 접속 여부(presence)도 하트비트+TTL 로 이중화한다. 상대가 정상적으로 나가면 presence
+// leave 가 바로 전파되지만, 백그라운드 전환·비정상 종료 등으로 leave 가 안 오는 경우가 있어
+// (그때 상대가 계속 "접속 중" 으로 남는다) 주기적으로 내 존재를 갱신하고, 오래 갱신이 없는
+// 상대는 나간 것으로 처리한다.
+const PRES_BEAT_MS = 4000   // 내 presence 재갱신(하트비트) 간격
+const PRES_TTL = 13000      // 이 시간 동안 갱신 없는 상대는 나간 것으로 (BEAT 의 3.25배)
 // "하트 뿅뿅" 테마 하트 색 — 맞닿을 때 뿅뿅 솟는 하트
 const HEART_COLORS = ['#ff6b95', '#ff92b0', '#ff5c86', '#ff7ea3', '#ffa6c0']
 const RISERS = [
@@ -37,13 +43,21 @@ export default function TouchKiss() {
   const [me, setMe] = useState(null)          // {x,y} 정규화 or null
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
-  const [peerCount, setPeerCount] = useState(1)
-  const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
+  const [present, setPresent] = useState({})  // 나 외 접속자 uid -> { name, avatar, t }
+  const [myMeta, setMyMeta] = useState({ name: profile?.login_id || '', avatar: null })
+  const myMetaRef = useRef(myMeta); myMetaRef.current = myMeta
   const [excited, setExcited] = useState(false) // 닿는 중(고양이 눈 빠르게 깜빡)
   const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
   const [partner, setPartner] = useState(null) // 부를 상대 {uid, name}
   const [callState, setCallState] = useState('idle') // idle | sending | done
   const meRef = useRef(me); meRef.current = me
+
+  // 접속 중 멤버 = 나 + (TTL 내에 갱신된) 상대들. presence 로만 계산하지 않고 present 맵으로 계산.
+  const members = [
+    { uid, name: myMeta.name, avatar: myMeta.avatar },
+    ...Object.entries(present).map(([k, v]) => ({ uid: k, name: v.name, avatar: v.avatar })),
+  ]
+  const peerCount = members.length
   // 전송용 내 신원(렌더마다 갱신) — sendFinger 를 매번 새로 만들지 않으려고 ref 로 둔다
   const idRef = useRef(null)
   idRef.current = { uid, name: profile?.login_id || '' }
@@ -114,9 +128,20 @@ export default function TouchKiss() {
     })
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState()
-      const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
-      setPeerCount(Math.max(1, list.length))
-      setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
+      // 상대들의 최신 t(하트비트 시각)로 present 맵 갱신. 정상 leave 면 st 에서 빠져
+      // 바로 사라진다. leave 가 안 와도(백그라운드 등) presence 엔 남아 있으므로,
+      // t 가 TTL 을 넘긴 상대는 여기서도 제외한다(안 그러면 sweep 이 지운 걸 sync 가 되살림).
+      setPresent((prev) => {
+        const now = Date.now()
+        const next = {}
+        for (const [k, arr] of Object.entries(st)) {
+          if (k === uid) continue
+          const m = arr[0]; if (!m) continue
+          const t = m.t || prev[k]?.t || now
+          if (now - t < PRES_TTL) next[k] = { name: m.name, avatar: m.avatar, t }
+        }
+        return next
+      })
       // 나간 사람의 입술은 즉시 치운다. 단 presence 가 아직 비어 있는 순간
       // (구독 직후) 에는 방금 받은 브로드캐스트를 지워 버리지 않도록 건너뛴다.
       if (Object.keys(st).length === 0) return
@@ -128,12 +153,13 @@ export default function TouchKiss() {
     })
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
-      let meta = { uid, name: profile?.login_id || '', avatar: null }
+      let name = profile?.login_id || '', avatar = null
       try {
         const m = await getMyGroupMember(groupId, uid)
-        if (m) meta = { uid, name: m.display_nickname || profile?.login_id || '', avatar: m.avatar_url || null }
+        if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null }
       } catch { /* noop */ }
-      try { await ch.track(meta) } catch { /* noop */ }
+      setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
+      try { await ch.track({ uid, name, avatar, t: Date.now() }) } catch { /* noop */ }
       // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
       if (pendRef.current?.down) sendFinger(pendRef.current)
     })
@@ -144,6 +170,35 @@ export default function TouchKiss() {
       supabase.removeChannel(ch); chanRef.current = null
     }
   }, [groupId, uid, profile?.login_id, sendFinger])
+
+  // ---- 내 존재를 주기적으로 갱신(presence 하트비트) ----
+  // 상대가 내 t 를 계속 새로 받아, 내가 갑자기 사라지면(백그라운드/종료) TTL 로 정리할 수 있다.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const ch = chanRef.current
+      if (ch) ch.track({ uid, ...myMetaRef.current, t: Date.now() }).catch(() => { })
+    }, PRES_BEAT_MS)
+    return () => clearInterval(iv)
+  }, [uid])
+
+  // ---- 갱신이 끊긴 상대는 나간 것으로 정리 ----
+  // presence leave 가 전파되지 않는 경우(백그라운드 전환 등)에도 상대가 계속 접속 중으로
+  // 남지 않게, t 가 오래된 상대를 주기적으로 제거한다.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setPresent((prev) => {
+        const now = Date.now()
+        let drop = false
+        const next = {}
+        for (const [k, v] of Object.entries(prev)) {
+          if (now - (v.t || 0) < PRES_TTL) next[k] = v
+          else drop = true
+        }
+        return drop ? next : prev
+      })
+    }, SWEEP_MS)
+    return () => clearInterval(iv)
+  }, [])
 
   // ---- 누르고 있는 동안 같은 자리라도 계속 알림 ----
   // 이벤트 하나가 유실되거나 상대가 뒤늦게 들어와도 한 박자 안에 맞춰진다.
