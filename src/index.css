@@ -1605,6 +1605,91 @@ button.mention-chip:active { opacity: .6; }
   .deco-adj-ctrl .deco-adj-reset { height: 26px; padding: 0 5px; font-size: 11px; }
 }
 
+/* ---- 타로 카페 ---- */
+.tarot-page { background: radial-gradient(120% 70% at 50% 0%, #2c2455 0%, #1c1836 55%, #171430 100%);
+  min-height: 100%; padding: 18px 16px 28px; box-sizing: border-box; color: #ece8f7; }
+.tr-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #b6afd0; }
+.tr-soon-ico { font-size: 40px; }
+.tr-head { text-align: center; }
+.tr-sign { display: inline-block; font-size: 19px; font-weight: 800; letter-spacing: -.3px; color: #f6f1e2; }
+.tr-sub { margin: 5px 0 0; font-size: 12.5px; color: #b0a8cf; }
+.tr-who { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255, 255, 255, .07); border-radius: 999px; padding: 4px 11px 4px 5px; }
+.tr-who-t { font-size: 11.5px; font-weight: 700; color: #cfc7e8; }
+.tr-who-alone { padding-left: 4px; color: #9a92b8; }
+
+.tr-tabs { margin: 16px auto 0; display: flex; gap: 5px; background: rgba(255, 255, 255, .07);
+  border-radius: 999px; padding: 4px; width: fit-content; max-width: 100%; }
+.tr-tab { border: none; background: none; color: #b8b0d6; font-size: 12.5px; font-weight: 800;
+  padding: 7px 13px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap; }
+.tr-tab.on { background: #f6f1e2; color: #241f45; }
+.tr-tab:disabled { opacity: .45; cursor: default; }
+.tr-tab-lock { font-size: 9.5px; font-weight: 700; background: rgba(255, 255, 255, .14); border-radius: 999px; padding: 1px 5px; }
+
+/* 부채: 가운데가 높고 양옆이 낮게, 카드끼리 살짝 겹쳐 어느 폭에서도 한 줄에 들어간다.
+   폭을 %로 잡아 뷰포트가 아니라 "부채가 놓인 칸" 기준으로 맞춘다.
+   총 너비 = 9*15% - 18*2% = 99% → 회전으로 조금 삐져나와도 페이지 안. */
+/* 좌우 padding = 맨 끝 카드가 기울면서 넓어지는 만큼의 여유(없으면 화면 밖으로 나간다) */
+.tr-fan { margin: 20px auto 0; max-width: 420px; padding-inline: 15px; box-sizing: border-box;
+  display: flex; justify-content: center; align-items: flex-end; }
+.tr-fan.shuffling { animation: tr-shuffle .5s ease; }
+@keyframes tr-shuffle { 0% { opacity: .2; transform: scale(.96); } 100% { opacity: 1; transform: none; } }
+.tr-slot { border: none; background: none; padding: 0; cursor: pointer; line-height: 0;
+  flex: 0 0 15%; margin-inline: -2%; margin-bottom: 22px;   /* 아래 여백 = 양옆 카드가 내려갈 자리 */
+  transform: rotate(var(--rot)) translateY(var(--lift)); transform-origin: bottom center;
+  transition: transform .18s ease, filter .18s ease; }
+.tr-slot:not(:disabled):hover, .tr-slot:not(:disabled):active {
+  transform: rotate(var(--rot)) translateY(calc(var(--lift) - 14px)); filter: brightness(1.2); }
+.tr-slot.used { visibility: hidden; }
+.tr-card { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .35)); }
+.tr-count { margin: 18px 0 0; text-align: center; font-size: 12.5px; font-weight: 700; color: #b8b0d6; }
+.tr-peer-state { color: #8f86b4; font-weight: 600; }
+
+/* 결과 */
+.tr-result { margin-top: 20px; }
+.tr-result.flip .tr-cardwrap { animation: tr-flip .6s ease; }
+@keyframes tr-flip { 0% { transform: rotateY(90deg) scale(.9); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.tr-spread { display: flex; justify-content: center; gap: 10px; }
+.tr-duo { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.tr-duo-x { font-size: 18px; color: #b79a5b; font-weight: 800; }
+.tr-slotwrap { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; }
+.tr-slot-label { font-size: 11px; font-weight: 800; color: #b0a8cf; max-width: 96px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.tr-cardwrap { position: relative; width: 92px; max-width: 30vw; }
+.tr-spread.cols-3 .tr-cardwrap { width: 84px; }
+.tr-cardwrap.rev .tr-glyph { transform-box: fill-box; transform-origin: center; transform: rotate(180deg); }
+.tr-revtag { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
+  background: #b79a5b; color: #241f45; font-size: 9.5px; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
+.tr-wait { width: 92px; opacity: .5; }
+.tr-num { font-size: 11px; font-weight: 700; fill: #b79a5b; }
+.tr-glyph { font-size: 40px; }
+.tr-name { font-size: 11px; font-weight: 800; fill: #3b3358; }
+
+.tr-read { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.tr-read-row { background: rgba(255, 255, 255, .06); border-radius: 14px; padding: 11px 13px;
+  display: flex; flex-direction: column; gap: 4px; }
+.tr-read-row b { font-size: 12.5px; color: #f6f1e2; }
+.tr-read-row span { font-size: 12.5px; line-height: 1.65; color: #c3bbdd; }
+
+.tr-score { margin-top: 22px; text-align: center; }
+.tr-score-num { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; color: #f6f1e2; line-height: 1; }
+.tr-score-num i { font-size: 18px; font-style: normal; margin-left: 2px; color: #b79a5b; }
+.tr-score-bar { margin: 12px auto 0; width: min(240px, 80%); height: 7px; border-radius: 999px;
+  background: rgba(255, 255, 255, .1); overflow: hidden; }
+.tr-score-bar span { display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #b79a5b, #f0c968); transition: width .7s ease; }
+.tr-score-tier { margin-top: 11px; display: inline-block; background: #f6f1e2; color: #241f45;
+  font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 13px; }
+.tr-score-line { margin: 11px 0 0; font-size: 13px; line-height: 1.65; color: #ded7f0; }
+.tr-score-note { margin: 6px 0 0; font-size: 12px; color: #a49bc6; }
+.tr-waiting { margin-top: 20px; text-align: center; font-size: 12.5px; color: #a49bc6; }
+
+.tr-again { margin: 26px auto 0; display: block; border: none; cursor: pointer;
+  background: rgba(255, 255, 255, .1); color: #ece8f7; font-size: 13px; font-weight: 800;
+  border-radius: 999px; padding: 11px 20px; }
+.tr-again:hover { background: rgba(255, 255, 255, .16); }
+
 .member-list li { align-items: flex-start; }
 .member-info { flex: 1; min-width: 0; }
 .member-name { font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
