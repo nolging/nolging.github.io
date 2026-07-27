@@ -16,6 +16,7 @@ import Omok from './pages/Omok'
 import Davinci from './pages/Davinci'
 import Rps from './pages/Rps'
 import TarotCafe from './pages/TarotCafe'
+import SecretBoard from './pages/SecretBoard'
 import PraiseStickers from './pages/PraiseStickers'
 import MemberDetail from './pages/MemberDetail'
 import CreateTask from './pages/CreateTask'
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="/groups/:groupId/davinci" element={<Davinci />} />
         <Route path="/groups/:groupId/rps" element={<Rps />} />
         <Route path="/groups/:groupId/tarot" element={<TarotCafe />} />
+        <Route path="/groups/:groupId/board" element={<SecretBoard />} />
         <Route path="/groups/:groupId/praise" element={<PraiseStickers />} />
         <Route path="/groups/:groupId/members/:userId" element={<MemberDetail />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />

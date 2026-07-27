@@ -2509,3 +2509,25 @@ create table if not exists public.tarot_cards (
   updated_at  timestamptz not null default now()
 );
 alter table public.tarot_cards enable row level security;  -- 조회: 로그인 사용자 / 쓰기: 관리자 (tarot-cards.sql)
+
+-- =============================================================
+--  비밀 게시판 (board_prefixes / board_posts / board_comments)
+--  전체 DDL·RLS·RPC 는 supabase/secret-board.sql 참고. 익명 게시판이라
+--  직접 접근은 RLS 로 막고(정책 없음) security definer RPC 로만 접근한다.
+-- =============================================================
+create table if not exists public.board_prefixes (
+  id uuid primary key default gen_random_uuid(), group_id uuid not null references public.groups(id) on delete cascade,
+  label text not null, sort_order int not null default 0, created_at timestamptz not null default now());
+create table if not exists public.board_posts (
+  id uuid primary key default gen_random_uuid(), group_id uuid not null references public.groups(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  prefix_id uuid references public.board_prefixes(id) on delete set null,
+  title text not null, body text not null default '', created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+create table if not exists public.board_comments (
+  id uuid primary key default gen_random_uuid(), post_id uuid not null references public.board_posts(id) on delete cascade,
+  group_id uuid not null references public.groups(id) on delete cascade, author_id uuid not null references public.profiles(id) on delete cascade,
+  parent_id uuid references public.board_comments(id) on delete cascade,
+  body text not null, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+alter table public.board_prefixes enable row level security;
+alter table public.board_posts    enable row level security;
+alter table public.board_comments enable row level security;

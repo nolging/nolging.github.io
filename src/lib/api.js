@@ -1066,6 +1066,69 @@ export async function listTarotCards() {
   }))
 }
 
+// ---- 비밀 게시판 (secret board) ----
+// 모든 접근은 security definer RPC 로만(익명: author_id 는 서버 밖으로 안 나감).
+// 미배포(PGRST202/42883) 시 안내 메시지.
+const boardNotReady = (error, fn) =>
+  error && (error.code === 'PGRST202' || error.code === '42883' || new RegExp(fn).test(error.message || ''))
+
+export async function listBoardPrefixes(groupId) {
+  const { data, error } = await supabase.rpc('board_prefixes', { p_group: groupId })
+  if (error) { if (boardNotReady(error, 'board_prefixes')) return []; throw error }
+  return data ?? []
+}
+export async function addBoardPrefix(groupId, label) {
+  const { data, error } = await supabase.rpc('board_add_prefix', { p_group: groupId, p_label: label })
+  if (error) { if (boardNotReady(error, 'board_add_prefix')) throw new Error('비밀 게시판이 아직 DB에 설정되지 않았습니다. (secret-board.sql 을 먼저 적용해 주세요)'); throw error }
+  return data
+}
+export async function updateBoardPrefix(id, label) {
+  const { error } = await supabase.rpc('board_update_prefix', { p_id: id, p_label: label })
+  if (error) throw error
+}
+export async function deleteBoardPrefix(id) {
+  const { error } = await supabase.rpc('board_delete_prefix', { p_id: id })
+  if (error) throw error
+}
+
+export async function listBoardPosts(groupId) {
+  const { data, error } = await supabase.rpc('board_posts', { p_group: groupId })
+  if (error) { if (boardNotReady(error, 'board_posts')) return []; throw error }
+  return data ?? []
+}
+export async function createBoardPost(groupId, prefixId, title, body) {
+  const { data, error } = await supabase.rpc('board_create_post', { p_group: groupId, p_prefix: prefixId || null, p_title: title, p_body: body ?? '' })
+  if (error) { if (boardNotReady(error, 'board_create_post')) throw new Error('비밀 게시판이 아직 DB에 설정되지 않았습니다. (secret-board.sql 을 먼저 적용해 주세요)'); throw error }
+  return data
+}
+export async function updateBoardPost(id, prefixId, title, body) {
+  const { error } = await supabase.rpc('board_update_post', { p_id: id, p_prefix: prefixId || null, p_title: title, p_body: body ?? '' })
+  if (error) throw error
+}
+export async function deleteBoardPost(id) {
+  const { error } = await supabase.rpc('board_delete_post', { p_id: id })
+  if (error) throw error
+}
+
+export async function listBoardComments(postId) {
+  const { data, error } = await supabase.rpc('board_comments', { p_post: postId })
+  if (error) { if (boardNotReady(error, 'board_comments')) return []; throw error }
+  return data ?? []
+}
+export async function addBoardComment(postId, parentId, body) {
+  const { data, error } = await supabase.rpc('board_add_comment', { p_post: postId, p_parent: parentId || null, p_body: body })
+  if (error) throw error
+  return data
+}
+export async function updateBoardComment(id, body) {
+  const { error } = await supabase.rpc('board_update_comment', { p_id: id, p_body: body })
+  if (error) throw error
+}
+export async function deleteBoardComment(id) {
+  const { error } = await supabase.rpc('board_delete_comment', { p_id: id })
+  if (error) throw error
+}
+
 // 냥피또(스크래치 복권): 서버가 당첨을 결정하고 냥피또 1개 소모 + 츄르 적립. 반환=당첨 츄르(0=꽝).
 export async function scratchNyangpito() {
   const { data, error } = await supabase.rpc('scratch_nyangpito')
