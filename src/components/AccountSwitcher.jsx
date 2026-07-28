@@ -67,19 +67,15 @@ export default function AccountSwitcher({ onClose }) {
 
   function doRemove(aid) { removeAccount(aid); setAccounts(getSavedAccounts()) }
 
-  const initial = (s) => (s || '?').trim().slice(0, 1).toUpperCase()
-
   return (
     <div className="acct-panel">
       <div className="acct-switch-head">
         <span className="acct-title">계정 전환</span>
-        <span className="acct-switch-tag">관리자 전용</span>
       </div>
 
       <ul className="acct-list">
         {profile && (
           <li className="acct-item is-current">
-            <span className="acct-ava">{initial(profile.nickname || profile.login_id)}</span>
             <span className="acct-info">
               <span className="acct-name">{profile.login_id || '—'}</span>
               {isAdmin && <span className="acct-role">관리자</span>}
@@ -89,7 +85,6 @@ export default function AccountSwitcher({ onClose }) {
         )}
         {others.map((a) => (
           <li key={a.id} className="acct-item">
-            <span className="acct-ava">{initial(a.nickname || a.login_id)}</span>
             <span className="acct-info">
               <span className="acct-name">{a.login_id}</span>
               {a.role === 'admin' && <span className="acct-role">관리자</span>}

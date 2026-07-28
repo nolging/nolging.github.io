@@ -4811,11 +4811,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .acct-panel { display: block; }
 .acct-title { font-size: 15px; font-weight: 800; color: var(--text); }
 .acct-switch-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.acct-switch-tag { font-size: 10.5px; font-weight: 800; color: #7363e8; background: #efeafe; border-radius: 999px; padding: 2px 8px; }
 .acct-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .acct-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
 .acct-item.is-current { opacity: .95; }
-.acct-ava { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #efeafe; color: #7363e8; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 .acct-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .acct-name { font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acct-role { flex-shrink: 0; font-size: 10px; font-weight: 800; color: #7363e8; background: #efeafe; border-radius: 999px; padding: 1px 7px; }
