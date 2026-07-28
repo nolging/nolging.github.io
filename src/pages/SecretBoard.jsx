@@ -39,6 +39,14 @@ function isNewPost(iso) {
   try { return (Date.now() - new Date(iso).getTime()) < 86400000 } catch { return false }
 }
 
+// 드롭다운 아래 화살표(텍스트 문자 대신 SVG 로 정렬·굵기 통일)
+const CaretDown = () => (
+  <svg className="sb-caret" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+)
+
 // 접근 준비 안 됨(관리자 아님) 공통 화면
 const NotReady = () => (
   <div className="page sb-page">
@@ -98,14 +106,12 @@ export default function SecretBoard() {
 
   return (
     <div className="page sb-page sb-list-page">
-      {error && <div className="alert alert-error sb-cmt-err">{error}</div>}
-
-      {/* 목록 헤더: 좌 총 게시글 수, 우 말머리 선택(필터) */}
+      {/* 목록 헤더(고정): 좌 총 게시글 수, 우 말머리 선택(필터) — 스크롤/새로고침 영향 없음 */}
       <div className="sb-listhead">
         <span className="sb-total">전체 <b>{posts.length.toLocaleString('ko-KR')}</b></span>
         <div className="sb-prefilter">
           <button type="button" className="sb-prefilter-btn" onClick={() => setFilterOpen((o) => !o)}>
-            {filterLabel}<span className="sb-caret" aria-hidden="true">⌄</span>
+            {filterLabel}<CaretDown />
           </button>
           {filterOpen && (
             <>
@@ -123,35 +129,37 @@ export default function SecretBoard() {
         </div>
       </div>
 
-      {/* 게시글 목록 위 회색 여백 */}
-      <div className="sb-gap" />
-
-      {loading ? <div className="spinner" /> : shown.length === 0 ? (
-        <div className="sb-empty">{filterPrefix ? '이 말머리의 글이 없어요.' : '아직 글이 없어요. 첫 글을 남겨 보세요.'}</div>
-      ) : (
-        <ul className="sb-rows">
-          {shown.map((p) => (
-            <li key={p.id}>
-              <button type="button" className="sb-row"
-                onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
-                <span className="sb-row-main">
-                  <span className="sb-row-title">
-                    {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
-                    <span className="sb-row-t">{p.title}</span>
+      {/* 이 아래(회색 여백 + 목록)만 스크롤/당겨서 새로고침 */}
+      <div className="sb-scroll">
+        {error && <div className="alert alert-error sb-cmt-err">{error}</div>}
+        <div className="sb-gap" />
+        {loading ? <div className="spinner" /> : shown.length === 0 ? (
+          <div className="sb-empty">{filterPrefix ? '이 말머리의 글이 없어요.' : '아직 글이 없어요. 첫 글을 남겨 보세요.'}</div>
+        ) : (
+          <ul className="sb-rows">
+            {shown.map((p) => (
+              <li key={p.id}>
+                <button type="button" className="sb-row"
+                  onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
+                  <span className="sb-row-main">
+                    <span className="sb-row-title">
+                      {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
+                      <span className="sb-row-t">{p.title}</span>
+                    </span>
+                    <span className="sb-row-meta">
+                      <span className="sb-row-time">{boardTime(p.created_at)}</span>
+                      {isNewPost(p.created_at) && <span className="sb-n">N</span>}
+                    </span>
                   </span>
-                  <span className="sb-row-meta">
-                    <span className="sb-row-time">{boardTime(p.created_at)}</span>
-                    {isNewPost(p.created_at) && <span className="sb-n">N</span>}
-                  </span>
-                </span>
-                {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                  {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      {/* 하단 탭바: 검색하기 · 글쓰기 (동작 레이아웃은 추후) */}
+      {/* 하단 탭바(고정): 검색하기 · 글쓰기 */}
       <nav className="sb-tabbar">
         <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/search'))}>검색하기</button>
         <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>글쓰기</button>
@@ -230,7 +238,7 @@ export function BoardCompose() {
           <div className="sb-compose-head">
             <div className="sb-prefix-sel">
               <button type="button" className="sb-prefix-sel-btn" onClick={() => setPfOpen((o) => !o)}>
-                {prefixLabel}<span className="sb-caret" aria-hidden="true">⌄</span>
+                {prefixLabel}<CaretDown />
               </button>
               {pfOpen && (
                 <>
