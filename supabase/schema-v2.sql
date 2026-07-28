@@ -757,15 +757,19 @@ drop function if exists public.tg_notify_task_accept();
 --  브라우저 푸시 구독 저장소. notifications INSERT → Database Webhook
 --  → Edge Function(send-push) 가 이 구독들로 푸시를 전송한다.
 -- =============================================================
+-- endpoint 는 (user_id, endpoint) 로 유일 → 같은 기기를 여러 계정이 각각 구독 가능
+-- (계정 전환 시에도 다른 계정 푸시를 계속 받게. 상세: push-multi-account.sql)
 create table if not exists public.push_subscriptions (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references public.profiles(id) on delete cascade,
-  endpoint   text not null unique,
+  endpoint   text not null,
   p256dh     text not null,
   auth       text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (user_id, endpoint)
 );
 create index if not exists idx_push_subscriptions_user on public.push_subscriptions(user_id);
+create index if not exists idx_push_subscriptions_endpoint on public.push_subscriptions(endpoint);
 alter table public.push_subscriptions enable row level security;
 
 -- 본인 구독만 관리 (Edge Function 은 service_role 로 RLS 우회하여 전체 조회)
@@ -786,23 +790,25 @@ create policy ps_delete on public.push_subscriptions
 --  - endpoint 는 브라우저가 생성한 추측 불가능한 비밀 문자열 → 소지 = 관리 권한.
 --  - 계정 전환 시 같은 기기의 구독을 이전 소유자에서 현재 사용자로 넘긴다.
 --    (RLS update/insert 는 user_id=auth.uid() 만 허용하므로 정의자 함수로 우회)
+-- 현재 사용자 구독만 upsert. 다른 계정의 같은 기기 구독은 유지(여러 계정 동시 수신).
 create or replace function public.attach_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null then raise exception '로그인이 필요합니다.'; end if;
-  delete from public.push_subscriptions where endpoint = p_endpoint;
   insert into public.push_subscriptions(user_id, endpoint, p256dh, auth)
-    values (auth.uid(), p_endpoint, p_p256dh, p_auth);
+    values (auth.uid(), p_endpoint, p_p256dh, p_auth)
+  on conflict (user_id, endpoint) do update
+    set p256dh = excluded.p256dh, auth = excluded.auth;
 end;
 $$;
 grant execute on function public.attach_push_subscription(text, text, text) to authenticated;
 
--- 기기 구독 제거(로그아웃/끄기). 이전 소유자 행이라도 endpoint 소지자면 정리 가능.
+-- 기기 구독 제거(로그아웃/끄기): 현재 사용자의 이 기기 구독만 제거(다른 계정 구독 유지).
 create or replace function public.detach_push_subscription(p_endpoint text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null then raise exception '로그인이 필요합니다.'; end if;
-  delete from public.push_subscriptions where endpoint = p_endpoint;
+  delete from public.push_subscriptions where endpoint = p_endpoint and user_id = auth.uid();
 end;
 $$;
 grant execute on function public.detach_push_subscription(text) to authenticated;

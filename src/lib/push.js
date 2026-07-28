@@ -88,7 +88,7 @@ export async function enablePush(userId) {
     if (error.code === 'PGRST202' || /attach_push_subscription/.test(error.message || '')) {
       const { error: upErr } = await supabase.from('push_subscriptions').upsert(
         { user_id: userId, endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
-        { onConflict: 'endpoint' },
+        { onConflict: 'user_id,endpoint' },
       )
       if (upErr) throw upErr
       return true
