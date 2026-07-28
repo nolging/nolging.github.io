@@ -64,6 +64,15 @@ function CloseIcon() {
   )
 }
 
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
+}
+
 function MenuIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -231,6 +240,11 @@ export default function Layout() {
   const [headerPostMenu, setHeaderPostMenu] = useState(null)
   const [postMenuOpen, setPostMenuOpen] = useState(false)
   useEffect(() => { setPostMenuOpen(false) }, [location.pathname])
+  // 비밀 게시판 댓글 상세: 상단바에 댓글 수 표기 + 돋보기 → 상단바 검색창 토글
+  const [headerCommentCount, setHeaderCommentCount] = useState(null)
+  const [commentSearchOpen, setCommentSearchOpen] = useState(false)
+  const [commentSearchQuery, setCommentSearchQuery] = useState('')
+  useEffect(() => { setCommentSearchOpen(false); setCommentSearchQuery(''); setHeaderCommentCount(null) }, [location.pathname])
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -476,11 +490,20 @@ export default function Layout() {
       </header>
     )
   } else if (boardCommentsMatch) {
-    // 비밀 게시판 댓글 상세: 좌측 뒤로, 제목 "댓글"
-    topbar = (
+    // 비밀 게시판 댓글 상세: 상단바에 댓글 수 + 우측 돋보기. 돋보기 → 상단바 한 줄이 검색창으로.
+    topbar = commentSearchOpen ? (
+      <header className="topbar sb-search-topbar">
+        <input className="sb-topbar-search" autoFocus placeholder="댓글 내용 검색"
+          value={commentSearchQuery} onChange={(e) => setCommentSearchQuery(e.target.value)} />
+        <button type="button" className="sb-topbar-close"
+          onClick={() => { setCommentSearchOpen(false); setCommentSearchQuery('') }}>닫기</button>
+      </header>
+    ) : (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">댓글</span>
+        <span className="topbar-heading">댓글{headerCommentCount != null ? ` ${headerCommentCount}` : ''}</span>
+        <button type="button" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="댓글 검색" title="댓글 검색"
+          onClick={() => setCommentSearchOpen(true)}><SearchIcon /></button>
       </header>
     )
   } else if (boardPostMatch) {
@@ -892,7 +915,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

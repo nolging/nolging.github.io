@@ -468,12 +468,15 @@ function useBoardComments(postId, focusId) {
 
 // 댓글 목록(공용). boardTime 형식 시간, ⋮ 메뉴(답글/수정/삭제)
 // limit 주면 마지막 limit개만 보여주고, 초과 시 상단에 '댓글 전체 보기' 바(onSeeAll).
-function CommentList({ h, onReply, onEdit, limit, onSeeAll }) {
+// filterText 주면 검색어로 본문 필터(삭제 댓글 제외, 전체보기·limit 무시).
+function CommentList({ h, onReply, onEdit, limit, onSeeAll, filterText }) {
   const { flat, loading, menuId, setMenuId, flashId, removeComment } = h
   if (loading) return <div className="spinner sm" />
   if (flat.length === 0) return <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-  const truncated = limit && flat.length > limit
-  const visible = truncated ? flat.slice(-limit) : flat
+  const kw = (filterText || '').trim().toLowerCase()
+  const truncated = !kw && limit && flat.length > limit
+  const visible = kw ? flat.filter(({ c }) => !c.deleted && (c.body || '').toLowerCase().includes(kw)) : (truncated ? flat.slice(-limit) : flat)
+  if (kw && visible.length === 0) return <p className="comment-empty">검색 결과가 없어요.</p>
   return (
     <>
       {truncated && (
@@ -697,12 +700,18 @@ export function BoardComments() {
   const navigate = useNavigate()
   const [sp] = useSearchParams()
   const { isAdmin } = useAuth()
-  const { setRefreshHandler } = useOutletContext()
+  const { setRefreshHandler, setHeaderCommentCount, commentSearch } = useOutletContext()
 
   const h = useBoardComments(postId, sp.get('c'))
   const c = useComposerToggle(h)
   const [bottomEl, setBottomEl] = useState(null)
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+
+  // 상단바에 댓글 수 표기
+  useEffect(() => {
+    setHeaderCommentCount(h.commentCount)
+    return () => setHeaderCommentCount(null)
+  }, [setHeaderCommentCount, h.commentCount])
 
   // 당겨서 새로고침 = 댓글 다시 불러오기
   useEffect(() => {
@@ -712,6 +721,7 @@ export function BoardComments() {
 
   if (!isAdmin) return <NotReady />
 
+  const searching = !!commentSearch?.open
   const scrollFirst = () => document.querySelector('.sb-cmt-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   const bottomBar = (
@@ -728,11 +738,11 @@ export function BoardComments() {
   return (
     <div className="page sb-post-page sb-comments-page">
       <div className="sb-cmt-section">
-        <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} />
+        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} filterText={searching ? commentSearch.query : ''} />
       </div>
-      {bottomEl && createPortal(c.composing ? composer : bottomBar, bottomEl)}
+      {/* 검색 중에는 하단 바 숨김(키보드 위 자리 차지 방지) */}
+      {bottomEl && !searching && createPortal(c.composing ? composer : bottomBar, bottomEl)}
     </div>
   )
 }
