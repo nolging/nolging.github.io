@@ -4805,3 +4805,32 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .wc-add { margin-top: 12px; width: 100%; padding: 11px; border: 1.5px dashed var(--border); border-radius: 12px; background: none; color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; }
 .wc-add:active { background: rgba(0,0,0,.03); }
 .wc-hint { margin: 10px 2px 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* ---- 계정 전환 (관리자 전용, 마이 페이지 하단) ---- */
+.acct-switch { margin-top: 18px; background: var(--surface); border-radius: 16px; padding: 14px 15px; box-shadow: 0 2px 10px rgba(20, 22, 40, .05); }
+.acct-switch-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.acct-switch-tag { font-size: 10.5px; font-weight: 800; color: #7363e8; background: #efeafe; border-radius: 999px; padding: 2px 8px; }
+.acct-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.acct-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
+.acct-item.is-current { opacity: .95; }
+.acct-ava { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #efeafe; color: #7363e8; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.acct-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.acct-name { font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-role { flex-shrink: 0; font-size: 10px; font-weight: 800; color: #7363e8; background: #efeafe; border-radius: 999px; padding: 1px 7px; }
+.acct-cur { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
+.acct-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.acct-go { border: none; background: #7363e8; color: #fff; font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.acct-go:disabled { opacity: .55; }
+.acct-x { border: none; background: none; color: #b3adc4; font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1; }
+.acct-x:hover { color: #e5688a; }
+.acct-relogin { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.acct-pw, .acct-in { border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 11px; font-size: 14px; font-family: inherit; background: #fafaff; color: var(--text); box-sizing: border-box; }
+.acct-pw { width: 130px; }
+.acct-pw:focus, .acct-in:focus { outline: none; border-color: #b9abf3; background: #fff; }
+.acct-err { margin: 8px 2px 0; font-size: 12.5px; color: #e5688a; }
+.acct-add { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.acct-in { width: 100%; }
+.acct-add-row { display: flex; justify-content: flex-end; gap: 8px; }
+.acct-add-btn { margin-top: 10px; width: 100%; padding: 10px; border: 1.5px dashed var(--border); border-radius: 12px; background: none; color: var(--text); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.acct-add-btn:active { background: rgba(0, 0, 0, .03); }
+.acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }

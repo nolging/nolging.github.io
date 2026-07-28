@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase, nicknameToEmail } from '../lib/supabase'
 import { syncPushToCurrentUser, detachPushFromServer } from '../lib/push'
+import { refreshStoredAccount } from '../lib/accountSwitch'
 
 const AuthContext = createContext(null)
 
@@ -73,6 +74,8 @@ export function AuthProvider({ children }) {
         lastSession.current = data.session
         setSession(data.session)
         await loadProfile(data.session?.user?.id)
+        // 계정 전환 목록에 있는 계정이면 저장 토큰을 최신화(전환 정확도 유지)
+        if (data.session?.user?.id) refreshStoredAccount(data.session)
         // 이 기기의 기존 푸시 구독을 현재 로그인 사용자 소유로 재바인딩(계정 전환 대응)
         if (data.session?.user?.id) syncPushToCurrentUser()
       } catch {
@@ -86,6 +89,7 @@ export function AuthProvider({ children }) {
       lastSession.current = newSession
       setSession(newSession)
       await loadProfile(newSession?.user?.id)
+      if (newSession?.user?.id) refreshStoredAccount(newSession) // 전환 목록 토큰 최신화
       if (newSession?.user?.id) syncPushToCurrentUser() // 로그인/전환 시 기기 재바인딩
       settle()
     }
