@@ -522,7 +522,7 @@ export default function Layout() {
     ) : (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">댓글{headerCommentCount != null ? ` ${headerCommentCount}` : ''}</span>
+        <span className="topbar-heading">댓글{headerCommentCount != null && (<>{' '}<span className="sb-cmt-count-num">{headerCommentCount}</span></>)}</span>
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="댓글 검색" title="댓글 검색"
           onClick={() => setCommentSearchOpen(true)}><SearchIcon /></button>
       </header>

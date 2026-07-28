@@ -1750,7 +1750,8 @@ button.mention-chip:active { opacity: .6; }
 .sb-n { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px;
   padding: 0 3px; box-sizing: border-box; border-radius: 50%; background: #f0384a; color: #fff; font-size: 10px; font-weight: 800; }
 .sb-row-cc { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e3e2e8;
-  display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #6a6875; }
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #6a6875; cursor: pointer; }
+.sb-row-cc:active { background: #f2f0fa; }
 
 /* 하단 탭바 (검색하기 · 글쓰기) — 아이콘 없이 텍스트만, 하단 여백 추가 */
 .sb-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex;
@@ -1859,7 +1860,7 @@ button.mention-chip:active { opacity: .6; }
 /* 작성시간 라인 오른쪽 끝: 댓글 수 원형 배지 */
 .sb-post-cc { flex-shrink: 0; min-width: 38px; height: 38px; padding: 0 8px; box-sizing: border-box; border-radius: 999px;
   border: 1px solid #e3e2e8; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600; color: #6a6875; }
+  font-size: 12px; font-weight: 600; color: #6a6875; }
 /* 하단 고정 바(댓글쓰기·댓글 N·새로고침)가 마지막 내용을 가리지 않게 */
 .sb-detail { padding-bottom: 24px; }
 
@@ -1870,7 +1871,9 @@ button.mention-chip:active { opacity: .6; }
 
 .sb-cmt-section { border-top: 8px solid #f4f2f9; }   /* 본문↔댓글 구분 띠 */
 .sb-comments-page .sb-cmt-section { border-top: none; }   /* 댓글 상세 페이지: 상단 띠 없음 */
-.sb-comments-page { margin-top: calc(-1 * var(--pad-y)); }   /* 상단바 바로 아래에서 첫 댓글 시작(위 여백 제거) */
+/* 상단바 바로 아래에서 첫 댓글 시작 + 마지막 댓글 아래 여백 제거 */
+.sb-comments-page { margin-top: calc(-1 * var(--pad-y)); margin-bottom: calc(-1 * var(--pad-y)); }
+.sb-cmt-count-num { color: #7363e8; }
 .sb-cmt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 13px var(--pad-x) 4px; font-weight: 700; font-size: .9rem; color: #191722; }
 .sb-cmt-head .muted { color: #a49bc6; }

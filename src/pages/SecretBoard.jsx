@@ -151,7 +151,13 @@ export default function SecretBoard() {
                       {isNewPost(p.created_at) && <span className="sb-n">N</span>}
                     </span>
                   </span>
-                  {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
+                  {p.comment_count > 0 && (
+                    <span className="sb-row-cc" role="button" tabIndex={0} aria-label="댓글 보기"
+                      onClick={(e) => { e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) } }}>
+                      {p.comment_count}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}
@@ -316,7 +322,13 @@ export function BoardSearch() {
                       {isNewPost(p.created_at) && <span className="sb-n">N</span>}
                     </span>
                   </span>
-                  {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
+                  {p.comment_count > 0 && (
+                    <span className="sb-row-cc" role="button" tabIndex={0} aria-label="댓글 보기"
+                      onClick={(e) => { e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) } }}>
+                      {p.comment_count}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}
