@@ -366,8 +366,8 @@ const ChevronRight = () => (
 )
 // 답글 들여쓰기 ㄴ(└) 표시
 const ReplyCorner = () => (
-  <svg className="sb-cmt-corner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M8 5v10h10" /></svg>
+  <svg className="sb-cmt-corner" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M7 4v11h11" /></svg>
 )
 
 // ---- 댓글 상태·동작 공용 훅(글 상세·댓글 상세). 익명, 대댓글 1단계, 삭제 자리표시자 ----
@@ -547,29 +547,26 @@ function CommentComposer({ h, onClose, onFocus, onBlur }) {
   )
 }
 
-// ---- 댓글 상세 페이지 전용 스레드(항상 열린 입력창 + 헤더/새로고침) ----
-function BoardCommentThread({ postId, focusId, showRefresh = false }) {
-  const h = useBoardComments(postId, focusId)
-  const [bottomEl, setBottomEl] = useState(null)
-  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
-
-  const composer = <CommentComposer h={h} />
-  return (
-    <>
-      <div className="sb-cmt-section">
-        <div className="sb-cmt-head">
-          <span>댓글 <span className="muted">{h.commentCount}</span></span>
-          {showRefresh && (
-            <button type="button" className="sb-cmt-refresh" onClick={h.doRefresh} disabled={h.refreshing}
-              aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
-          )}
-        </div>
-        {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={h.replyTo} onEdit={h.startEdit} />
-      </div>
-      {bottomEl ? createPortal(composer, bottomEl) : composer}
-    </>
-  )
+// ---- 하단 바 ↔ 입력창 토글(글 상세·댓글 상세 공용) ----
+// 기본은 하단 바, '댓글 쓰기'/답글/수정 시 입력창(키패드) 노출. 비었을 때 blur 되면 다시 하단 바.
+function useComposerToggle(h) {
+  const [composing, setComposing] = useState(false)
+  const closeTimer = useRef(null)
+  const latest = useRef({})
+  latest.current = { body: h.body, editingId: h.editingId, replyParent: h.replyParent }
+  useEffect(() => { if (composing) h.inputRef.current?.focus() }, [composing]) // eslint-disable-line react-hooks/exhaustive-deps
+  const openComposer = () => setComposing(true)
+  const closeComposer = () => { h.cancelCompose(); setComposing(false) }
+  const onComposerFocus = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
+  const onComposerBlur = () => {
+    closeTimer.current = setTimeout(() => {
+      const s = latest.current
+      if (!s.body.trim() && !s.editingId && !s.replyParent) setComposing(false)
+    }, 250)
+  }
+  const handleReply = (c) => { h.replyTo(c); setComposing(true) }
+  const handleEdit = (c) => { h.startEdit(c); setComposing(true) }
+  return { composing, openComposer, closeComposer, onComposerFocus, onComposerBlur, handleReply, handleEdit }
 }
 
 // ============ 글 상세 + 댓글 (페이지) ============
@@ -583,14 +580,11 @@ export function BoardPost() {
   const { setHeaderPostMenu, setRefreshHandler } = useOutletContext()
 
   const h = useBoardComments(postId, null)
+  const c = useComposerToggle(h)
   const [posts, setPosts] = useState(location.state?.post ? [location.state.post] : [])
   const [post, setPost] = useState(location.state?.post || null)
   const [gone, setGone] = useState(false)
   const [bottomEl, setBottomEl] = useState(null)
-  const [composing, setComposing] = useState(false)
-  const closeTimer = useRef(null)
-  const latest = useRef({})
-  latest.current = { body: h.body, editingId: h.editingId, replyParent: h.replyParent }
 
   const loadPost = useCallback(async () => {
     try {
@@ -603,8 +597,6 @@ export function BoardPost() {
   useEffect(() => { loadPost() }, [loadPost])
 
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
-  // 컴포저가 열리면 입력창 포커스(키패드 올림)
-  useEffect(() => { if (composing) h.inputRef.current?.focus() }, [composing]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 당겨서 새로고침 = 글 + 댓글 다시 불러오기
   const refreshAll = useCallback(async () => { await Promise.all([loadPost(), h.loadComments()]) }, [loadPost, h.loadComments])
@@ -639,18 +631,6 @@ export function BoardPost() {
   const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null
   const goPost = (p) => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })
 
-  const openComposer = () => setComposing(true)
-  const closeComposer = () => { h.cancelCompose(); setComposing(false) }
-  const onComposerFocus = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
-  const onComposerBlur = () => {
-    closeTimer.current = setTimeout(() => {
-      const s = latest.current
-      if (!s.body.trim() && !s.editingId && !s.replyParent) setComposing(false)
-    }, 250)
-  }
-  const handleReply = (c) => { h.replyTo(c); setComposing(true) }
-  const handleEdit = (c) => { h.startEdit(c); setComposing(true) }
-
   const navRow = (p, label) => (
     <button type="button" className="sb-navrow" onClick={() => goPost(p)}>
       <span className="sb-navlabel">{label}</span>
@@ -663,7 +643,7 @@ export function BoardPost() {
 
   const bottomBar = (
     <nav className="sb-detail-bar">
-      <button type="button" className="sb-detail-btn" onClick={openComposer}><span>댓글 쓰기</span></button>
+      <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
       <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}/comments`))}>
         <span>댓글 {h.commentCount}</span>
       </button>
@@ -671,7 +651,7 @@ export function BoardPost() {
         aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
     </nav>
   )
-  const composer = <CommentComposer h={h} onClose={closeComposer} onFocus={onComposerFocus} onBlur={onComposerBlur} />
+  const composer = <CommentComposer h={h} onClose={c.closeComposer} onFocus={c.onComposerFocus} onBlur={c.onComposerBlur} />
 
   return (
     <div className="page sb-post-page sb-detail">
@@ -692,11 +672,11 @@ export function BoardPost() {
       <div className="sb-cmt-section">
         <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={handleReply} onEdit={handleEdit} limit={10}
+        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} limit={10}
           onSeeAll={() => navigate(boardPath(groupId, `/${postId}/comments`))} />
       </div>
 
-      <button type="button" className="sb-write-pill" onClick={openComposer}><PencilMini />댓글 쓰기</button>
+      <button type="button" className="sb-write-pill" onClick={c.openComposer}><PencilMini />댓글 쓰기</button>
 
       {(newer || older) && (
         <div className="sb-navposts">
@@ -705,20 +685,54 @@ export function BoardPost() {
         </div>
       )}
 
-      {bottomEl && createPortal(composing ? composer : bottomBar, bottomEl)}
+      {bottomEl && createPortal(c.composing ? composer : bottomBar, bottomEl)}
     </div>
   )
 }
 
-// ============ 댓글 상세 (글 본문 없이 댓글만 + 새로고침, 알림 포커스) ============
+// ============ 댓글 상세 (글 본문 없이 댓글만, 알림 포커스) ============
+// 하단 바[댓글 쓰기·원문 보기·첫 댓글로·새로고침] + 댓글 쓰기 시 입력창 토글.
 export function BoardComments() {
-  const { postId } = useParams()
+  const { groupId, postId } = useParams()
+  const navigate = useNavigate()
   const [sp] = useSearchParams()
   const { isAdmin } = useAuth()
+  const { setRefreshHandler } = useOutletContext()
+
+  const h = useBoardComments(postId, sp.get('c'))
+  const c = useComposerToggle(h)
+  const [bottomEl, setBottomEl] = useState(null)
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+
+  // 당겨서 새로고침 = 댓글 다시 불러오기
+  useEffect(() => {
+    setRefreshHandler(() => h.loadComments)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, h.loadComments])
+
   if (!isAdmin) return <NotReady />
+
+  const scrollFirst = () => document.querySelector('.sb-cmt-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  const bottomBar = (
+    <nav className="sb-detail-bar">
+      <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
+      <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}`))}><span>원문 보기</span></button>
+      <button type="button" className="sb-detail-btn" onClick={scrollFirst}><span>첫 댓글로</span></button>
+      <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={h.doRefresh} disabled={h.refreshing}
+        aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
+    </nav>
+  )
+  const composer = <CommentComposer h={h} onClose={c.closeComposer} onFocus={c.onComposerFocus} onBlur={c.onComposerBlur} />
+
   return (
     <div className="page sb-post-page sb-comments-page">
-      <BoardCommentThread postId={postId} focusId={sp.get('c')} showRefresh />
+      <div className="sb-cmt-section">
+        <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
+        {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
+        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} />
+      </div>
+      {bottomEl && createPortal(c.composing ? composer : bottomBar, bottomEl)}
     </div>
   )
 }

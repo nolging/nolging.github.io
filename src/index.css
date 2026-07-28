@@ -1864,9 +1864,9 @@ button.mention-chip:active { opacity: .6; }
 .sb-cmt-list { list-style: none; margin: 0; padding: 0; }
 .sb-cmt-row { position: relative; padding: 12px var(--pad-x); border-top: 1px solid #ece9f4; }   /* 댓글 사이 실선 */
 .sb-cmt-row:first-child { border-top: none; }
-.sb-cmt-row.reply { padding-left: calc(var(--pad-x) + 24px); }
-/* 답글 들여쓰기 ㄴ(└) 표시 */
-.sb-cmt-corner { position: absolute; left: var(--pad-x); top: 14px; color: #c4c1d0; }
+.sb-cmt-row.reply { padding-left: calc(var(--pad-x) + 28px); }
+/* 답글 들여쓰기 ㄴ(└) 표시 — 조금 크게 */
+.sb-cmt-corner { position: absolute; left: calc(var(--pad-x) - 1px); top: 12px; color: #bdbaca; }
 .sb-cmt-row.mine { background: #f5f1fe; }
 /* 알림/작성 강조: 잠깐 색 올라왔다가 서서히 꺼짐(내 댓글 배경 위에도 자연스럽게) */
 .sb-cmt-row.hl::after { content: ''; position: absolute; inset: 0; background: #ffe6a1; pointer-events: none; animation: sb-cmt-flash 2s ease forwards; }
@@ -1877,10 +1877,10 @@ button.mention-chip:active { opacity: .6; }
 .sb-cmt-row.deleted .sb-cmt-text { color: #b3adc4; font-style: italic; }
 .sb-cmt-section .comment-empty { padding: 30px var(--pad-x); }
 
-/* 댓글 목록 아래 '댓글 쓰기' 알약 — 가운데 정렬 */
-.sb-write-pill { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: 14px 0 4px;
-  border: 1px solid #e3e2e8; background: #fff; color: #55525f; font-size: 13px; font-weight: 700;
-  border-radius: 999px; padding: 8px 15px; cursor: pointer; }
+/* 댓글 목록 아래 '댓글 쓰기' 알약 — 가운데 정렬, 높이 살짝 키움 */
+.sb-write-pill { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: 16px 0 4px;
+  border: 1px solid #e3e2e8; background: #fff; color: #55525f; font-size: 13.5px; font-weight: 700;
+  border-radius: 999px; padding: 12px 20px; cursor: pointer; }
 .sb-write-pill:active { background: #f5f4f8; }
 .sb-write-pill svg { color: #8b8798; }
 
@@ -1899,8 +1899,8 @@ button.mention-chip:active { opacity: .6; }
 /* 글 상세 하단 고정 바: 댓글쓰기 · 댓글 N · 새로고침 (목록 탭바처럼 하단 여백) */
 .sb-detail-bar { display: flex; align-items: stretch; background: #fff; border-top: 1px solid #ececf1;
   padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-.sb-detail-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 52px; border: none; background: none; cursor: pointer; color: #33313a; font-size: 14px; font-weight: 700; }
+.sb-detail-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+  height: 52px; border: none; background: none; cursor: pointer; color: #33313a; font-size: 13.5px; font-weight: 700; }
 .sb-detail-btn svg { color: #55525f; }
 .sb-detail-btn:active { opacity: .4; background: none; }
 .sb-detail-btn:disabled { opacity: .5; }
