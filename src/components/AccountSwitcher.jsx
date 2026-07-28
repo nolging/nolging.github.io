@@ -7,7 +7,7 @@ import { getSavedAccounts, upsertAccount, removeAccount, hasAdminSaved, switchTo
 // 관리자 전용 계정 전환. 일반 사용자에겐 노출되지 않는다:
 //  - 현재 관리자이거나, 이 기기에 저장된 관리자 계정이 있을 때만 렌더.
 //  - 저장 계정은 관리자가 직접 '추가'해야만 생기므로 일반 사용자 기기엔 아무 것도 안 뜬다.
-export default function AccountSwitcher() {
+export default function AccountSwitcher({ onClose }) {
   const { session, profile, isAdmin, login } = useAuth()
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState(getSavedAccounts)
@@ -39,7 +39,7 @@ export default function AccountSwitcher() {
       upsertAccount(session, profile) // 현재 계정 보관
       await login(id.trim(), pw)      // 새 계정 로그인(활성 세션 교체)
       await saveCurrentAfterLogin()
-      navigate('/')
+      onClose?.(); navigate('/')
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -49,7 +49,7 @@ export default function AccountSwitcher() {
     try {
       const r = await switchToAccount(a.id)
       if (r.needPassword) { setRelogin({ id: a.id, login_id: r.login_id }); setRePw(''); setBusy(false); return }
-      navigate('/')
+      onClose?.(); navigate('/')
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -61,7 +61,7 @@ export default function AccountSwitcher() {
       upsertAccount(session, profile)
       await login(relogin.login_id, rePw)
       await saveCurrentAfterLogin()
-      navigate('/')
+      onClose?.(); navigate('/')
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -70,9 +70,9 @@ export default function AccountSwitcher() {
   const initial = (s) => (s || '?').trim().slice(0, 1).toUpperCase()
 
   return (
-    <div className="acct-switch">
+    <div className="acct-panel">
       <div className="acct-switch-head">
-        <span>계정 전환</span>
+        <span className="acct-title">계정 전환</span>
         <span className="acct-switch-tag">관리자 전용</span>
       </div>
 

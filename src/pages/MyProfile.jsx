@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { openCompose } from '../lib/composeWindow'
 import { GRADE_LABEL } from '../lib/membership'
-import AccountSwitcher from '../components/AccountSwitcher'
 
 // 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
 const QUEST_TARGET = {
@@ -308,9 +307,6 @@ export default function MyProfile() {
               )}
             </div>
           )}
-
-          {/* 계정 전환 (관리자 전용 · 일반 사용자에겐 미노출) */}
-          <AccountSwitcher />
         </>
       )}
     </div>

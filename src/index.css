@@ -4806,9 +4806,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .wc-add:active { background: rgba(0,0,0,.03); }
 .wc-hint { margin: 10px 2px 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-/* ---- 계정 전환 (관리자 전용, 마이 페이지 하단) ---- */
-.acct-switch { margin-top: 18px; background: var(--surface); border-radius: 16px; padding: 14px 15px; box-shadow: 0 2px 10px rgba(20, 22, 40, .05); }
-.acct-switch-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+/* ---- 계정 전환 (관리자 전용, 마이 페이지 상단바 아이콘 → 모달) ---- */
+.acct-modal { max-width: 420px; }
+.acct-panel { display: block; }
+.acct-title { font-size: 15px; font-weight: 800; color: var(--text); }
+.acct-switch-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .acct-switch-tag { font-size: 10.5px; font-weight: 800; color: #7363e8; background: #efeafe; border-radius: 999px; padding: 2px 8px; }
 .acct-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .acct-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }

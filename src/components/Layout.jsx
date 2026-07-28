@@ -13,6 +13,18 @@ import { MEMBER_EVENT } from '../lib/memberModal'
 import MiniPlayer from './MiniPlayer'
 import BlurayPlayer from './BlurayPlayer'
 import NotifDropdown from './NotifDropdown'
+import AccountSwitcher from './AccountSwitcher'
+import { hasAdminSaved } from '../lib/accountSwitch'
+
+function SwapIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="17 2 21 6 17 10" /><path d="M21 6H7" />
+      <polyline points="7 22 3 18 7 14" /><path d="M3 18h14" />
+    </svg>
+  )
+}
 
 function GearIcon() {
   return (
@@ -201,6 +213,8 @@ export default function Layout() {
   const [headerSave, setHeaderSave] = useState(null)
   // 페이지가 상단바 우측 톱니바퀴(설정) 버튼을 등록할 수 있게 (비밀 게시판 → 말머리 관리)
   const [headerGear, setHeaderGear] = useState(null)
+  // 마이 페이지 상단바: 계정 전환(관리자용) 모달 열림 상태
+  const [acctOpen, setAcctOpen] = useState(false)
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -675,11 +689,19 @@ export default function Layout() {
       </header>
     )
   } else if (meMatch) {
-    // 마이 페이지: 좌측 "마이 페이지" 제목, (관리자면) 우측 관리자 페이지 링크
+    // 마이 페이지: 좌측 "마이 페이지" 제목, (관리자면) 우측 관리자 링크 + 계정 전환 아이콘
+    // 계정 전환 아이콘은 (현재 관리자) 또는 (이 기기에 저장된 관리자 계정 있음)일 때만 노출
+    const showAcct = isAdmin || hasAdminSaved()
     topbar = (
       <header className="topbar">
         <span className="topbar-heading topbar-title-lg">마이 페이지</span>
-        {isAdmin && <Link to="/admin" className="topbar-admin">관리자</Link>}
+        <div className="topbar-right">
+          {isAdmin && <Link to="/admin" className="topbar-admin">관리자</Link>}
+          {showAcct && (
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="계정 전환" title="계정 전환"
+              onClick={() => setAcctOpen(true)}><SwapIcon /></button>
+          )}
+        </div>
       </header>
     )
   } else if (scheduleMatch) {
@@ -851,6 +873,11 @@ export default function Layout() {
       {memberModal && (
         <Modal open onClose={() => setMemberModal(null)} cardClassName="member-modal">
           <MemberDetail embedded groupId={memberModal.groupId} userId={memberModal.userId} onClose={() => setMemberModal(null)} />
+        </Modal>
+      )}
+      {acctOpen && (
+        <Modal open onClose={() => setAcctOpen(false)} cardClassName="acct-modal">
+          <AccountSwitcher onClose={() => setAcctOpen(false)} />
         </Modal>
       )}
       <PushPrompt />
