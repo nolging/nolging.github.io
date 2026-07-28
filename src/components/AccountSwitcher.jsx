@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getSavedAccounts, upsertAccount, removeAccount, hasAdminSaved, switchToAccount } from '../lib/accountSwitch'
@@ -7,9 +6,9 @@ import { getSavedAccounts, upsertAccount, removeAccount, hasAdminSaved, switchTo
 // 관리자 전용 계정 전환. 일반 사용자에겐 노출되지 않는다:
 //  - 현재 관리자이거나, 이 기기에 저장된 관리자 계정이 있을 때만 렌더.
 //  - 저장 계정은 관리자가 직접 '추가'해야만 생기므로 일반 사용자 기기엔 아무 것도 안 뜬다.
+// 전환/추가 후엔 화면 이동 없이 그대로 마이 페이지에 머문다(프로필 컨텍스트 갱신으로 반영).
 export default function AccountSwitcher({ onClose }) {
   const { session, profile, isAdmin, login } = useAuth()
-  const navigate = useNavigate()
   const [accounts, setAccounts] = useState(getSavedAccounts)
   const [adding, setAdding] = useState(false)
   const [id, setId] = useState('')
@@ -39,7 +38,7 @@ export default function AccountSwitcher({ onClose }) {
       upsertAccount(session, profile) // 현재 계정 보관
       await login(id.trim(), pw)      // 새 계정 로그인(활성 세션 교체)
       await saveCurrentAfterLogin()
-      onClose?.(); navigate('/')
+      onClose?.()
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -49,7 +48,7 @@ export default function AccountSwitcher({ onClose }) {
     try {
       const r = await switchToAccount(a.id)
       if (r.needPassword) { setRelogin({ id: a.id, login_id: r.login_id }); setRePw(''); setBusy(false); return }
-      onClose?.(); navigate('/')
+      onClose?.()
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -61,7 +60,7 @@ export default function AccountSwitcher({ onClose }) {
       upsertAccount(session, profile)
       await login(relogin.login_id, rePw)
       await saveCurrentAfterLogin()
-      onClose?.(); navigate('/')
+      onClose?.()
     } catch (e2) { setErr(e2.message); setBusy(false) }
   }
 
@@ -78,30 +77,39 @@ export default function AccountSwitcher({ onClose }) {
           <li className="acct-item is-current">
             <span className="acct-info">
               <span className="acct-name">{profile.login_id || '—'}</span>
-              {isAdmin && <span className="acct-role">관리자</span>}
+              <span className={`acct-role ${isAdmin ? 'is-admin' : 'is-user'}`}>{isAdmin ? '관리자' : '일반'}</span>
             </span>
             <span className="acct-cur">현재</span>
           </li>
         )}
         {others.map((a) => (
           <li key={a.id} className="acct-item">
-            <span className="acct-info">
-              <span className="acct-name">{a.login_id}</span>
-              {a.role === 'admin' && <span className="acct-role">관리자</span>}
-            </span>
             {relogin?.id === a.id ? (
-              <form className="acct-relogin" onSubmit={doRelogin}>
-                <input type="password" className="acct-pw" placeholder="비밀번호 다시 입력" value={rePw}
-                  onChange={(e) => setRePw(e.target.value)} autoFocus />
-                <button className="btn btn-primary btn-sm" disabled={busy || !rePw}>확인</button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRelogin(null)}>취소</button>
-              </form>
+              <>
+                <span className="acct-info">
+                  <span className="acct-name">{a.login_id}</span>
+                  <span className={`acct-role ${a.role === 'admin' ? 'is-admin' : 'is-user'}`}>{a.role === 'admin' ? '관리자' : '일반'}</span>
+                </span>
+                <form className="acct-relogin" onSubmit={doRelogin}>
+                  <input type="password" className="acct-pw" placeholder="비밀번호 다시 입력" value={rePw}
+                    onChange={(e) => setRePw(e.target.value)} autoFocus />
+                  <button className="btn btn-primary btn-sm" disabled={busy || !rePw}>확인</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRelogin(null)}>취소</button>
+                </form>
+              </>
             ) : (
-              <span className="acct-actions">
-                <button type="button" className="acct-go" disabled={busy} onClick={() => doSwitch(a)}>전환</button>
+              <>
+                {/* 행 전체를 눌러 전환 */}
+                <button type="button" className="acct-row" disabled={busy} onClick={() => doSwitch(a)}>
+                  <span className="acct-info">
+                    <span className="acct-name">{a.login_id}</span>
+                    <span className={`acct-role ${a.role === 'admin' ? 'is-admin' : 'is-user'}`}>{a.role === 'admin' ? '관리자' : '일반'}</span>
+                  </span>
+                  <span className="acct-chev" aria-hidden="true">›</span>
+                </button>
                 <button type="button" className="acct-x" aria-label="목록에서 제거" title="목록에서 제거"
                   onClick={() => doRemove(a.id)}>✕</button>
-              </span>
+              </>
             )}
           </li>
         ))}

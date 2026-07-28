@@ -179,7 +179,8 @@ export default function MyProfile() {
       setError('')
     } catch (err) { setError(err.message) }
   }
-  useEffect(() => { load().finally(() => setLoading(false)) }, [])
+  // 최초 + 계정 전환 시(profile.id 변경) 데이터 새로고침 → 전환 후에도 마이 페이지에 머물며 최신 반영
+  useEffect(() => { setLoading(true); load().finally(() => setLoading(false)) }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function claimDaily(key) {
     if (busy) return
