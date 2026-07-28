@@ -364,6 +364,30 @@ const ChevronRight = () => (
     <polyline points="9 6 15 12 9 18" />
   </svg>
 )
+// 검색 결과 이동(아래=다음, 위=이전)
+const ChevronDown = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+)
+const ChevronUp = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15" /></svg>
+)
+// 검색어를 본문에서 하이라이팅(대소문자 무시)
+function highlightText(text, term) {
+  const t = (term || '').toLowerCase()
+  if (!t) return text
+  const low = (text || '').toLowerCase()
+  const out = []; let i = 0, k = 0
+  for (;;) {
+    const idx = low.indexOf(t, i)
+    if (idx === -1) { out.push(text.slice(i)); break }
+    if (idx > i) out.push(text.slice(i, idx))
+    out.push(<mark key={k++} className="sb-hl">{text.slice(idx, idx + t.length)}</mark>)
+    i = idx + t.length
+  }
+  return out
+}
 // 답글 들여쓰기 ㄴ(└) 표시
 const ReplyCorner = () => (
   <svg className="sb-cmt-corner" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -468,15 +492,14 @@ function useBoardComments(postId, focusId) {
 
 // 댓글 목록(공용). boardTime 형식 시간, ⋮ 메뉴(답글/수정/삭제)
 // limit 주면 마지막 limit개만 보여주고, 초과 시 상단에 '댓글 전체 보기' 바(onSeeAll).
-// filterText 주면 검색어로 본문 필터(삭제 댓글 제외, 전체보기·limit 무시).
-function CommentList({ h, onReply, onEdit, limit, onSeeAll, filterText }) {
+// rows 주면 그 목록을 그대로 노출(검색 '내댓글' 필터 등). highlight 주면 본문에서 검색어 강조.
+function CommentList({ h, onReply, onEdit, limit, onSeeAll, rows, highlight, emptyText }) {
   const { flat, loading, menuId, setMenuId, flashId, removeComment } = h
   if (loading) return <div className="spinner sm" />
   if (flat.length === 0) return <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-  const kw = (filterText || '').trim().toLowerCase()
-  const truncated = !kw && limit && flat.length > limit
-  const visible = kw ? flat.filter(({ c }) => !c.deleted && (c.body || '').toLowerCase().includes(kw)) : (truncated ? flat.slice(-limit) : flat)
-  if (kw && visible.length === 0) return <p className="comment-empty">검색 결과가 없어요.</p>
+  const truncated = !rows && limit && flat.length > limit
+  const visible = rows ? rows : (truncated ? flat.slice(-limit) : flat)
+  if (rows && visible.length === 0) return <p className="comment-empty">{emptyText || '표시할 댓글이 없어요.'}</p>
   return (
     <>
       {truncated && (
@@ -516,7 +539,7 @@ function CommentList({ h, onReply, onEdit, limit, onSeeAll, filterText }) {
                 </div>
               )}
             </div>
-            <p className="sb-cmt-text">{c.body}</p>
+            <p className="sb-cmt-text">{highlight ? highlightText(c.body, highlight) : c.body}</p>
           </li>
         )
       })}
@@ -705,7 +728,23 @@ export function BoardComments() {
   const h = useBoardComments(postId, sp.get('c'))
   const c = useComposerToggle(h)
   const [bottomEl, setBottomEl] = useState(null)
+  const [curMatch, setCurMatch] = useState(0)   // 현재 검색 결과(몇 번째)
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+
+  const searching = !!commentSearch?.open
+  const mineOnly = !!commentSearch?.mineOnly
+  const term = (commentSearch?.term || '').trim()
+
+  // 내댓글만 보기(검색 중). 그 외에는 전체.
+  const rows = useMemo(() => (searching && mineOnly ? h.flat.filter(({ c }) => c.is_mine) : (searching ? h.flat : null)),
+    [searching, mineOnly, h.flat])
+  // 검색어가 포함된 댓글 목록(이동 대상) — 하이라이팅과 동일 기준
+  const matches = useMemo(() => {
+    if (!term) return []
+    const kw = term.toLowerCase()
+    const base = rows || h.flat
+    return base.filter(({ c }) => !c.deleted && (c.body || '').toLowerCase().includes(kw)).map(({ c }) => c.id)
+  }, [term, rows, h.flat])
 
   // 상단바에 댓글 수 표기
   useEffect(() => {
@@ -719,16 +758,24 @@ export function BoardComments() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, h.loadComments])
 
+  // 검색 결과가 바뀌면 첫 번째로, 현재 결과로 스크롤
+  useEffect(() => { setCurMatch(0) }, [term, mineOnly])
+  useEffect(() => {
+    if (!term || matches.length === 0) return
+    const id = matches[Math.min(curMatch, matches.length - 1)]
+    const t = setTimeout(() => document.querySelector(`[data-cid="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+    return () => clearTimeout(t)
+  }, [term, matches, curMatch])
+
   if (!isAdmin) return <NotReady />
 
-  const searching = !!commentSearch?.open
   const scrollFirst = () => document.querySelector('.sb-cmt-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   // 새로고침 후 가장 최근 댓글(맨 아래)로 스크롤
   const refreshToBottom = async () => {
     await h.doRefresh()
     setTimeout(() => {
-      const rows = document.querySelectorAll('.sb-cmt-row')
-      rows[rows.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      const rs = document.querySelectorAll('.sb-cmt-row')
+      rs[rs.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     }, 80)
   }
 
@@ -743,14 +790,32 @@ export function BoardComments() {
   )
   const composer = <CommentComposer h={h} onClose={c.closeComposer} onFocus={c.onComposerFocus} onBlur={c.onComposerBlur} />
 
+  // 검색어 확정(term) 시: 결과 이동 바(아래=다음 · n/총 · 위=이전)
+  const total = matches.length
+  const cur = total ? Math.min(curMatch, total - 1) : 0
+  const searchNav = (
+    <nav className="sb-detail-bar sb-searchnav">
+      <button type="button" className="sb-detail-btn" aria-label="다음 결과" disabled={total <= 1}
+        onClick={() => setCurMatch((m) => Math.min(total - 1, m + 1))}><ChevronDown /></button>
+      <span className="sb-searchnav-count">{total ? cur + 1 : 0}/{total}</span>
+      <button type="button" className="sb-detail-btn" aria-label="이전 결과" disabled={total <= 1}
+        onClick={() => setCurMatch((m) => Math.max(0, m - 1))}><ChevronUp /></button>
+    </nav>
+  )
+
+  // 하단 슬롯: 검색어 확정 시 결과 이동 바 / 검색 입력 중(term 없음)엔 비움 / 평소엔 하단 바·입력창
+  let bottom = null
+  if (searching) bottom = term ? searchNav : null
+  else bottom = c.composing ? composer : bottomBar
+
   return (
     <div className="page sb-post-page sb-comments-page">
       <div className="sb-cmt-section">
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} filterText={searching ? commentSearch.query : ''} />
+        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit}
+          rows={rows} highlight={searching ? term : ''} emptyText={mineOnly ? '내가 쓴 댓글이 없어요.' : '표시할 댓글이 없어요.'} />
       </div>
-      {/* 검색 중에는 하단 바 숨김(키보드 위 자리 차지 방지) */}
-      {bottomEl && !searching && createPortal(c.composing ? composer : bottomBar, bottomEl)}
+      {bottomEl && bottom && createPortal(bottom, bottomEl)}
     </div>
   )
 }

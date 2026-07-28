@@ -73,6 +73,15 @@ function SearchIcon() {
   )
 }
 
+function CheckCircleIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" /><polyline points="8.5 12 11 14.5 15.5 9.5" />
+    </svg>
+  )
+}
+
 function MenuIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -241,10 +250,14 @@ export default function Layout() {
   const [postMenuOpen, setPostMenuOpen] = useState(false)
   useEffect(() => { setPostMenuOpen(false) }, [location.pathname])
   // 비밀 게시판 댓글 상세: 상단바에 댓글 수 표기 + 돋보기 → 상단바 검색창 토글
+  // query=입력값, term=엔터로 확정한 검색어(하이라이팅 대상), mineOnly=내댓글만
   const [headerCommentCount, setHeaderCommentCount] = useState(null)
   const [commentSearchOpen, setCommentSearchOpen] = useState(false)
   const [commentSearchQuery, setCommentSearchQuery] = useState('')
-  useEffect(() => { setCommentSearchOpen(false); setCommentSearchQuery(''); setHeaderCommentCount(null) }, [location.pathname])
+  const [commentSearchTerm, setCommentSearchTerm] = useState('')
+  const [commentMineOnly, setCommentMineOnly] = useState(false)
+  const resetCommentSearch = () => { setCommentSearchOpen(false); setCommentSearchQuery(''); setCommentSearchTerm(''); setCommentMineOnly(false) }
+  useEffect(() => { resetCommentSearch(); setHeaderCommentCount(null) }, [location.pathname])
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -493,10 +506,18 @@ export default function Layout() {
     // 비밀 게시판 댓글 상세: 상단바에 댓글 수 + 우측 돋보기. 돋보기 → 상단바 한 줄이 검색창으로.
     topbar = commentSearchOpen ? (
       <header className="topbar sb-search-topbar">
-        <input className="sb-topbar-search" autoFocus placeholder="댓글 내용 검색"
-          value={commentSearchQuery} onChange={(e) => setCommentSearchQuery(e.target.value)} />
-        <button type="button" className="sb-topbar-close"
-          onClick={() => { setCommentSearchOpen(false); setCommentSearchQuery('') }}>닫기</button>
+        <button type="button" className={`sb-mine-toggle${commentMineOnly ? ' on' : ''}`}
+          onClick={() => setCommentMineOnly((v) => !v)}><CheckCircleIcon /><span>내댓글</span></button>
+        <div className="sb-topbar-searchwrap">
+          <input className="sb-topbar-search" autoFocus placeholder="댓글 내용 검색"
+            value={commentSearchQuery} onChange={(e) => setCommentSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setCommentSearchTerm(commentSearchQuery.trim()) } }} />
+          {commentSearchQuery && (
+            <button type="button" className="sb-topbar-clear" aria-label="지우기"
+              onClick={() => { setCommentSearchQuery(''); setCommentSearchTerm('') }}>✕</button>
+          )}
+        </div>
+        <button type="button" className="sb-topbar-close" onClick={resetCommentSearch}>닫기</button>
       </header>
     ) : (
       <header className="topbar">
@@ -915,7 +936,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
