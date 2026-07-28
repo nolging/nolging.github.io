@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams, useOutletContext } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import {
@@ -8,8 +9,8 @@ import {
   listBoardComments, addBoardComment, updateBoardComment, deleteBoardComment,
 } from '../lib/api'
 
-// 비밀 게시판 — 프리미엄 그룹 익명 게시판. 글/댓글/답글, 말머리, 내 글·댓글은 연보라 배경.
-// 우선 앱 관리자에게만 노출(메뉴에서 숨김). 서버 RPC 가 익명(author_id 미노출) + 권한을 담당.
+// 비밀 게시판 — 프리미엄 그룹 익명 게시판. 글쓰기/수정/조회는 페이지 이동, 댓글은 상세 페이지 안에서.
+// 내 글·내 댓글은 배경만 연보라(배지 없음). 우선 앱 관리자에게만 노출. 서버 RPC 가 익명 + 권한 담당.
 
 function timeAgo(iso) {
   try {
@@ -21,9 +22,19 @@ function timeAgo(iso) {
     return new Date(iso).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
   } catch { return '' }
 }
+const boardPath = (groupId, sub = '') => `/groups/${groupId}/board${sub}`
 
+// 접근 준비 안 됨(관리자 아님) 공통 화면
+const NotReady = () => (
+  <div className="page sb-page">
+    <div className="sb-soon"><span>🔒</span><p>비밀 게시판은 아직 준비 중이에요</p></div>
+  </div>
+)
+
+// ============ 목록 ============
 export default function SecretBoard() {
   const { groupId } = useParams()
+  const navigate = useNavigate()
   const { profile, isAdmin } = useAuth()
   const { setHeaderGear } = useOutletContext()
   const uid = profile?.id
@@ -33,9 +44,7 @@ export default function SecretBoard() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [openPost, setOpenPost] = useState(null)     // 상세로 연 글
-  const [compose, setCompose] = useState(null)       // { editing?post } 글쓰기/수정 모달
-  const [prefixMgr, setPrefixMgr] = useState(false)  // 말머리 관리 모달
+  const [prefixMgr, setPrefixMgr] = useState(false)
 
   const canManage = isAdmin || (group && group.owner_id === uid)
 
@@ -52,10 +61,6 @@ export default function SecretBoard() {
   }, [groupId])
   useEffect(() => { load() }, [load])
 
-  const reloadPosts = useCallback(async () => {
-    try { setPosts(await listBoardPosts(groupId)) } catch { /* noop */ }
-  }, [groupId])
-
   // 관리 권한이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
   useEffect(() => {
     if (isAdmin && canManage) setHeaderGear(() => () => setPrefixMgr(true))
@@ -63,13 +68,7 @@ export default function SecretBoard() {
     return () => setHeaderGear(null)
   }, [isAdmin, canManage, setHeaderGear])
 
-  if (!isAdmin) {
-    return (
-      <div className="page sb-page">
-        <div className="sb-soon"><span>🔒</span><p>비밀 게시판은 아직 준비 중이에요</p></div>
-      </div>
-    )
-  }
+  if (!isAdmin) return <NotReady />
 
   return (
     <div className="page sb-page">
@@ -81,7 +80,8 @@ export default function SecretBoard() {
         <ul className="sb-list">
           {posts.map((p) => (
             <li key={p.id}>
-              <button type="button" className={`sb-item${p.is_mine ? ' mine' : ''}`} onClick={() => setOpenPost(p)}>
+              <button type="button" className={`sb-item${p.is_mine ? ' mine' : ''}`}
+                onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
                 <div className="sb-item-title">
                   {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
                   <span className="sb-item-t">{p.title}</span>
@@ -90,7 +90,6 @@ export default function SecretBoard() {
                 <div className="sb-item-meta">
                   <span>{timeAgo(p.created_at)}{p.edited ? ' · 수정됨' : ''}</span>
                   {p.comment_count > 0 && <span className="sb-cc">💬 {p.comment_count}</span>}
-                  {p.is_mine && <span className="sb-mine-tag">내 글</span>}
                 </div>
               </button>
             </li>
@@ -98,21 +97,7 @@ export default function SecretBoard() {
         </ul>
       )}
 
-      <button type="button" className="sb-fab" onClick={() => setCompose({})} aria-label="새 글 쓰기">＋</button>
-
-      {compose && (
-        <ComposeModal groupId={groupId} prefixes={prefixes} editing={compose.editing}
-          onClose={() => setCompose(null)}
-          onDone={async () => { setCompose(null); await reloadPosts(); if (openPost) { const fresh = (await listBoardPosts(groupId)).find((x) => x.id === openPost.id); setOpenPost(fresh || null) } }} />
-      )}
-
-      {openPost && (
-        <PostDetail post={openPost} uid={uid}
-          onClose={() => setOpenPost(null)}
-          onEdit={() => setCompose({ editing: openPost })}
-          onDeleted={async () => { setOpenPost(null); await reloadPosts() }}
-          onCommentsChanged={reloadPosts} />
-      )}
+      <button type="button" className="sb-fab" onClick={() => navigate(boardPath(groupId, '/new'))} aria-label="새 글 쓰기">＋</button>
 
       {prefixMgr && (
         <PrefixManager groupId={groupId} prefixes={prefixes}
@@ -123,173 +108,306 @@ export default function SecretBoard() {
   )
 }
 
-// ---- 글쓰기 / 수정 ----
-function ComposeModal({ groupId, prefixes, editing, onClose, onDone }) {
-  const [prefixId, setPrefixId] = useState(editing?.prefix_id || '')
-  const [title, setTitle] = useState(editing?.title || '')
-  const [body, setBody] = useState(editing?.body || '')
+// ============ 글쓰기 / 수정 (페이지) ============
+export function BoardCompose() {
+  const { groupId, postId } = useParams()   // postId 있으면 수정
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAdmin } = useAuth()
+  const editing = !!postId
+
+  const [prefixes, setPrefixes] = useState([])
+  const [prefixId, setPrefixId] = useState('')
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [loaded, setLoaded] = useState(!editing)   // 새 글은 즉시 편집 가능
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+
+  useEffect(() => {
+    let on = true
+    listBoardPrefixes(groupId).then((pf) => { if (on) setPrefixes(pf) }).catch(() => { })
+    if (editing) {
+      // 목록에서 넘어왔으면 state 로 즉시, 아니면(직접 URL) 목록에서 찾아 채운다
+      const seed = location.state?.post
+      const fill = (p) => { if (!p || !on) return; setPrefixId(p.prefix_id || ''); setTitle(p.title || ''); setBody(p.body || ''); setLoaded(true) }
+      if (seed) fill(seed)
+      else listBoardPosts(groupId).then((ps) => fill(ps.find((x) => x.id === postId))).catch(() => on && setLoaded(true))
+    }
+    return () => { on = false }
+  }, [groupId, postId, editing, location.state])
+
+  if (!isAdmin) return <NotReady />
 
   async function submit() {
     if (!title.trim()) { setErr('제목을 입력해 주세요.'); return }
     setBusy(true); setErr('')
     try {
-      if (editing) await updateBoardPost(editing.id, prefixId, title.trim(), body)
-      else await createBoardPost(groupId, prefixId, title.trim(), body)
-      await onDone()
-    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+      if (editing) {
+        await updateBoardPost(postId, prefixId, title.trim(), body)
+        navigate(boardPath(groupId, `/${postId}`), { replace: true })
+      } else {
+        const id = await createBoardPost(groupId, prefixId, title.trim(), body)
+        navigate(boardPath(groupId, `/${id}`), { replace: true })
+      }
+    } catch (e) { setErr(e.message); setBusy(false) }
   }
 
   return (
-    <Modal open onClose={onClose} cardClassName="sb-modal">
-      <div className="sb-compose">
-        <h3 className="sb-modal-title">{editing ? '글 수정' : '새 글'}</h3>
-        {err && <div className="alert alert-error">{err}</div>}
-        {prefixes.length > 0 && (
-          <div className="sb-prefix-pick">
-            <button type="button" className={`sb-chip${!prefixId ? ' on' : ''}`} onClick={() => setPrefixId('')}>말머리 없음</button>
-            {prefixes.map((pf) => (
-              <button key={pf.id} type="button" className={`sb-chip${prefixId === pf.id ? ' on' : ''}`}
-                onClick={() => setPrefixId(pf.id)}>{pf.label}</button>
-            ))}
-          </div>
-        )}
-        <input className="sb-input" placeholder="제목" value={title} maxLength={100}
-          onChange={(e) => setTitle(e.target.value)} />
-        <textarea className="sb-textarea" placeholder="내용을 입력하세요" value={body} maxLength={5000} rows={7}
-          onChange={(e) => setBody(e.target.value)} />
-        <button type="button" className="btn btn-primary btn-block" onClick={submit} disabled={busy || !title.trim()}>
-          {busy ? '올리는 중…' : editing ? '수정하기' : '올리기'}
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-// ---- 글 상세 + 댓글 ----
-function PostDetail({ post, uid, onClose, onEdit, onDeleted, onCommentsChanged }) {
-  const [comments, setComments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [draft, setDraft] = useState('')
-  const [replyTo, setReplyTo] = useState(null)   // { id, }
-  const [editing, setEditing] = useState(null)   // 편집 중 댓글 id
-  const [editText, setEditText] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-
-  const load = useCallback(async () => {
-    try { setComments(await listBoardComments(post.id)) } catch (e) { setErr(e.message) } finally { setLoading(false) }
-  }, [post.id])
-  useEffect(() => { load() }, [load])
-
-  // 최상위 댓글 + 그에 달린 답글 그룹핑
-  const tree = useMemo(() => {
-    const roots = comments.filter((c) => !c.parent_id)
-    const kids = {}
-    for (const c of comments) if (c.parent_id) (kids[c.parent_id] = kids[c.parent_id] || []).push(c)
-    return roots.map((r) => ({ ...r, replies: kids[r.id] || [] }))
-  }, [comments])
-
-  async function send() {
-    if (!draft.trim()) return
-    setBusy(true); setErr('')
-    try {
-      await addBoardComment(post.id, replyTo?.id || null, draft.trim())
-      setDraft(''); setReplyTo(null)
-      await load(); await onCommentsChanged?.()
-    } catch (e) { setErr(e.message) } finally { setBusy(false) }
-  }
-  async function saveEdit(id) {
-    if (!editText.trim()) return
-    setBusy(true); setErr('')
-    try { await updateBoardComment(id, editText.trim()); setEditing(null); await load() }
-    catch (e) { setErr(e.message) } finally { setBusy(false) }
-  }
-  async function removeComment(id) {
-    if (!confirm('이 댓글을 삭제할까요? 답글도 함께 삭제돼요.')) return
-    try { await deleteBoardComment(id); await load(); await onCommentsChanged?.() }
-    catch (e) { setErr(e.message) }
-  }
-  async function removePost() {
-    if (!confirm('이 글을 삭제할까요?')) return
-    try { await deleteBoardPost(post.id); await onDeleted() } catch (e) { setErr(e.message) }
-  }
-
-  const CommentRow = ({ c, isReply }) => (
-    <div className={`sb-comment${c.is_mine ? ' mine' : ''}${isReply ? ' reply' : ''}`}>
-      {editing === c.id ? (
-        <div className="sb-cedit">
-          <textarea className="sb-textarea" rows={2} value={editText} maxLength={2000} onChange={(e) => setEditText(e.target.value)} />
-          <div className="sb-cedit-row">
-            <button type="button" className="sb-link" onClick={() => setEditing(null)}>취소</button>
-            <button type="button" className="sb-link strong" onClick={() => saveEdit(c.id)} disabled={busy}>저장</button>
-          </div>
+    <div className="page sb-page">
+      {!loaded ? <div className="spinner" /> : (
+        <div className="sb-compose">
+          {err && <div className="alert alert-error">{err}</div>}
+          {prefixes.length > 0 && (
+            <div className="sb-prefix-pick">
+              <button type="button" className={`sb-chip${!prefixId ? ' on' : ''}`} onClick={() => setPrefixId('')}>말머리 없음</button>
+              {prefixes.map((pf) => (
+                <button key={pf.id} type="button" className={`sb-chip${prefixId === pf.id ? ' on' : ''}`}
+                  onClick={() => setPrefixId(pf.id)}>{pf.label}</button>
+              ))}
+            </div>
+          )}
+          <input className="sb-input" placeholder="제목" value={title} maxLength={100}
+            onChange={(e) => setTitle(e.target.value)} />
+          <textarea className="sb-textarea sb-body-input" placeholder="내용을 입력하세요" value={body} maxLength={5000}
+            onChange={(e) => setBody(e.target.value)} />
+          <button type="button" className="btn btn-primary btn-block" onClick={submit} disabled={busy || !title.trim()}>
+            {busy ? '올리는 중…' : editing ? '수정하기' : '올리기'}
+          </button>
         </div>
-      ) : (
-        <>
-          <div className="sb-comment-body">{c.body}</div>
-          <div className="sb-comment-meta">
-            <span>{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
-            {c.is_mine && <span className="sb-mine-tag sm">내 댓글</span>}
-            {!isReply && <button type="button" className="sb-link" onClick={() => { setReplyTo(c); setDraft('') }}>답글</button>}
-            {c.is_mine && <button type="button" className="sb-link" onClick={() => { setEditing(c.id); setEditText(c.body) }}>수정</button>}
-            {c.can_delete && <button type="button" className="sb-link danger" onClick={() => removeComment(c.id)}>삭제</button>}
-          </div>
-        </>
       )}
     </div>
   )
+}
+
+// ============ 글 상세 + 댓글 (페이지) — 위시/약속/추억 상세와 동일 레이아웃 ============
+export function BoardPost() {
+  const { groupId, postId } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAdmin } = useAuth()
+
+  const [post, setPost] = useState(location.state?.post || null)
+  const [gone, setGone] = useState(false)
+  const [comments, setComments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+  const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
+  const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
+  const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
+  const [headMenu, setHeadMenu] = useState(false)      // 상단 글 ⋮ 메뉴
+  const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
+  const [bottomEl, setBottomEl] = useState(null)
+  const [err, setErr] = useState('')
+  const inputRef = useRef(null)
+
+  const loadPost = useCallback(async () => {
+    try {
+      const fresh = (await listBoardPosts(groupId)).find((x) => x.id === postId)
+      if (fresh) setPost(fresh); else setGone(true)
+    } catch { /* 기존 값 유지 */ }
+  }, [groupId, postId])
+  const loadComments = useCallback(async () => {
+    try { setComments(await listBoardComments(postId)) } catch (e) { setErr(e.message) } finally { setLoading(false) }
+  }, [postId])
+  useEffect(() => { loadPost(); loadComments() }, [loadPost, loadComments])
+
+  // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더(위시 상세와 동일)
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+  // 입력창 높이 자동 조절
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`
+  }, [body])
+  // 방금 작성/수정한 댓글로 스크롤 + 강조
+  useEffect(() => {
+    if (!highlightId) return
+    document.querySelector(`[data-cid="${highlightId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const t = setTimeout(() => setHighlightId(null), 1800)
+    return () => clearTimeout(t)
+  }, [highlightId])
+
+  // 최상위 댓글 + 각 최상위에 딸린 답글(답글의 답글까지 한 단계로 평면화 — 위시와 동일)
+  const { roots, repliesOf } = useMemo(() => {
+    const byId = {}
+    comments.forEach((c) => { byId[c.id] = c })
+    const rootIdOf = (c) => { let cur = c, g = 0; while (cur.parent_id && byId[cur.parent_id] && g++ < 100) cur = byId[cur.parent_id]; return cur.id }
+    const roots = comments.filter((c) => !c.parent_id)
+    const repliesOf = {}
+    comments.forEach((c) => {
+      if (!c.parent_id) return
+      const rid = rootIdOf(c)
+      if (rid === c.id) return
+      ;(repliesOf[rid] = repliesOf[rid] || []).push(c)
+    })
+    return { roots, repliesOf }
+  }, [comments])
+  const commentCount = useMemo(() => comments.filter((c) => !c.deleted).length, [comments])
+
+  if (!isAdmin) return <NotReady />
+
+  // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
+  async function submit(e) {
+    e.preventDefault()
+    if (!body.trim() || sending) return
+    setSending(true); setErr('')
+    try {
+      let targetId
+      if (editingId) { await updateBoardComment(editingId, body.trim()); targetId = editingId; setEditingId(null) }
+      else { targetId = await addBoardComment(postId, replyParent?.id || null, body.trim()); setReplyParent(null) }
+      setBody(''); await loadComments(); await loadPost()
+      setHighlightId(targetId || null)
+    } catch (e2) { setErr(e2.message) } finally { setSending(false) }
+  }
+  async function removeComment(id) {
+    setMenuId(null)
+    if (!confirm('이 댓글을 삭제할까요?')) return
+    try {
+      await deleteBoardComment(id)
+      if (editingId === id) { setEditingId(null); setBody('') }
+      if (replyParent?.id === id) setReplyParent(null)
+      await loadComments(); await loadPost()
+    } catch (e) { setErr(e.message) }
+  }
+  async function removePost() {
+    setHeadMenu(false)
+    if (!confirm('이 글을 삭제할까요?')) return
+    try { await deleteBoardPost(postId); navigate(boardPath(groupId), { replace: true }) } catch (e) { setErr(e.message) }
+  }
+  function startEdit(c) { setMenuId(null); setReplyParent(null); setEditingId(c.id); setBody(c.body); inputRef.current?.focus() }
+  function replyTo(c) { setMenuId(null); setEditingId(null); setReplyParent(c); setBody(''); inputRef.current?.focus() }
+  function cancelCompose() { setEditingId(null); setReplyParent(null); setBody('') }
+
+  function renderCard(c, depth) {
+    if (c.deleted) {
+      return (
+        <div data-cid={c.id} className="comment sb-comment-deleted">
+          <div className="comment-body"><p className="comment-text sb-deleted">삭제된 댓글입니다.</p></div>
+        </div>
+      )
+    }
+    const hasMenu = depth === 0 || c.is_mine || c.can_delete
+    return (
+      <div data-cid={c.id} className={`comment sb-comment${c.is_mine ? ' mine' : ''} ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
+        <div className="comment-body">
+          <div className="comment-meta">
+            <span className="comment-time">{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
+            {hasMenu && (
+              <div className="comment-menu-wrap">
+                <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                  </svg>
+                </button>
+                {menuId === c.id && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                    <div className="menu-pop" role="menu">
+                      {depth === 0 && <button type="button" onClick={() => replyTo(c)}>답글 달기</button>}
+                      {c.is_mine && <button type="button" onClick={() => startEdit(c)}>수정</button>}
+                      {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <p className="comment-text">{c.body}</p>
+        </div>
+      </div>
+    )
+  }
+  function renderThread(c) {
+    const replies = repliesOf[c.id] || []
+    return (
+      <li key={c.id} className="comment-item">
+        {renderCard(c, 0)}
+        {replies.length > 0 && (
+          <ul className="comment-replies">
+            {replies.map((k) => <li key={k.id} className="comment-item">{renderCard(k, 1)}</li>)}
+          </ul>
+        )}
+      </li>
+    )
+  }
+
+  if (gone) return <div className="page"><div className="comment-empty">삭제된 글이에요.</div></div>
+  if (!post) return <div className="page"><div className="spinner" /></div>
+
+  const composer = (
+    <form className="composer" onSubmit={submit}>
+      {(editingId || replyParent) && (
+        <div className="composer-tag">
+          <span className="composer-tag-text">{editingId ? '댓글 수정 중' : '답글 작성 중'}</span>
+          <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
+        </div>
+      )}
+      <div className="composer-row">
+        <textarea ref={inputRef} className="composer-input" value={body} rows={1} maxLength={2000}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
+        <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+      </div>
+    </form>
+  )
 
   return (
-    <Modal open onClose={onClose} cardClassName="sb-modal sb-detail-modal">
-      <div className="sb-detail">
-        <div className="sb-detail-top">
-          <div className="sb-detail-title">
-            {post.prefix_label && <span className="sb-prefix">[{post.prefix_label}]</span>}
-            <span>{post.title}</span>
+    <div className="page task-detail sb-post-page">
+      <div className="td-head">
+        <div className="td-head-top">
+          <div className="td-head-left">
+            {post.prefix_label && <span className="sb-post-prefix">[{post.prefix_label}]</span>}
           </div>
-          {(post.is_mine || post.can_delete) && (
-            <div className="sb-detail-actions">
-              {post.is_mine && <button type="button" className="sb-link" onClick={onEdit}>수정</button>}
-              {post.can_delete && <button type="button" className="sb-link danger" onClick={removePost}>삭제</button>}
-            </div>
-          )}
+          <div className="td-head-right">
+            {(post.is_mine || post.can_delete) && (
+              <div className="task-menu-wrap">
+                <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                  </svg>
+                </button>
+                {headMenu && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
+                    <div className="menu-pop" role="menu">
+                      {post.is_mine && <button type="button" onClick={() => { setHeadMenu(false); navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) }}>수정</button>}
+                      {post.can_delete && <button type="button" className="menu-danger" onClick={removePost}>삭제</button>}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="sb-detail-meta">{timeAgo(post.created_at)}{post.edited ? ' · 수정됨' : ''}{post.is_mine ? ' · 내 글' : ''}</div>
-        {post.body && <div className={`sb-detail-body${post.is_mine ? ' mine' : ''}`}>{post.body}</div>}
+        <h2 className="task-name td-name td-title">{post.title}</h2>
+      </div>
 
-        {err && <div className="alert alert-error">{err}</div>}
+      {post.body && <p className={`td-desc${post.is_mine ? ' sb-mine' : ''}`}>{post.body}</p>}
 
-        <div className="sb-comments">
-          <div className="sb-comments-title">댓글 {comments.length}</div>
-          {loading ? <div className="spinner sm" /> : tree.length === 0 ? (
-            <p className="sb-nocomments">첫 댓글을 남겨 보세요.</p>
-          ) : tree.map((c) => (
-            <div key={c.id} className="sb-thread">
-              <CommentRow c={c} isReply={false} />
-              {c.replies.map((r) => <CommentRow key={r.id} c={r} isReply />)}
-            </div>
-          ))}
+      <div className="comment-section">
+        <div className="comment-head">
+          <div className="comment-title">댓글 <span className="muted">{commentCount}</span></div>
+        </div>
+        <div className="comment-body-area">
+          {err && <div className="alert alert-error">{err}</div>}
+          <div className="sub-pane">
+            {loading ? <div className="spinner sm" /> : roots.length === 0 ? (
+              <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+            ) : (
+              <ul className="comment-list">{roots.map((c) => renderThread(c))}</ul>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="sb-composer">
-        {replyTo && (
-          <div className="sb-reply-hint">답글 작성 중 <button type="button" className="sb-link" onClick={() => setReplyTo(null)}>취소</button></div>
-        )}
-        <div className="sb-composer-row">
-          <input className="sb-input" placeholder={replyTo ? '답글을 입력하세요' : '댓글을 입력하세요'} value={draft}
-            maxLength={2000} onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-          <button type="button" className="btn btn-primary sb-send" onClick={send} disabled={busy || !draft.trim()}>등록</button>
-        </div>
-      </div>
-    </Modal>
+      {bottomEl ? createPortal(composer, bottomEl) : composer}
+    </div>
   )
 }
 
-// ---- 말머리 관리 (방장/관리자) ----
+// ---- 말머리 관리 (방장/관리자) — 목록에서 톱니바퀴로 여는 모달 ----
 function PrefixManager({ groupId, prefixes, onClose, onChanged }) {
   const [items, setItems] = useState(prefixes)
   const [adding, setAdding] = useState('')

@@ -143,6 +143,9 @@ export default function Layout() {
   const rpsMatch = useMatch('/groups/:groupId/rps')
   const tarotMatch = useMatch('/groups/:groupId/tarot')
   const boardMatch = useMatch('/groups/:groupId/board')
+  const boardNewMatch = useMatch('/groups/:groupId/board/new')
+  const boardEditMatch = useMatch('/groups/:groupId/board/:postId/edit')
+  const boardPostMatch = useMatch('/groups/:groupId/board/:postId')
   const praiseMatch = useMatch('/groups/:groupId/praise')
   const davinciMatch = useMatch('/groups/:groupId/davinci')
   const taskNewMatch = useMatch('/groups/:groupId/tasks/new')
@@ -360,7 +363,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || boardMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || boardMatch || boardNewMatch || boardEditMatch || boardPostMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     // body 배경 = 콘텐츠 캔버스(--bg)와 동일하게. iOS 홈화면 앱에서 콘텐츠가 하단까지
     // 못 미쳐 body 가 비쳐도 흰색(#fff)이 아니라 콘텐츠와 같은 색으로 보이게 하는 안전장치
@@ -423,6 +426,30 @@ export default function Layout() {
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">타로 카페</span>
+      </header>
+    )
+  } else if (boardNewMatch) {
+    // 비밀 게시판 새 글 쓰기: 좌측 뒤로(목록으로), 제목 "새 글"
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">새 글</span>
+      </header>
+    )
+  } else if (boardEditMatch) {
+    // 비밀 게시판 글 수정: 좌측 뒤로(글로), 제목 "글 수정"
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">글 수정</span>
+      </header>
+    )
+  } else if (boardPostMatch) {
+    // 비밀 게시판 글 상세: 좌측 뒤로(목록으로), 제목 "비밀 게시판"
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">비밀 게시판</span>
       </header>
     )
   } else if (boardMatch) {

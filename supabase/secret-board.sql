@@ -35,8 +35,9 @@ create table if not exists public.board_comments (
   post_id    uuid not null references public.board_posts(id) on delete cascade,
   group_id   uuid not null references public.groups(id) on delete cascade,
   author_id  uuid not null references public.profiles(id) on delete cascade,
-  parent_id  uuid references public.board_comments(id) on delete cascade,    -- 답글(1단계). 부모 삭제 시 답글도 삭제
+  parent_id  uuid references public.board_comments(id) on delete cascade,    -- 답글(1단계)
   body       text not null,
+  deleted_at timestamptz,                                                    -- 소프트삭제: 답글 있는 부모는 자리표시자로 남김
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -137,7 +138,8 @@ language sql stable security definer set search_path = public as $$
          po.created_at, po.updated_at, (po.updated_at > po.created_at) as edited,
          (po.author_id = auth.uid()) as is_mine,
          (po.author_id = auth.uid() or public.board_can_manage(po.group_id, auth.uid())) as can_delete,
-         (select count(*) from public.board_comments c where c.post_id = po.id) as comment_count
+         (select count(*) from public.board_comments c
+           where c.post_id = po.id and c.deleted_at is null) as comment_count
   from public.board_posts po
   left join public.board_prefixes pr on pr.id = po.prefix_id
   where po.group_id = p_group and public.board_access(p_group, auth.uid())
@@ -198,12 +200,16 @@ grant execute on function public.board_delete_post(uuid) to authenticated;
 -- ── 댓글 / 답글 ───────────────────────────────────────────
 create or replace function public.board_comments(p_post uuid)
 returns table(id uuid, parent_id uuid, body text, created_at timestamptz, updated_at timestamptz,
-              edited boolean, is_mine boolean, can_delete boolean)
+              edited boolean, is_mine boolean, can_delete boolean, deleted boolean)
 language sql stable security definer set search_path = public as $$
-  select c.id, c.parent_id, c.body, c.created_at, c.updated_at,
-         (c.updated_at > c.created_at) as edited,
-         (c.author_id = auth.uid()) as is_mine,
-         (c.author_id = auth.uid() or public.board_can_manage(c.group_id, auth.uid())) as can_delete
+  select c.id, c.parent_id,
+         case when c.deleted_at is not null then '' else c.body end as body,
+         c.created_at, c.updated_at,
+         (c.deleted_at is null and c.updated_at > c.created_at) as edited,
+         (c.deleted_at is null and c.author_id = auth.uid()) as is_mine,
+         (c.deleted_at is null
+            and (c.author_id = auth.uid() or public.board_can_manage(c.group_id, auth.uid()))) as can_delete,
+         (c.deleted_at is not null) as deleted
   from public.board_comments c
   join public.board_posts po on po.id = c.post_id
   where c.post_id = p_post and public.board_access(po.group_id, auth.uid())
@@ -248,14 +254,33 @@ begin
 end $$;
 grant execute on function public.board_update_comment(uuid, text) to authenticated;
 
+-- 부모 댓글을 지워도 답글은 남긴다: 답글 있으면 자리표시자로 소프트삭제, 없으면 하드삭제.
 create or replace function public.board_delete_comment(p_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_c public.board_comments;
+declare v_c public.board_comments; v_kids int; v_parent uuid; v_pdel timestamptz; v_left int;
 begin
   select * into v_c from public.board_comments where id = p_id;
   if v_c.id is null then return; end if;
   if v_c.author_id <> auth.uid() and not public.board_can_manage(v_c.group_id, auth.uid()) then
     raise exception '삭제 권한이 없어요.'; end if;
-  delete from public.board_comments where id = p_id;   -- 답글은 on delete cascade
+  if v_c.deleted_at is not null then return; end if;
+
+  select count(*) into v_kids from public.board_comments where parent_id = p_id;
+  if v_kids > 0 then
+    update public.board_comments set deleted_at = now(), body = '' where id = p_id;   -- "삭제된 댓글입니다."
+    return;
+  end if;
+
+  v_parent := v_c.parent_id;
+  delete from public.board_comments where id = p_id;
+
+  -- 소프트삭제된 부모의 마지막 답글이 지워졌으면 부모 자리표시자도 정리
+  if v_parent is not null then
+    select deleted_at into v_pdel from public.board_comments where id = v_parent;
+    if v_pdel is not null then
+      select count(*) into v_left from public.board_comments where parent_id = v_parent;
+      if v_left = 0 then delete from public.board_comments where id = v_parent; end if;
+    end if;
+  end if;
 end $$;
 grant execute on function public.board_delete_comment(uuid) to authenticated;

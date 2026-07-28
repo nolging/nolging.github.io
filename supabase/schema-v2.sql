@@ -2527,7 +2527,8 @@ create table if not exists public.board_comments (
   id uuid primary key default gen_random_uuid(), post_id uuid not null references public.board_posts(id) on delete cascade,
   group_id uuid not null references public.groups(id) on delete cascade, author_id uuid not null references public.profiles(id) on delete cascade,
   parent_id uuid references public.board_comments(id) on delete cascade,
-  body text not null, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+  body text not null, deleted_at timestamptz,   -- 소프트삭제: 답글 있는 부모는 자리표시자로 남김
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now());
 alter table public.board_prefixes enable row level security;
 alter table public.board_posts    enable row level security;
 alter table public.board_comments enable row level security;
