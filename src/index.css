@@ -1870,6 +1870,7 @@ button.mention-chip:active { opacity: .6; }
 
 .sb-cmt-section { border-top: 8px solid #f4f2f9; }   /* 본문↔댓글 구분 띠 */
 .sb-comments-page .sb-cmt-section { border-top: none; }   /* 댓글 상세 페이지: 상단 띠 없음 */
+.sb-comments-page { margin-top: calc(-1 * var(--pad-y)); }   /* 상단바 바로 아래에서 첫 댓글 시작(위 여백 제거) */
 .sb-cmt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 13px var(--pad-x) 4px; font-weight: 700; font-size: .9rem; color: #191722; }
 .sb-cmt-head .muted { color: #a49bc6; }
