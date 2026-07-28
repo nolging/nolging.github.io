@@ -34,24 +34,10 @@ function boardTime(iso) {
     return sameDay ? hm : `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())} ${hm}`
   } catch { return '' }
 }
-// 오늘 올라온 글이면 N 배지
+// 최근 24시간 내 글이면 N 배지
 function isNewPost(iso) {
-  try {
-    const d = new Date(iso), now = new Date()
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
-  } catch { return false }
+  try { return (Date.now() - new Date(iso).getTime()) < 86400000 } catch { return false }
 }
-
-const SearchIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-)
-const PencilIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-  </svg>
-)
 
 // 접근 준비 안 됨(관리자 아님) 공통 화면
 const NotReady = () => (
@@ -65,7 +51,7 @@ export default function SecretBoard() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { profile, isAdmin } = useAuth()
-  const { setHeaderGear } = useOutletContext()
+  const { setHeaderGear, setRefreshHandler } = useOutletContext()
   const uid = profile?.id
 
   const [group, setGroup] = useState(null)
@@ -91,6 +77,12 @@ export default function SecretBoard() {
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
+
+  // 당겨서 새로고침(하단 게시글 목록) — Layout 의 PTR 에 새로고침 핸들러 등록
+  useEffect(() => {
+    setRefreshHandler(() => load)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, load])
 
   // 관리 권한이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
   useEffect(() => {
@@ -131,6 +123,9 @@ export default function SecretBoard() {
         </div>
       </div>
 
+      {/* 게시글 목록 위 회색 여백 */}
+      <div className="sb-gap" />
+
       {loading ? <div className="spinner" /> : shown.length === 0 ? (
         <div className="sb-empty">{filterPrefix ? '이 말머리의 글이 없어요.' : '아직 글이 없어요. 첫 글을 남겨 보세요.'}</div>
       ) : (
@@ -158,12 +153,8 @@ export default function SecretBoard() {
 
       {/* 하단 탭바: 검색하기 · 글쓰기 (동작 레이아웃은 추후) */}
       <nav className="sb-tabbar">
-        <button type="button" className="sb-tab" onClick={() => { /* 검색 레이아웃 추후 연결 */ }}>
-          <SearchIcon /><span>검색하기</span>
-        </button>
-        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>
-          <PencilIcon /><span>글쓰기</span>
-        </button>
+        <button type="button" className="sb-tab" onClick={() => { /* 검색 레이아웃 추후 연결 */ }}>검색하기</button>
+        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>글쓰기</button>
       </nav>
 
       {prefixMgr && (

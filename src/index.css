@@ -1711,12 +1711,17 @@ button.mention-chip:active { opacity: .6; }
 .sb-nocomments { padding: 18px 0; }
 
 /* ---- 목록(카페형): 전체폭 행 + 실선 구분 + 하단 탭바 ---- */
-.sb-list-page { gap: 0; padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+/* content 상단 여백 제거 → 헤더가 상단바 바로 아래 붙어 sticky 가 깔끔히 고정 */
+.content:has(> .sb-list-page) { padding-top: 0; }
+.sb-list-page { gap: 0; padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
 
-/* 목록 헤더: 좌 총 게시글 수 · 우 말머리 선택(필터). content 좌우 패딩 상쇄해 전체폭 */
-.sb-listhead { display: flex; align-items: center; justify-content: space-between;
-  margin: 0 calc(-1 * var(--pad-x)); padding: 10px var(--pad-x);
+/* 목록 헤더(sticky): 좌 총 게시글 수 · 우 말머리 선택(필터). content 좌우 패딩 상쇄해 전체폭 */
+.sb-listhead { position: sticky; top: 0; z-index: 6; background: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0 calc(-1 * var(--pad-x)); padding: 12px var(--pad-x);
   border-bottom: 1px solid #ececf1; font-size: 13px; color: #8b8798; }
+/* 게시글 목록 위 회색 여백(전체폭) */
+.sb-gap { height: 10px; margin: 0 calc(-1 * var(--pad-x)); background: #f1f1f4; }
 .sb-total b { color: #33313a; font-weight: 800; }
 .sb-prefilter { position: relative; }
 .sb-prefilter-btn { display: inline-flex; align-items: center; gap: 3px; border: none; background: none;
@@ -1745,12 +1750,11 @@ button.mention-chip:active { opacity: .6; }
 .sb-row-cc { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e3e2e8;
   display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #6a6875; }
 
-/* 하단 탭바 (검색하기 · 글쓰기) */
+/* 하단 탭바 (검색하기 · 글쓰기) — 아이콘 없이 텍스트만, 하단 여백 추가 */
 .sb-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex;
-  background: #fff; border-top: 1px solid #ececf1; padding-bottom: env(safe-area-inset-bottom); }
-.sb-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  height: 56px; border: none; background: none; cursor: pointer; color: #33313a; font-size: 12px; font-weight: 600; }
-.sb-tab svg { width: 22px; height: 22px; }
+  background: #fff; border-top: 1px solid #ececf1; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.sb-tab { flex: 1; display: flex; align-items: center; justify-content: center;
+  height: 50px; border: none; background: none; cursor: pointer; color: #33313a; font-size: 15px; font-weight: 700; }
 .sb-tab:active { background: #f5f4f8; }
 
 /* 글쓰기/수정 페이지 + 말머리 관리 모달 */
