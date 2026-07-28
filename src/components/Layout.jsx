@@ -195,6 +195,8 @@ export default function Layout() {
   const [headerInvite, setHeaderInvite] = useState(null)
   // 페이지가 상단바 저장 버튼을 등록할 수 있게 (낙서장 → 이미지 저장)
   const [headerSave, setHeaderSave] = useState(null)
+  // 페이지가 상단바 우측 톱니바퀴(설정) 버튼을 등록할 수 있게 (비밀 게시판 → 말머리 관리)
+  const [headerGear, setHeaderGear] = useState(null)
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -424,11 +426,15 @@ export default function Layout() {
       </header>
     )
   } else if (boardMatch) {
-    // 비밀 게시판: 좌측 뒤로, 제목
+    // 비밀 게시판: 좌측 뒤로, 제목, (관리 권한 시) 우측 톱니바퀴 → 말머리 관리
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">비밀 게시판</span>
+        {headerGear && (
+          <button type="button" onClick={() => headerGear()} className="btn btn-ghost btn-sm icon-btn push-right"
+            aria-label="말머리 관리" title="말머리 관리"><GearIcon /></button>
+        )}
       </header>
     )
   } else if (puzzleMatch) {
@@ -791,7 +797,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

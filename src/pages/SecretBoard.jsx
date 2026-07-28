@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import {
@@ -25,6 +25,7 @@ function timeAgo(iso) {
 export default function SecretBoard() {
   const { groupId } = useParams()
   const { profile, isAdmin } = useAuth()
+  const { setHeaderGear } = useOutletContext()
   const uid = profile?.id
 
   const [group, setGroup] = useState(null)
@@ -55,6 +56,13 @@ export default function SecretBoard() {
     try { setPosts(await listBoardPosts(groupId)) } catch { /* noop */ }
   }, [groupId])
 
+  // 관리 권한이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
+  useEffect(() => {
+    if (isAdmin && canManage) setHeaderGear(() => () => setPrefixMgr(true))
+    else setHeaderGear(null)
+    return () => setHeaderGear(null)
+  }, [isAdmin, canManage, setHeaderGear])
+
   if (!isAdmin) {
     return (
       <div className="page sb-page">
@@ -65,16 +73,6 @@ export default function SecretBoard() {
 
   return (
     <div className="page sb-page">
-      <div className="sb-head">
-        <div>
-          <h2 className="sb-title">비밀 게시판</h2>
-          <p className="sb-sub">익명으로 남기는 우리만의 이야기</p>
-        </div>
-        {canManage && (
-          <button type="button" className="sb-mgr-btn" onClick={() => setPrefixMgr(true)}>말머리 관리</button>
-        )}
-      </div>
-
       {error && <div className="alert alert-error">{error}</div>}
 
       {loading ? <div className="spinner" /> : posts.length === 0 ? (
