@@ -280,55 +280,48 @@ export function BoardPost() {
   function replyTo(c) { setMenuId(null); setEditingId(null); setReplyParent(c); setBody(''); inputRef.current?.focus() }
   function cancelCompose() { setEditingId(null); setReplyParent(null); setBody('') }
 
-  function renderCard(c, depth) {
+  // 최상위 → 그 답글 순서로 평면화(한 목록). 답글은 depth 1 로 들여쓰기, 댓글 사이는 실선.
+  const flat = useMemo(() => {
+    const out = []
+    roots.forEach((r) => { out.push({ c: r, depth: 0 }); (repliesOf[r.id] || []).forEach((k) => out.push({ c: k, depth: 1 })) })
+    return out
+  }, [roots, repliesOf])
+
+  function renderRow({ c, depth }) {
+    const rowCls = `sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${highlightId === c.id ? ' highlight' : ''}`
     if (c.deleted) {
       return (
-        <div data-cid={c.id} className="comment sb-comment-deleted">
-          <div className="comment-body"><p className="comment-text sb-deleted">삭제된 댓글입니다.</p></div>
-        </div>
+        <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted`}>
+          <p className="sb-cmt-text sb-deleted">삭제된 댓글입니다.</p>
+        </li>
       )
     }
     const hasMenu = depth === 0 || c.is_mine || c.can_delete
     return (
-      <div data-cid={c.id} className={`comment sb-comment${c.is_mine ? ' mine' : ''} ${editingId === c.id ? 'editing' : ''} ${replyParent?.id === c.id ? 'replying' : ''} ${highlightId === c.id ? 'highlight' : ''}`}>
-        <div className="comment-body">
-          <div className="comment-meta">
-            <span className="comment-time">{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
-            {hasMenu && (
-              <div className="comment-menu-wrap">
-                <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                  </svg>
-                </button>
-                {menuId === c.id && (
-                  <>
-                    <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                    <div className="menu-pop" role="menu">
-                      {depth === 0 && <button type="button" onClick={() => replyTo(c)}>답글 달기</button>}
-                      {c.is_mine && <button type="button" onClick={() => startEdit(c)}>수정</button>}
-                      {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          <p className="comment-text">{c.body}</p>
+      <li key={c.id} data-cid={c.id} className={rowCls}>
+        <div className="sb-cmt-meta">
+          <span className="sb-cmt-time">{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
+          {hasMenu && (
+            <div className="comment-menu-wrap">
+              <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                </svg>
+              </button>
+              {menuId === c.id && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                  <div className="menu-pop" role="menu">
+                    {depth === 0 && <button type="button" onClick={() => replyTo(c)}>답글 달기</button>}
+                    {c.is_mine && <button type="button" onClick={() => startEdit(c)}>수정</button>}
+                    {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
-      </div>
-    )
-  }
-  function renderThread(c) {
-    const replies = repliesOf[c.id] || []
-    return (
-      <li key={c.id} className="comment-item">
-        {renderCard(c, 0)}
-        {replies.length > 0 && (
-          <ul className="comment-replies">
-            {replies.map((k) => <li key={k.id} className="comment-item">{renderCard(k, 1)}</li>)}
-          </ul>
-        )}
+        <p className="sb-cmt-text">{c.body}</p>
       </li>
     )
   }
@@ -354,52 +347,44 @@ export function BoardPost() {
   )
 
   return (
-    <div className="page task-detail sb-post-page">
-      <div className="td-head">
-        <div className="td-head-top">
-          <div className="td-head-left">
-            {post.prefix_label && <span className="sb-post-prefix">[{post.prefix_label}]</span>}
-          </div>
-          <div className="td-head-right">
-            {(post.is_mine || post.can_delete) && (
-              <div className="task-menu-wrap">
-                <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                  </svg>
-                </button>
-                {headMenu && (
-                  <>
-                    <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
-                    <div className="menu-pop" role="menu">
-                      {post.is_mine && <button type="button" onClick={() => { setHeadMenu(false); navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) }}>수정</button>}
-                      {post.can_delete && <button type="button" className="menu-danger" onClick={removePost}>삭제</button>}
-                    </div>
-                  </>
-                )}
-              </div>
+    <div className="page sb-post-page">
+      <div className="sb-post-head">
+        <h2 className="sb-post-title">
+          {post.prefix_label && <span className="sb-post-prefix">[{post.prefix_label}]</span>}
+          {post.title}
+        </h2>
+        {(post.is_mine || post.can_delete) && (
+          <div className="task-menu-wrap">
+            <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+              </svg>
+            </button>
+            {headMenu && (
+              <>
+                <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
+                <div className="menu-pop" role="menu">
+                  {post.is_mine && <button type="button" onClick={() => { setHeadMenu(false); navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) }}>수정</button>}
+                  {post.can_delete && <button type="button" className="menu-danger" onClick={removePost}>삭제</button>}
+                </div>
+              </>
             )}
           </div>
-        </div>
-        <h2 className="task-name td-name td-title">{post.title}</h2>
+        )}
       </div>
 
-      {post.body && <p className={`td-desc${post.is_mine ? ' sb-mine' : ''}`}>{post.body}</p>}
+      <div className="sb-post-meta">{timeAgo(post.created_at)}{post.edited ? ' · 수정됨' : ''}</div>
 
-      <div className="comment-section">
-        <div className="comment-head">
-          <div className="comment-title">댓글 <span className="muted">{commentCount}</span></div>
-        </div>
-        <div className="comment-body-area">
-          {err && <div className="alert alert-error">{err}</div>}
-          <div className="sub-pane">
-            {loading ? <div className="spinner sm" /> : roots.length === 0 ? (
-              <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-            ) : (
-              <ul className="comment-list">{roots.map((c) => renderThread(c))}</ul>
-            )}
-          </div>
-        </div>
+      {post.body && <div className="sb-post-body">{post.body}</div>}
+
+      <div className="sb-cmt-section">
+        <div className="sb-cmt-head">댓글 <span className="muted">{commentCount}</span></div>
+        {err && <div className="alert alert-error sb-cmt-err">{err}</div>}
+        {loading ? <div className="spinner sm" /> : flat.length === 0 ? (
+          <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+        ) : (
+          <ul className="sb-cmt-list">{flat.map(renderRow)}</ul>
+        )}
       </div>
 
       {bottomEl ? createPortal(composer, bottomEl) : composer}
