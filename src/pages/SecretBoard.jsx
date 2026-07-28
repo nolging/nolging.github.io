@@ -153,7 +153,7 @@ export default function SecretBoard() {
 
       {/* 하단 탭바: 검색하기 · 글쓰기 (동작 레이아웃은 추후) */}
       <nav className="sb-tabbar">
-        <button type="button" className="sb-tab" onClick={() => { /* 검색 레이아웃 추후 연결 */ }}>검색하기</button>
+        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/search'))}>검색하기</button>
         <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>글쓰기</button>
       </nav>
 
@@ -166,12 +166,13 @@ export default function SecretBoard() {
   )
 }
 
-// ============ 글쓰기 / 수정 (페이지) ============
+// ============ 글쓰기 / 수정 (페이지) — 상단바 ✕/등록, 말머리 드롭다운, 여백 없는 제목/본문 ============
 export function BoardCompose() {
   const { groupId, postId } = useParams()   // postId 있으면 수정
   const navigate = useNavigate()
   const location = useLocation()
   const { isAdmin } = useAuth()
+  const { setHeaderSubmit } = useOutletContext()
   const editing = !!postId
 
   const [prefixes, setPrefixes] = useState([])
@@ -181,12 +182,12 @@ export function BoardCompose() {
   const [loaded, setLoaded] = useState(!editing)   // 새 글은 즉시 편집 가능
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [pfOpen, setPfOpen] = useState(false)
 
   useEffect(() => {
     let on = true
     listBoardPrefixes(groupId).then((pf) => { if (on) setPrefixes(pf) }).catch(() => { })
     if (editing) {
-      // 목록에서 넘어왔으면 state 로 즉시, 아니면(직접 URL) 목록에서 찾아 채운다
       const seed = location.state?.post
       const fill = (p) => { if (!p || !on) return; setPrefixId(p.prefix_id || ''); setTitle(p.title || ''); setBody(p.body || ''); setLoaded(true) }
       if (seed) fill(seed)
@@ -195,9 +196,8 @@ export function BoardCompose() {
     return () => { on = false }
   }, [groupId, postId, editing, location.state])
 
-  if (!isAdmin) return <NotReady />
-
   async function submit() {
+    if (busy) return
     if (!title.trim()) { setErr('제목을 입력해 주세요.'); return }
     setBusy(true); setErr('')
     try {
@@ -210,29 +210,112 @@ export function BoardCompose() {
       }
     } catch (e) { setErr(e.message); setBusy(false) }
   }
+  // 상단바 "등록" 이 최신 submit 을 호출하도록 ref 로 연결(한 번만 등록)
+  const submitRef = useRef(submit)
+  submitRef.current = submit
+  useEffect(() => {
+    setHeaderSubmit(() => () => submitRef.current())
+    return () => setHeaderSubmit(null)
+  }, [setHeaderSubmit])
+
+  if (!isAdmin) return <NotReady />
+
+  const prefixLabel = prefixId ? (prefixes.find((p) => p.id === prefixId)?.label || '말머리') : '말머리 없음'
 
   return (
-    <div className="page sb-page">
+    <div className="page sb-page sb-compose-page">
       {!loaded ? <div className="spinner" /> : (
-        <div className="sb-compose">
-          {err && <div className="alert alert-error">{err}</div>}
-          {prefixes.length > 0 && (
-            <div className="sb-prefix-pick">
-              <button type="button" className={`sb-chip${!prefixId ? ' on' : ''}`} onClick={() => setPrefixId('')}>말머리 없음</button>
-              {prefixes.map((pf) => (
-                <button key={pf.id} type="button" className={`sb-chip${prefixId === pf.id ? ' on' : ''}`}
-                  onClick={() => setPrefixId(pf.id)}>{pf.label}</button>
-              ))}
+        <>
+          {err && <div className="alert alert-error sb-cmt-err">{err}</div>}
+          <div className="sb-compose-head">
+            <div className="sb-prefix-sel">
+              <button type="button" className="sb-prefix-sel-btn" onClick={() => setPfOpen((o) => !o)}>
+                {prefixLabel}<span className="sb-caret" aria-hidden="true">⌄</span>
+              </button>
+              {pfOpen && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setPfOpen(false)} />
+                  <div className="sb-prefix-menu" role="menu">
+                    <button type="button" className={!prefixId ? 'on' : ''} onClick={() => { setPrefixId(''); setPfOpen(false) }}>말머리 없음</button>
+                    {prefixes.map((pf) => (
+                      <button type="button" key={pf.id} className={prefixId === pf.id ? 'on' : ''}
+                        onClick={() => { setPrefixId(pf.id); setPfOpen(false) }}>{pf.label}</button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-          )}
-          <input className="sb-input" placeholder="제목" value={title} maxLength={100}
+          </div>
+          <input className="sb-title-input" placeholder="제목" value={title} maxLength={100}
             onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="sb-textarea sb-body-input" placeholder="내용을 입력하세요" value={body} maxLength={5000}
+          <div className="sb-compose-div" />
+          <textarea className="sb-body-area" placeholder="내용을 입력하세요" value={body} maxLength={5000}
             onChange={(e) => setBody(e.target.value)} />
-          <button type="button" className="btn btn-primary btn-block" onClick={submit} disabled={busy || !title.trim()}>
-            {busy ? '올리는 중…' : editing ? '수정하기' : '올리기'}
-          </button>
-        </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ============ 검색 (페이지) — 검색어 입력 + 게시글/댓글 탭 ============
+export function BoardSearch() {
+  const { groupId } = useParams()
+  const navigate = useNavigate()
+  const { isAdmin } = useAuth()
+  const [q, setQ] = useState('')
+  const [tab, setTab] = useState('posts')  // posts | comments
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { listBoardPosts(groupId).then(setPosts).catch(() => { }).finally(() => setLoading(false)) }, [groupId])
+
+  if (!isAdmin) return <NotReady />
+
+  const kw = q.trim().toLowerCase()
+  const results = kw ? posts.filter((p) => (p.title || '').toLowerCase().includes(kw) || (p.body || '').toLowerCase().includes(kw)) : []
+
+  return (
+    <div className="page sb-page sb-search-page">
+      <div className="sb-search-box">
+        <input className="sb-search-input" placeholder="검색어를 입력하세요" value={q} autoFocus
+          onChange={(e) => setQ(e.target.value)} />
+        {q && <button type="button" className="sb-search-clear" aria-label="지우기" onClick={() => setQ('')}>✕</button>}
+      </div>
+
+      <div className="sb-search-tabs">
+        <button type="button" className={`sb-search-tab${tab === 'posts' ? ' on' : ''}`} onClick={() => setTab('posts')}>게시글</button>
+        <button type="button" className={`sb-search-tab${tab === 'comments' ? ' on' : ''}`} onClick={() => setTab('comments')}>댓글</button>
+      </div>
+
+      {tab === 'posts' ? (
+        loading ? <div className="spinner" /> : !kw ? (
+          <div className="sb-search-hint">검색어를 입력하면 게시글을 찾아 드려요.</div>
+        ) : results.length === 0 ? (
+          <div className="sb-search-hint">‘{q}’에 대한 검색 결과가 없어요.</div>
+        ) : (
+          <ul className="sb-rows">
+            {results.map((p) => (
+              <li key={p.id}>
+                <button type="button" className="sb-row"
+                  onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
+                  <span className="sb-row-main">
+                    <span className="sb-row-title">
+                      {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
+                      <span className="sb-row-t">{p.title}</span>
+                    </span>
+                    <span className="sb-row-meta">
+                      <span className="sb-row-time">{boardTime(p.created_at)}</span>
+                      {isNewPost(p.created_at) && <span className="sb-n">N</span>}
+                    </span>
+                  </span>
+                  {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <div className="sb-search-hint">댓글 검색은 준비 중이에요.</div>
       )}
     </div>
   )
