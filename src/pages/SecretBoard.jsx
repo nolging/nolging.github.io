@@ -24,6 +24,35 @@ function timeAgo(iso) {
 }
 const boardPath = (groupId, sub = '') => `/groups/${groupId}/board${sub}`
 
+// 목록 시간표기: 오늘은 HH:MM, 자정 지난(다른 날) 글은 YYYY.MM.DD HH:MM
+function boardTime(iso) {
+  try {
+    const d = new Date(iso), now = new Date()
+    const p2 = (n) => String(n).padStart(2, '0')
+    const hm = `${p2(d.getHours())}:${p2(d.getMinutes())}`
+    const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+    return sameDay ? hm : `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())} ${hm}`
+  } catch { return '' }
+}
+// 오늘 올라온 글이면 N 배지
+function isNewPost(iso) {
+  try {
+    const d = new Date(iso), now = new Date()
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  } catch { return false }
+}
+
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+)
+const PencilIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+)
+
 // 접근 준비 안 됨(관리자 아님) 공통 화면
 const NotReady = () => (
   <div className="page sb-page">
@@ -45,6 +74,8 @@ export default function SecretBoard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [prefixMgr, setPrefixMgr] = useState(false)
+  const [filterPrefix, setFilterPrefix] = useState('') // '' = 전체
+  const [filterOpen, setFilterOpen] = useState(false)
 
   const canManage = isAdmin || (group && group.owner_id === uid)
 
@@ -70,34 +101,70 @@ export default function SecretBoard() {
 
   if (!isAdmin) return <NotReady />
 
-  return (
-    <div className="page sb-page">
-      {error && <div className="alert alert-error">{error}</div>}
+  const shown = filterPrefix ? posts.filter((p) => p.prefix_id === filterPrefix) : posts
+  const filterLabel = filterPrefix ? (prefixes.find((p) => p.id === filterPrefix)?.label || '말머리') : '말머리 선택'
 
-      {loading ? <div className="spinner" /> : posts.length === 0 ? (
-        <div className="sb-empty">아직 글이 없어요. 첫 글을 남겨 보세요.</div>
+  return (
+    <div className="page sb-page sb-list-page">
+      {error && <div className="alert alert-error sb-cmt-err">{error}</div>}
+
+      {/* 목록 헤더: 좌 총 게시글 수, 우 말머리 선택(필터) */}
+      <div className="sb-listhead">
+        <span className="sb-total">전체 <b>{posts.length.toLocaleString('ko-KR')}</b></span>
+        <div className="sb-prefilter">
+          <button type="button" className="sb-prefilter-btn" onClick={() => setFilterOpen((o) => !o)}>
+            {filterLabel}<span className="sb-caret" aria-hidden="true">⌄</span>
+          </button>
+          {filterOpen && (
+            <>
+              <div className="menu-backdrop" onClick={() => setFilterOpen(false)} />
+              <div className="sb-prefilter-menu" role="menu">
+                <button type="button" className={!filterPrefix ? 'on' : ''}
+                  onClick={() => { setFilterPrefix(''); setFilterOpen(false) }}>전체</button>
+                {prefixes.map((pf) => (
+                  <button type="button" key={pf.id} className={filterPrefix === pf.id ? 'on' : ''}
+                    onClick={() => { setFilterPrefix(pf.id); setFilterOpen(false) }}>{pf.label}</button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {loading ? <div className="spinner" /> : shown.length === 0 ? (
+        <div className="sb-empty">{filterPrefix ? '이 말머리의 글이 없어요.' : '아직 글이 없어요. 첫 글을 남겨 보세요.'}</div>
       ) : (
-        <ul className="sb-list">
-          {posts.map((p) => (
+        <ul className="sb-rows">
+          {shown.map((p) => (
             <li key={p.id}>
-              <button type="button" className={`sb-item${p.is_mine ? ' mine' : ''}`}
+              <button type="button" className="sb-row"
                 onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
-                <div className="sb-item-title">
-                  {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
-                  <span className="sb-item-t">{p.title}</span>
-                </div>
-                {p.body && <div className="sb-item-body">{p.body}</div>}
-                <div className="sb-item-meta">
-                  <span>{timeAgo(p.created_at)}{p.edited ? ' · 수정됨' : ''}</span>
-                  {p.comment_count > 0 && <span className="sb-cc">💬 {p.comment_count}</span>}
-                </div>
+                <span className="sb-row-main">
+                  <span className="sb-row-title">
+                    {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
+                    <span className="sb-row-t">{p.title}</span>
+                  </span>
+                  <span className="sb-row-meta">
+                    <span className="sb-row-time">{boardTime(p.created_at)}</span>
+                    {isNewPost(p.created_at) && <span className="sb-n">N</span>}
+                  </span>
+                </span>
+                {p.comment_count > 0 && <span className="sb-row-cc">{p.comment_count}</span>}
               </button>
             </li>
           ))}
         </ul>
       )}
 
-      <button type="button" className="sb-fab" onClick={() => navigate(boardPath(groupId, '/new'))} aria-label="새 글 쓰기">＋</button>
+      {/* 하단 탭바: 검색하기 · 글쓰기 (동작 레이아웃은 추후) */}
+      <nav className="sb-tabbar">
+        <button type="button" className="sb-tab" onClick={() => { /* 검색 레이아웃 추후 연결 */ }}>
+          <SearchIcon /><span>검색하기</span>
+        </button>
+        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>
+          <PencilIcon /><span>글쓰기</span>
+        </button>
+      </nav>
 
       {prefixMgr && (
         <PrefixManager groupId={groupId} prefixes={prefixes}
