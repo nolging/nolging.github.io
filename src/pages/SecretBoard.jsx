@@ -271,22 +271,93 @@ export function BoardCompose() {
   )
 }
 
-// ============ 검색 (페이지) — 검색어 입력 + 게시글/댓글 탭 ============
+// 검색 옵션 드롭다운(범위/정렬)
+function SearchDropdown({ value, options, onChange }) {
+  const [open, setOpen] = useState(false)
+  const cur = options.find((o) => o.value === value) || options[0]
+  return (
+    <div className="sb-sdrop">
+      <button type="button" className="sb-sdrop-btn" onClick={() => setOpen((o) => !o)}>{cur.label}<CaretDown /></button>
+      {open && (
+        <>
+          <div className="menu-backdrop" onClick={() => setOpen(false)} />
+          <div className="sb-sdrop-menu" role="menu">
+            {options.map((o) => (
+              <button type="button" key={o.value} className={o.value === value ? 'on' : ''}
+                onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// 댓글 수 원형(검색 결과 공용) — 누르면 해당 글 댓글 상세로
+function CommentCountBadge({ count, onClick }) {
+  return (
+    <span className="sb-scc" role="button" tabIndex={0} aria-label="댓글 보기"
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onClick() } }}>
+      <span className="sb-scc-ico">💬</span>{count}
+    </span>
+  )
+}
+
+// ============ 검색 (페이지) — 검색어 + 게시글/댓글 탭 + 범위·정렬, 키워드 볼드 ============
 export function BoardSearch() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState('posts')  // posts | comments
+  const [tab, setTab] = useState('posts')       // posts | comments
+  const [scope, setScope] = useState('both')    // both | title | body (게시글)
+  const [sort, setSort] = useState('recent')    // recent | comments (게시글)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [allComments, setAllComments] = useState(null)  // null=미로딩
+  const [cLoading, setCLoading] = useState(false)
 
   useEffect(() => { listBoardPosts(groupId).then(setPosts).catch(() => { }).finally(() => setLoading(false)) }, [groupId])
 
-  if (!isAdmin) return <NotReady />
+  // 댓글 탭 최초 진입 시 모든 글의 댓글을 모아 로딩(원문 제목 포함)
+  useEffect(() => {
+    if (tab !== 'comments' || allComments !== null || cLoading || loading) return
+    setCLoading(true)
+    ;(async () => {
+      try {
+        const lists = await Promise.all(posts.map((p) =>
+          listBoardComments(p.id).then((cs) => cs.map((c) => ({ ...c, post_id: p.id, post_title: p.title }))).catch(() => [])))
+        setAllComments(lists.flat())
+      } finally { setCLoading(false) }
+    })()
+  }, [tab, allComments, cLoading, loading, posts])
 
   const kw = q.trim().toLowerCase()
-  const results = kw ? posts.filter((p) => (p.title || '').toLowerCase().includes(kw) || (p.body || '').toLowerCase().includes(kw)) : []
+
+  const postResults = useMemo(() => {
+    if (!kw) return []
+    const inScope = (p) => {
+      const t = (p.title || '').toLowerCase().includes(kw)
+      const b = (p.body || '').toLowerCase().includes(kw)
+      return scope === 'title' ? t : scope === 'body' ? b : (t || b)
+    }
+    const arr = posts.filter(inScope)
+    return sort === 'comments'
+      ? arr.slice().sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0))
+      : arr.slice().sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  }, [kw, posts, scope, sort])
+
+  const commentResults = useMemo(() => {
+    if (!kw || !allComments) return []
+    return allComments
+      .filter((c) => !c.deleted && (c.body || '').toLowerCase().includes(kw))
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))   // 최신순 고정
+  }, [kw, allComments])
+
+  if (!isAdmin) return <NotReady />
+
+  const count = tab === 'posts' ? postResults.length : commentResults.length
 
   return (
     <div className="page sb-page sb-search-page">
@@ -301,41 +372,72 @@ export function BoardSearch() {
         <button type="button" className={`sb-search-tab${tab === 'comments' ? ' on' : ''}`} onClick={() => setTab('comments')}>댓글</button>
       </div>
 
-      {tab === 'posts' ? (
-        loading ? <div className="spinner" /> : !kw ? (
-          <div className="sb-search-hint">검색어를 입력하면 게시글을 찾아 드려요.</div>
-        ) : results.length === 0 ? (
-          <div className="sb-search-hint">‘{q}’에 대한 검색 결과가 없어요.</div>
-        ) : (
-          <ul className="sb-rows">
-            {results.map((p) => (
-              <li key={p.id}>
-                <button type="button" className="sb-row"
-                  onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
-                  <span className="sb-row-main">
-                    <span className="sb-row-title">
-                      {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
-                      <span className="sb-row-t">{p.title}</span>
-                    </span>
-                    <span className="sb-row-meta">
-                      <span className="sb-row-time">{boardTime(p.created_at)}</span>
-                      {isNewPost(p.created_at) && <span className="sb-n">N</span>}
-                    </span>
-                  </span>
-                  {p.comment_count > 0 && (
-                    <span className="sb-row-cc" role="button" tabIndex={0} aria-label="댓글 보기"
-                      onClick={(e) => { e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) }}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) } }}>
-                      {p.comment_count}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )
+      {!kw ? (
+        <div className="sb-search-hint">검색어를 입력하면 {tab === 'posts' ? '게시글' : '댓글'}을 찾아 드려요.</div>
       ) : (
-        <div className="sb-search-hint">댓글 검색은 준비 중이에요.</div>
+        <>
+          <div className="sb-searchbar">
+            <span className="sb-searchcount">{count.toLocaleString('ko-KR')}건</span>
+            <div className="sb-searchopts">
+              {tab === 'posts' && (
+                <SearchDropdown value={scope} onChange={setScope}
+                  options={[{ value: 'both', label: '제목+내용' }, { value: 'title', label: '제목' }, { value: 'body', label: '내용' }]} />
+              )}
+              {tab === 'posts'
+                ? <SearchDropdown value={sort} onChange={setSort}
+                  options={[{ value: 'recent', label: '최신순' }, { value: 'comments', label: '댓글순' }]} />
+                : <span className="sb-sortfixed">최신순</span>}
+            </div>
+          </div>
+
+          {tab === 'posts' ? (
+            loading ? <div className="spinner" /> : postResults.length === 0 ? (
+              <div className="sb-search-hint">‘{q}’에 대한 검색 결과가 없어요.</div>
+            ) : (
+              <ul className="sb-srows">
+                {postResults.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" className="sb-srow"
+                      onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
+                      <span className="sb-srow-main">
+                        <span className="sb-srow-title">
+                          {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
+                          {boldText(p.title, q)}
+                        </span>
+                        {p.body && <span className="sb-srow-body">{boldText(p.body, q)}</span>}
+                        <span className="sb-srow-time">{boardTime(p.created_at)}</span>
+                      </span>
+                      {p.comment_count > 0 && (
+                        <CommentCountBadge count={p.comment_count}
+                          onClick={() => navigate(boardPath(groupId, `/${p.id}/comments`))} />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : (
+            cLoading || allComments === null ? <div className="spinner" /> : commentResults.length === 0 ? (
+              <div className="sb-search-hint">‘{q}’에 대한 검색 결과가 없어요.</div>
+            ) : (
+              <ul className="sb-srows">
+                {commentResults.map((c) => (
+                  <li key={c.id}>
+                    <button type="button" className="sb-srow sb-crow"
+                      onClick={() => navigate(boardPath(groupId, `/${c.post_id}/comments?c=${c.id}`))}>
+                      <span className="sb-crow-body">{boldText(c.body, q)}</span>
+                      <span className="sb-crow-origin">
+                        <span className="sb-origin-badge">원문</span>
+                        <span className="sb-origin-title">{c.post_title}</span>
+                      </span>
+                      <span className="sb-srow-time">{boardTime(c.created_at)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
+          )}
+        </>
       )}
     </div>
   )
@@ -385,8 +487,8 @@ const ChevronUp = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15" /></svg>
 )
-// 검색어를 본문에서 하이라이팅(대소문자 무시)
-function highlightText(text, term) {
+// 검색어 위치를 찾아 render(부분문자열, key)로 감싸 반환(대소문자 무시)
+function markMatches(text, term, render) {
   const t = (term || '').toLowerCase()
   if (!t) return text
   const low = (text || '').toLowerCase()
@@ -395,11 +497,14 @@ function highlightText(text, term) {
     const idx = low.indexOf(t, i)
     if (idx === -1) { out.push(text.slice(i)); break }
     if (idx > i) out.push(text.slice(i, idx))
-    out.push(<mark key={k++} className="sb-hl">{text.slice(idx, idx + t.length)}</mark>)
+    out.push(render(text.slice(idx, idx + t.length), k++))
     i = idx + t.length
   }
   return out
 }
+// 노란 하이라이팅(댓글 상세) / 볼드(검색 결과)
+const highlightText = (text, term) => markMatches(text, term, (s, k) => <mark key={k} className="sb-hl">{s}</mark>)
+const boldText = (text, term) => markMatches(text, term, (s, k) => <b key={k} className="sb-kw">{s}</b>)
 // 답글 들여쓰기 ㄴ(└) 표시
 const ReplyCorner = () => (
   <svg className="sb-cmt-corner" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"

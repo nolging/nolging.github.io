@@ -1829,6 +1829,46 @@ button.mention-chip:active { opacity: .6; }
 .sb-search-hint { text-align: center; color: #a3a1ab; font-size: 13.5px; padding: 60px 20px; line-height: 1.6; }
 .sb-search-page .sb-rows { margin-top: 0; }
 
+/* 검색 결과 상단 바: 좌 건수 · 우 범위/정렬 */
+.sb-searchbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 0 8px; }
+.sb-searchcount { font-size: 14px; font-weight: 700; color: #7363e8; }
+.sb-searchopts { display: flex; align-items: center; gap: 8px; }
+.sb-sortfixed { font-size: 13.5px; font-weight: 700; color: #55525f; padding: 0 2px; }
+.sb-sdrop { position: relative; }
+.sb-sdrop-btn { display: inline-flex; align-items: center; gap: 2px; border: none; background: none; cursor: pointer;
+  font-size: 13.5px; font-weight: 700; color: #55525f; padding: 4px 2px; }
+.sb-sdrop-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 50; min-width: 118px;
+  background: #fff; border: 1px solid #ececf1; border-radius: 12px; box-shadow: 0 10px 28px rgba(25, 23, 34, .14);
+  padding: 6px; display: flex; flex-direction: column; }
+.sb-sdrop-menu button { text-align: left; border: none; background: none; cursor: pointer; font-size: 13.5px; color: #33313a; padding: 9px 10px; border-radius: 8px; }
+.sb-sdrop-menu button:hover { background: #f5f4f8; }
+.sb-sdrop-menu button.on { color: #7363e8; font-weight: 800; }
+
+/* 검색 결과 목록(게시글/댓글 공용) */
+.sb-srows { list-style: none; margin: 0 calc(-1 * var(--pad-x)); padding: 0; }
+.sb-srow { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  border: none; border-bottom: 1px solid #ececf1; background: none; cursor: pointer; padding: 15px var(--pad-x); }
+.sb-srow:active { background: #f7f6fb; }
+.sb-srow-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.sb-srow-title { display: block; font-size: 16px; font-weight: 600; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-srow-body { display: block; font-size: 13.5px; color: #8b8798; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-srow-time { display: block; font-size: 12.5px; color: #a49bc6; margin-top: 2px; }
+.sb-kw { font-weight: 800; color: #191722; }
+/* 검색 결과 댓글 수(💬 N) — 누르면 댓글 상세 */
+.sb-scc { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; padding: 7px 11px; border-radius: 999px;
+  background: #f2f2f5; color: #6a6875; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sb-scc:active { background: #e8e7ee; }
+.sb-scc-ico { font-size: 12px; }
+
+/* 댓글 검색 결과 행: 댓글 내용 · 원문 제목 · 시간 */
+.sb-crow { flex-direction: column; align-items: stretch; gap: 6px; }
+.sb-crow-body { font-size: 15px; line-height: 1.5; color: #26232f;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sb-crow-origin { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sb-origin-badge { flex-shrink: 0; font-size: 11px; color: #8b8798; border: 1px solid #dcdae4; border-radius: 5px; padding: 1px 6px; }
+.sb-origin-title { font-size: 13px; color: #8b8798; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-crow .sb-srow-time { margin-top: 0; }
+
 /* 글쓰기/수정 페이지 + 말머리 관리 모달 */
 .sb-modal { max-width: 460px; }
 .sb-modal-title { margin: 0 0 12px; font-size: 17px; font-weight: 800; color: #191722; }
