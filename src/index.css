@@ -1829,8 +1829,9 @@ button.mention-chip:active { opacity: .6; }
 .sb-post-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .sb-post-title { margin: 0; flex: 1; min-width: 0; font-size: 1.15rem; font-weight: 800; line-height: 1.45; color: #191722; word-break: break-word; }
 .sb-post-prefix { color: #7363e8; font-weight: 800; margin-right: 5px; }
-.sb-post-meta { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.sb-post-time { font-size: 12px; color: #a49bc6; }
+.sb-post-meta { margin-top: 8px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.sb-post-time { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #a49bc6; }
+.sb-clock { flex-shrink: 0; color: #a49bc6; }
 /* 작성시간 라인 오른쪽 끝: 댓글 수 원형 배지 */
 .sb-post-cc { flex-shrink: 0; min-width: 38px; height: 38px; padding: 0 8px; box-sizing: border-box; border-radius: 999px;
   border: 1px solid #e3e2e8; display: inline-flex; align-items: center; justify-content: center;
@@ -1854,10 +1855,18 @@ button.mention-chip:active { opacity: .6; }
 .sb-spin { animation: sb-rot .7s linear infinite; transform-origin: 50% 50%; }
 @keyframes sb-rot { to { transform: rotate(360deg); } }
 .sb-cmt-err { margin: 6px var(--pad-x); }
+/* 댓글 전체 보기 바(글 상세: 최근 10개만 노출, 초과 시 상단에) */
+.sb-seeall { width: 100%; display: flex; align-items: center; justify-content: center; gap: 3px;
+  border: none; border-bottom: 1px solid #ece9f4; background: #f7f6fb; color: #55525f;
+  font-size: 13.5px; font-weight: 700; padding: 12px; cursor: pointer; }
+.sb-seeall svg { color: #a49bc6; }
+.sb-seeall:active { background: #efeef5; }
 .sb-cmt-list { list-style: none; margin: 0; padding: 0; }
 .sb-cmt-row { position: relative; padding: 12px var(--pad-x); border-top: 1px solid #ece9f4; }   /* 댓글 사이 실선 */
 .sb-cmt-row:first-child { border-top: none; }
-.sb-cmt-row.reply { padding-left: calc(var(--pad-x) + 22px); }
+.sb-cmt-row.reply { padding-left: calc(var(--pad-x) + 24px); }
+/* 답글 들여쓰기 ㄴ(└) 표시 */
+.sb-cmt-corner { position: absolute; left: var(--pad-x); top: 14px; color: #c4c1d0; }
 .sb-cmt-row.mine { background: #f5f1fe; }
 /* 알림/작성 강조: 잠깐 색 올라왔다가 서서히 꺼짐(내 댓글 배경 위에도 자연스럽게) */
 .sb-cmt-row.hl::after { content: ''; position: absolute; inset: 0; background: #ffe6a1; pointer-events: none; animation: sb-cmt-flash 2s ease forwards; }

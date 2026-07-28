@@ -350,6 +350,25 @@ const PencilMini = () => (
     <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
   </svg>
 )
+// 시계(글 작성 시간 앞)
+const ClockIcon = () => (
+  <svg className="sb-clock" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
+  </svg>
+)
+// 오른쪽 화살표(댓글 전체 보기)
+const ChevronRight = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="9 6 15 12 9 18" />
+  </svg>
+)
+// 답글 들여쓰기 ㄴ(└) 표시
+const ReplyCorner = () => (
+  <svg className="sb-cmt-corner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M8 5v10h10" /></svg>
+)
 
 // ---- 댓글 상태·동작 공용 훅(글 상세·댓글 상세). 익명, 대댓글 1단계, 삭제 자리표시자 ----
 function useBoardComments(postId, focusId) {
@@ -448,16 +467,24 @@ function useBoardComments(postId, focusId) {
 }
 
 // 댓글 목록(공용). boardTime 형식 시간, ⋮ 메뉴(답글/수정/삭제)
-function CommentList({ h, onReply, onEdit }) {
+// limit 주면 마지막 limit개만 보여주고, 초과 시 상단에 '댓글 전체 보기' 바(onSeeAll).
+function CommentList({ h, onReply, onEdit, limit, onSeeAll }) {
   const { flat, loading, menuId, setMenuId, flashId, removeComment } = h
   if (loading) return <div className="spinner sm" />
   if (flat.length === 0) return <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+  const truncated = limit && flat.length > limit
+  const visible = truncated ? flat.slice(-limit) : flat
   return (
-    <ul className="sb-cmt-list">
-      {flat.map(({ c, depth }) => {
+    <>
+      {truncated && (
+        <button type="button" className="sb-seeall" onClick={onSeeAll}>댓글 전체 보기 <ChevronRight /></button>
+      )}
+      <ul className="sb-cmt-list">
+      {visible.map(({ c, depth }) => {
         if (c.deleted) {
           return (
             <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted${flashId === c.id ? ' hl' : ''}`}>
+              {depth === 1 && <ReplyCorner />}
               <p className="sb-cmt-text sb-deleted">삭제된 댓글입니다.</p>
             </li>
           )
@@ -465,6 +492,7 @@ function CommentList({ h, onReply, onEdit }) {
         const hasMenu = depth === 0 || c.is_mine || c.can_delete
         return (
           <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
+            {depth === 1 && <ReplyCorner />}
             <div className="sb-cmt-meta">
               <span className="sb-cmt-time">{boardTime(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
               {hasMenu && (
@@ -489,7 +517,8 @@ function CommentList({ h, onReply, onEdit }) {
           </li>
         )
       })}
-    </ul>
+      </ul>
+    </>
   )
 }
 
@@ -654,7 +683,7 @@ export function BoardPost() {
       </div>
 
       <div className="sb-post-meta">
-        <span className="sb-post-time">{boardTime(post.created_at)}</span>
+        <span className="sb-post-time"><ClockIcon />{boardTime(post.created_at)}</span>
         {h.commentCount > 0 && <span className="sb-post-cc">{h.commentCount}</span>}
       </div>
 
@@ -663,7 +692,8 @@ export function BoardPost() {
       <div className="sb-cmt-section">
         <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={handleReply} onEdit={handleEdit} />
+        <CommentList h={h} onReply={handleReply} onEdit={handleEdit} limit={10}
+          onSeeAll={() => navigate(boardPath(groupId, `/${postId}/comments`))} />
       </div>
 
       <button type="button" className="sb-write-pill" onClick={openComposer}><PencilMini />댓글 쓰기</button>
