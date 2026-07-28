@@ -497,7 +497,7 @@ function CommentList({ h, onReply, onEdit, limit, onSeeAll, filterText }) {
           <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
             {depth === 1 && <ReplyCorner />}
             <div className="sb-cmt-meta">
-              <span className="sb-cmt-time">{boardTime(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
+              <span className="sb-cmt-time">{boardTime(c.created_at)}</span>
               {hasMenu && (
                 <div className="comment-menu-wrap">
                   <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
@@ -723,13 +723,21 @@ export function BoardComments() {
 
   const searching = !!commentSearch?.open
   const scrollFirst = () => document.querySelector('.sb-cmt-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  // 새로고침 후 가장 최근 댓글(맨 아래)로 스크롤
+  const refreshToBottom = async () => {
+    await h.doRefresh()
+    setTimeout(() => {
+      const rows = document.querySelectorAll('.sb-cmt-row')
+      rows[rows.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }, 80)
+  }
 
   const bottomBar = (
     <nav className="sb-detail-bar">
       <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
       <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}`))}><span>원문 보기</span></button>
       <button type="button" className="sb-detail-btn" onClick={scrollFirst}><span>첫 댓글로</span></button>
-      <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={h.doRefresh} disabled={h.refreshing}
+      <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={refreshToBottom} disabled={h.refreshing}
         aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
     </nav>
   )
