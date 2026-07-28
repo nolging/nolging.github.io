@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useSearchParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import {
@@ -180,40 +180,37 @@ export function BoardCompose() {
   )
 }
 
-// ============ 글 상세 + 댓글 (페이지) — 위시/약속/추억 상세와 동일 레이아웃 ============
-export function BoardPost() {
-  const { groupId, postId } = useParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { isAdmin } = useAuth()
+// 새로고침 아이콘
+const RefreshIcon = ({ spinning }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={spinning ? 'sb-spin' : ''}>
+    <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+)
 
-  const [post, setPost] = useState(location.state?.post || null)
-  const [gone, setGone] = useState(false)
+// ---- 댓글 스레드(글 상세·댓글 상세 공용). 익명, 대댓글 1단계, 삭제 자리표시자, 하단 고정 입력창 ----
+function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
   const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
-  const [headMenu, setHeadMenu] = useState(false)      // 상단 글 ⋮ 메뉴
-  const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
+  const [flashId, setFlashId] = useState(null)         // 강조(작성/수정/포커스) 대상
   const [bottomEl, setBottomEl] = useState(null)
   const [err, setErr] = useState('')
   const inputRef = useRef(null)
+  const didFocus = useRef(false)
 
-  const loadPost = useCallback(async () => {
-    try {
-      const fresh = (await listBoardPosts(groupId)).find((x) => x.id === postId)
-      if (fresh) setPost(fresh); else setGone(true)
-    } catch { /* 기존 값 유지 */ }
-  }, [groupId, postId])
   const loadComments = useCallback(async () => {
     try { setComments(await listBoardComments(postId)) } catch (e) { setErr(e.message) } finally { setLoading(false) }
   }, [postId])
-  useEffect(() => { loadPost(); loadComments() }, [loadPost, loadComments])
+  useEffect(() => { loadComments() }, [loadComments])
 
-  // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로 렌더(위시 상세와 동일)
+  // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
   // 입력창 높이 자동 조절
   useEffect(() => {
@@ -221,15 +218,20 @@ export function BoardPost() {
     if (!el) return
     el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`
   }, [body])
-  // 방금 작성/수정한 댓글로 스크롤 + 강조
+  // 강조 대상으로 스크롤 + 잠깐 색 → 서서히 꺼짐
   useEffect(() => {
-    if (!highlightId) return
-    document.querySelector(`[data-cid="${highlightId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    const t = setTimeout(() => setHighlightId(null), 1800)
+    if (!flashId) return
+    document.querySelector(`[data-cid="${flashId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const t = setTimeout(() => setFlashId(null), 2000)
     return () => clearTimeout(t)
-  }, [highlightId])
+  }, [flashId])
+  // 알림에서 넘어온 포커스 대상: 로딩 후 한 번 강조
+  useEffect(() => {
+    if (!focusId || loading || didFocus.current) return
+    didFocus.current = true; setFlashId(focusId)
+  }, [focusId, loading])
 
-  // 최상위 댓글 + 각 최상위에 딸린 답글(답글의 답글까지 한 단계로 평면화 — 위시와 동일)
+  // 최상위 댓글 + 딸린 답글(답글의 답글까지 한 단계로 평면화)
   const { roots, repliesOf } = useMemo(() => {
     const byId = {}
     comments.forEach((c) => { byId[c.id] = c })
@@ -245,10 +247,13 @@ export function BoardPost() {
     return { roots, repliesOf }
   }, [comments])
   const commentCount = useMemo(() => comments.filter((c) => !c.deleted).length, [comments])
+  const flat = useMemo(() => {
+    const out = []
+    roots.forEach((r) => { out.push({ c: r, depth: 0 }); (repliesOf[r.id] || []).forEach((k) => out.push({ c: k, depth: 1 })) })
+    return out
+  }, [roots, repliesOf])
 
-  if (!isAdmin) return <NotReady />
-
-  // 하단 입력창 제출: 수정 중이면 수정, 답글 대상이 있으면 답글, 아니면 새 댓글
+  async function doRefresh() { setRefreshing(true); setErr(''); await loadComments(); setTimeout(() => setRefreshing(false), 300) }
   async function submit(e) {
     e.preventDefault()
     if (!body.trim() || sending) return
@@ -257,8 +262,8 @@ export function BoardPost() {
       let targetId
       if (editingId) { await updateBoardComment(editingId, body.trim()); targetId = editingId; setEditingId(null) }
       else { targetId = await addBoardComment(postId, replyParent?.id || null, body.trim()); setReplyParent(null) }
-      setBody(''); await loadComments(); await loadPost()
-      setHighlightId(targetId || null)
+      setBody(''); await loadComments()
+      setFlashId(targetId || null)
     } catch (e2) { setErr(e2.message) } finally { setSending(false) }
   }
   async function removeComment(id) {
@@ -268,37 +273,24 @@ export function BoardPost() {
       await deleteBoardComment(id)
       if (editingId === id) { setEditingId(null); setBody('') }
       if (replyParent?.id === id) setReplyParent(null)
-      await loadComments(); await loadPost()
+      await loadComments()
     } catch (e) { setErr(e.message) }
-  }
-  async function removePost() {
-    setHeadMenu(false)
-    if (!confirm('이 글을 삭제할까요?')) return
-    try { await deleteBoardPost(postId); navigate(boardPath(groupId), { replace: true }) } catch (e) { setErr(e.message) }
   }
   function startEdit(c) { setMenuId(null); setReplyParent(null); setEditingId(c.id); setBody(c.body); inputRef.current?.focus() }
   function replyTo(c) { setMenuId(null); setEditingId(null); setReplyParent(c); setBody(''); inputRef.current?.focus() }
   function cancelCompose() { setEditingId(null); setReplyParent(null); setBody('') }
 
-  // 최상위 → 그 답글 순서로 평면화(한 목록). 답글은 depth 1 로 들여쓰기, 댓글 사이는 실선.
-  const flat = useMemo(() => {
-    const out = []
-    roots.forEach((r) => { out.push({ c: r, depth: 0 }); (repliesOf[r.id] || []).forEach((k) => out.push({ c: k, depth: 1 })) })
-    return out
-  }, [roots, repliesOf])
-
   function renderRow({ c, depth }) {
-    const rowCls = `sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${highlightId === c.id ? ' highlight' : ''}`
     if (c.deleted) {
       return (
-        <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted`}>
+        <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted${flashId === c.id ? ' hl' : ''}`}>
           <p className="sb-cmt-text sb-deleted">삭제된 댓글입니다.</p>
         </li>
       )
     }
     const hasMenu = depth === 0 || c.is_mine || c.can_delete
     return (
-      <li key={c.id} data-cid={c.id} className={rowCls}>
+      <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
         <div className="sb-cmt-meta">
           <span className="sb-cmt-time">{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
           {hasMenu && (
@@ -326,9 +318,6 @@ export function BoardPost() {
     )
   }
 
-  if (gone) return <div className="page"><div className="comment-empty">삭제된 글이에요.</div></div>
-  if (!post) return <div className="page"><div className="spinner" /></div>
-
   const composer = (
     <form className="composer" onSubmit={submit}>
       {(editingId || replyParent) && (
@@ -345,6 +334,58 @@ export function BoardPost() {
       </div>
     </form>
   )
+
+  return (
+    <>
+      <div className="sb-cmt-section">
+        <div className="sb-cmt-head">
+          <span>댓글 <span className="muted">{commentCount}</span></span>
+          {showRefresh && (
+            <button type="button" className="sb-cmt-refresh" onClick={doRefresh} disabled={refreshing}
+              aria-label="새로고침" title="새로고침"><RefreshIcon spinning={refreshing} /></button>
+          )}
+        </div>
+        {err && <div className="alert alert-error sb-cmt-err">{err}</div>}
+        {loading ? <div className="spinner sm" /> : flat.length === 0 ? (
+          <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+        ) : (
+          <ul className="sb-cmt-list">{flat.map(renderRow)}</ul>
+        )}
+      </div>
+      {bottomEl ? createPortal(composer, bottomEl) : composer}
+    </>
+  )
+}
+
+// ============ 글 상세 + 댓글 (페이지) ============
+export function BoardPost() {
+  const { groupId, postId } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAdmin } = useAuth()
+
+  const [post, setPost] = useState(location.state?.post || null)
+  const [gone, setGone] = useState(false)
+  const [headMenu, setHeadMenu] = useState(false)
+
+  const loadPost = useCallback(async () => {
+    try {
+      const fresh = (await listBoardPosts(groupId)).find((x) => x.id === postId)
+      if (fresh) setPost(fresh); else setGone(true)
+    } catch { /* 기존 값 유지 */ }
+  }, [groupId, postId])
+  useEffect(() => { loadPost() }, [loadPost])
+
+  if (!isAdmin) return <NotReady />
+
+  async function removePost() {
+    setHeadMenu(false)
+    if (!confirm('이 글을 삭제할까요?')) return
+    try { await deleteBoardPost(postId); navigate(boardPath(groupId), { replace: true }) } catch { /* noop */ }
+  }
+
+  if (gone) return <div className="page"><div className="comment-empty">삭제된 글이에요.</div></div>
+  if (!post) return <div className="page"><div className="spinner" /></div>
 
   return (
     <div className="page sb-post-page">
@@ -377,17 +418,20 @@ export function BoardPost() {
 
       {post.body && <div className="sb-post-body">{post.body}</div>}
 
-      <div className="sb-cmt-section">
-        <div className="sb-cmt-head">댓글 <span className="muted">{commentCount}</span></div>
-        {err && <div className="alert alert-error sb-cmt-err">{err}</div>}
-        {loading ? <div className="spinner sm" /> : flat.length === 0 ? (
-          <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-        ) : (
-          <ul className="sb-cmt-list">{flat.map(renderRow)}</ul>
-        )}
-      </div>
+      <BoardCommentThread groupId={groupId} postId={postId} />
+    </div>
+  )
+}
 
-      {bottomEl ? createPortal(composer, bottomEl) : composer}
+// ============ 댓글 상세 (글 본문 없이 댓글만 + 새로고침, 알림 포커스) ============
+export function BoardComments() {
+  const { groupId, postId } = useParams()
+  const [sp] = useSearchParams()
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <NotReady />
+  return (
+    <div className="page sb-post-page sb-comments-page">
+      <BoardCommentThread groupId={groupId} postId={postId} focusId={sp.get('c')} showRefresh />
     </div>
   )
 }

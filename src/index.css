@@ -1760,17 +1760,24 @@ button.mention-chip:active { opacity: .6; }
   font-size: 15px; line-height: 1.75; color: #26232f; white-space: pre-wrap; word-break: break-word; }
 
 .sb-cmt-section { border-top: 8px solid #f4f2f9; }   /* 본문↔댓글 구분 띠 */
-.sb-cmt-head { padding: 13px var(--pad-x) 4px; font-weight: 700; font-size: .9rem; color: #191722; }
+.sb-comments-page .sb-cmt-section { border-top: none; }   /* 댓글 상세 페이지: 상단 띠 없음 */
+.sb-cmt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 13px var(--pad-x) 4px; font-weight: 700; font-size: .9rem; color: #191722; }
 .sb-cmt-head .muted { color: #a49bc6; }
+.sb-cmt-refresh { border: none; background: none; color: #8b8798; cursor: pointer; padding: 2px; line-height: 0; display: flex; }
+.sb-cmt-refresh:hover { color: #7363e8; }
+.sb-cmt-refresh:disabled { opacity: .6; }
+.sb-spin { animation: sb-rot .7s linear infinite; transform-origin: 50% 50%; }
+@keyframes sb-rot { to { transform: rotate(360deg); } }
 .sb-cmt-err { margin: 6px var(--pad-x); }
 .sb-cmt-list { list-style: none; margin: 0; padding: 0; }
-.sb-cmt-row { padding: 12px var(--pad-x); border-top: 1px solid #ece9f4; }   /* 댓글 사이 실선 */
+.sb-cmt-row { position: relative; padding: 12px var(--pad-x); border-top: 1px solid #ece9f4; }   /* 댓글 사이 실선 */
 .sb-cmt-row:first-child { border-top: none; }
 .sb-cmt-row.reply { padding-left: calc(var(--pad-x) + 22px); }
 .sb-cmt-row.mine { background: #f5f1fe; }
-.sb-cmt-row.highlight { animation: sb-cmt-hl 1.8s ease; }
-@keyframes sb-cmt-hl { 0%, 40% { background: #e5dbfb; } 100% { background: transparent; } }
-.sb-cmt-row.mine.highlight { animation: none; }
+/* 알림/작성 강조: 잠깐 색 올라왔다가 서서히 꺼짐(내 댓글 배경 위에도 자연스럽게) */
+.sb-cmt-row.hl::after { content: ''; position: absolute; inset: 0; background: #ffe6a1; pointer-events: none; animation: sb-cmt-flash 2s ease forwards; }
+@keyframes sb-cmt-flash { 0%, 12% { opacity: .8; } 100% { opacity: 0; } }
 .sb-cmt-meta { display: flex; align-items: center; gap: 8px; }
 .sb-cmt-time { font-size: 11px; color: #a49bc6; }
 .sb-cmt-text { margin: 3px 0 0; font-size: 14px; line-height: 1.6; color: #26232f; white-space: pre-wrap; word-break: break-word; }

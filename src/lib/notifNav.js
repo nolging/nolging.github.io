@@ -20,6 +20,10 @@ export const NOTIF_ICONS = {
   touch_call: '💋',
   ledboard: '📟',
   nametag: '🏷️',
+  board_post: '🤫',
+  board_comment: '💬',
+  board_reply: '↩︎',
+  praise_new: '🌟',
 }
 
 export function timeAgo(iso) {
@@ -41,7 +45,10 @@ const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'casse
 export function notifTarget(n) {
   if (NOTE_TYPES.has(n.type)) return '/notes'
   if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
-  if (n.type === 'praise' && n.group_id) return `/groups/${n.group_id}/praise?mine=1`
+  if ((n.type === 'praise' || n.type === 'praise_new') && n.group_id) return `/groups/${n.group_id}/praise?mine=1`
+  if (n.type === 'board_post' && n.group_id && n.post_id) return `/groups/${n.group_id}/board/${n.post_id}`   // 새 글 → 글 상세
+  if ((n.type === 'board_comment' || n.type === 'board_reply') && n.group_id && n.post_id)
+    return `/groups/${n.group_id}/board/${n.post_id}/comments${n.board_comment_id ? `?c=${n.board_comment_id}` : ''}`   // 댓글/답글 → 댓글 상세 + 포커스
   if (n.type === 'nametag' && n.group_id) return `/groups/${n.group_id}/members`   // 명찰 → 데이트 페이지
   if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
   if (n.task_id && n.group_id) {

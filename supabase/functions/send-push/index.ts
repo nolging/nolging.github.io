@@ -67,8 +67,13 @@ Deno.serve(async (req) => {
       url = '/notes' // 쪽지 유형 → 받은 쪽지함
     } else if (record.type === 'touch_call' && record.group_id) {
       url = `/groups/${record.group_id}/touch` // 우심뽀까 알림 → 우심뽀까 페이지
-    } else if (record.type === 'praise' && record.group_id) {
-      url = `/groups/${record.group_id}/praise?mine=1` // 스티커판 완성 → 내 칭찬 스티커판
+    } else if ((record.type === 'praise' || record.type === 'praise_new') && record.group_id) {
+      url = `/groups/${record.group_id}/praise?mine=1` // 스티커판 완성/도착 → 내 칭찬 스티커판
+    } else if (record.type === 'board_post' && record.group_id && record.post_id) {
+      url = `/groups/${record.group_id}/board/${record.post_id}` // 비밀 게시판 새 글 → 글 상세
+    } else if ((record.type === 'board_comment' || record.type === 'board_reply') && record.group_id && record.post_id) {
+      url = `/groups/${record.group_id}/board/${record.post_id}/comments` // 내 글 댓글 / 내 댓글 답글 → 댓글 상세
+      if (record.board_comment_id) url += `?c=${record.board_comment_id}` // 해당 댓글/답글로 포커스
     } else if (record.type === 'nametag' && record.group_id) {
       url = `/groups/${record.group_id}/members` // 연인이 내 이름 변경 → 데이트 페이지
     } else if (record.type === 'ledboard' && record.group_id) {

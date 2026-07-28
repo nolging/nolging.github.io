@@ -2532,3 +2532,8 @@ create table if not exists public.board_comments (
 alter table public.board_prefixes enable row level security;
 alter table public.board_posts    enable row level security;
 alter table public.board_comments enable row level security;
+-- 알림 딥링크용(비밀 게시판 글/댓글) — notifications 는 board 테이블보다 먼저 정의되므로 여기서 FK 추가
+alter table public.notifications add column if not exists post_id uuid
+  references public.board_posts(id) on delete cascade;
+alter table public.notifications add column if not exists board_comment_id uuid
+  references public.board_comments(id) on delete cascade;

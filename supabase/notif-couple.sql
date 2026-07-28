@@ -12,7 +12,8 @@ insert into public.notif_templates (key, label, title, body, vars, emoji, sort_o
   ('couple_ring_reject', '커플 링 거절',       '{actor} 님이 커플 링을 거절했어요',    '커플 링은 다시 사용할 수 있어요', '{actor} = 거절한 사람 · (알림센터 이모지는 커플 링 도착과 공유)', '💍', 93),
   ('friend_ring',        '우정 링 도착',       '{actor} 님이 우정 링을 보냈어요',      '쪽지함에서 확인하세요 🤝',      '{actor} = 보낸 사람', '🤝', 94),
   ('reminder',           '약속 리마인더',      '[{title}] {when}',                    '준비해 주세요',                '{title} = 항목 제목, {when} = 약속 시각', '⏰', 95),
-  ('praise',             '칭찬 스티커판 완성',  '{actor} 님이 칭찬 스티커판을 완성했어요', '칭찬 스티커에서 소원권을 수령하세요 🎉', '{actor} = 완성한 짝꿍', '🎉', 96)
+  ('praise',             '칭찬 스티커판 완성',  '{actor} 님이 칭찬 스티커판을 완성했어요', '칭찬 스티커에서 소원권을 수령하세요 🎉', '{actor} = 완성한 짝꿍', '🎉', 96),
+  ('praise_new',         '칭찬 스티커 도착',    '{actor} 님이 칭찬 스티커를 붙였어요', '{reason}', '{actor} = 붙인 짝꿍, {reason} = 칭찬 내용', '🌟', 100)
 on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
 
 -- ── 소원권 사용(wish) ──────────────────────────────────────
@@ -229,7 +230,7 @@ end; $$;
 -- ── 칭찬 스티커판 완성(type: gift → praise) ────────────────
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text;
+declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text; v_reason text;
 begin
   if not public.is_couple_group(p_group_id) then raise exception '커플 그룹이 아니에요.'; end if;
   if not public.is_group_member(p_group_id, v_uid) then raise exception '그룹 멤버가 아니에요.'; end if;
@@ -244,20 +245,28 @@ begin
   if v_board.id is null then raise exception '상대가 아직 스티커판을 준비하지 않았어요.'; end if;
   if v_board.completed_at is not null then raise exception '이미 완성된 스티커판이에요.'; end if;
 
+  v_reason := left(btrim(p_reason), 100);
   insert into public.praise_stickers(board_id, group_id, owner_id, slot_index, reason, from_id)
-    values (v_board.id, p_group_id, p_owner_id, p_slot, left(btrim(p_reason), 100), v_uid);
+    values (v_board.id, p_group_id, p_owner_id, p_slot, v_reason, v_uid);
 
+  v_pactor := coalesce(public.notif_member_name(p_group_id, v_uid), '');
   select count(*) into v_count from public.praise_stickers where board_id = v_board.id;
   if v_count >= 20 then
     update public.praise_boards
       set completed_at = now(), group_id = p_group_id, gifter_id = v_uid
       where id = v_board.id;
-    v_pactor := coalesce(public.notif_member_name(p_group_id, v_uid), '');
     select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('praise', jsonb_build_object('actor', v_pactor)) nr;
     insert into public.notifications(user_id, actor_id, type, title, body, group_id)
       values (p_owner_id, v_uid, 'praise',
               coalesce(v_nt_t, v_pactor || ' 님이 칭찬 스티커판을 완성했어요'),
               coalesce(v_nt_b, '칭찬 스티커에서 소원권을 수령하세요 🎉'), p_group_id);
+  else
+    -- 완성 전: 스티커 도착 알림(판 주인에게)
+    select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('praise_new', jsonb_build_object('actor', v_pactor, 'reason', v_reason)) nr;
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+      values (p_owner_id, v_uid, 'praise_new',
+              coalesce(v_nt_t, v_pactor || ' 님이 칭찬 스티커를 붙였어요'),
+              coalesce(nullif(v_nt_b, ''), v_reason), p_group_id);
   end if;
 end;
 $$;

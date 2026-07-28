@@ -149,7 +149,7 @@ grant execute on function public.board_posts(uuid) to authenticated;
 
 create or replace function public.board_create_post(p_group uuid, p_prefix uuid, p_title text, p_body text)
 returns uuid language plpgsql security definer set search_path = public as $$
-declare v_id uuid; v_title text; v_prefix uuid;
+declare v_id uuid; v_title text; v_prefix uuid; v_t text; v_b text;
 begin
   if not public.board_access(p_group, auth.uid()) then raise exception '이 게시판에 글을 쓸 수 없어요.'; end if;
   v_title := btrim(coalesce(p_title, ''));
@@ -163,6 +163,13 @@ begin
   insert into public.board_posts(group_id, author_id, prefix_id, title, body)
     values (p_group, auth.uid(), v_prefix, v_title, coalesce(p_body, ''))
     returning id into v_id;
+  -- 새 글 알림(익명): 그룹 멤버 전원(글쓴이 제외). 상세는 board-notifs.sql 참고.
+  select r.title, r.body into v_t, v_b from public.notif_render('board_post', jsonb_build_object('title', v_title)) r;
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id)
+  select gm.user_id, null, 'board_post',
+         coalesce(v_t, '비밀 게시판에 새 글이 올라왔어요'), coalesce(nullif(v_b, ''), v_title), p_group, v_id
+  from public.group_members gm
+  where gm.group_id = p_group and gm.user_id <> auth.uid();
   return v_id;
 end $$;
 grant execute on function public.board_create_post(uuid, uuid, text, text) to authenticated;
@@ -220,22 +227,40 @@ grant execute on function public.board_comments(uuid) to authenticated;
 create or replace function public.board_add_comment(p_post uuid, p_parent uuid, p_body text)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare v_group uuid; v_id uuid; v_body text; v_parent uuid; v_pparent uuid;
+        v_post_author uuid; v_target_author uuid; v_t text; v_b text;
 begin
-  select group_id into v_group from public.board_posts where id = p_post;
+  select group_id, author_id into v_group, v_post_author from public.board_posts where id = p_post;
   if v_group is null then raise exception '글을 찾을 수 없어요.'; end if;
   if not public.board_access(v_group, auth.uid()) then raise exception '댓글을 쓸 수 없어요.'; end if;
   v_body := btrim(coalesce(p_body, ''));
   if v_body = '' then raise exception '내용을 입력해 주세요.'; end if;
   if char_length(v_body) > 2000 then raise exception '댓글이 너무 길어요.'; end if;
-  -- 답글은 1단계만: 부모가 같은 글의 댓글이어야 하고, 부모가 또 답글이면 그 부모(최상위)에 붙인다
+  -- 답글은 1단계만: 부모가 또 답글이면 그 부모(최상위)에 붙인다. 알림 대상은 실제로 답글 단 원 댓글 작성자.
   if p_parent is not null then
-    select id, parent_id into v_parent, v_pparent from public.board_comments where id = p_parent and post_id = p_post;
-    if v_parent is null then raise exception '원 댓글을 찾을 수 없어요.'; end if;
+    select parent_id, author_id into v_pparent, v_target_author from public.board_comments where id = p_parent and post_id = p_post;
+    if v_target_author is null then raise exception '원 댓글을 찾을 수 없어요.'; end if;
+    v_parent := p_parent;
     if v_pparent is not null then v_parent := v_pparent; end if;
   end if;
   insert into public.board_comments(post_id, group_id, author_id, parent_id, body)
     values (p_post, v_group, auth.uid(), v_parent, v_body)
     returning id into v_id;
+  -- 알림(익명: actor 미노출). 상세는 board-notifs.sql 참고.
+  if p_parent is null then
+    if v_post_author is not null and v_post_author <> auth.uid() then
+      select r.title, r.body into v_t, v_b from public.notif_render('board_comment', jsonb_build_object('text', v_body)) r;
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
+        values (v_post_author, null, 'board_comment',
+                coalesce(v_t, '내 글에 댓글이 달렸어요'), coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+    end if;
+  else
+    if v_target_author is not null and v_target_author <> auth.uid() then
+      select r.title, r.body into v_t, v_b from public.notif_render('board_reply', jsonb_build_object('text', v_body)) r;
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
+        values (v_target_author, null, 'board_reply',
+                coalesce(v_t, '내 댓글에 답글이 달렸어요'), coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+    end if;
+  end if;
   return v_id;
 end $$;
 grant execute on function public.board_add_comment(uuid, uuid, text) to authenticated;
