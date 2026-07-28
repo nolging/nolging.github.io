@@ -227,6 +227,10 @@ export default function Layout() {
   const [acctOpen, setAcctOpen] = useState(false)
   // 비밀 게시판 글쓰기: 상단바 "등록" 이 호출할 제출 핸들러(페이지가 등록)
   const [headerSubmit, setHeaderSubmit] = useState(null)
+  // 비밀 게시판 글 상세: 상단바 우측 ⋮(수정/삭제) 메뉴 — 권한자만 페이지가 등록
+  const [headerPostMenu, setHeaderPostMenu] = useState(null)
+  const [postMenuOpen, setPostMenuOpen] = useState(false)
+  useEffect(() => { setPostMenuOpen(false) }, [location.pathname])
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -480,11 +484,32 @@ export default function Layout() {
       </header>
     )
   } else if (boardPostMatch) {
-    // 비밀 게시판 글 상세: 좌측 뒤로(목록으로), 제목 "비밀 게시판"
+    // 비밀 게시판 글 상세: 좌측 뒤로(목록으로), 제목, (권한 시) 우측 ⋮ → 수정/삭제
+    const hasPostMenu = headerPostMenu?.items?.length > 0
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">비밀 게시판</span>
+        {hasPostMenu && (
+          <div className="task-menu-wrap push-right">
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setPostMenuOpen((o) => !o)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+              </svg>
+            </button>
+            {postMenuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setPostMenuOpen(false)} />
+                <div className="menu-pop" role="menu">
+                  {headerPostMenu.items.map((it, i) => (
+                    <button key={i} type="button" className={it.danger ? 'menu-danger' : ''}
+                      onClick={() => { setPostMenuOpen(false); it.onClick?.() }}>{it.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
     )
   } else if (boardMatch) {
@@ -867,7 +892,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />

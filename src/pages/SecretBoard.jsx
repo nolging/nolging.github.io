@@ -337,19 +337,31 @@ const RefreshIcon = ({ spinning }) => (
     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
   </svg>
 )
+// 세로 점 3개(더보기)
+const DotsIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+  </svg>
+)
+// 작은 연필(댓글쓰기)
+const PencilMini = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+)
 
-// ---- 댓글 스레드(글 상세·댓글 상세 공용). 익명, 대댓글 1단계, 삭제 자리표시자, 하단 고정 입력창 ----
-function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
+// ---- 댓글 상태·동작 공용 훅(글 상세·댓글 상세). 익명, 대댓글 1단계, 삭제 자리표시자 ----
+function useBoardComments(postId, focusId) {
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
-  const [editingId, setEditingId] = useState(null)     // 하단 입력창에서 수정 중인 댓글 id
+  const [editingId, setEditingId] = useState(null)     // 입력창에서 수정 중인 댓글 id
   const [replyParent, setReplyParent] = useState(null) // 답글을 달 부모 댓글
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
   const [flashId, setFlashId] = useState(null)         // 강조(작성/수정/포커스) 대상
-  const [bottomEl, setBottomEl] = useState(null)
   const [err, setErr] = useState('')
   const inputRef = useRef(null)
   const didFocus = useRef(false)
@@ -359,8 +371,6 @@ function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
   }, [postId])
   useEffect(() => { loadComments() }, [loadComments])
 
-  // 하단 고정 입력창을 앱 셸 하단 슬롯에 Portal 로
-  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
   // 입력창 높이 자동 조절
   useEffect(() => {
     const el = inputRef.current
@@ -402,9 +412,9 @@ function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
     return out
   }, [roots, repliesOf])
 
-  async function doRefresh() { setRefreshing(true); setErr(''); await loadComments(); setTimeout(() => setRefreshing(false), 300) }
+  const doRefresh = useCallback(async () => { setRefreshing(true); setErr(''); await loadComments(); setTimeout(() => setRefreshing(false), 300) }, [loadComments])
   async function submit(e) {
-    e.preventDefault()
+    if (e?.preventDefault) e.preventDefault()
     if (!body.trim() || sending) return
     setSending(true); setErr('')
     try {
@@ -413,6 +423,7 @@ function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
       else { targetId = await addBoardComment(postId, replyParent?.id || null, body.trim()); setReplyParent(null) }
       setBody(''); await loadComments()
       setFlashId(targetId || null)
+      inputRef.current?.focus()   // 등록 후에도 입력 유지(키패드 내려가지 않게)
     } catch (e2) { setErr(e2.message) } finally { setSending(false) }
   }
   async function removeComment(id) {
@@ -429,77 +440,103 @@ function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
   function replyTo(c) { setMenuId(null); setEditingId(null); setReplyParent(c); setBody(''); inputRef.current?.focus() }
   function cancelCompose() { setEditingId(null); setReplyParent(null); setBody('') }
 
-  function renderRow({ c, depth }) {
-    if (c.deleted) {
-      return (
-        <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted${flashId === c.id ? ' hl' : ''}`}>
-          <p className="sb-cmt-text sb-deleted">삭제된 댓글입니다.</p>
-        </li>
-      )
-    }
-    const hasMenu = depth === 0 || c.is_mine || c.can_delete
-    return (
-      <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
-        <div className="sb-cmt-meta">
-          <span className="sb-cmt-time">{timeAgo(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
-          {hasMenu && (
-            <div className="comment-menu-wrap">
-              <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-                </svg>
-              </button>
-              {menuId === c.id && (
-                <>
-                  <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                  <div className="menu-pop" role="menu">
-                    {depth === 0 && <button type="button" onClick={() => replyTo(c)}>답글 달기</button>}
-                    {c.is_mine && <button type="button" onClick={() => startEdit(c)}>수정</button>}
-                    {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
-                  </div>
-                </>
+  return {
+    comments, loading, refreshing, commentCount, flat, body, setBody, sending,
+    editingId, replyParent, menuId, setMenuId, flashId, err, inputRef,
+    loadComments, doRefresh, submit, removeComment, startEdit, replyTo, cancelCompose,
+  }
+}
+
+// 댓글 목록(공용). boardTime 형식 시간, ⋮ 메뉴(답글/수정/삭제)
+function CommentList({ h, onReply, onEdit }) {
+  const { flat, loading, menuId, setMenuId, flashId, removeComment } = h
+  if (loading) return <div className="spinner sm" />
+  if (flat.length === 0) return <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
+  return (
+    <ul className="sb-cmt-list">
+      {flat.map(({ c, depth }) => {
+        if (c.deleted) {
+          return (
+            <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''} deleted${flashId === c.id ? ' hl' : ''}`}>
+              <p className="sb-cmt-text sb-deleted">삭제된 댓글입니다.</p>
+            </li>
+          )
+        }
+        const hasMenu = depth === 0 || c.is_mine || c.can_delete
+        return (
+          <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
+            <div className="sb-cmt-meta">
+              <span className="sb-cmt-time">{boardTime(c.created_at)}{c.edited ? ' · 수정됨' : ''}</span>
+              {hasMenu && (
+                <div className="comment-menu-wrap">
+                  <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
+                    <DotsIcon />
+                  </button>
+                  {menuId === c.id && (
+                    <>
+                      <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                      <div className="menu-pop" role="menu">
+                        {depth === 0 && <button type="button" onClick={() => onReply(c)}>답글 달기</button>}
+                        {c.is_mine && <button type="button" onClick={() => onEdit(c)}>수정</button>}
+                        {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-        <p className="sb-cmt-text">{c.body}</p>
-      </li>
-    )
-  }
+            <p className="sb-cmt-text">{c.body}</p>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
-  const composer = (
+// 하단 고정 댓글 입력창(공용). onClose 주면 ✕(닫기) 노출, onFocus/onBlur 로 열림 상태 제어
+function CommentComposer({ h, onClose, onFocus, onBlur }) {
+  const { body, setBody, sending, editingId, replyParent, inputRef, submit, cancelCompose } = h
+  const showTag = editingId || replyParent
+  return (
     <form className="composer" onSubmit={submit}>
-      {(editingId || replyParent) && (
+      {(showTag || onClose) && (
         <div className="composer-tag">
-          <span className="composer-tag-text">{editingId ? '댓글 수정 중' : '답글 작성 중'}</span>
-          <button type="button" className="composer-cancel" onClick={cancelCompose} aria-label="취소" title="취소">✕</button>
+          <span className="composer-tag-text">{editingId ? '댓글 수정 중' : replyParent ? '답글 작성 중' : '댓글 작성'}</span>
+          <button type="button" className="composer-cancel" aria-label="닫기" title="닫기"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { cancelCompose(); onClose?.() }}>✕</button>
         </div>
       )}
       <div className="composer-row">
         <textarea ref={inputRef} className="composer-input" value={body} rows={1} maxLength={2000}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => setBody(e.target.value)} onFocus={onFocus} onBlur={onBlur}
           placeholder={editingId ? '댓글 수정…' : replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
-        <button className="btn btn-primary" disabled={sending || !body.trim()}>{editingId ? '수정' : '등록'}</button>
+        <button className="btn btn-primary" disabled={sending || !body.trim()}
+          onMouseDown={(e) => e.preventDefault()}>{editingId ? '수정' : '등록'}</button>
       </div>
     </form>
   )
+}
 
+// ---- 댓글 상세 페이지 전용 스레드(항상 열린 입력창 + 헤더/새로고침) ----
+function BoardCommentThread({ postId, focusId, showRefresh = false }) {
+  const h = useBoardComments(postId, focusId)
+  const [bottomEl, setBottomEl] = useState(null)
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+
+  const composer = <CommentComposer h={h} />
   return (
     <>
       <div className="sb-cmt-section">
         <div className="sb-cmt-head">
-          <span>댓글 <span className="muted">{commentCount}</span></span>
+          <span>댓글 <span className="muted">{h.commentCount}</span></span>
           {showRefresh && (
-            <button type="button" className="sb-cmt-refresh" onClick={doRefresh} disabled={refreshing}
-              aria-label="새로고침" title="새로고침"><RefreshIcon spinning={refreshing} /></button>
+            <button type="button" className="sb-cmt-refresh" onClick={h.doRefresh} disabled={h.refreshing}
+              aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
           )}
         </div>
-        {err && <div className="alert alert-error sb-cmt-err">{err}</div>}
-        {loading ? <div className="spinner sm" /> : flat.length === 0 ? (
-          <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
-        ) : (
-          <ul className="sb-cmt-list">{flat.map(renderRow)}</ul>
-        )}
+        {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
+        <CommentList h={h} onReply={h.replyTo} onEdit={h.startEdit} />
       </div>
       {bottomEl ? createPortal(composer, bottomEl) : composer}
     </>
@@ -507,80 +544,151 @@ function BoardCommentThread({ groupId, postId, focusId, showRefresh = false }) {
 }
 
 // ============ 글 상세 + 댓글 (페이지) ============
+// 카페형: 제목/작성시간+댓글수, 본문, 댓글, 댓글쓰기, 이전·다음 글, 하단 바[댓글쓰기·댓글 N·새로고침].
+// 수정/삭제 ⋮ 는 상단바(권한자만). 하단 바 대신 댓글쓰기 누르면 입력창(키패드) 노출.
 export function BoardPost() {
   const { groupId, postId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const { isAdmin } = useAuth()
+  const { setHeaderPostMenu, setRefreshHandler } = useOutletContext()
 
+  const h = useBoardComments(postId, null)
+  const [posts, setPosts] = useState(location.state?.post ? [location.state.post] : [])
   const [post, setPost] = useState(location.state?.post || null)
   const [gone, setGone] = useState(false)
-  const [headMenu, setHeadMenu] = useState(false)
+  const [bottomEl, setBottomEl] = useState(null)
+  const [composing, setComposing] = useState(false)
+  const closeTimer = useRef(null)
+  const latest = useRef({})
+  latest.current = { body: h.body, editingId: h.editingId, replyParent: h.replyParent }
 
   const loadPost = useCallback(async () => {
     try {
-      const fresh = (await listBoardPosts(groupId)).find((x) => x.id === postId)
+      const list = await listBoardPosts(groupId)
+      setPosts(list)
+      const fresh = list.find((x) => x.id === postId)
       if (fresh) setPost(fresh); else setGone(true)
     } catch { /* 기존 값 유지 */ }
   }, [groupId, postId])
   useEffect(() => { loadPost() }, [loadPost])
 
-  if (!isAdmin) return <NotReady />
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
+  // 컴포저가 열리면 입력창 포커스(키패드 올림)
+  useEffect(() => { if (composing) h.inputRef.current?.focus() }, [composing]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function removePost() {
-    setHeadMenu(false)
+  // 당겨서 새로고침 = 글 + 댓글 다시 불러오기
+  const refreshAll = useCallback(async () => { await Promise.all([loadPost(), h.loadComments()]) }, [loadPost, h.loadComments])
+  useEffect(() => {
+    setRefreshHandler(() => refreshAll)
+    return () => setRefreshHandler(() => null)
+  }, [setRefreshHandler, refreshAll])
+
+  // 삭제 핸들러(상단바 메뉴가 참조) — 최신 유지
+  const removePost = useCallback(async () => {
     if (!confirm('이 글을 삭제할까요?')) return
     try { await deleteBoardPost(postId); navigate(boardPath(groupId), { replace: true }) } catch { /* noop */ }
-  }
+  }, [postId, groupId, navigate])
 
+  // 수정/삭제 ⋮ 를 상단바에 등록(권한자만)
+  useEffect(() => {
+    if (post && (post.is_mine || post.can_delete)) {
+      const items = []
+      if (post.is_mine) items.push({ label: '수정', onClick: () => navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) })
+      if (post.can_delete) items.push({ label: '삭제', danger: true, onClick: removePost })
+      setHeaderPostMenu({ items })
+    } else setHeaderPostMenu(null)
+    return () => setHeaderPostMenu(null)
+  }, [post, groupId, navigate, removePost, setHeaderPostMenu])
+
+  if (!isAdmin) return <NotReady />
   if (gone) return <div className="page"><div className="comment-empty">삭제된 글이에요.</div></div>
   if (!post) return <div className="page"><div className="spinner" /></div>
 
+  const idx = posts.findIndex((p) => p.id === postId)
+  const newer = idx > 0 ? posts[idx - 1] : null   // 목록은 최신순 → 앞쪽이 새 글
+  const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null
+  const goPost = (p) => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })
+
+  const openComposer = () => setComposing(true)
+  const closeComposer = () => { h.cancelCompose(); setComposing(false) }
+  const onComposerFocus = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
+  const onComposerBlur = () => {
+    closeTimer.current = setTimeout(() => {
+      const s = latest.current
+      if (!s.body.trim() && !s.editingId && !s.replyParent) setComposing(false)
+    }, 250)
+  }
+  const handleReply = (c) => { h.replyTo(c); setComposing(true) }
+  const handleEdit = (c) => { h.startEdit(c); setComposing(true) }
+
+  const navRow = (p, label) => (
+    <button type="button" className="sb-navrow" onClick={() => goPost(p)}>
+      <span className="sb-navlabel">{label}</span>
+      <span className="sb-navtitle">
+        {p.prefix_label && <span className="sb-navprefix">[{p.prefix_label}]</span>}{p.title}
+      </span>
+      {p.comment_count > 0 && <span className="sb-navcc">{p.comment_count}</span>}
+    </button>
+  )
+
+  const bottomBar = (
+    <nav className="sb-detail-bar">
+      <button type="button" className="sb-detail-btn" onClick={openComposer}><PencilMini /><span>댓글 쓰기</span></button>
+      <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}/comments`))}>
+        <span>댓글 {h.commentCount}</span>
+      </button>
+      <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={h.doRefresh} disabled={h.refreshing}
+        aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
+    </nav>
+  )
+  const composer = <CommentComposer h={h} onClose={closeComposer} onFocus={onComposerFocus} onBlur={onComposerBlur} />
+
   return (
-    <div className="page sb-post-page">
+    <div className="page sb-post-page sb-detail">
       <div className="sb-post-head">
         <h2 className="sb-post-title">
           {post.prefix_label && <span className="sb-post-prefix">[{post.prefix_label}]</span>}
           {post.title}
         </h2>
-        {(post.is_mine || post.can_delete) && (
-          <div className="task-menu-wrap">
-            <button className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setHeadMenu((v) => !v)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
-              </svg>
-            </button>
-            {headMenu && (
-              <>
-                <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
-                <div className="menu-pop" role="menu">
-                  {post.is_mine && <button type="button" onClick={() => { setHeadMenu(false); navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) }}>수정</button>}
-                  {post.can_delete && <button type="button" className="menu-danger" onClick={removePost}>삭제</button>}
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
-      <div className="sb-post-meta">{timeAgo(post.created_at)}{post.edited ? ' · 수정됨' : ''}</div>
+      <div className="sb-post-meta">
+        <span className="sb-post-time">{boardTime(post.created_at)}{post.edited ? ' · 수정됨' : ''}</span>
+        {h.commentCount > 0 && <span className="sb-post-cc">{h.commentCount}</span>}
+      </div>
 
       {post.body && <div className="sb-post-body">{post.body}</div>}
 
-      <BoardCommentThread groupId={groupId} postId={postId} />
+      <div className="sb-cmt-section">
+        <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
+        {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
+        <CommentList h={h} onReply={handleReply} onEdit={handleEdit} />
+      </div>
+
+      <button type="button" className="sb-write-pill" onClick={openComposer}><PencilMini />댓글 쓰기</button>
+
+      {(newer || older) && (
+        <div className="sb-navposts">
+          {newer && navRow(newer, '다음 글')}
+          {older && navRow(older, '이전 글')}
+        </div>
+      )}
+
+      {bottomEl && createPortal(composing ? composer : bottomBar, bottomEl)}
     </div>
   )
 }
 
 // ============ 댓글 상세 (글 본문 없이 댓글만 + 새로고침, 알림 포커스) ============
 export function BoardComments() {
-  const { groupId, postId } = useParams()
+  const { postId } = useParams()
   const [sp] = useSearchParams()
   const { isAdmin } = useAuth()
   if (!isAdmin) return <NotReady />
   return (
     <div className="page sb-post-page sb-comments-page">
-      <BoardCommentThread groupId={groupId} postId={postId} focusId={sp.get('c')} showRefresh />
+      <BoardCommentThread postId={postId} focusId={sp.get('c')} showRefresh />
     </div>
   )
 }
