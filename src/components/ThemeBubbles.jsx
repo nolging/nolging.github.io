@@ -16,6 +16,8 @@ const BUBBLES = [
 ]
 
 const DASHES = 9   // 터질 때 원형으로 배치되는 짧은 점선 개수
+// 점선도 홀로그램처럼 파스텔 여러 색을 돌려 씀
+const DASH_COLORS = ['#ff7eb9', '#7ec8ff', '#5fe0ad', '#ffcf4d', '#b78cff', '#57dbe6']
 
 export default function ThemeBubbles({ durScale = 1, className = '' }) {
   return (
@@ -26,11 +28,15 @@ export default function ThemeBubbles({ durScale = 1, className = '' }) {
             left: `${b.l}%`, width: b.s, height: b.s,
             '--dur': `${b.dur * durScale}s`, '--delay': `${b.d * durScale}s`,
             '--dx': `${b.dx}px`, '--ry': `${b.ry}%`, '--pr': `${b.s / 2}px`,
+            // 점선 굵기·길이를 방울 크기에 비례(작은 방울=가늘게, 큰 방울=조금 굵게)
+            '--dw': `${Math.max(0.8, b.s * 0.05).toFixed(1)}px`,
+            '--dh': `${Math.max(2, b.s * 0.16).toFixed(1)}px`,
           }}>
           <span className="tb-body" />
           <span className="tb-pop">
             {Array.from({ length: DASHES }).map((_, j) => (
-              <i key={j} className="tb-dash" style={{ '--a': `${j * (360 / DASHES)}deg` }} />
+              <i key={j} className="tb-dash"
+                style={{ '--a': `${j * (360 / DASHES)}deg`, '--dc': DASH_COLORS[j % DASH_COLORS.length] }} />
             ))}
           </span>
         </span>
