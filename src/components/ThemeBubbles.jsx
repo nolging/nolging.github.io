@@ -24,7 +24,10 @@ export default function ThemeBubbles({ durScale = 1, className = '' }) {
             left: `${b.l}%`, width: b.s, height: b.s,
             '--dur': `${b.dur * durScale}s`, '--delay': `${b.d * durScale}s`,
             '--dx': `${b.dx}px`, '--ry': `${b.ry}%`,
-          }} />
+          }}>
+          <span className="tb-body" />
+          <span className="tb-ring" />
+        </span>
       ))}
     </div>
   )

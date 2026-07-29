@@ -2719,35 +2719,51 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .app-shell.gd-bg-bubble .content { background: transparent; }
 .theme-bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
 .theme-bubbles.gd-bubbles-over { position: fixed; inset: 0; z-index: 15; }
+/* 버블 = 이동/위치만 담당(투명도 애니메이션 없음 → 자식 body/ring 이 각자 투명도 제어).
+   부모에 opacity 를 주면 자식(ring)까지 함께 사라져서 '팡' 이 안 됨 → 분리한 것. */
 .theme-bubble {
-  position: absolute; bottom: -14%; border-radius: 50%; opacity: 0;
+  position: absolute; bottom: -12%;
+  animation: bubble-float var(--dur, 6s) var(--delay, 0s) infinite cubic-bezier(.4, .05, .55, .95);
+  will-change: bottom, transform;
+}
+/* 비눗방울 본체 — 팝 순간 순식간에(3%만에) 사라짐 */
+.tb-body {
+  position: absolute; inset: 0; border-radius: 50%; opacity: 0;
   background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 6%, rgba(255,255,255,.4) 16%, rgba(150,205,235,.26) 46%, rgba(196,176,246,.22) 100%);
   box-shadow: inset 0 0 6px rgba(255,255,255,.7), 0 1px 3px rgba(120,140,200,.16);
   border: 1px solid rgba(255,255,255,.55);
-  animation: bubble-float var(--dur, 6s) var(--delay, 0s) infinite cubic-bezier(.4, .05, .55, .95);
-  will-change: bottom, opacity, transform;
+  animation: bubble-body var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
-/* 톡! 터지는 순간 퍼지는 얇은 링 (부모와 같은 --dur/--delay 로 타이밍 동기화) */
-.theme-bubble::after {
-  content: ''; position: absolute; inset: -1px; border-radius: 50%; opacity: 0;
-  border: 1.5px solid rgba(255,255,255,.8);
+/* 팝 순간 본체와 '동시에' 확 퍼지는 얇은 링 */
+.tb-ring {
+  position: absolute; inset: -1px; border-radius: 50%; opacity: 0;
+  border: 1.5px solid rgba(255,255,255,.85);
   animation: bubble-pop var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
-/* 가로(--dx)로 흐르며 살짝 대각선 위로 떠오르다 끝에서 부풀며 톡! 터짐 */
+/* 가로(--dx)로 흐르며 살짝 대각선 위로 떠오르다 도착 → 살짝 부풀고 팝 */
 @keyframes bubble-float {
-  0%   { bottom: -12%; opacity: 0; transform: translateX(0) scale(.5); }
-  10%  { opacity: .9; transform: translateX(calc(var(--dx) * .16)) scale(.9); }
-  50%  { opacity: .94; transform: translateX(calc(var(--dx) * .62)) scale(1); }
-  82%  { bottom: calc(var(--ry, 60%) - 10%); opacity: .95; transform: translateX(calc(var(--dx) * .96)) scale(1.05); }
-  92%  { opacity: 1;  transform: translateX(var(--dx)) scale(1.15); }   /* 부풀어 오름 */
-  100% { bottom: var(--ry, 60%); opacity: 0; transform: translateX(calc(var(--dx) * 1.05)) scale(1.5); } /* 팡! */
+  0%   { bottom: -12%; transform: translateX(0) scale(.5); }
+  10%  { transform: translateX(calc(var(--dx) * .16)) scale(.92); }
+  55%  { transform: translateX(calc(var(--dx) * .64)) scale(1); }
+  88%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1); }
+  90%  { transform: translateX(var(--dx)) scale(1.1); }             /* 팝 직전 아주 살짝 부풀기 */
+  92%, 100% { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.12); }
+}
+@keyframes bubble-body {
+  0%   { opacity: 0; }
+  10%  { opacity: .9; }
+  86%  { opacity: .96; }
+  90%  { opacity: 1; }     /* 팝 직전까지 또렷 */
+  93%  { opacity: 0; }     /* 펑! 3%만에 사라짐 */
+  100% { opacity: 0; }
 }
 @keyframes bubble-pop {
-  0%, 86% { opacity: 0; transform: scale(.55); }
-  91%     { opacity: .85; transform: scale(1.05); }
-  100%    { opacity: 0; transform: scale(2); }   /* 링이 확 퍼지며 사라짐 */
+  0%, 88% { opacity: 0; transform: scale(.5); }
+  91%     { opacity: .95; transform: scale(1.25); }   /* 본체 사라지는 순간 링이 확 퍼짐 */
+  97%     { opacity: 0; transform: scale(2.4); }
+  100%    { opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .theme-bubble, .theme-bubble::after { animation: none; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-ring { animation: none; opacity: 0; } }
 
 /* 상점/인벤토리 썸네일용 테마 효과 미리보기 (하트와 동일 패턴) */
 .store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
@@ -2774,19 +2790,29 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .group-tile.tile-fw .tile-name { color: #f4f1fa; }
 .group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
 .theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }
-.theme-fw-spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffd75e;
-  box-shadow: 0 0 6px 2px rgba(255,215,94,.7); opacity: 0;
-  animation: fw-spark 3.2s ease-out infinite; }
-.theme-fw-spark.s1 { top: 34%; left: 30%; }
-.theme-fw-spark.s2 { top: 26%; left: 66%; background: #ff5c8a; box-shadow: 0 0 6px 2px rgba(255,92,138,.7); animation-delay: 1.4s; }
-@keyframes fw-spark {
-  0%   { opacity: 0; transform: scale(.2); box-shadow: 0 0 0 0 currentColor; }
-  16%  { opacity: 1; transform: scale(1); }
-  40%  { opacity: .9; box-shadow: 0 0 10px 5px rgba(255,215,94,.35); }
-  60%  { opacity: 0; transform: scale(1.4); }
-  100% { opacity: 0; }
+/* 카드용 폭죽 터짐: 중심에서 입자가 방사형으로 퍼졌다 사라지는 CSS 폭죽 */
+.fw-burst { position: absolute; width: 0; height: 0; }
+.fw-flash { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 8px 3px currentColor; opacity: 0; }
+.fw-p { position: absolute; left: 0; top: 0; width: 2.5px; height: 2.5px; border-radius: 50%;
+  background: currentColor; box-shadow: 0 0 3px currentColor; opacity: 0;
+  transform: rotate(var(--a)) translateX(0); }
+.fw-flash { animation: fw-flash 2.6s ease-out infinite; }
+.fw-p { animation: fw-p 2.6s ease-out infinite; }
+@keyframes fw-flash {
+  0%, 2%  { opacity: 0; transform: scale(.4); }
+  6%      { opacity: 1; transform: scale(1.1); }   /* 팡! 중심 섬광 */
+  16%     { opacity: 0; transform: scale(.6); }
+  100%    { opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .theme-fw-spark { animation: none; opacity: 0; } }
+@keyframes fw-p {
+  0%, 4%  { opacity: 0; transform: rotate(var(--a)) translateX(2px) scale(.6); }
+  10%     { opacity: 1; transform: rotate(var(--a)) translateX(calc(var(--r) * .5)) scale(1); }
+  55%     { opacity: 1; transform: rotate(var(--a)) translateX(var(--r)) scale(1); }
+  80%     { opacity: 0; transform: rotate(var(--a)) translateX(calc(var(--r) * 1.12)) scale(.7); } /* 중력처럼 살짝 더 퍼지며 소멸 */
+  100%    { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .fw-p, .fw-flash { animation: none; opacity: 0; } }
 
 /* ===== 위시 작성/수정 · 약속 잡기/수정 (시안) ===== */
 /* 유형 칩 (선택 시에만 이모지 표시) */
