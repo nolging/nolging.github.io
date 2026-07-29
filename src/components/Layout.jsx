@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
-import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard } from '../lib/api'
 import Brand from './Brand'
 import PawIcon from './PawIcon'
 import PushPrompt from './PushPrompt'
@@ -258,6 +258,17 @@ export default function Layout() {
   const [commentMineOnly, setCommentMineOnly] = useState(false)
   const resetCommentSearch = () => { setCommentSearchOpen(false); setCommentSearchQuery(''); setCommentSearchTerm(''); setCommentMineOnly(false) }
   useEffect(() => { resetCommentSearch(); setHeaderCommentCount(null) }, [location.pathname])
+  // 비밀 게시판 상단바 명칭: 그룹이 개설 시 지정한 이름(없으면 '비밀 게시판')
+  const [boardTitle, setBoardTitle] = useState(null)
+  const boardGroupId = boardMatch?.params.groupId || boardPostMatch?.params.groupId
+    || boardCommentsMatch?.params.groupId || boardSearchMatch?.params.groupId
+    || boardNewMatch?.params.groupId || boardEditMatch?.params.groupId || null
+  useEffect(() => {
+    if (!boardGroupId) { setBoardTitle(null); return }
+    let on = true
+    getGroupBoard(boardGroupId).then((n) => { if (on) setBoardTitle(n || null) }).catch(() => {})
+    return () => { on = false }
+  }, [boardGroupId])
   // 페이지가 상단바 제목을 바꿀 수 있게 (예: 커플 그룹 멤버 목록 → "데이트")
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
@@ -533,7 +544,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">비밀 게시판</span>
+        <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {hasPostMenu && (
           <div className="task-menu-wrap push-right">
             <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setPostMenuOpen((o) => !o)}>
@@ -561,7 +572,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">비밀 게시판</span>
+        <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {headerGear && (
           <button type="button" onClick={() => headerGear()} className="btn btn-ghost btn-sm icon-btn push-right"
             aria-label="말머리 관리" title="말머리 관리"><GearIcon /></button>
