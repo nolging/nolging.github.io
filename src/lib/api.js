@@ -837,6 +837,11 @@ export async function openWaterNote(noteId) {
 }
 
 // ---- 상점 ----------------------------------------------------
+// 컬럼 미배포 감지: Postgres(42703) + PostgREST 스키마 캐시(PGRST204) + 메시지 매칭
+const isMissingColumn = (err) => !!err && (
+  err.code === '42703' || err.code === 'PGRST204' ||
+  /schema cache|could not find .* column|column .* does not exist/i.test(err.message || '')
+)
 // 판매 중인 아이템 목록. store_items 미배포(42P01) 시 빈 배열.
 export async function listStoreItems() {
   const { data, error } = await supabase
@@ -846,7 +851,7 @@ export async function listStoreItems() {
     .order('sort_order', { ascending: true })
   if (error) {
     // admin_only 컬럼 미배포(42703) 시 → premium/tier 는 유지하고 admin_only 만 빼고 재조회
-    if (error.code === '42703') {
+    if (isMissingColumn(error)) {
       const { data: d1, error: e1 } = await supabase
         .from('store_items')
         .select('id, name, price, emoji, description, gift_only, premium, tier, sort_order')
@@ -859,7 +864,7 @@ export async function listStoreItems() {
         }))
       }
       // premium/tier 까지 미배포 시 최소 컬럼으로 재조회
-      if (e1.code === '42703') {
+      if (isMissingColumn(e1)) {
         const { data: d2, error: e2 } = await supabase
           .from('store_items')
           .select('id, name, price, emoji, description, gift_only')
@@ -1517,7 +1522,7 @@ export async function adminListQuestDefs() {
   if (error) {
     if (error.code === '42P01') return []
     // emoji 컬럼 미배포(42703) 시 → emoji 없이 재조회
-    if (error.code === '42703') {
+    if (isMissingColumn(error)) {
       const { data: d1, error: e1 } = await supabase.from('quest_defs')
         .select('id, title, body, reward, grade, active, sort_order').order('sort_order', { ascending: true })
       if (e1) throw e1
@@ -1754,7 +1759,7 @@ export async function adminGrantCoin({ userId, amount, reason }) {
 export async function adminListStoreItems() {
   const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only, image_svg, image_bg'
   let res = await supabase.from('store_items').select(cols).order('sort_order', { ascending: true })
-  if (res.error?.code === '42703') {
+  if (isMissingColumn(res.error)) {
     // premium/tier/admin_only/image_* 미배포 환경 폴백
     res = await supabase.from('store_items')
       .select('id, name, price, emoji, description, gift_only, sort_order, is_active')
@@ -1789,7 +1794,7 @@ export async function adminUpsertStoreItem(item) {
   if (!row.id) throw new Error('아이템 ID를 입력해 주세요.')
   if (!row.name) throw new Error('아이템 이름을 입력해 주세요.')
   let res = await supabase.from('store_items').upsert(row).select().single()
-  if (res.error?.code === '42703') {
+  if (isMissingColumn(res.error)) {
     // premium/tier/admin_only/image_* 미배포 환경 폴백
     const { premium, tier, admin_only, image_svg, image_bg, ...rest } = row // eslint-disable-line no-unused-vars
     res = await supabase.from('store_items').upsert(rest).select().single()

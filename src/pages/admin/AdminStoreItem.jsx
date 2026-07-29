@@ -5,6 +5,9 @@ import { ITEM_KINDS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
 import { cleanSvg, imgBgOf } from '../../lib/storeMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 
+// 배경색 팔레트(파스텔 + 프리미엄 다크 + 투명)
+const BG_PRESETS = ['#f3f2f7', '#fde8ee', '#e6eefd', '#fff0d6', '#eaf4ec', '#fbf1d3', '#eeebfe', '#e3f1fb', '#fdeee6', '#f4ece0', '#fdeceb', '#332c52', 'transparent']
+
 // 상점 아이템 추가(/admin/store/new) + 상세·수정(/admin/store/:id)
 export default function AdminStoreItem() {
   const { id } = useParams()
@@ -122,6 +125,14 @@ export default function AdminStoreItem() {
               <input className="si-bg-text" value={form.imageBg} onChange={setField('imageBg')}
                 placeholder="#f3f2f7 / transparent / gradient" autoCapitalize="none" />
               {form.imageBg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageBg: '' }))}>초기화</button>}
+            </div>
+            <div className="si-bg-palette">
+              {BG_PRESETS.map((c) => (
+                <button type="button" key={c} title={c}
+                  className={`si-bg-swatch${c === 'transparent' ? ' none' : ''}${form.imageBg === c ? ' on' : ''}`}
+                  style={c === 'transparent' ? undefined : { background: c }}
+                  onClick={() => setForm((f) => ({ ...f, imageBg: c }))} />
+              ))}
             </div>
           </div>
 

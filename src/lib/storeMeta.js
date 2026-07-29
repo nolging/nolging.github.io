@@ -18,6 +18,7 @@ const IMG_BG = {
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
   'sticker-grape': '#332c52', 'sticker-apple': '#332c52',
   'name-tag': '#332c52', 'time-machine': '#332c52',
+  'secret-board': '#f4ece0', 'megaphone': '#fdeceb',
   'deco-sprout': '#eaf6ee', 'deco-jaguar': '#ecebf0', 'deco-wolf': '#eceef3', 'deco-blush': '#fdeef2',
   'deco-anger': '#fdecec', 'deco-pixel-shades': '#ecedf1', 'deco-alien-shades': '#e8f6ec',
   'deco-bandage': '#fdeee6', 'deco-gum': '#fdeaf1',
