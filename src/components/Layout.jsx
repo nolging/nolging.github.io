@@ -855,10 +855,9 @@ export default function Layout() {
       </header>
     )
   } else if (adminSection) {
-    // 관리자 섹션: 좌측 뒤로(마이 페이지), 상단바에 회원/상점/퀘스트 탭 메뉴
+    // 관리자 섹션(탭 화면): 하단 탭바로 이동 가능하므로 뒤로 버튼 없이 탭만
     topbar = (
       <header className="topbar admin-topbar">
-        <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
         <nav className="admin-tabs">
           <NavLink to="/admin/members">회원 관리</NavLink>
           <NavLink to="/admin/store">상점 관리</NavLink>
