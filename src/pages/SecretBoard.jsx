@@ -138,8 +138,8 @@ export default function SecretBoard() {
         ) : (
           <ul className="sb-rows">
             {shown.map((p) => (
-              <li key={p.id}>
-                <button type="button" className="sb-row"
+              <li key={p.id} className={`sb-row${p.is_mine ? ' mine' : ''}`}>
+                <button type="button" className="sb-row-main-btn"
                   onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
                   <span className="sb-row-main">
                     <span className="sb-row-title">
@@ -151,14 +151,13 @@ export default function SecretBoard() {
                       {isNewPost(p.created_at) && <span className="sb-n">N</span>}
                     </span>
                   </span>
-                  {p.comment_count > 0 && (
-                    <span className="sb-row-cc" role="button" tabIndex={0} aria-label="댓글 보기"
-                      onClick={(e) => { e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) }}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); navigate(boardPath(groupId, `/${p.id}/comments`)) } }}>
-                      {p.comment_count}
-                    </span>
-                  )}
                 </button>
+                {p.comment_count > 0 && (
+                  <button type="button" className="sb-row-cc" aria-label="댓글 보기"
+                    onClick={() => navigate(boardPath(groupId, `/${p.id}/comments`))}>
+                    {p.comment_count}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -544,10 +543,12 @@ function useBoardComments(postId, focusId) {
     const t = setTimeout(() => setFlashId(null), 2000)
     return () => clearTimeout(t)
   }, [flashId])
-  // 알림에서 넘어온 포커스 대상: 로딩 후 한 번 강조
+  // 알림/검색에서 넘어온 포커스 대상: 로딩 후 한 번 화면 안으로 스크롤(강조 없음)
   useEffect(() => {
     if (!focusId || loading || didFocus.current) return
-    didFocus.current = true; setFlashId(focusId)
+    didFocus.current = true
+    const t = setTimeout(() => document.querySelector(`[data-cid="${focusId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
+    return () => clearTimeout(t)
   }, [focusId, loading])
 
   // 최상위 댓글 + 딸린 답글(답글의 답글까지 한 단계로 평면화)

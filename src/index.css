@@ -1740,18 +1740,21 @@ button.mention-chip:active { opacity: .6; }
 /* 글 목록: 전체폭, 글 사이 실선, 제목만 표시 */
 .sb-prefix { color: #7363e8; font-weight: 800; font-size: 14px; flex-shrink: 0; }
 .sb-rows { list-style: none; margin: 0; padding: 0; }
-.sb-row { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
-  border: none; border-bottom: 1px solid #ececf1; background: none; cursor: pointer; padding: 15px var(--pad-x); }
-.sb-row:active { background: #f7f6fb; }
+/* 행: li 컨테이너(내 글이면 연보라) + 본문 버튼 + 댓글수 버튼(독립 눌림) */
+.sb-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ececf1; padding-right: var(--pad-x); }
+.sb-row.mine { background: #f5f1fe; }
+.sb-row-main-btn { flex: 1; min-width: 0; display: flex; align-items: center; text-align: left;
+  border: none; background: none; cursor: pointer; padding: 15px 0 15px var(--pad-x); }
+.sb-row-main-btn:active { background: rgba(115, 99, 232, .06); }
 .sb-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
 .sb-row-title { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
 .sb-row-t { font-size: 16px; font-weight: 600; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-row-meta { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #a49bc6; }
 .sb-n { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px;
   padding: 0 3px; box-sizing: border-box; border-radius: 50%; background: #f0384a; color: #fff; font-size: 10px; font-weight: 800; }
-.sb-row-cc { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e3e2e8;
+.sb-row-cc { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e3e2e8; background: none;
   display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #6a6875; cursor: pointer; }
-.sb-row-cc:active { background: #f2f0fa; }
+.sb-row-cc:active { background: #e6e1f5; }   /* 누를 때 해당 원형만 살짝 진하게 */
 
 /* 하단 탭바 (검색하기 · 글쓰기) — 아이콘 없이 텍스트만, 하단 여백 추가 */
 .sb-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex;
