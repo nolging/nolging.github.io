@@ -191,11 +191,16 @@ export function BoardCompose() {
   const [prefixes, setPrefixes] = useState([])
   const [prefixId, setPrefixId] = useState('')
   const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  const [body, setBody] = useState('')       // 초기 시드(HTML)
   const [loaded, setLoaded] = useState(!editing)   // 새 글은 즉시 편집 가능
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [pfOpen, setPfOpen] = useState(false)
+  const [empty, setEmpty] = useState(true)
+  const editorRef = useRef(null)
+  const seededRef = useRef(false)
+  const [bottomEl, setBottomEl] = useState(null)
+  useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
   useEffect(() => {
     let on = true
@@ -209,16 +214,28 @@ export function BoardCompose() {
     return () => { on = false }
   }, [groupId, postId, editing, location.state])
 
+  // 에디터에 초기 본문 주입(HTML 은 새니타이즈, 옛 평문은 줄바꿈 보존)
+  useEffect(() => {
+    if (!loaded || !editorRef.current || seededRef.current) return
+    seededRef.current = true
+    const html = isHtml(body) ? sanitizeHtml(body) : escapeHtml(body).replace(/\n/g, '<br>')
+    editorRef.current.innerHTML = html
+    setEmpty(!editorRef.current.textContent.trim())
+  }, [loaded, body])
+
   async function submit() {
     if (busy) return
     if (!title.trim()) { setErr('제목을 입력해 주세요.'); return }
+    const el = editorRef.current
+    const hasText = el ? !!el.textContent.trim() : false
+    const bodyHtml = hasText ? sanitizeHtml(el.innerHTML) : ''
     setBusy(true); setErr('')
     try {
       if (editing) {
-        await updateBoardPost(postId, prefixId, title.trim(), body)
+        await updateBoardPost(postId, prefixId, title.trim(), bodyHtml)
         navigate(boardPath(groupId, `/${postId}`), { replace: true })
       } else {
-        const id = await createBoardPost(groupId, prefixId, title.trim(), body)
+        const id = await createBoardPost(groupId, prefixId, title.trim(), bodyHtml)
         navigate(boardPath(groupId, `/${id}`), { replace: true })
       }
     } catch (e) { setErr(e.message); setBusy(false) }
@@ -262,8 +279,20 @@ export function BoardCompose() {
           <input className="sb-title-input" placeholder="제목" value={title} maxLength={100}
             onChange={(e) => setTitle(e.target.value)} />
           <div className="sb-compose-div" />
-          <textarea className="sb-body-area" placeholder="내용을 입력하세요" value={body} maxLength={5000}
-            onChange={(e) => setBody(e.target.value)} />
+          <div className="sb-editor-wrap">
+            {empty && <div className="sb-editor-ph">내용을 입력하세요</div>}
+            <div className="sb-body-area sb-editor sb-rich" contentEditable suppressContentEditableWarning
+              ref={editorRef} onInput={() => setEmpty(!editorRef.current.textContent.trim())}
+              onPaste={(e) => {
+                e.preventDefault()
+                const html = e.clipboardData?.getData('text/html')
+                const text = e.clipboardData?.getData('text/plain') || ''
+                const clean = html ? sanitizeHtml(html) : escapeHtml(text).replace(/\n/g, '<br>')
+                try { document.execCommand('insertHTML', false, clean) } catch { /* noop */ }
+                setEmpty(!editorRef.current.textContent.trim())
+              }} />
+          </div>
+          {bottomEl && createPortal(<RichToolbar editorRef={editorRef} />, bottomEl)}
         </>
       )}
     </div>
@@ -338,7 +367,7 @@ export function BoardSearch() {
     if (!kw) return []
     const inScope = (p) => {
       const t = (p.title || '').toLowerCase().includes(kw)
-      const b = (p.body || '').toLowerCase().includes(kw)
+      const b = stripHtml(p.body).toLowerCase().includes(kw)
       return scope === 'title' ? t : scope === 'body' ? b : (t || b)
     }
     const arr = posts.filter(inScope)
@@ -403,7 +432,7 @@ export function BoardSearch() {
                           {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
                           {boldText(p.title, q)}
                         </span>
-                        {p.body && <span className="sb-srow-body">{boldText(p.body, q)}</span>}
+                        {stripHtml(p.body) && <span className="sb-srow-body">{boldText(stripHtml(p.body), q)}</span>}
                         <span className="sb-srow-time">{boardTime(p.created_at)}</span>
                       </span>
                       {p.comment_count > 0 && (
@@ -504,6 +533,105 @@ function markMatches(text, term, render) {
 // 노란 하이라이팅(댓글 상세) / 볼드(검색 결과)
 const highlightText = (text, term) => markMatches(text, term, (s, k) => <mark key={k} className="sb-hl">{s}</mark>)
 const boldText = (text, term) => markMatches(text, term, (s, k) => <b key={k} className="sb-kw">{s}</b>)
+
+// ---- 글 본문 리치 텍스트: 허용 태그/스타일만 남기는 새니타이저(붙여넣기·XSS 방지) ----
+const RICH_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'SPAN', 'DIV', 'P', 'BR'])
+const RICH_STYLES = ['color', 'background-color', 'text-align', 'font-weight', 'font-style', 'text-decoration', 'text-decoration-line', 'text-decoration-style']
+function sanitizeHtml(html) {
+  const tpl = document.createElement('template')
+  tpl.innerHTML = html || ''
+  tpl.content.querySelectorAll('script,style,iframe,object,embed,link,meta,img,svg,video,audio,a,button,input').forEach((el) => el.remove())
+  // 허용 안 된 태그는 껍데기만 벗기고 내용은 유지
+  let guard = 0
+  for (;;) {
+    const bad = [...tpl.content.querySelectorAll('*')].find((el) => !RICH_TAGS.has(el.tagName))
+    if (!bad || guard++ > 5000) break
+    const parent = bad.parentNode
+    while (bad.firstChild) parent.insertBefore(bad.firstChild, bad)
+    parent.removeChild(bad)
+  }
+  // 속성 정리: style 의 허용 속성만
+  tpl.content.querySelectorAll('*').forEach((el) => {
+    const style = el.getAttribute('style')
+    ;[...el.attributes].forEach((a) => el.removeAttribute(a.name))
+    if (style) {
+      const kept = style.split(';').map((s) => s.trim()).filter(Boolean).filter((decl) => {
+        const i = decl.indexOf(':'); if (i < 0) return false
+        const prop = decl.slice(0, i).trim().toLowerCase()
+        const val = decl.slice(i + 1).trim().toLowerCase()
+        return RICH_STYLES.includes(prop) && !/url\(|expression|javascript:/.test(val)
+      })
+      if (kept.length) el.setAttribute('style', kept.join('; '))
+    }
+  })
+  return tpl.innerHTML
+}
+const isHtml = (s) => typeof s === 'string' && /<[a-z][\s\S]*>/i.test(s)
+const escapeHtml = (s) => (s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+// 목록/검색 미리보기용 한 줄 텍스트(HTML 제거)
+function stripHtml(s) {
+  if (!s) return ''
+  if (!/[<&]/.test(s)) return s
+  const d = document.createElement('div'); d.innerHTML = sanitizeHtml(s)
+  return (d.textContent || '').replace(/\s+/g, ' ').trim()
+}
+
+// 리치 텍스트 편집 툴바(글쓰기 하단 고정) — execCommand 기반
+const RT_TEXT_COLORS = ['#191722', '#8b8798', '#e5484d', '#f0762b', '#f5b301', '#2fa84f', '#3b82f6', '#7363e8']
+const RT_BG_COLORS = ['#fff08a', '#ffd3d3', '#d6f5d6', '#d0e4ff', '#e6ddff', '#ffe0b3', '#e8e8ee', 'transparent']
+const AlignIcon = ({ kind }) => {
+  const lines = kind === 'center' ? [[6, 6, 18, 6], [3, 12, 21, 12], [6, 18, 18, 18]]
+    : kind === 'right' ? [[8, 6, 21, 6], [3, 12, 21, 12], [8, 18, 21, 18]]
+      : [[3, 6, 16, 6], [3, 12, 21, 12], [3, 18, 16, 18]]
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      {lines.map((l, i) => <line key={i} x1={l[0]} y1={l[1]} x2={l[2]} y2={l[3]} />)}
+    </svg>
+  )
+}
+function RichToolbar({ editorRef }) {
+  const [palette, setPalette] = useState(null)   // 'fore' | 'back' | null
+  const exec = (cmd, val) => {
+    const el = editorRef.current; if (!el) return
+    el.focus()
+    try { document.execCommand('styleWithCSS', false, true) } catch { /* noop */ }
+    try { document.execCommand(cmd, false, val) } catch { /* noop */ }
+  }
+  const Btn = ({ cmd, label, style, ariaLabel }) => (
+    <button type="button" className="sb-rt-btn" aria-label={ariaLabel} style={style}
+      onMouseDown={(e) => { e.preventDefault(); exec(cmd) }}>{label}</button>
+  )
+  return (
+    <div className="sb-rttoolbar">
+      {palette && (
+        <div className="sb-rt-palette" onMouseDown={(e) => e.preventDefault()}>
+          {(palette === 'fore' ? RT_TEXT_COLORS : RT_BG_COLORS).map((c) => (
+            <button type="button" key={c} className={`sb-rt-swatch${c === 'transparent' ? ' none' : ''}`}
+              style={c === 'transparent' ? undefined : { background: c }}
+              onMouseDown={(e) => { e.preventDefault(); exec(palette === 'fore' ? 'foreColor' : 'hiliteColor', c === 'transparent' ? 'transparent' : c); setPalette(null) }} />
+          ))}
+        </div>
+      )}
+      <div className="sb-rt-row">
+        <Btn cmd="bold" label="B" ariaLabel="굵게" style={{ fontWeight: 800 }} />
+        <Btn cmd="italic" label="I" ariaLabel="기울임" style={{ fontStyle: 'italic', fontFamily: 'serif' }} />
+        <Btn cmd="underline" label="U" ariaLabel="밑줄" style={{ textDecoration: 'underline' }} />
+        <Btn cmd="strikeThrough" label="S" ariaLabel="취소선" style={{ textDecoration: 'line-through' }} />
+        <span className="sb-rt-sep" />
+        <button type="button" className="sb-rt-btn" aria-label="글자색"
+          onMouseDown={(e) => { e.preventDefault(); setPalette((v) => v === 'fore' ? null : 'fore') }}><span className="sb-rt-a">가</span></button>
+        <button type="button" className="sb-rt-btn" aria-label="배경색"
+          onMouseDown={(e) => { e.preventDefault(); setPalette((v) => v === 'back' ? null : 'back') }}><span className="sb-rt-a bg">가</span></button>
+        <span className="sb-rt-sep" />
+        <button type="button" className="sb-rt-btn" aria-label="왼쪽 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyLeft') }}><AlignIcon kind="left" /></button>
+        <button type="button" className="sb-rt-btn" aria-label="가운데 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyCenter') }}><AlignIcon kind="center" /></button>
+        <button type="button" className="sb-rt-btn" aria-label="오른쪽 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyRight') }}><AlignIcon kind="right" /></button>
+        <span className="sb-rt-sep" />
+        <button type="button" className="sb-rt-btn" aria-label="서식 지우기" onMouseDown={(e) => { e.preventDefault(); exec('removeFormat') }}>✕서식</button>
+      </div>
+    </div>
+  )
+}
 // 답글 들여쓰기 ㄴ(└) 표시
 const ReplyCorner = () => (
   <svg className="sb-cmt-corner" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -811,7 +939,9 @@ export function BoardPost() {
         {h.commentCount > 0 && <span className="sb-post-cc">{h.commentCount}</span>}
       </div>
 
-      {post.body && <div className="sb-post-body">{post.body}</div>}
+      {post.body && (isHtml(post.body)
+        ? <div className="sb-post-body sb-rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body) }} />
+        : <div className="sb-post-body">{post.body}</div>)}
 
       <div className="sb-cmt-section">
         <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>

@@ -1815,6 +1815,30 @@ button.mention-chip:active { opacity: .6; }
 .sb-body-area::placeholder { color: #b8b6c0; }
 .sb-body-area:focus { outline: none; }
 
+/* 리치 텍스트 에디터(contentEditable) + placeholder */
+.sb-editor-wrap { position: relative; }
+.sb-editor { outline: none; }
+.sb-editor-ph { position: absolute; top: 10px; left: 0; color: #b8b6c0; font-size: 15.5px; pointer-events: none; }
+
+/* 하단 리치 텍스트 툴바 */
+.sb-rttoolbar { background: #fff; border-top: 1px solid #ececf1; padding-bottom: env(safe-area-inset-bottom); }
+.sb-rt-row { display: flex; align-items: center; gap: 2px; padding: 6px 8px; overflow-x: auto; }
+.sb-rt-btn { flex-shrink: 0; min-width: 38px; height: 38px; padding: 0 8px; border: none; background: none;
+  border-radius: 9px; cursor: pointer; color: #33313a; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-rt-btn:active { background: #eeecf5; }
+.sb-rt-sep { flex-shrink: 0; width: 1px; height: 20px; background: #e3e2e8; margin: 0 4px; }
+.sb-rt-a { font-size: 15px; font-weight: 800; line-height: 1; border-bottom: 3px solid #e5484d; padding-bottom: 1px; }
+.sb-rt-a.bg { border-bottom: none; background: #fff08a; padding: 1px 3px; border-radius: 3px; }
+.sb-rt-palette { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid #f0eef6; }
+.sb-rt-swatch { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .12); cursor: pointer; }
+.sb-rt-swatch.none { position: relative; background: #fff; }
+.sb-rt-swatch.none::after { content: ''; position: absolute; left: 2px; right: 2px; top: 50%; height: 2px; background: #e5484d; transform: rotate(-45deg); }
+
+/* 리치 본문 렌더링: 줄바꿈은 태그로 처리(pre-wrap 해제) */
+.sb-rich { white-space: normal; }
+.sb-post-body.sb-rich { white-space: normal; }
+.sb-post-body.sb-rich div { min-height: 1.2em; }
+
 /* 검색 페이지: 검색어 입력 + 게시글/댓글 탭 */
 .sb-search-page { gap: 0; }
 .sb-search-box { position: relative; margin-top: 4px; }
