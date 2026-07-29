@@ -144,8 +144,12 @@ export default function Store() {
   function qualifies(item) {
     // 칭찬 스티커판(사과/포도알)은 관리자 전용이지만 커플에게 노출(아래 커플 tier 게이팅으로 제한됨)
     const stickerBoard = item.id === 'sticker-grape' || item.id === 'sticker-apple'
-    // 관리자 전용(테스트용): 관리자에게는 탭·tier 상관없이 항상 노출, 그 외엔 숨김
-    if (item.adminOnly && !stickerBoard) return isAdmin
+    // 관리자 전용(테스트용, 스티커판 제외): 비관리자는 숨김. 관리자에게는 커플/우정 tier
+    // 게이팅 없이 노출하되, 일반/프리미엄 탭 구분은 유지(프리미엄 아이템은 프리미엄 탭에만).
+    if (item.adminOnly && !stickerBoard) {
+      if (!isAdmin) return false
+      return item.premium ? inPremium : !inPremium
+    }
     if (!item.premium) return !inPremium
     if (!inPremium) return false
     if (item.tier === 'couple') return hasCouple
