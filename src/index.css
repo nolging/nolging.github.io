@@ -194,6 +194,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   padding: env(safe-area-inset-top) 24px 0; height: calc(58px + env(safe-area-inset-top));
   box-sizing: border-box;
   background: var(--bg); border-bottom: none; z-index: 10;
+  /* 드래그/그리기 중 상단바 텍스트가 블록 선택되지 않도록 */
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 .topbar-heading { font-weight: 700; font-size: 1.05rem; color: var(--text); }
 /* 헤더의 원형 아이콘 버튼 (시안) */
@@ -4892,7 +4894,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   cursor: pointer; font-size: 11px; line-height: 1; color: #55525f; display: flex; align-items: center; justify-content: center; }
 .admin-ord-btn:active { background: #eee; }
 .admin-ord-btn:disabled { opacity: .3; cursor: default; }
-/* 길게 눌러 드래그 정렬 */
+/* 길게 눌러 드래그 정렬 — 롱프레스 시 행 텍스트가 블록 선택되지 않도록 */
+.admin-rows, .admin-row-wrap, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .admin-row-grip { font-size: 15px; color: #c3c0cc; flex-shrink: 0; width: 16px; text-align: center; cursor: grab; user-select: none; }
 .admin-row-wrap.is-dragging { background: #f3eefb; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.14); position: relative; z-index: 2; }
 .admin-row-wrap.is-dragging .admin-row-grip { color: #8a63d2; cursor: grabbing; }
