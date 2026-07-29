@@ -8,14 +8,20 @@ const PROFILE_COLS = 'id, nickname, role, status, created_at'
 // ---- 그룹 ----------------------------------------------------
 
 export async function listMyGroups() {
+  // 관리자 계정은 RLS(gm_select) 상 모든 그룹의 멤버를 볼 수 있어 group_members!inner 가
+  // 모든 그룹을 반환한다. "내 그룹" 은 실제 내가 멤버인 그룹만이어야 하므로 uid 로 후필터.
+  const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: null }))
+  const uid = sess?.session?.user?.id || null
   const q = (cols) => supabase.from('groups').select(`*, group_members!inner(${cols})`)
     .order('created_at', { ascending: false })
     .order('joined_at', { referencedTable: 'group_members', ascending: true })
   let { data, error } = await q('user_id, display_nickname, avatar_url, left_at')
   if (error) { ({ data, error } = await q('user_id, display_nickname, avatar_url')) } // left_at 미배포 폴백
   if (error) throw error
-  // 탈퇴자(left_at) 는 각 그룹의 멤버 목록에서 제외
-  return (data ?? []).map((g) => ({ ...g, group_members: (g.group_members || []).filter((m) => !m.left_at) }))
+  let rows = (data ?? []).map((g) => ({ ...g, group_members: (g.group_members || []).filter((m) => !m.left_at) }))
+  // 탈퇴 안 한 실제 멤버인 그룹만(관리자여도 내가 가입한 그룹만)
+  if (uid) rows = rows.filter((g) => (g.group_members || []).some((m) => m.user_id === uid))
+  return rows
 }
 
 export async function getGroup(groupId) {
