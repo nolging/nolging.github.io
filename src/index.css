@@ -4884,8 +4884,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-row-price { font-weight: 800; }
 .admin-row-caret { color: var(--muted); font-size: 18px; line-height: 1; }
 /* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
-.admin-cat + .admin-cat { margin-top: 14px; }
-.admin-cat-title { font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 4px 2px; }
+/* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
+.admin-store-tabbar {
+  position: sticky; top: 0; z-index: 6; background: var(--bg);
+  margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 0;
+  padding: var(--pad-y) var(--pad-x) 10px;
+}
+.admin-store-tabbar .seg-tabs { margin-bottom: 0; }
+.admin-cat { display: flex; flex-direction: column; gap: 8px; }
+.admin-cat + .admin-cat { margin-top: 0; }
+.admin-cat-title { font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 0 2px; }
+.admin-page .admin-cat-card { margin-bottom: 0; padding: 6px 14px; }
 .admin-row-wrap { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
 .admin-row-wrap:last-child { border-bottom: none; }
 .admin-row-wrap .admin-row { flex: 1; min-width: 0; border-bottom: none; }

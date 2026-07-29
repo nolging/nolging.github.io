@@ -70,7 +70,7 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
+    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, premium: !!s.premium, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
     setMeta(m); setStoreCatalog(storeItems)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -105,9 +105,11 @@ export default function Inventory() {
     if (ledBanner && !groups.some((g) => g.id === 'ledboard')) {
       list = [...groups, { id: 'ledboard', name: meta.ledboard?.name || '전광판', emoji: meta.ledboard?.emoji || '📟', count: 0, rows: [] }]
     }
-    // 상점과 동일한 정렬(sort_order) 로 노출
+    // 상점과 동일한 정렬(sort_order). 단 인벤토리는 일반/프리미엄이 한 카테고리로 합쳐지므로
+    // (두 상점의 sort_order 시퀀스가 독립적) 프리미엄 아이템은 항상 일반 아이템 뒤로.
+    const prem = (id) => (meta[id]?.premium ? 1 : 0)
     const ord = (id) => (meta[id]?.sortOrder ?? 999)
-    return [...list].sort((a, b) => ord(a.id) - ord(b.id))
+    return [...list].sort((a, b) => prem(a.id) - prem(b.id) || ord(a.id) - ord(b.id))
   }, [groups, ledBanner, meta])
 
   // 카테고리 섹션으로 묶기 (상점과 동일한 분류)

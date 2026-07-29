@@ -149,58 +149,58 @@ export default function AdminStore() {
     <div className="page admin-page">
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="seg-tabs">
-        <button type="button" className={`seg-tab ${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>일반 상점</button>
-        <button type="button" className={`seg-tab ${tab === 'premium' ? 'active' : ''}`} onClick={() => setTab('premium')}>프리미엄 상점</button>
+      <div className="admin-store-tabbar">
+        <div className="seg-tabs">
+          <button type="button" className={`seg-tab ${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>일반 상점</button>
+          <button type="button" className={`seg-tab ${tab === 'premium' ? 'active' : ''}`} onClick={() => setTab('premium')}>프리미엄 상점</button>
+        </div>
       </div>
 
-      <div className="card">
-        <div className="admin-list-head">
-          <h3 className="card-title" style={{ margin: 0 }}>아이템 <span className="muted">({list.length})</span></h3>
-          <Link to="/admin/store/new" className="btn btn-sm btn-primary">아이템 추가</Link>
-        </div>
-        <p className="muted sm" style={{ margin: '0 0 10px' }}>행을 길게 눌러 드래그하거나 ▲▼ 로 순서를 바꿀 수 있어요.</p>
-        {loading ? <div className="spinner" /> : sections.length === 0 ? (
-          <p className="muted sm">아이템이 없습니다.</p>
-        ) : (
-          sections.map((sec) => (
-            <div key={sec.key} className="admin-cat">
-              <div className="admin-cat-title">{sec.label} <span className="muted sm">{sec.items.length}</span></div>
-              <ul className="admin-rows">
-                {sec.items.map((it, i) => (
-                  <li
-                    key={it.id}
-                    className={`admin-row-wrap${dragId === it.id ? ' is-dragging' : ''}`}
-                    data-row-id={it.id}
-                    data-sec={sec.key}
-                    style={dragId ? { touchAction: 'none' } : undefined}
-                  >
-                    <button
-                      type="button"
-                      className="admin-row"
-                      onClick={() => onRowClick(it)}
-                      onPointerDown={(e) => onRowPointerDown(e, sec.key, it)}
-                      onPointerMove={onRowPointerMove}
-                      onPointerUp={onRowPointerUp}
-                      onPointerLeave={onRowPointerUp}
-                      style={{ opacity: it.isActive ? (dragId === it.id ? .85 : 1) : .5 }}
-                    >
-                      <span className="admin-row-grip" aria-hidden="true">⠿</span>
-                      <span className="admin-row-emoji" aria-hidden="true">{it.emoji || '🐾'}</span>
-                      <span className="admin-row-main">{it.name}{!it.isActive && <span className="muted sm"> · 숨김</span>}</span>
-                      <span className="admin-row-price">{formatCoin(it.price)}</span>
-                    </button>
-                    <div className="admin-ord">
-                      <button type="button" className="admin-ord-btn" disabled={i === 0} aria-label="위로" onClick={() => move(sec.key, sec.items, it, -1)}>▲</button>
-                      <button type="button" className="admin-ord-btn" disabled={i === sec.items.length - 1} aria-label="아래로" onClick={() => move(sec.key, sec.items, it, 1)}>▼</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        )}
+      <div className="admin-list-head">
+        <h3 className="card-title" style={{ margin: 0 }}>아이템 <span className="muted">({list.length})</span></h3>
+        <Link to="/admin/store/new" className="btn btn-sm btn-primary">아이템 추가</Link>
       </div>
+
+      {loading && <div className="spinner" />}
+      {!loading && sections.length === 0 && <p className="muted sm">아이템이 없습니다.</p>}
+      {!loading && sections.map((sec) => (
+        <div key={sec.key} className="admin-cat">
+          <div className="admin-cat-title">{sec.label} <span className="muted sm">{sec.items.length}</span></div>
+          <div className="card admin-cat-card">
+            <ul className="admin-rows">
+              {sec.items.map((it, i) => (
+                <li
+                  key={it.id}
+                  className={`admin-row-wrap${dragId === it.id ? ' is-dragging' : ''}`}
+                  data-row-id={it.id}
+                  data-sec={sec.key}
+                  style={dragId ? { touchAction: 'none' } : undefined}
+                >
+                  <button
+                    type="button"
+                    className="admin-row"
+                    onClick={() => onRowClick(it)}
+                    onPointerDown={(e) => onRowPointerDown(e, sec.key, it)}
+                    onPointerMove={onRowPointerMove}
+                    onPointerUp={onRowPointerUp}
+                    onPointerLeave={onRowPointerUp}
+                    style={{ opacity: it.isActive ? (dragId === it.id ? .85 : 1) : .5 }}
+                  >
+                    <span className="admin-row-grip" aria-hidden="true">⠿</span>
+                    <span className="admin-row-emoji" aria-hidden="true">{it.emoji || '🐾'}</span>
+                    <span className="admin-row-main">{it.name}{!it.isActive && <span className="muted sm"> · 숨김</span>}</span>
+                    <span className="admin-row-price">{formatCoin(it.price)}</span>
+                  </button>
+                  <div className="admin-ord">
+                    <button type="button" className="admin-ord-btn" disabled={i === 0} aria-label="위로" onClick={() => move(sec.key, sec.items, it, -1)}>▲</button>
+                    <button type="button" className="admin-ord-btn" disabled={i === sec.items.length - 1} aria-label="아래로" onClick={() => move(sec.key, sec.items, it, 1)}>▼</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
