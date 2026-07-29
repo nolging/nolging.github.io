@@ -5005,6 +5005,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .tm-ok { flex: 1.4; height: 46px; border: none; border-radius: 999px; background: #191722; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
 
 /* ===== 관리자: 알림 메시지 미리보기 ===== */
+.admin-notif-note { font-size: 13px; line-height: 1.55; color: #8b8798; background: #f6f5fa; border-radius: 10px; padding: 10px 12px; }
 .admin-notif-preview { background: #f4f3f7; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
 .admin-notif-preview-ico { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .admin-notif-preview-t { font-size: 13.5px; font-weight: 800; color: #191722; }

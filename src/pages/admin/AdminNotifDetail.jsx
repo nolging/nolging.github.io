@@ -12,6 +12,7 @@ const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b ||
 // 푸시 알림 메시지 수정 (/admin/notifs/:key)
 export default function AdminNotifDetail() {
   const { key } = useParams()
+  const isMegaphone = key === 'megaphone'   // 확성기: 본문은 사용자가 입력(제목·이모지·배경만 편집)
   const nav = useNavigate()
   const [tpl, setTpl] = useState(null)
   const [title, setTitle] = useState('')
@@ -38,11 +39,13 @@ export default function AdminNotifDetail() {
 
   async function save(e) {
     e.preventDefault(); setError('')
-    if (!title.trim() || !body.trim()) { setError('제목과 본문을 입력해 주세요.'); return }
+    if (!title.trim() || (!isMegaphone && !body.trim())) { setError('제목과 본문을 입력해 주세요.'); return }
     const hex = bg.trim()
     if (hex && !/^#[0-9a-fA-F]{6}$/.test(hex)) { setError('배경색은 #RRGGBB 형식으로 입력해 주세요.'); return }
+    // 확성기는 본문을 사용자가 입력하므로 템플릿 본문은 그대로 두고 저장(비어 있지 않게 유지)
+    const bodyToSave = isMegaphone ? (tpl?.body || '(내용은 사용자가 입력)') : body.trim()
     setBusy(true)
-    try { await updateNotifTemplate(key, title.trim(), body.trim(), emoji.trim(), hex); nav('/admin/notifs', { replace: true }) }
+    try { await updateNotifTemplate(key, title.trim(), bodyToSave, emoji.trim(), hex); nav('/admin/notifs', { replace: true }) }
     catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
@@ -77,14 +80,19 @@ export default function AdminNotifDetail() {
             </div>
             <div className="field"><label htmlFor="nt-title">제목</label>
               <input id="nt-title" defaultValue={title} onChange={(e) => setTitle(e.target.value)} placeholder="알림 제목" /></div>
-            <div className="field"><label htmlFor="nt-body">본문</label>
-              <textarea id="nt-body" rows={3} defaultValue={body} onChange={(e) => setBody(e.target.value)}
-                placeholder="알림 본문" style={{ resize: 'vertical' }} /></div>
+            {isMegaphone ? (
+              <div className="field"><label>본문</label>
+                <div className="admin-notif-note">내용은 사용자가 확성기를 쓸 때 직접 입력해요. 여기서는 제목·이모지·배경색만 바꿀 수 있어요.</div></div>
+            ) : (
+              <div className="field"><label htmlFor="nt-body">본문</label>
+                <textarea id="nt-body" rows={3} defaultValue={body} onChange={(e) => setBody(e.target.value)}
+                  placeholder="알림 본문" style={{ resize: 'vertical' }} /></div>
+            )}
             <div className="admin-notif-preview">
               <span className="admin-notif-preview-ico" style={bg ? { background: bg } : undefined} aria-hidden="true">{emoji || '🔔'}</span>
               <div>
                 <div className="admin-notif-preview-t">{title || '제목'}</div>
-                <div className="admin-notif-preview-b">{body || '본문'}</div>
+                <div className="admin-notif-preview-b">{isMegaphone ? '(사용자가 입력한 메시지)' : (body || '본문')}</div>
               </div>
             </div>
             <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
