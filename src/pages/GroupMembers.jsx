@@ -104,11 +104,11 @@ export default function GroupMembers() {
   }, [groupId])
   useEffect(() => { load() }, [load])
 
-  // 커플 그룹이면 상단바 제목을 "데이트"로 (그 외엔 기본 "멤버")
+  // 상단바 제목: 커플=데이트, 우정=놀이터, 그 외 기본("멤버")
   useEffect(() => {
-    setHeaderTitle?.(couple ? '데이트' : null)
+    setHeaderTitle?.(couple ? '데이트' : friend ? '놀이터' : null)
     return () => setHeaderTitle?.(null)
-  }, [couple, setHeaderTitle])
+  }, [couple, friend, setHeaderTitle])
 
   // 커플 그룹 데이트 페이지 방문 → 랜덤 퀘스트 '데이트하러 가기'
   useEffect(() => { if (couple) touchQuest('r_date') }, [couple])
@@ -291,6 +291,7 @@ export default function GroupMembers() {
 
   const q = query.trim().toLowerCase()
   const shown = q ? members.filter((m) => (m.display_nickname || '').toLowerCase().includes(q)) : members
+  const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
 
   return (
     <div className="page mlist-page">
@@ -343,43 +344,26 @@ export default function GroupMembers() {
         {shown.length === 0 && <p className="comment-empty">멤버를 찾을 수 없어요.</p>}
       </div>
 
-      {/* 우정 그룹: 함께 놀기(게임) — 예전엔 그룹 상세 헤더에 있던 것 */}
+      {/* 우정 그룹: 커뮤니티 · 미니 게임 (커플 데이트 페이지와 동일한 가로 스크롤 UI) */}
       {friend && (
-        <div className="mlist-games">
-          <div className="mlist-games-title">함께 놀기</div>
-          <div className="cs-actions">
-            {(boardName || isAdmin) && (
-              <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/board`, { state: { from: 'members' } })}>
-                <span className="cs-act-ico" style={{ background: '#eeebfe' }}>🤫</span>
-                <span className="cs-act-t">{boardName || '비밀 게시판'}</span>
-              </button>
-            )}
-            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
-                <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>
-              </span>
-              <span className="cs-act-t">낙서장</span>
-            </button>
-            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/puzzle`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#e6eefd' }}>🧩</span>
-              <span className="cs-act-t">퍼즐</span>
-            </button>
-            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/catchmind`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#fdeee6' }}>🎨</span>
-              <span className="cs-act-t">캐치마인드</span>
-            </button>
-            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/omok`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#efe7d8' }}>⚫</span>
-              <span className="cs-act-t">오목</span>
-            </button>
-            <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/davinci`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#e6e9f2' }}>🔢</span>
-              <span className="cs-act-t">다빈치코드</span>
-            </button>
-            <button type="button" className="cs-act cs-act-wide" onClick={() => navigate(`/groups/${groupId}/rps`, { state: { from: 'members' } })}>
-              <span className="cs-act-ico" style={{ background: '#e9e4f7' }}>✊</span>
-              <span className="cs-act-t">가위바위보</span>
-            </button>
+        <div className="mlist-zones">
+          <div className="csx-zone">
+            <div className="csx-zone-title">커뮤니티</div>
+            <div className="csx-scroll">
+              {(boardName || isAdmin) && <PlayCard emoji="🤫" bg="#eeebfe" title={boardName || '비밀 게시판'} sub="익명 이야기" onClick={() => go('board')} />}
+              <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
+              <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />
+            </div>
+          </div>
+          <div className="csx-zone">
+            <div className="csx-zone-title">미니 게임</div>
+            <div className="csx-scroll">
+              <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={() => go('catchmind')} />
+              <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={() => go('davinci')} />
+              <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={() => go('puzzle')} />
+              <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={() => go('rps')} />
+              <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={() => go('omok')} />
+            </div>
           </div>
         </div>
       )}
