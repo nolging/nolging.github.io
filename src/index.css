@@ -2529,6 +2529,7 @@ button.mlist-row:hover { background: #f6f5fa; }
 .si-bg-row > span { font-size: 13px; color: #55525f; }
 .si-bg-row input[type="color"] { width: 40px; height: 34px; padding: 0; border: 1px solid #ddd; border-radius: 8px; background: none; cursor: pointer; }
 .si-bg-text { flex: 1; min-width: 150px; }
+.nc-fineprint { margin: 12px 0 0; font-size: 12px; line-height: 1.55; color: #a29bb5; text-align: center; }
 .si-bg-palette { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .si-bg-swatch { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .12); cursor: pointer; padding: 0; }
 .si-bg-swatch.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #7363e8; }

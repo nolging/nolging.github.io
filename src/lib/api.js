@@ -1101,6 +1101,46 @@ export async function listBoardPosts(groupId) {
   if (error) { if (boardNotReady(error, 'board_posts')) return []; throw error }
   return data ?? []
 }
+
+// ---- 익명 게시판 아이템(개설) ----
+// 이 그룹에 개설된 게시판 이름(없으면 null). 멤버 목록/데이트 페이지에서 노출 여부 판단.
+export async function getGroupBoard(groupId) {
+  const { data, error } = await supabase.rpc('group_board', { p_group: groupId })
+  if (error) return null   // 미배포/권한없음 → 미개설로 간주
+  return data || null
+}
+// 게시판을 개설할 수 있는 내 그룹(프리미엄 + 미개설)
+export async function boardEligibleGroups() {
+  const { data, error } = await supabase.rpc('board_eligible_groups')
+  if (error) {
+    if (error.code === 'PGRST202' || /board_eligible_groups/.test(error.message || '')) return []
+    throw error
+  }
+  return data ?? []
+}
+// 게시판 개설(아이템 1개 소모)
+export async function setupSecretBoard(groupId, name) {
+  const { data, error } = await supabase.rpc('board_setup', { p_group: groupId, p_name: name })
+  if (error) {
+    if (error.code === 'PGRST202' || /board_setup/.test(error.message || '')) {
+      throw new Error('익명 게시판 기능이 아직 DB에 설정되지 않았습니다. (board-item.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
+// ---- 확성기(그룹 전체 알림) ----
+export async function sendMegaphone(groupId, body) {
+  const { data, error } = await supabase.rpc('megaphone_send', { p_group: groupId, p_body: body })
+  if (error) {
+    if (error.code === 'PGRST202' || /megaphone_send/.test(error.message || '')) {
+      throw new Error('확성기 기능이 아직 DB에 설정되지 않았습니다. (megaphone.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
 export async function createBoardPost(groupId, prefixId, title, body) {
   const { data, error } = await supabase.rpc('board_create_post', { p_group: groupId, p_prefix: prefixId || null, p_title: title, p_body: body ?? '' })
   if (error) { if (boardNotReady(error, 'board_create_post')) throw new Error('비밀 게시판이 아직 DB에 설정되지 않았습니다. (secret-board.sql 을 먼저 적용해 주세요)'); throw error }

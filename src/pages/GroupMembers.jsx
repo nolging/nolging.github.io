@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { openMember } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
@@ -84,17 +84,20 @@ export default function GroupMembers() {
   const [burst, setBurst] = useState(false)    // 하트 콕! 애니메이션
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [boardName, setBoardName] = useState(null)   // 개설된 익명 게시판 이름(없으면 null)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, c, f, d] = await Promise.all([
+      const [cards, g, c, f, d, bn] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
+        getGroupBoard(groupId).catch(() => null),
       ])
+      setBoardName(bn || null)
       setMembers((cards || []).filter((m) => !m.is_left)); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
       if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
@@ -245,8 +248,8 @@ export default function GroupMembers() {
             <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="착한 애인 챌린지" onClick={() => go('praise')} />
             {/* 타로 카페: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
             {isAdmin && <PlayCard emoji="🔮" bg="#eeebfe" title="타로 카페" sub="오늘의 카드" onClick={() => go('tarot')} />}
-            {/* 비밀 게시판: 우선 관리자만 */}
-            {isAdmin && <PlayCard emoji="🤫" bg="#eeebfe" title="비밀 게시판" sub="익명 이야기" onClick={() => go('board')} />}
+            {/* 익명 게시판: 개설되면 지정한 이름으로 전원 노출(미개설이면 관리자에게만) */}
+            {(boardName || isAdmin) && <PlayCard emoji="🤫" bg="#eeebfe" title={boardName || '비밀 게시판'} sub="익명 이야기" onClick={() => go('board')} />}
             <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />
           </div>
         </div>
@@ -345,6 +348,12 @@ export default function GroupMembers() {
         <div className="mlist-games">
           <div className="mlist-games-title">함께 놀기</div>
           <div className="cs-actions">
+            {(boardName || isAdmin) && (
+              <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/board`, { state: { from: 'members' } })}>
+                <span className="cs-act-ico" style={{ background: '#eeebfe' }}>🤫</span>
+                <span className="cs-act-t">{boardName || '비밀 게시판'}</span>
+              </button>
+            )}
             <button type="button" className="cs-act" onClick={() => navigate(`/groups/${groupId}/draw`, { state: { from: 'members' } })}>
               <span className="cs-act-ico" style={{ background: '#eeebfe', color: '#7363e8' }}>
                 <svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" stroke="none" /><path d="M12 2a10 10 0 1 0 0 20c1.7 0 2-1.4 1.2-2.3-.8-.9-.5-2.2.7-2.4l1.3-.2A4.8 4.8 0 0 0 21 12 9.7 9.7 0 0 0 12 2Z" /></svg>

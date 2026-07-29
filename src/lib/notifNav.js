@@ -24,6 +24,7 @@ export const NOTIF_ICONS = {
   board_comment: '💬',
   board_reply: '↩︎',
   praise_new: '🌟',
+  megaphone: '📣',
 }
 
 export function timeAgo(iso) {
@@ -51,6 +52,7 @@ export function notifTarget(n) {
     return `/groups/${n.group_id}/board/${n.post_id}/comments${n.board_comment_id ? `?c=${n.board_comment_id}` : ''}`   // 댓글/답글 → 댓글 상세 + 포커스
   if (n.type === 'nametag' && n.group_id) return `/groups/${n.group_id}/members`   // 명찰 → 데이트 페이지
   if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
+  if (n.type === 'megaphone' && n.group_id) return `/groups/${n.group_id}`         // 확성기 → 그룹 홈
   if (n.task_id && n.group_id) {
     const base = `/groups/${n.group_id}/tasks/${n.task_id}`
     return n.comment_id ? `${base}?c=${n.comment_id}` : base

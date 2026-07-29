@@ -9,7 +9,7 @@ import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -58,6 +58,8 @@ export default function Inventory() {
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
   const [nameTagOpen, setNameTagOpen] = useState(false) // 명찰(닉네임 변경) 모달
+  const [boardOpen, setBoardOpen] = useState(false)     // 익명 게시판 개설 모달
+  const [megaphoneOpen, setMegaphoneOpen] = useState(false) // 확성기 모달
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
   async function reload() {
@@ -128,6 +130,8 @@ export default function Inventory() {
     else if (g.id === 'friend-ring') setFriendOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
+    else if (g.id === 'secret-board') setBoardOpen(true)
+    else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
       setThemeItem({ id: g.id, name: g.name, appliedGroupId: appliedRow?.group_id || null })
@@ -236,6 +240,8 @@ export default function Inventory() {
       <StickerUseModal item={stickerUse} coupleGroupId={coupleGroupIds[0]} onClose={() => setStickerUse(null)} onDone={reload} navigate={navigate} />
 
       <NameTagModal open={nameTagOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setNameTagOpen(false)} onDone={reload} />
+      <SecretBoardApplyModal open={boardOpen} onClose={() => setBoardOpen(false)} onDone={reload} />
+      <MegaphoneModal open={megaphoneOpen} myId={user?.id} onClose={() => setMegaphoneOpen(false)} onDone={reload} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
         item={giftItemId ? { id: giftItemId, name: itemName(giftItemId, meta[giftItemId]?.name || GUIDE[giftItemId]?.name || giftItemId), emoji: meta[giftItemId]?.emoji || GUIDE[giftItemId]?.emoji } : null}
@@ -438,6 +444,115 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
             적용 해제
           </button>
         )}
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 익명 게시판 개설 (프리미엄 그룹 · 미개설) ----
+function SecretBoardApplyModal({ open, onClose, onDone }) {
+  const [groups, setGroups] = useState([])
+  const [groupId, setGroupId] = useState('')
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setGroupId(''); setName(''); setError(''); setBusy(false)
+    boardEligibleGroups().then((gs) => setGroups(gs || [])).catch((e) => setError(e.message))
+  }, [open])
+
+  async function add() {
+    if (!groupId) { setError('게시판을 추가할 그룹을 선택해 주세요.'); return }
+    if (!name.trim()) { setError('게시판 이름을 입력해 주세요.'); return }
+    setBusy(true); setError('')
+    try {
+      await setupSecretBoard(groupId, name.trim())
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="couple-modal">
+        <ItemHead id="secret-board" name="익명 게시판" sub="프리미엄 그룹에 익명 게시판을 만들어요" emoji="🤫" />
+        {error && <div className="alert alert-error">{error}</div>}
+        <label className="field">
+          <span>추가할 그룹</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{groups.length ? '그룹 선택' : '추가할 수 있는 프리미엄 그룹이 없어요'}</option>
+            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </label>
+        <label className="field">
+          <span>게시판 이름</span>
+          <input value={name} maxLength={20} placeholder="예: 우리끼리 익명방"
+            onChange={(e) => setName(e.target.value)} />
+        </label>
+        <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId || !name.trim()} onClick={add}>
+          {busy ? '추가 중…' : '추가하기'}
+        </button>
+        <p className="nc-fineprint">추가하면 그 그룹의 멤버 목록(커플은 데이트 · 멍냥꽁냥) 페이지에 이 이름으로 게시판이 생겨요. 아이템은 1개 사용돼요.</p>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 확성기: 그룹 멤버 전원에게 메시지 알림 ----
+function MegaphoneModal({ open, onClose, onDone, myId }) {
+  const [groups, setGroups] = useState([])
+  const [groupId, setGroupId] = useState('')
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setGroupId(''); setMsg(''); setError(''); setBusy(false)
+    listMyGroups().then((gs) => setGroups((gs || []).filter((g) => (g.group_members || []).some((m) => m.user_id === myId))))
+      .catch((e) => setError(e.message))
+  }, [open, myId])
+
+  const group = groups.find((g) => g.id === groupId)
+
+  async function send() {
+    if (!groupId) { setError('보낼 그룹을 선택해 주세요.'); return }
+    if (!msg.trim()) { setError('보낼 메시지를 입력해 주세요.'); return }
+    setBusy(true); setError('')
+    try {
+      await sendMegaphone(groupId, msg.trim())
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="couple-modal">
+        <ItemHead id="megaphone" name="확성기" sub="그룹 멤버 전원에게 알림을 보내요" emoji="📣" />
+        {error && <div className="alert alert-error">{error}</div>}
+        <label className="field">
+          <span>보낼 그룹</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{groups.length ? '그룹 선택' : '보낼 수 있는 그룹이 없어요'}</option>
+            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </label>
+        <div className="field">
+          <span>제목</span>
+          <input value={group ? `[${group.name}] 확성기가 켜졌어요` : '[그룹] 확성기가 켜졌어요'} disabled readOnly />
+        </div>
+        <label className="field">
+          <span>메시지</span>
+          <textarea rows={3} value={msg} maxLength={500} placeholder="멤버들에게 보낼 메시지를 입력하세요"
+            onChange={(e) => setMsg(e.target.value)} style={{ resize: 'vertical' }} />
+        </label>
+        <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId || !msg.trim()} onClick={send}>
+          {busy ? '보내는 중…' : '확인'}
+        </button>
+        <p className="nc-fineprint">확인을 누르면 그룹 멤버 전원에게 즉시 알림이 가요. 아이템은 1개 사용돼요.</p>
       </div>
     </Modal>
   )
