@@ -4881,6 +4881,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-row-side { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .admin-row-price { font-weight: 800; }
 .admin-row-caret { color: var(--muted); font-size: 18px; line-height: 1; }
+/* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
+.admin-cat + .admin-cat { margin-top: 14px; }
+.admin-cat-title { font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 4px 2px; }
+.admin-row-wrap { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
+.admin-row-wrap:last-child { border-bottom: none; }
+.admin-row-wrap .admin-row { flex: 1; min-width: 0; border-bottom: none; }
+.admin-ord { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.admin-ord-btn { width: 30px; height: 22px; border: 1px solid rgba(0, 0, 0, .12); background: #fff; border-radius: 7px;
+  cursor: pointer; font-size: 11px; line-height: 1; color: #55525f; display: flex; align-items: center; justify-content: center; }
+.admin-ord-btn:active { background: #eee; }
+.admin-ord-btn:disabled { opacity: .3; cursor: default; }
 /* 상세 정보 나열 */
 .admin-detail { margin: 0; }
 .admin-detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0, 0, 0, .06); }

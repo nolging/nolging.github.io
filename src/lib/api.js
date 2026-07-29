@@ -852,7 +852,7 @@ const isMissingColumn = (err) => !!err && (
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, sort_order')
+    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, category, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
@@ -887,7 +887,8 @@ export async function listStoreItems() {
   return (data ?? []).map((r) => ({
     id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji,
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
-    adminOnly: !!r.admin_only, imageSvg: r.image_svg || '', imageBg: r.image_bg || '', sortOrder: r.sort_order ?? 0,
+    adminOnly: !!r.admin_only, imageSvg: r.image_svg || '', imageBg: r.image_bg || '',
+    category: r.category || '', sortOrder: r.sort_order ?? 0,
   }))
 }
 
@@ -1803,10 +1804,10 @@ export async function adminGrantCoin({ userId, amount, reason }) {
 // ---- 관리자: 상점 아이템 관리 (RLS 상 store_items 쓰기는 관리자만 허용) ----
 // 비활성 포함 전체 목록 (sort_order 순).
 export async function adminListStoreItems() {
-  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only, image_svg, image_bg'
+  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only, image_svg, image_bg, category'
   let res = await supabase.from('store_items').select(cols).order('sort_order', { ascending: true })
   if (isMissingColumn(res.error)) {
-    // premium/tier/admin_only/image_* 미배포 환경 폴백
+    // premium/tier/admin_only/image_*/category 미배포 환경 폴백
     res = await supabase.from('store_items')
       .select('id, name, price, emoji, description, gift_only, sort_order, is_active')
       .order('sort_order', { ascending: true })
@@ -1816,7 +1817,7 @@ export async function adminListStoreItems() {
     id: r.id, name: r.name, price: r.price, emoji: r.emoji, description: r.description ?? '',
     giftOnly: !!r.gift_only, sortOrder: r.sort_order ?? 0, isActive: r.is_active !== false,
     premium: !!r.premium, tier: r.tier || '', adminOnly: !!r.admin_only,
-    imageSvg: r.image_svg || '', imageBg: r.image_bg || '',
+    imageSvg: r.image_svg || '', imageBg: r.image_bg || '', category: r.category || '',
   }))
 }
 
@@ -1836,17 +1837,26 @@ export async function adminUpsertStoreItem(item) {
     admin_only: !!item.adminOnly,
     image_svg: item.imageSvg ? String(item.imageSvg) : null,
     image_bg: item.imageBg ? String(item.imageBg) : null,
+    category: item.category ? String(item.category) : null,
   }
   if (!row.id) throw new Error('아이템 ID를 입력해 주세요.')
   if (!row.name) throw new Error('아이템 이름을 입력해 주세요.')
   let res = await supabase.from('store_items').upsert(row).select().single()
   if (isMissingColumn(res.error)) {
-    // premium/tier/admin_only/image_* 미배포 환경 폴백
-    const { premium, tier, admin_only, image_svg, image_bg, ...rest } = row // eslint-disable-line no-unused-vars
+    // premium/tier/admin_only/image_*/category 미배포 환경 폴백
+    const { premium, tier, admin_only, image_svg, image_bg, category, ...rest } = row // eslint-disable-line no-unused-vars
     res = await supabase.from('store_items').upsert(rest).select().single()
   }
   if (res.error) throw res.error
   return res.data
+}
+
+// 정렬 순서 일괄 갱신(관리자 목록 ▲▼ 재정렬용). items: [{ id, sortOrder }]
+export async function adminReorderStoreItems(items) {
+  for (const { id, sortOrder } of items) {
+    const { error } = await supabase.from('store_items').update({ sort_order: sortOrder }).eq('id', id)
+    if (error) throw error
+  }
 }
 
 export async function adminSetStoreItemActive(id, active) {

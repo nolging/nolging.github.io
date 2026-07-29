@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem } from '../../lib/api'
-import { ITEM_KINDS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
+import { ITEM_KINDS, CATEGORY_OPTIONS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
 import { cleanSvg, imgBgOf } from '../../lib/storeMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 
@@ -30,7 +30,7 @@ export default function AdminStoreItem() {
       setForm({
         id: it.id, name: it.name, price: String(it.price), emoji: it.emoji || '', description: it.description || '',
         sortOrder: String(it.sortOrder ?? ''), kind: flagsToKind(it.premium, it.tier), giftOnly: it.giftOnly, isActive: it.isActive, adminOnly: it.adminOnly,
-        imageSvg: it.imageSvg || '', imageBg: it.imageBg || '',
+        imageSvg: it.imageSvg || '', imageBg: it.imageBg || '', category: it.category || '',
       })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, id])
@@ -43,7 +43,14 @@ export default function AdminStoreItem() {
     try {
       const { premium, tier } = kindToFlags(form.kind)
       const description = (form.description || '').replace(/\r\n/g, '\n').replace(/\\n/g, '\n')
-      await adminUpsertStoreItem({ ...form, description, premium, tier })
+      // 새 아이템은 목록 맨 끝으로(가장 큰 sort_order + 10). 수정은 기존 순서 유지.
+      let sortOrder = form.sortOrder
+      if (!editing) {
+        const items = await adminListStoreItems().catch(() => [])
+        const max = items.reduce((mx, x) => Math.max(mx, x.sortOrder || 0), 0)
+        sortOrder = max + 10
+      }
+      await adminUpsertStoreItem({ ...form, sortOrder, description, premium, tier })
       nav('/admin/store', { replace: true })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
@@ -90,13 +97,18 @@ export default function AdminStoreItem() {
               <input id="si-emoji" defaultValue={form.emoji} onChange={setField('emoji')} placeholder="🎁" maxLength={16} /></div>
             <div className="field field-narrow"><label htmlFor="si-price">가격 *</label>
               <input id="si-price" type="number" inputMode="numeric" min="0" defaultValue={form.price} onChange={setField('price')} placeholder="예: 300" /></div>
-            <div className="field field-narrow"><label htmlFor="si-sort">정렬</label>
-              <input id="si-sort" type="number" inputMode="numeric" defaultValue={form.sortOrder} onChange={setField('sortOrder')} placeholder="예: 5" /></div>
           </div>
-          <div className="field"><label htmlFor="si-kind">노출 위치</label>
-            <select id="si-kind" value={form.kind} onChange={setField('kind')}>
-              {ITEM_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
-            </select></div>
+          <div className="field-row">
+            <div className="field"><label htmlFor="si-kind">노출 위치</label>
+              <select id="si-kind" value={form.kind} onChange={setField('kind')}>
+                {ITEM_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
+              </select></div>
+            <div className="field"><label htmlFor="si-cat">카테고리</label>
+              <select id="si-cat" value={form.category} onChange={setField('category')}>
+                {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select></div>
+          </div>
+          <p className="si-hint" style={{ margin: '-4px 0 2px' }}>정렬 순서는 아이템 목록에서 ▲▼ 로 조정해요. 새 아이템은 목록 맨 끝에 추가돼요.</p>
           <div className="field"><label htmlFor="si-desc">설명</label>
             <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
               placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></div>

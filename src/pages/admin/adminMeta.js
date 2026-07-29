@@ -28,4 +28,13 @@ export const kindToFlags = (kind) => kind === 'prem' ? { premium: true, tier: ''
   : { premium: false, tier: '' }
 export const flagsToKind = (premium, tier) => !premium ? 'general' : tier === 'couple' ? 'couple' : tier === 'friend' ? 'friend' : 'prem'
 export const kindLabel = (premium, tier) => ITEM_KINDS.find((k) => k.key === flagsToKind(premium, tier))?.label || '일반 상점'
-export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: false, imageSvg: '', imageBg: '' }
+// 상점 카테고리(섹션) — 관리자가 직접 지정. '' = 자동(ID 규칙)
+export const CATEGORY_OPTIONS = [
+  { value: '', label: '자동 (ID 규칙)' },
+  { value: 'special', label: '스페셜' },
+  { value: 'feature', label: '기능 강화' },
+  { value: 'avatar', label: '프로필 꾸미기' },
+  { value: 'theme', label: '테마' },
+  { value: 'etc', label: '기타' },
+]
+export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: false, imageSvg: '', imageBg: '', category: '' }

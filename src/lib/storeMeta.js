@@ -3,7 +3,8 @@
 export const CAT = { special: '스페셜', feature: '기능 강화', avatar: '프로필 꾸미기', theme: '테마', etc: '기타' }
 export const CAT_ORDER = ['special', 'feature', 'avatar', 'theme', 'etc']
 
-export function catOf(id) {
+export function catOf(id, category) {
+  if (category && CAT[category]) return category   // 관리자 지정 카테고리 우선
   if (id === 'couple-ring' || id === 'friend-ring' || id === 'wish') return 'special'
   if (String(id).startsWith('deco-')) return 'avatar'
   if (String(id).startsWith('theme-')) return 'theme'

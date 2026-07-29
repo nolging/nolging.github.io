@@ -159,7 +159,7 @@ export default function Store() {
   const shownItems = items.filter(qualifies)
 
   const sections = CAT_ORDER.map((key) => {
-    const secItems = shownItems.filter((it) => catOf(it.id) === key)
+    const secItems = shownItems.filter((it) => catOf(it.id, it.category) === key)
     return { key, label: CAT[key], items: secItems, comingSoon: inPremium && key === 'avatar' && secItems.length === 0 }
   }).filter((s) => s.items.length || s.comingSoon)
 
