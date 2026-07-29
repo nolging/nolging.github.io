@@ -3,7 +3,8 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
-import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard, listStoreItems } from '../lib/api'
+import { setStoreCatalog } from '../lib/storeCatalog'
 import Brand from './Brand'
 import PawIcon from './PawIcon'
 import PushPrompt from './PushPrompt'
@@ -442,6 +443,9 @@ export default function Layout() {
     if (meta) meta.setAttribute('content', storePremium ? '#2c2560' : '#fdfcfe')
     return () => { document.body.style.background = '' }
   }, [isGroupView, storePremium])
+
+  // 아이템 이미지/배경색 카탈로그 최초 로드(선물 모달·쪽지 등 어디서든 공유)
+  useEffect(() => { listStoreItems().then(setStoreCatalog).catch(() => {}) }, [])
 
   // 키보드가 올라오면 앱 셸을 보이는 영역(visual viewport)에 맞춰 축소한다.
   // → 하단 입력창이 키보드 위로 올라오고, 본문은 그 영역 안에 맞춰진다.

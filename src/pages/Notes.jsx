@@ -8,7 +8,8 @@ import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
 import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
-import { imgBgOf, itemName, resolveItemText } from '../lib/storeMeta'
+import { itemName, resolveItemText } from '../lib/storeMeta'
+import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
 import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
@@ -90,6 +91,7 @@ function formatNoteFull(iso) {
 
 export default function Notes() {
   const { user } = useAuth()
+  useStoreCatalog()
   const location = useLocation()
   const navigate = useNavigate()
   const { setRefreshHandler, refreshNoteUnread, player, bluray: blurayPlayer } = useOutletContext()
@@ -717,7 +719,7 @@ export default function Notes() {
                     <ul className="note-gift-list">
                       {gItems.map((it) => (
                         <li key={it.item_id} className="note-gift-row">
-                          <span className="note-gift-thumb" style={{ background: imgBgOf(it.item_id) }}>
+                          <span className="note-gift-thumb" style={{ background: bgOf(it.item_id) }}>
                             <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
                           </span>
                           <span className="note-gift-name">{itemName(it.item_id, it.item_name)}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>

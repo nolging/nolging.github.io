@@ -7,7 +7,8 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
-import { imgBgOf, itemName } from '../lib/storeMeta'
+import { itemName } from '../lib/storeMeta'
+import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
 import { NOTE_CHANNEL } from '../lib/composeWindow'
 
 const MAX = 150
@@ -49,6 +50,7 @@ export default function NoteCompose() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  useStoreCatalog()
   // 팝업(브라우저 새 창) 모드 여부 — /notes/compose?popup=1 로 열림
   const isPopup = new URLSearchParams(location.search).get('popup') === '1'
   // 프리필: 인앱은 location.state, 팝업은 localStorage(nc-prefill) 로 전달(한 번만 읽고 제거)
@@ -116,7 +118,7 @@ export default function NoteCompose() {
   const metaOf = useCallback((id) => ({
     name: itemName(id, USE_META[id]?.name || store[id]?.name || id),
     emoji: USE_META[id]?.emoji || store[id]?.emoji || '🎁',
-    bg: imgBgOf(id),
+    bg: bgOf(id),
   }), [store])
 
   function handlePick(r) {

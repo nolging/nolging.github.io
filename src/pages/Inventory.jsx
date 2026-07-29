@@ -15,6 +15,7 @@ import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
 import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
+import { setStoreCatalog, bgOf, useStoreCatalog } from '../lib/storeCatalog'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MAX_WISH = 300
@@ -24,9 +25,10 @@ const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.
 
 // 인벤토리 모달 공용 헤더 — 좌측 정렬(이미지 + 아이템명 한 줄), 사용 아이템은 설명(1줄) 포함
 function ItemHead({ id, name, sub, emoji }) {
+  useStoreCatalog()
   return (
     <div className="nc-link-head">
-      <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
+      <span className="nc-link-ico" style={{ background: bgOf(id) }}><StoreItemImage id={id} emoji={emoji} className="nc-img" /></span>
       <div><div className="nc-link-name">{name}</div>{sub && <div className="nc-link-sub">{sub}</div>}</div>
     </div>
   )
@@ -69,7 +71,7 @@ export default function Inventory() {
     ])
     const m = {}
     for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
-    setMeta(m)
+    setMeta(m); setStoreCatalog(storeItems)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
     setFriendGroupIds(friendIds)
@@ -722,7 +724,7 @@ function MediaSendModal({ open, itemId, onClose, onDone }) {
       <Modal open={open && !pickOpen} onClose={onClose} cardClassName="nc-link-modal">
         <div className="nc-link">
           <div className="nc-link-head">
-            <span className="nc-link-ico" style={{ background: imgBgOf(itemId) }}><StoreItemImage id={itemId} emoji={cfg.emoji} className="nc-img" /></span>
+            <span className="nc-link-ico" style={{ background: bgOf(itemId) }}><StoreItemImage id={itemId} emoji={cfg.emoji} className="nc-img" /></span>
             <div><div className="nc-link-name">{cfg.name()}</div><div className="nc-link-sub">{cfg.sub}</div></div>
           </div>
           {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
@@ -781,7 +783,7 @@ function ItemGuideModal({ id, name, onClose, onUse, onGift }) {
       {cfg && (
         <div className="nc-link">
           <div className="nc-link-head">
-            <span className="nc-link-ico" style={{ background: imgBgOf(id) }}><StoreItemImage id={id} emoji={cfg.emoji} className="nc-img" /></span>
+            <span className="nc-link-ico" style={{ background: bgOf(id) }}><StoreItemImage id={id} emoji={cfg.emoji} className="nc-img" /></span>
             <div className="nc-link-name">{name || cfg.name}</div>
           </div>
           <p className="tele-guide-label nc-mt">사용 방법</p>

@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { itemImgId, svgDataUri } from '../lib/storeMeta'
+import { catalogSvg, useStoreCatalog } from '../lib/storeCatalog'
 import ThemeHearts from './ThemeHearts'
 import { DecoPreview } from './AvatarDeco'
 
-// 아이템 이미지: 업로드 SVG(svg prop) 우선 → public/store/{id}.svg → 이모지 폴백.
+// 아이템 이미지: 업로드 SVG(svg prop 또는 카탈로그) 우선 → public/store/{id}.svg → 이모지 폴백.
 // - 카세트('cassette')는 플랫폼에 따라 airpods/buds 아이콘으로 자동 매핑.
 // - '하트 뿅뿅' 테마(theme-heart)는 정적 이미지 대신 실제 테마 효과(하트 솟아오름)를 보여줌.
 export default function StoreItemImage({ id, emoji, className, svg }) {
   const [failed, setFailed] = useState(false)
+  useStoreCatalog()   // 업로드 이미지 카탈로그 갱신 시 리렌더
   const imgId = itemImgId(id)
-  const uploaded = svg ? svgDataUri(svg) : null
+  const effSvg = svg || catalogSvg(id)
+  const uploaded = effSvg ? svgDataUri(effSvg) : null
   useEffect(() => { setFailed(false) }, [imgId, uploaded])
 
   if (id === 'theme-heart') {

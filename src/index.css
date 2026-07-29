@@ -4892,6 +4892,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   cursor: pointer; font-size: 11px; line-height: 1; color: #55525f; display: flex; align-items: center; justify-content: center; }
 .admin-ord-btn:active { background: #eee; }
 .admin-ord-btn:disabled { opacity: .3; cursor: default; }
+/* 길게 눌러 드래그 정렬 */
+.admin-row-grip { font-size: 15px; color: #c3c0cc; flex-shrink: 0; width: 16px; text-align: center; cursor: grab; user-select: none; }
+.admin-row-wrap.is-dragging { background: #f3eefb; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.14); position: relative; z-index: 2; }
+.admin-row-wrap.is-dragging .admin-row-grip { color: #8a63d2; cursor: grabbing; }
 /* 상세 정보 나열 */
 .admin-detail { margin: 0; }
 .admin-detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0, 0, 0, .06); }

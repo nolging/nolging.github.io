@@ -4,7 +4,7 @@ import Modal from './Modal'
 import Avatar from './Avatar'
 import RecipientPicker from './RecipientPicker'
 import StoreItemImage from './StoreItemImage'
-import { imgBgOf } from '../lib/storeMeta'
+import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
 
 const Paw = () => (
   <svg className="gift-paw" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -18,6 +18,7 @@ const Paw = () => (
 // onSend(recipient, message)→Promise. onFinish=성공 화면 하단 버튼(없으면 onClose).
 export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, price = null, purchased = false, onSend, excludeGroupIds = [] }) {
   const navigate = useNavigate()
+  useStoreCatalog()
   const [recipient, setRecipient] = useState(null)
   const [message, setMessage] = useState('')
   const [pickOpen, setPickOpen] = useState(false)
@@ -73,7 +74,7 @@ export default function GiftItemModal({ open, onClose, onFinish, item, qty = 1, 
             </div>
 
             <div className="gift-sum">
-              <span className="gift-sum-ico" style={{ background: imgBgOf(item.id) }}>
+              <span className="gift-sum-ico" style={{ background: bgOf(item.id) }}>
                 <StoreItemImage id={item.id} emoji={item.emoji} className="nc-img" />
               </span>
               <span className="gift-sum-name">{item.name}{qty > 1 && <span className="gift-sum-qty"> ×{qty}</span>}</span>
