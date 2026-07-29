@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { itemImgId, svgDataUri } from '../lib/storeMeta'
 import { catalogSvg, useStoreCatalog } from '../lib/storeCatalog'
 import ThemeHearts from './ThemeHearts'
+import ThemeBubbles from './ThemeBubbles'
+import ThemeFireworks from './ThemeFireworks'
 import { DecoPreview } from './AvatarDeco'
 
 // 아이템 이미지: 업로드 SVG(svg prop 또는 카탈로그) 우선 → public/store/{id}.svg → 이모지 폴백.
@@ -19,6 +21,20 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
     return (
       <span className={`${className} store-hearts`} aria-hidden="true">
         <ThemeHearts durScale={1.5} />
+      </span>
+    )
+  }
+  if (id === 'theme-bubble') {
+    return (
+      <span className={`${className} store-bubbles`} aria-hidden="true">
+        <ThemeBubbles durScale={1.2} />
+      </span>
+    )
+  }
+  if (id === 'theme-firework') {
+    return (
+      <span className={`${className} store-fw`} aria-hidden="true">
+        <ThemeFireworks />
       </span>
     )
   }

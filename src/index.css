@@ -2724,18 +2724,33 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 6%, rgba(255,255,255,.4) 16%, rgba(150,205,235,.26) 46%, rgba(196,176,246,.22) 100%);
   box-shadow: inset 0 0 6px rgba(255,255,255,.7), 0 1px 3px rgba(120,140,200,.16);
   border: 1px solid rgba(255,255,255,.55);
-  animation-name: bubble-rise; animation-timing-function: ease-in; animation-iteration-count: infinite;
+  animation: bubble-float var(--dur, 6s) var(--delay, 0s) infinite cubic-bezier(.4, .05, .55, .95);
   will-change: bottom, opacity, transform;
 }
-@keyframes bubble-rise {
-  0%   { bottom: -14%; opacity: 0; transform: translateX(0) scale(.5); }
-  8%   { opacity: .92; }
-  50%  { transform: translateX(7px) scale(1); }
-  78%  { opacity: .92; transform: translateX(-5px) scale(1.03); }
-  90%  { opacity: .95; transform: translateX(0) scale(1.28); }   /* 부풀어 오름 */
-  100% { bottom: 98%; opacity: 0; transform: scale(1.55); }      /* 팡! 터짐 */
+/* 톡! 터지는 순간 퍼지는 얇은 링 (부모와 같은 --dur/--delay 로 타이밍 동기화) */
+.theme-bubble::after {
+  content: ''; position: absolute; inset: -1px; border-radius: 50%; opacity: 0;
+  border: 1.5px solid rgba(255,255,255,.8);
+  animation: bubble-pop var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
-@media (prefers-reduced-motion: reduce) { .theme-bubble { animation: none; opacity: 0; } }
+/* 가로(--dx)로 흐르며 살짝 대각선 위로 떠오르다 끝에서 부풀며 톡! 터짐 */
+@keyframes bubble-float {
+  0%   { bottom: -12%; opacity: 0; transform: translateX(0) scale(.5); }
+  10%  { opacity: .9; transform: translateX(calc(var(--dx) * .16)) scale(.9); }
+  50%  { opacity: .94; transform: translateX(calc(var(--dx) * .62)) scale(1); }
+  82%  { bottom: calc(var(--ry, 60%) - 10%); opacity: .95; transform: translateX(calc(var(--dx) * .96)) scale(1.05); }
+  92%  { opacity: 1;  transform: translateX(var(--dx)) scale(1.15); }   /* 부풀어 오름 */
+  100% { bottom: var(--ry, 60%); opacity: 0; transform: translateX(calc(var(--dx) * 1.05)) scale(1.5); } /* 팡! */
+}
+@keyframes bubble-pop {
+  0%, 86% { opacity: 0; transform: scale(.55); }
+  91%     { opacity: .85; transform: scale(1.05); }
+  100%    { opacity: 0; transform: scale(2); }   /* 링이 확 퍼지며 사라짐 */
+}
+@media (prefers-reduced-motion: reduce) { .theme-bubble, .theme-bubble::after { animation: none; opacity: 0; } }
+
+/* 상점/인벤토리 썸네일용 테마 효과 미리보기 (하트와 동일 패턴) */
+.store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 
 /* ===== 폭죽 팡팡 테마: 다크 밤하늘 + 반짝이는 별 + 폭죽(커플 기념일 폭죽 재사용) ===== */
 .app-shell.gd-bg-firework { background: linear-gradient(180deg, #241d38 0%, #141120 60%); }
@@ -2753,8 +2768,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-themed > .theme-fw-stars { z-index: 0; }
 
 /* 대시보드 카드용 테마 미리보기 (카드 안에 담김) */
-.group-tile.tile-bubble { background: linear-gradient(165deg, #d9eff8 0%, #e2e5fb 55%, #ece0fb 100%); }
-.group-tile.tile-fw { background: linear-gradient(165deg, #2a2140 0%, #16121f 100%); }
+/* .premium / .friend 카드 배경(0,3,0)을 이기도록 동일 특이도 + 뒤에 정의 */
+.group-card.group-tile.tile-bubble { background: linear-gradient(165deg, #d9eff8 0%, #e2e5fb 55%, #ece0fb 100%); }
+.group-card.group-tile.tile-fw { background: linear-gradient(165deg, #2a2140 0%, #16121f 100%); }
 .group-tile.tile-fw .tile-name { color: #f4f1fa; }
 .group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
 .theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }
