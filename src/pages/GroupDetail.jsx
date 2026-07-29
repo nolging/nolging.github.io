@@ -15,6 +15,8 @@ import MemberAvatarBtn from '../components/MemberAvatarBtn'
 import MemberStack from '../components/MemberStack'
 import GroupBadge from '../components/GroupBadge'
 import ThemeHearts from '../components/ThemeHearts'
+import ThemeBubbles from '../components/ThemeBubbles'
+import ThemeFireworks from '../components/ThemeFireworks'
 import Fireworks from '../components/Fireworks'
 import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
@@ -406,11 +408,15 @@ export default function GroupDetail() {
   }, [isCouple, group?.anniversary, groupId])
   const annivToday = isCouple && isAnnivToday(group?.anniversary || claimDate)
 
-  // 하트 뿅뿅 테마: 상단바~콘텐츠 배경을 은은한 분홍빛으로 (페이지 벗어나면 원복)
+  // 꾸미기 테마: 상단바~콘텐츠 배경을 테마별로 (페이지 벗어나면 원복)
+  //  heart=은은한 분홍 / bubble=소라·연보라 그라데이션 / firework=밤하늘 다크
   useEffect(() => {
-    const themed = group?.deco_theme === 'heart'
-    document.querySelector('.app-shell')?.classList.toggle('gd-bg-heart', themed)
-    return () => document.querySelector('.app-shell')?.classList.remove('gd-bg-heart')
+    const shell = document.querySelector('.app-shell')
+    if (!shell) return
+    const t = group?.deco_theme
+    const map = { heart: 'gd-bg-heart', bubble: 'gd-bg-bubble', firework: 'gd-bg-firework' }
+    Object.entries(map).forEach(([k, cls]) => shell.classList.toggle(cls, t === k))
+    return () => Object.values(map).forEach((cls) => shell.classList.remove(cls))
   }, [group?.deco_theme])
 
   async function runAction(fn) {
@@ -534,9 +540,11 @@ export default function GroupDetail() {
     : { opacity: 0 }
 
   return (
-    <div className={`page gd-page ${group.deco_theme === 'heart' ? 'gd-themed' : ''}`}
+    <div className={`page gd-page ${group.deco_theme ? 'gd-themed' : ''}`}
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
+      {group.deco_theme === 'bubble' && <ThemeBubbles durScale={2.6} className="gd-bubbles-over" />}
+      {group.deco_theme === 'firework' && <ThemeFireworks page />}
       {annivToday && <Fireworks className="fw-over" />}
 
       {/* 좌측 고정 섹션 (PC 전용): 그룹 정보 + 설정 */}

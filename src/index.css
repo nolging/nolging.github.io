@@ -2713,6 +2713,65 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .app-shell.gd-bg-heart .topbar,
 .app-shell.gd-bg-heart .content { background: transparent; }
 
+/* ===== 버블버블 테마: 소라색+연보라 그라데이션 배경 위로 비눗방울이 솟아올라 톡 터짐 ===== */
+.app-shell.gd-bg-bubble { background: linear-gradient(165deg, #d6eef8 0%, #dfe4fb 52%, #ece0fb 100%); }
+.app-shell.gd-bg-bubble .topbar,
+.app-shell.gd-bg-bubble .content { background: transparent; }
+.theme-bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.theme-bubbles.gd-bubbles-over { position: fixed; inset: 0; z-index: 15; }
+.theme-bubble {
+  position: absolute; bottom: -14%; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 6%, rgba(255,255,255,.4) 16%, rgba(150,205,235,.26) 46%, rgba(196,176,246,.22) 100%);
+  box-shadow: inset 0 0 6px rgba(255,255,255,.7), 0 1px 3px rgba(120,140,200,.16);
+  border: 1px solid rgba(255,255,255,.55);
+  animation-name: bubble-rise; animation-timing-function: ease-in; animation-iteration-count: infinite;
+  will-change: bottom, opacity, transform;
+}
+@keyframes bubble-rise {
+  0%   { bottom: -14%; opacity: 0; transform: translateX(0) scale(.5); }
+  8%   { opacity: .92; }
+  50%  { transform: translateX(7px) scale(1); }
+  78%  { opacity: .92; transform: translateX(-5px) scale(1.03); }
+  90%  { opacity: .95; transform: translateX(0) scale(1.28); }   /* 부풀어 오름 */
+  100% { bottom: 98%; opacity: 0; transform: scale(1.55); }      /* 팡! 터짐 */
+}
+@media (prefers-reduced-motion: reduce) { .theme-bubble { animation: none; opacity: 0; } }
+
+/* ===== 폭죽 팡팡 테마: 다크 밤하늘 + 반짝이는 별 + 폭죽(커플 기념일 폭죽 재사용) ===== */
+.app-shell.gd-bg-firework { background: linear-gradient(180deg, #241d38 0%, #141120 60%); }
+.app-shell.gd-bg-firework .topbar,
+.app-shell.gd-bg-firework .content { background: transparent; }
+.app-shell.gd-bg-firework .topbar,
+.app-shell.gd-bg-firework .topbar-heading { color: #f3f0f7; }
+.app-shell.gd-bg-firework .topbar .icon-btn { background: rgba(255,255,255,.12); color: #efecfb; }
+.app-shell.gd-bg-firework .topbar .icon-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+/* 배경(다크) 위에 직접 놓인 텍스트만 밝게 — 탭(밝은 알약 바)·카드·목록은 원래 색 유지 */
+.app-shell.gd-bg-firework .gd-head h1 { color: #f4f1fa; }
+.app-shell.gd-bg-firework .gd-title-text .muted { color: #b6afca; }
+/* 페이지 별 레이어(콘텐츠 뒤), 폭죽 캔버스는 Fireworks 가 z-index:15 로 앞에 */
+.theme-fw-stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.gd-themed > .theme-fw-stars { z-index: 0; }
+
+/* 대시보드 카드용 테마 미리보기 (카드 안에 담김) */
+.group-tile.tile-bubble { background: linear-gradient(165deg, #d9eff8 0%, #e2e5fb 55%, #ece0fb 100%); }
+.group-tile.tile-fw { background: linear-gradient(165deg, #2a2140 0%, #16121f 100%); }
+.group-tile.tile-fw .tile-name { color: #f4f1fa; }
+.group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
+.theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }
+.theme-fw-spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffd75e;
+  box-shadow: 0 0 6px 2px rgba(255,215,94,.7); opacity: 0;
+  animation: fw-spark 3.2s ease-out infinite; }
+.theme-fw-spark.s1 { top: 34%; left: 30%; }
+.theme-fw-spark.s2 { top: 26%; left: 66%; background: #ff5c8a; box-shadow: 0 0 6px 2px rgba(255,92,138,.7); animation-delay: 1.4s; }
+@keyframes fw-spark {
+  0%   { opacity: 0; transform: scale(.2); box-shadow: 0 0 0 0 currentColor; }
+  16%  { opacity: 1; transform: scale(1); }
+  40%  { opacity: .9; box-shadow: 0 0 10px 5px rgba(255,215,94,.35); }
+  60%  { opacity: 0; transform: scale(1.4); }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .theme-fw-spark { animation: none; opacity: 0; } }
+
 /* ===== 위시 작성/수정 · 약속 잡기/수정 (시안) ===== */
 /* 유형 칩 (선택 시에만 이모지 표시) */
 /* 상태 선택 탭 (위시/약속/추억) — 그룹 상세 탭과 동일한 '움직이는 알약' 스타일 재사용.

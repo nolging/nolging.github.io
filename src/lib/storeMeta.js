@@ -23,8 +23,10 @@ const IMG_BG = {
   'deco-sprout': '#eaf6ee', 'deco-jaguar': '#ecebf0', 'deco-wolf': '#eceef3', 'deco-blush': '#fdeef2',
   'deco-anger': '#fdecec', 'deco-pixel-shades': '#ecedf1', 'deco-alien-shades': '#e8f6ec',
   'deco-bandage': '#fdeee6', 'deco-gum': '#fdeaf1',
-  // 하트 뿅뿅 테마: 실제 적용 시 배경(연분홍 그라데이션)과 동일하게 → 위에 하트가 솟아오름
+  // 꾸미기 테마: 실제 적용 시 배경과 동일한 그라데이션으로 썸네일 배경 지정
   'theme-heart': 'linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%)',
+  'theme-bubble': 'linear-gradient(165deg, #d6eef8 0%, #dfe4fb 52%, #ece0fb 100%)',
+  'theme-firework': 'linear-gradient(165deg, #2a2140 0%, #16121f 100%)',
 }
 export const imgBgOf = (id, premium) => IMG_BG[id] || (premium ? '#2f2a49' : '#f3f2f7')
 
