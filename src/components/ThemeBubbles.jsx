@@ -15,6 +15,8 @@ const BUBBLES = [
   { l: 10, d: 5.8, dur: 6.9, s: 19, dx: 84,  ry: 66 },
 ]
 
+const DASHES = 9   // 터질 때 원형으로 배치되는 짧은 점선 개수
+
 export default function ThemeBubbles({ durScale = 1, className = '' }) {
   return (
     <div className={`theme-bubbles${className ? ` ${className}` : ''}`} aria-hidden="true">
@@ -23,10 +25,14 @@ export default function ThemeBubbles({ durScale = 1, className = '' }) {
           style={{
             left: `${b.l}%`, width: b.s, height: b.s,
             '--dur': `${b.dur * durScale}s`, '--delay': `${b.d * durScale}s`,
-            '--dx': `${b.dx}px`, '--ry': `${b.ry}%`,
+            '--dx': `${b.dx}px`, '--ry': `${b.ry}%`, '--pr': `${b.s / 2}px`,
           }}>
           <span className="tb-body" />
-          <span className="tb-ring" />
+          <span className="tb-pop">
+            {Array.from({ length: DASHES }).map((_, j) => (
+              <i key={j} className="tb-dash" style={{ '--a': `${j * (360 / DASHES)}deg` }} />
+            ))}
+          </span>
         </span>
       ))}
     </div>

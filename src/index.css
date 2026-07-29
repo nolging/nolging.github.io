@@ -2726,19 +2726,26 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   animation: bubble-float var(--dur, 6s) var(--delay, 0s) infinite cubic-bezier(.4, .05, .55, .95);
   will-change: bottom, transform;
 }
-/* 비눗방울 본체 — 팝 순간 순식간에(3%만에) 사라짐 */
+/* 비눗방울 본체 — 홀로그램처럼 파스텔 무지개가 은은하게 섞인 반투명 방울. 팝 순간 순식간에 사라짐 */
 .tb-body {
   position: absolute; inset: 0; border-radius: 50%; opacity: 0;
-  background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 6%, rgba(255,255,255,.4) 16%, rgba(150,205,235,.26) 46%, rgba(196,176,246,.22) 100%);
-  box-shadow: inset 0 0 6px rgba(255,255,255,.7), 0 1px 3px rgba(120,140,200,.16);
-  border: 1px solid rgba(255,255,255,.55);
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255,255,255,.98) 0 3%, rgba(255,255,255,.5) 9%, rgba(255,255,255,0) 20%),  /* 하이라이트 */
+    radial-gradient(circle at 68% 72%, rgba(255,255,255,.55) 0 3%, rgba(255,255,255,0) 13%),                          /* 보조 하이라이트 */
+    radial-gradient(circle at 50% 48%, rgba(255,255,255,.62) 0 24%, rgba(255,255,255,.14) 52%, rgba(255,255,255,0) 70%), /* 맑은 중심(색은 테두리로) */
+    conic-gradient(from 200deg at 50% 50%,
+      rgba(255,150,210,.62), rgba(150,200,255,.55), rgba(150,240,205,.55),
+      rgba(255,235,160,.55), rgba(205,165,255,.62), rgba(255,150,210,.62));                                          /* 무지개 이리데센스 */
+  box-shadow: inset 0 0 7px rgba(255,255,255,.7), inset 0 -3px 7px rgba(180,150,240,.28), 0 1px 4px rgba(140,150,210,.16);
+  border: 1px solid rgba(255,255,255,.45);
   animation: bubble-body var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
-/* 팝 순간 본체와 '동시에' 확 퍼지는 얇은 링 */
-.tb-ring {
-  position: absolute; inset: -1px; border-radius: 50%; opacity: 0;
-  border: 1.5px solid rgba(255,255,255,.85);
-  animation: bubble-pop var(--dur, 6s) var(--delay, 0s) infinite ease-out;
+/* 팝: 원형으로 배치된 짧은 점선(대시)이 톡 짧게 퍼졌다 금방 사라짐 */
+.tb-pop { position: absolute; inset: 0; }
+.tb-dash {
+  position: absolute; left: 50%; top: 50%; width: 2px; height: 4px; border-radius: 1px;
+  background: rgba(196,166,250,.95); opacity: 0;
+  animation: bubble-dash var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
 /* 가로(--dx)로 흐르며 살짝 대각선 위로 떠오르다 도착 → 살짝 부풀고 팝 */
 @keyframes bubble-float {
@@ -2753,17 +2760,19 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   0%   { opacity: 0; }
   10%  { opacity: .9; }
   86%  { opacity: .96; }
-  90%  { opacity: 1; }     /* 팝 직전까지 또렷 */
-  93%  { opacity: 0; }     /* 펑! 3%만에 사라짐 */
+  89%  { opacity: 1; }     /* 팝 직전까지 또렷 */
+  92%  { opacity: 0; }     /* 펑! 3%만에 사라짐 */
   100% { opacity: 0; }
 }
-@keyframes bubble-pop {
-  0%, 88% { opacity: 0; transform: scale(.5); }
-  91%     { opacity: .95; transform: scale(1.25); }   /* 본체 사라지는 순간 링이 확 퍼짐 */
-  97%     { opacity: 0; transform: scale(2.4); }
+/* 대시는 방울 테두리(--pr)에서 아주 짧게 밖으로 톡 퍼졌다 금방 사라짐 (rotate 후 translateY=반경 방향) */
+@keyframes bubble-dash {
+  0%, 87% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px))) scaleY(.4); }
+  90%     { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 2px)) scaleY(1); }
+  95%     { opacity: .9; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 7px)) scaleY(1); }
+  99%     { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 8px)) scaleY(.6); }
   100%    { opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-ring { animation: none; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-dash { animation: none; opacity: 0; } }
 
 /* 상점/인벤토리 썸네일용 테마 효과 미리보기 (하트와 동일 패턴) */
 .store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
