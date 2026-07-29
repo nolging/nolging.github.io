@@ -68,7 +68,7 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, desc: s.desc || '' }
+    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
     setMeta(m)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -207,8 +207,8 @@ export default function Inventory() {
                 return (
                   <button key={g.id} type="button" className={`inv-card2 ${actionable ? '' : 'is-static'}`}
                     onClick={actionable ? onClick : undefined}>
-                    <span className="inv-thumb" style={{ background: imgBgOf(g.id) }}>
-                      <StoreItemImage id={g.id} emoji={g.emoji} className="inv-thumb-img" />
+                    <span className="inv-thumb" style={{ background: meta[g.id]?.imageBg || imgBgOf(g.id) }}>
+                      <StoreItemImage id={g.id} emoji={g.emoji} svg={meta[g.id]?.imageSvg} className="inv-thumb-img" />
                       {showCount && <span className="inv-badge-count">×{countShown}</span>}
                       {badge && <span className="inv-badge-state">{badge}</span>}
                       {decoSlot(g.id) && <span className="deco-slot-badge">{decoSlot(g.id) === 'head' ? '머리' : '얼굴'}</span>}

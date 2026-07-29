@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminListStoreItems, adminReorderStoreItems } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
@@ -14,8 +14,10 @@ export default function AdminStore() {
   const [tab, setTabState] = useState(lastStoreTab) // 'general' | 'premium'
   const setTab = (t) => { lastStoreTab = t; setTabState(t) }
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // 낙관적 정렬: 로컬 즉시 반영 + 마지막 클릭 후 디바운스로 한 번만 저장
+  const pendingRef = useRef(new Map())   // id -> sortOrder
+  const saveTimer = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -25,24 +27,35 @@ export default function AdminStore() {
   }, [])
   useEffect(() => { load() }, [load])
 
+  const flushSave = useCallback(async () => {
+    const ups = [...pendingRef.current.entries()].map(([id, sortOrder]) => ({ id, sortOrder }))
+    pendingRef.current.clear()
+    if (!ups.length) return
+    try { await adminReorderStoreItems(ups) }
+    catch (err) { setError('정렬 저장에 실패했어요: ' + err.message); load() }
+  }, [load])
+  // 언마운트 시 대기 중인 저장 반영
+  useEffect(() => () => { clearTimeout(saveTimer.current); flushSave() }, [flushSave])
+
   const list = items.filter((it) => (tab === 'premium' ? it.premium : !it.premium))
   const sections = CAT_ORDER.map((key) => ({
     key, label: CAT[key],
     items: list.filter((it) => catOf(it.id, it.category) === key).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
   })).filter((s) => s.items.length)
 
-  // 섹션 내에서 한 칸 이동 → 그 섹션 순서를 10,20,30… 으로 재부여
-  async function move(sectionItems, it, dir) {
+  // 섹션 내 한 칸 이동 — 로컬 즉시 반영, 저장은 디바운스(0.6s)로 묶어서 한 번만
+  function move(sectionItems, it, dir) {
     const idx = sectionItems.findIndex((x) => x.id === it.id)
     const j = idx + dir
-    if (j < 0 || j >= sectionItems.length || busy) return
+    if (j < 0 || j >= sectionItems.length) return
     const reordered = [...sectionItems]
     ;[reordered[idx], reordered[j]] = [reordered[j], reordered[idx]]
-    setBusy(true); setError('')
-    try {
-      await adminReorderStoreItems(reordered.map((x, i) => ({ id: x.id, sortOrder: (i + 1) * 10 })))
-      await load()
-    } catch (err) { setError(err.message) } finally { setBusy(false) }
+    const orders = reordered.map((x, i) => ({ id: x.id, sortOrder: (i + 1) * 10 }))
+    const map = new Map(orders.map((o) => [o.id, o.sortOrder]))
+    setItems((prev) => prev.map((x) => (map.has(x.id) ? { ...x, sortOrder: map.get(x.id) } : x)))
+    orders.forEach((o) => pendingRef.current.set(o.id, o.sortOrder))
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(flushSave, 600)
   }
 
   return (
@@ -74,8 +87,8 @@ export default function AdminStore() {
                       <span className="admin-row-price">{formatCoin(it.price)}</span>
                     </button>
                     <div className="admin-ord">
-                      <button type="button" className="admin-ord-btn" disabled={busy || i === 0} aria-label="위로" onClick={() => move(sec.items, it, -1)}>▲</button>
-                      <button type="button" className="admin-ord-btn" disabled={busy || i === sec.items.length - 1} aria-label="아래로" onClick={() => move(sec.items, it, 1)}>▼</button>
+                      <button type="button" className="admin-ord-btn" disabled={i === 0} aria-label="위로" onClick={() => move(sec.items, it, -1)}>▲</button>
+                      <button type="button" className="admin-ord-btn" disabled={i === sec.items.length - 1} aria-label="아래로" onClick={() => move(sec.items, it, 1)}>▼</button>
                     </div>
                   </li>
                 ))}
