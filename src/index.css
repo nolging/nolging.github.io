@@ -2515,6 +2515,20 @@ button.mlist-row:hover { background: #f6f5fa; }
 .deco-desc { white-space: pre-line; font-size: 13px; line-height: 1.55; color: #6f6a80; text-align: center; margin: 0 0 2px; }
 .st-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
 .st-card-img img.store-img { width: 82%; height: 82%; object-fit: contain; }
+
+/* 관리자 상점 아이템: 이미지(SVG) 업로드 · 배경색 · 미리보기 */
+.si-img-row { display: flex; align-items: center; gap: 14px; }
+.si-img-prev { width: 84px; height: 84px; flex-shrink: 0; border-radius: 18px; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ececf1; }
+.si-img-prev-in { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 34px; line-height: 1; }
+.si-img-prev-in img.store-img { width: 74%; height: 74%; object-fit: contain; }
+.si-img-ctrls { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.si-upload { cursor: pointer; }
+.si-hint { font-size: 12px; color: #8b8798; }
+.si-bg-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.si-bg-row > span { font-size: 13px; color: #55525f; }
+.si-bg-row input[type="color"] { width: 40px; height: 34px; padding: 0; border: 1px solid #ddd; border-radius: 8px; background: none; cursor: pointer; }
+.si-bg-text { flex: 1; min-width: 150px; }
 /* 하트 뿅뿅 테마: 썸네일 영역에 실제 테마 효과(하트 솟아오름) */
 .store-hearts { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 /* 일부 아이템(커플/우정 링, 에어팟/버즈)은 조금 더 크게 */

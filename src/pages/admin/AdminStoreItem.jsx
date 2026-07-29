@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem } from '../../lib/api'
 import { ITEM_KINDS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
+import { cleanSvg, imgBgOf } from '../../lib/storeMeta'
+import StoreItemImage from '../../components/StoreItemImage'
 
 // 상점 아이템 추가(/admin/store/new) + 상세·수정(/admin/store/:id)
 export default function AdminStoreItem() {
@@ -25,6 +27,7 @@ export default function AdminStoreItem() {
       setForm({
         id: it.id, name: it.name, price: String(it.price), emoji: it.emoji || '', description: it.description || '',
         sortOrder: String(it.sortOrder ?? ''), kind: flagsToKind(it.premium, it.tier), giftOnly: it.giftOnly, isActive: it.isActive, adminOnly: it.adminOnly,
+        imageSvg: it.imageSvg || '', imageBg: it.imageBg || '',
       })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, id])
@@ -40,6 +43,17 @@ export default function AdminStoreItem() {
       await adminUpsertStoreItem({ ...form, description, premium, tier })
       nav('/admin/store', { replace: true })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+  async function onSvgFile(e) {
+    const f = e.target.files?.[0]
+    e.target.value = ''   // 같은 파일 다시 선택 가능하게
+    if (!f) return
+    try {
+      const text = await f.text()
+      if (!/<svg[\s>]/i.test(text)) { setError('SVG 파일이 아니에요.'); return }
+      setForm((prev) => ({ ...prev, imageSvg: cleanSvg(text) }))
+      setError('')
+    } catch { setError('파일을 읽지 못했어요.') }
   }
   async function toggleActive() {
     setBusy(true); setError('')
@@ -83,6 +97,34 @@ export default function AdminStoreItem() {
           <div className="field"><label htmlFor="si-desc">설명</label>
             <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
               placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></div>
+
+          {/* 이미지(SVG 업로드) + 배경색 + 상점 미리보기 */}
+          <div className="field">
+            <label>이미지 · 배경</label>
+            <div className="si-img-row">
+              <span className="si-img-prev" style={{ background: form.imageBg || imgBgOf(form.id, kindToFlags(form.kind).premium) }}>
+                <StoreItemImage id={form.id || '_preview'} emoji={form.emoji || '🖼️'} svg={form.imageSvg} className="si-img-prev-in" />
+              </span>
+              <div className="si-img-ctrls">
+                <label className="btn btn-ghost btn-sm si-upload">
+                  {form.imageSvg ? 'SVG 교체' : 'SVG 올리기'}
+                  <input type="file" accept=".svg,image/svg+xml" onChange={onSvgFile} style={{ display: 'none' }} />
+                </label>
+                {form.imageSvg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageSvg: '' }))}>이미지 제거</button>}
+                <span className="si-hint">파일명은 무시하고 아이템 ID로 저장돼요.</span>
+              </div>
+            </div>
+            <div className="si-bg-row">
+              <span>배경색</span>
+              <input type="color" aria-label="배경색 선택"
+                value={/^#[0-9a-fA-F]{6}$/.test(form.imageBg) ? form.imageBg : '#f3f2f7'}
+                onChange={(e) => setForm((f) => ({ ...f, imageBg: e.target.value }))} />
+              <input className="si-bg-text" value={form.imageBg} onChange={setField('imageBg')}
+                placeholder="#f3f2f7 / transparent / gradient" autoCapitalize="none" />
+              {form.imageBg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageBg: '' }))}>초기화</button>}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label className="chk"><input type="checkbox" checked={form.giftOnly} onChange={setField('giftOnly')} /> 선물 전용(구매 불가)</label>
             <label className="chk"><input type="checkbox" checked={form.isActive} onChange={setField('isActive')} /> 활성(상점 노출)</label>

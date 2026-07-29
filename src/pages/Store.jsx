@@ -197,8 +197,8 @@ export default function Store() {
               <div className="st-grid">
                 {sec.items.map((item) => (
                   <button key={item.id} type="button" className={`st-card ${item.premium ? 'st-card-prem' : ''}`} onClick={() => open(item)}>
-                    <span className="st-card-thumb" style={{ background: imgBgOf(item.id, item.premium) }}>
-                      <StoreItemImage id={item.id} emoji={item.emoji} className="st-card-img" />
+                    <span className="st-card-thumb" style={{ background: item.imageBg || imgBgOf(item.id, item.premium) }}>
+                      <StoreItemImage id={item.id} emoji={item.emoji} svg={item.imageSvg} className="st-card-img" />
                       {decoSlot(item.id) && <span className="deco-slot-badge">{decoSlot(item.id) === 'head' ? '머리' : '얼굴'}</span>}
                     </span>
                     <span className="st-card-name">{itemName(item.id, item.name)}</span>
@@ -239,8 +239,8 @@ export default function Store() {
                 <svg width="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
               <div className="st-detail-top">
-                <span className="st-detail-thumb" style={{ background: imgBgOf(selected.id, selected.premium) }}>
-                  <StoreItemImage id={selected.id} emoji={selected.emoji} className="st-detail-img" />
+                <span className="st-detail-thumb" style={{ background: selected.imageBg || imgBgOf(selected.id, selected.premium) }}>
+                  <StoreItemImage id={selected.id} emoji={selected.emoji} svg={selected.imageSvg} className="st-detail-img" />
                 </span>
                 {selected.id !== 'couple-ring' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)}개</span>}
                 <div className="st-detail-name">{itemName(selected.id, selected.name)}</div>

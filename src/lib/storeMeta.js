@@ -26,6 +26,17 @@ const IMG_BG = {
 }
 export const imgBgOf = (id, premium) => IMG_BG[id] || (premium ? '#2f2a49' : '#f3f2f7')
 
+// 업로드한 SVG(문자열)를 <img src> 데이터 URI 로. <img> 컨텍스트라 스크립트는 실행 안 됨(안전).
+export const svgDataUri = (svg) => svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : null
+// 업로드 SVG 정리: 선언부·스크립트·이벤트 핸들러 제거(방어)
+export const cleanSvg = (s) => (s || '')
+  .replace(/<\?xml[^>]*\?>/gi, '')
+  .replace(/<!DOCTYPE[^>]*>/gi, '')
+  .replace(/<script[\s\S]*?<\/script>/gi, '')
+  .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+  .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+  .trim()
+
 // iOS 여부(아이패드 포함). 카세트 아이템의 이름/아이콘을 플랫폼별로 다르게 노출하기 위함.
 export const IS_IOS = typeof navigator !== 'undefined' && (
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
