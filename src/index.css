@@ -4905,7 +4905,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-ord-btn:disabled { opacity: .3; cursor: default; }
 /* 길게 눌러 드래그 정렬 — 롱프레스 시 행 텍스트가 블록 선택되지 않도록 */
 .admin-rows, .admin-row-wrap, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.admin-row-grip { font-size: 15px; color: #c3c0cc; flex-shrink: 0; width: 16px; text-align: center; cursor: grab; user-select: none; }
+.admin-row-grip { font-size: 16px; color: #c3c0cc; flex-shrink: 0; width: 22px; margin-left: -4px; text-align: center; cursor: grab;
+  user-select: none; -webkit-user-select: none; touch-action: none; -webkit-touch-callout: none; }
 .admin-row-wrap.is-dragging { background: #f3eefb; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.14); position: relative; z-index: 2; }
 .admin-row-wrap.is-dragging .admin-row-grip { color: #8a63d2; cursor: grabbing; }
 /* 상세 정보 나열 */

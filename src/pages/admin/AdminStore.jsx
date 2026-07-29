@@ -84,21 +84,35 @@ export default function AdminStore() {
 
   const clearPress = () => { if (pressRef.current) { clearTimeout(pressRef.current.timer); pressRef.current = null } }
 
+  // 드래그 활성화 — 포인터를 캡처해 이후 move/up 이벤트를 계속 받고(핑거가 행을 벗어나도),
+  // 모바일에서 스크롤로 가로채가지 않게 한다.
+  function activateDrag(el, pointerId, sectionKey, it) {
+    clearPress()
+    dragRef.current = { id: it.id, sectionKey }
+    try { el?.setPointerCapture?.(pointerId) } catch { /* noop */ }
+    setDragId(it.id)
+    if (navigator.vibrate) { try { navigator.vibrate(12) } catch { /* noop */ } }
+  }
+
   function onRowPointerDown(e, sectionKey, it) {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     clearPress()
+    const el = e.currentTarget
+    const pointerId = e.pointerId
+    // 손잡이(⠿)를 잡으면 바로 드래그, 행 본문은 길게 눌러(350ms) 드래그
+    if (e.target?.closest?.('.admin-row-grip')) {
+      e.preventDefault()
+      activateDrag(el, pointerId, sectionKey, it)
+      return
+    }
     const startY = e.clientY
-    const timer = setTimeout(() => {
-      dragRef.current = { id: it.id, sectionKey }
-      setDragId(it.id)
-      if (navigator.vibrate) { try { navigator.vibrate(12) } catch { /* noop */ } }
-    }, 350)
+    const timer = setTimeout(() => activateDrag(el, pointerId, sectionKey, it), 350)
     pressRef.current = { id: it.id, sectionKey, startY, timer }
   }
   // 드래그 활성화 전 스크롤로 판단되면 롱프레스 취소
   function onRowPointerMove(e) {
     if (!pressRef.current || dragRef.current) return
-    if (Math.abs(e.clientY - pressRef.current.startY) > 8) clearPress()
+    if (Math.abs(e.clientY - pressRef.current.startY) > 10) clearPress()
   }
   function onRowPointerUp() { clearPress() }
 
@@ -130,11 +144,15 @@ export default function AdminStore() {
       dragRef.current = null
       setDragId(null)
     }
+    // iOS Safari 는 pointermove.preventDefault 로 스크롤이 안 막힘 → touchmove 를 직접 막는다
+    const blockScroll = (e) => e.preventDefault()
     window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('touchmove', blockScroll, { passive: false })
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('touchmove', blockScroll)
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
     }
