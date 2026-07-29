@@ -1752,10 +1752,10 @@ export async function adminGrantCoin({ userId, amount, reason }) {
 // ---- 관리자: 상점 아이템 관리 (RLS 상 store_items 쓰기는 관리자만 허용) ----
 // 비활성 포함 전체 목록 (sort_order 순).
 export async function adminListStoreItems() {
-  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier'
+  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only'
   let res = await supabase.from('store_items').select(cols).order('sort_order', { ascending: true })
   if (res.error?.code === '42703') {
-    // premium/tier 미배포 환경 폴백
+    // premium/tier/admin_only 미배포 환경 폴백
     res = await supabase.from('store_items')
       .select('id, name, price, emoji, description, gift_only, sort_order, is_active')
       .order('sort_order', { ascending: true })
@@ -1764,7 +1764,7 @@ export async function adminListStoreItems() {
   return (res.data ?? []).map((r) => ({
     id: r.id, name: r.name, price: r.price, emoji: r.emoji, description: r.description ?? '',
     giftOnly: !!r.gift_only, sortOrder: r.sort_order ?? 0, isActive: r.is_active !== false,
-    premium: !!r.premium, tier: r.tier || '',
+    premium: !!r.premium, tier: r.tier || '', adminOnly: !!r.admin_only,
   }))
 }
 
@@ -1781,13 +1781,14 @@ export async function adminUpsertStoreItem(item) {
     is_active: item.isActive !== false,
     premium: !!item.premium,
     tier: item.tier ? String(item.tier) : null,
+    admin_only: !!item.adminOnly,
   }
   if (!row.id) throw new Error('아이템 ID를 입력해 주세요.')
   if (!row.name) throw new Error('아이템 이름을 입력해 주세요.')
   let res = await supabase.from('store_items').upsert(row).select().single()
   if (res.error?.code === '42703') {
-    // premium/tier 미배포 환경 폴백
-    const { premium, tier, ...rest } = row // eslint-disable-line no-unused-vars
+    // premium/tier/admin_only 미배포 환경 폴백
+    const { premium, tier, admin_only, ...rest } = row // eslint-disable-line no-unused-vars
     res = await supabase.from('store_items').upsert(rest).select().single()
   }
   if (res.error) throw res.error

@@ -24,7 +24,7 @@ export default function AdminStoreItem() {
       if (!it) { setError('아이템을 찾을 수 없어요.'); return }
       setForm({
         id: it.id, name: it.name, price: String(it.price), emoji: it.emoji || '', description: it.description || '',
-        sortOrder: String(it.sortOrder ?? ''), kind: flagsToKind(it.premium, it.tier), giftOnly: it.giftOnly, isActive: it.isActive,
+        sortOrder: String(it.sortOrder ?? ''), kind: flagsToKind(it.premium, it.tier), giftOnly: it.giftOnly, isActive: it.isActive, adminOnly: it.adminOnly,
       })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, id])
@@ -86,6 +86,7 @@ export default function AdminStoreItem() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label className="chk"><input type="checkbox" checked={form.giftOnly} onChange={setField('giftOnly')} /> 선물 전용(구매 불가)</label>
             <label className="chk"><input type="checkbox" checked={form.isActive} onChange={setField('isActive')} /> 활성(상점 노출)</label>
+            <label className="chk"><input type="checkbox" checked={form.adminOnly} onChange={setField('adminOnly')} /> 관리자에게만 보이게(테스트용)</label>
           </div>
           <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '아이템 추가'}</button>
         </form>

@@ -626,8 +626,6 @@ function RichToolbar({ editorRef }) {
         <button type="button" className="sb-rt-btn" aria-label="왼쪽 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyLeft') }}><AlignIcon kind="left" /></button>
         <button type="button" className="sb-rt-btn" aria-label="가운데 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyCenter') }}><AlignIcon kind="center" /></button>
         <button type="button" className="sb-rt-btn" aria-label="오른쪽 정렬" onMouseDown={(e) => { e.preventDefault(); exec('justifyRight') }}><AlignIcon kind="right" /></button>
-        <span className="sb-rt-sep" />
-        <button type="button" className="sb-rt-btn" aria-label="서식 지우기" onMouseDown={(e) => { e.preventDefault(); exec('removeFormat') }}>✕서식</button>
       </div>
     </div>
   )
