@@ -2784,6 +2784,26 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-dash { animation: none; opacity: 0; } }
 
+/* 그룹 상세(gd-bubbles-over): 상승은 느리게(durScale 2.6) 두되, 팝/점선만 사이클 끝의
+   '짧은 창'으로 처리 → 긴 주기여도 팝의 실제 지속시간이 카드와 거의 같게(≈0.3~0.6s). */
+.gd-bubbles-over .tb-body { animation-name: bubble-body-fast; }
+.gd-bubbles-over .tb-dash { animation-name: bubble-dash-fast; }
+@keyframes bubble-body-fast {
+  0%    { opacity: 0; --hole: 0%; }
+  6%    { opacity: .92; }
+  93%   { opacity: 1; --hole: 0%; }        /* 상승 내내 또렷 */
+  95.5% { opacity: 1; --hole: 135%; }      /* 사이클 끝에서 중심→바깥 빠른 페이드 */
+  96.5% { opacity: 0; --hole: 135%; }
+  100%  { opacity: 0; --hole: 135%; }
+}
+@keyframes bubble-dash-fast {
+  0%, 94%  { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px))) scaleY(.6); }
+  94.8%    { opacity: .9; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 1px)) scaleY(1); }
+  96%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 4px)) scaleY(.95); }
+  97.5%    { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 6px)); }
+  100%     { opacity: 0; }
+}
+
 /* 상점/인벤토리 썸네일용 테마 효과 미리보기 (하트와 동일 패턴) */
 .store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 
