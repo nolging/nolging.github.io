@@ -2741,8 +2741,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
       rgba(255,235,160,.55), rgba(205,165,255,.62), rgba(255,150,210,.62));                                          /* 무지개 이리데센스 */
   box-shadow: inset 0 0 7px rgba(255,255,255,.7), inset 0 -3px 7px rgba(180,150,240,.28), 0 1px 4px rgba(140,150,210,.16);
   border: 1px solid rgba(255,255,255,.45);
-  -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 var(--hole), #000 calc(var(--hole) + 12%));
-          mask: radial-gradient(circle at 50% 50%, transparent 0 var(--hole), #000 calc(var(--hole) + 12%));
+  /* 페더를 구멍의 '안쪽'에 두어(hole-12% → hole) 평상시(--hole:0)엔 구멍이 없이 꽉 차 보이게 */
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 calc(var(--hole) - 12%), #000 var(--hole));
+          mask: radial-gradient(circle at 50% 50%, transparent 0 calc(var(--hole) - 12%), #000 var(--hole));
   animation: bubble-body var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
 /* 팝: 원형으로 배치된 짧은 점선(대시)이 톡 짧게 퍼졌다 금방 사라짐 */
