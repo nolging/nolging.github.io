@@ -27,6 +27,7 @@ const IMG_BG = {
   'theme-heart': 'linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%)',
   'theme-bubble': 'linear-gradient(165deg, #d6eef8 0%, #dfe4fb 52%, #ece0fb 100%)',
   'theme-firework': 'linear-gradient(150deg, #100e18 0%, #14111f 55%, #2e2049 76%, #5e3350 91%, #9c5638 100%)',
+  'theme-waterpark': 'linear-gradient(150deg, #7fdaf0 0%, #38b6de 55%, #1f95c4 100%)',
 }
 export const imgBgOf = (id, premium) => IMG_BG[id] || (premium ? '#2f2a49' : '#f3f2f7')
 
