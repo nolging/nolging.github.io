@@ -6,6 +6,7 @@ import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
   completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
+  updateTaskMedia,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen, resolveCategories } from '../lib/constants'
 import { resolveMentions, splitMentions } from '../lib/mentions'
@@ -279,6 +280,13 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   }, [groupId, taskId])
 
   useEffect(() => { load() }, [load])
+
+  // 상세 정보 카드의 제공처 수정(쿠팡플레이 추가/제거). 낙관적 업데이트 후 저장.
+  const setMediaProviders = useCallback(async (providers) => {
+    const nextInfo = { ...task.media_info, providers }
+    setTask((t) => (t ? { ...t, media_info: nextInfo } : t))
+    try { await updateTaskMedia(task.id, nextInfo) } catch { load() }
+  }, [task, load])
 
   // 추억(완료)일 때만 리뷰 로드
   const loadReviews = useCallback(async () => {
@@ -705,7 +713,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
       {task.description && <p className="td-desc">{task.description}</p>}
 
       {task.media_info && MEDIA_LOOKUP_CATS.includes(task.category) && (
-        <MediaInfo category={task.category} info={task.media_info} />
+        <MediaInfo category={task.category} info={task.media_info} onSetProviders={setMediaProviders} />
       )}
 
       {/* 약속 정보(상세 정보 카드 아래) + 완료/리뷰 버튼을 같은 줄에 */}

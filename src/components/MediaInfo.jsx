@@ -1,5 +1,10 @@
 // 위시(OTT/영화/독서/게임)에서 가져온 정보 표시. category 에 따라 항목이 달라진다.
+import { useEffect, useRef, useState } from 'react'
 import { gamePlatformLabels } from '../lib/constants'
+
+// 쿠팡플레이(쿠플)는 OTT 검색 제공처에서 빠지는 경우가 많아 사용자가 직접 추가/제거
+const COUPANG_PROVIDER = { name: '쿠팡플레이', logo: '/ott/coupang.png' }
+const isCoupang = (p) => /coupang|쿠팡/i.test(typeof p === 'string' ? p : p?.name || '')
 
 // 특정 브랜드는 로고를 지정 이미지로 대체 (TMDB 로고가 마음에 안 들 때)
 const LOGO_OVERRIDE = [
@@ -28,7 +33,40 @@ function ProviderBadges({ list, suffix }) {
   )
 }
 
-export default function MediaInfo({ category, info, onClear }) {
+// 우측 상단 +/- 드롭다운: 쿠팡플레이 추가/제거
+function CoupangToggle({ providers, onSetProviders }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const has = providers.some(isCoupang)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  const toggle = () => {
+    const next = has ? providers.filter((p) => !isCoupang(p)) : [...providers, COUPANG_PROVIDER]
+    setOpen(false)
+    onSetProviders(next)
+  }
+  return (
+    <div className="mi-cp" ref={ref}>
+      <button type="button" className="mi-cp-btn" onClick={() => setOpen((v) => !v)}
+        aria-label={has ? '쿠팡플레이 제거' : '쿠팡플레이 추가'} aria-expanded={open}>
+        {has ? '−' : '+'}
+      </button>
+      {open && (
+        <div className="mi-cp-menu" role="menu">
+          <button type="button" className="mi-cp-item" role="menuitem" onClick={toggle}>
+            {has ? '쿠팡 플레이 제거' : '쿠팡 플레이 추가'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function MediaInfo({ category, info, onClear, onSetProviders }) {
   if (!info) return null
   const rows = [] // [label, node]
 
@@ -61,6 +99,9 @@ export default function MediaInfo({ category, info, onClear }) {
 
   return (
     <div className="media-info">
+      {category === 'OTT' && onSetProviders && (
+        <CoupangToggle providers={info.providers || []} onSetProviders={onSetProviders} />
+      )}
       <div className="media-info-body">
         {info.poster
           ? <img src={info.poster} alt="" className="media-info-poster" />

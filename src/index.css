@@ -2299,8 +2299,27 @@ button.mlist-row:hover { background: #f6f5fa; }
 .media-result-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .media-result-title { font-weight: 600; font-size: 14px; }
 .media-info {
+  position: relative;
   background: var(--surface); box-shadow: var(--card-shadow); border-radius: 12px; padding: 12px 14px;
 }
+/* 쿠팡플레이 추가/제거 토글 (우측 상단) */
+.mi-cp { position: absolute; top: 8px; right: 8px; z-index: 2; }
+.mi-cp-btn {
+  width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border, #e2e4ec);
+  background: var(--surface); color: var(--muted); font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  box-shadow: 0 1px 3px rgba(20,22,40,.12);
+}
+.mi-cp-btn:hover { color: var(--text); }
+.mi-cp-menu {
+  position: absolute; top: 26px; right: 0; background: var(--surface);
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(20,22,40,.18); padding: 4px; min-width: 116px;
+}
+.mi-cp-item {
+  display: block; width: 100%; text-align: left; border: none; background: transparent;
+  padding: 8px 10px; border-radius: 7px; font-size: 13px; color: var(--text); cursor: pointer; white-space: nowrap;
+}
+.mi-cp-item:hover { background: #f0f1f6; }
 .media-info-body { display: flex; gap: 12px; align-items: stretch; }
 .media-info-poster { width: 60px; align-self: stretch; height: auto; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #e4e6ec; }
 .media-info-main { flex: 1; min-width: 0; }
