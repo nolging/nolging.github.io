@@ -2786,8 +2786,16 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 그룹 상세(gd-bubbles-over): 상승은 느리게(durScale 2.6) 두되, 팝/점선만 사이클 끝의
    '짧은 창'으로 처리 → 긴 주기여도 팝의 실제 지속시간이 카드와 거의 같게(≈0.3~0.6s). */
+/* 상세는 등속(linear)으로 끝까지 상승 → 감속/멈춤 없이 상승 중에 팝 (카드의 감속 easing은
+   durScale 1이라 티가 안 나지만 2.6배에선 '터지기 직전 멈춤'처럼 보였음) */
+.gd-bubbles-over .theme-bubble { animation-name: bubble-float-detail; animation-timing-function: linear; }
 .gd-bubbles-over .tb-body { animation-name: bubble-body-fast; }
 .gd-bubbles-over .tb-dash { animation-name: bubble-dash-fast; }
+@keyframes bubble-float-detail {
+  0%   { bottom: -14%; transform: translateX(0) scale(.55); }
+  14%  { transform: translateX(calc(var(--dx) * .14)) scale(1); }
+  100% { bottom: calc(var(--ry, 60%) + 5%); transform: translateX(var(--dx)) scale(1.04); }
+}
 @keyframes bubble-body-fast {
   0%    { opacity: 0; --hole: 0%; }
   6%    { opacity: .92; }
