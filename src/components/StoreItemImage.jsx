@@ -28,7 +28,8 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
   if (id === 'theme-bubble') {
     return (
       <span className={`${className} store-bubbles`} aria-hidden="true">
-        <ThemeBubbles durScale={0.6} />
+        {/* 실제 적용(카드)와 같은 속도로 두둥실 떠오르게(0.6은 너무 빨라 '왈칵' 쏟아져 보였음) */}
+        <ThemeBubbles durScale={1} />
       </span>
     )
   }
