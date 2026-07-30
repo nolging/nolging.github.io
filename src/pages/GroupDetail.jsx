@@ -540,7 +540,7 @@ export default function GroupDetail() {
     : { opacity: 0 }
 
   return (
-    <div className={`page gd-page ${group.deco_theme ? 'gd-themed' : ''}`}
+    <div className={`page gd-page ${group.deco_theme ? `gd-themed gd-theme-${group.deco_theme}` : ''}`}
       onTouchStart={onTabTouchStart} onTouchMove={onTabTouchMove} onTouchEnd={onTabTouchEnd}>
       {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
       {group.deco_theme === 'bubble' && <ThemeBubbles durScale={2.6} className="gd-bubbles-over" />}

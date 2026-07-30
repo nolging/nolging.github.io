@@ -2179,10 +2179,21 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 .fab:hover { filter: brightness(1.06); text-decoration: none; }
 .fab:active { transform: scale(.94); }
-/* 하트 뿅뿅 테마 그룹: FAB 를 어울리는 분홍 그라데이션으로 */
-.gd-themed .fab {
+/* 테마별 FAB(위시 작성 버튼) 색상 */
+/* 하트 뿅뿅: 분홍 */
+.gd-theme-heart .fab {
   background: linear-gradient(140deg, #ff9ec0, #ef6591);
   box-shadow: 0 10px 24px rgba(236, 106, 143, .4);
+}
+/* 버블버블: 소라·연보라 이리데센스 톤 */
+.gd-theme-bubble .fab {
+  background: linear-gradient(140deg, #7fcdf0, #a78bf0);
+  box-shadow: 0 10px 24px rgba(130, 150, 230, .42);
+}
+/* 폭죽 팡팡: 다크 배경에서 도드라지는 골드→핑크(폭죽) 톤 */
+.gd-theme-firework .fab {
+  background: linear-gradient(140deg, #ffd45e, #ff6a9a);
+  box-shadow: 0 10px 24px rgba(255, 120, 120, .45);
 }
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px) {
@@ -2791,10 +2802,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-bubbles-over .theme-bubble { animation-name: bubble-float-detail; animation-timing-function: linear; }
 .gd-bubbles-over .tb-body { animation-name: bubble-body-fast; }
 .gd-bubbles-over .tb-dash { animation-name: bubble-dash-fast; }
+/* 대부분 등속 상승, 도착 직전(90~93%≈0.5s)만 감속(ease-out) → 카드의 감속 느낌과 비슷 */
 @keyframes bubble-float-detail {
-  0%   { bottom: -14%; transform: translateX(0) scale(.55); }
-  14%  { transform: translateX(calc(var(--dx) * .14)) scale(1); }
-  100% { bottom: calc(var(--ry, 60%) + 5%); transform: translateX(var(--dx)) scale(1.04); }
+  0%   { bottom: -14%; transform: translateX(0) scale(.55); animation-timing-function: linear; }
+  90%  { bottom: calc(var(--ry, 60%) - 5%); transform: translateX(calc(var(--dx) * .95)) scale(1.02); animation-timing-function: ease-out; }
+  93%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.03); animation-timing-function: linear; }
+  100% { bottom: calc(var(--ry, 60%) + 3%); transform: translateX(var(--dx)) scale(1.04); }
 }
 @keyframes bubble-body-fast {
   0%    { opacity: 0; --hole: 0%; }
