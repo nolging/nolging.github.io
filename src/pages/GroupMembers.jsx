@@ -245,13 +245,13 @@ export default function GroupMembers() {
         <div className="csx-zone">
           <div className="csx-zone-title">멍냥꽁냥</div>
           <div className="csx-scroll">
+            {/* 익명 게시판: 개설되면 전원 노출(미개설이면 관리자에게만) → 제일 앞. 카드 이름은 '비밀 게시판' 고정 */}
+            {(boardName || isAdmin) && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
             <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={() => go('touch')} />
             <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
             <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="착한 애인 챌린지" onClick={() => go('praise')} />
             {/* 타로 카페: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
             {isAdmin && <PlayCard emoji="🔮" bg="#eeebfe" title="타로 카페" sub="오늘의 카드" onClick={() => go('tarot')} />}
-            {/* 익명 게시판: 개설되면 전원 노출(미개설이면 관리자에게만). 카드 이름은 '비밀 게시판' 고정 */}
-            {(boardName || isAdmin) && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
             {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
           </div>
         </div>

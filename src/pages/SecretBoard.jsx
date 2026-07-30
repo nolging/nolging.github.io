@@ -214,6 +214,7 @@ export function BoardCompose() {
   const [err, setErr] = useState('')
   const [pfOpen, setPfOpen] = useState(false)
   const [empty, setEmpty] = useState(true)
+  const [titleFocused, setTitleFocused] = useState(false) // 제목 입력 포커스 시 스타일 툴바 숨김
   const editorRef = useRef(null)
   const seededRef = useRef(false)
   const [bottomEl, setBottomEl] = useState(null)
@@ -295,7 +296,8 @@ export function BoardCompose() {
             </div>
           </div>
           <input className="sb-title-input" placeholder="제목" value={title} maxLength={100}
-            onChange={(e) => setTitle(e.target.value)} />
+            onChange={(e) => setTitle(e.target.value)}
+            onFocus={() => setTitleFocused(true)} onBlur={() => setTitleFocused(false)} />
           <div className="sb-compose-div" />
           <div className="sb-editor-wrap">
             {empty && <div className="sb-editor-ph">내용을 입력하세요</div>}
@@ -310,7 +312,7 @@ export function BoardCompose() {
                 setEmpty(!editorRef.current.textContent.trim())
               }} />
           </div>
-          {bottomEl && createPortal(<RichToolbar editorRef={editorRef} />, bottomEl)}
+          {bottomEl && !titleFocused && createPortal(<RichToolbar editorRef={editorRef} />, bottomEl)}
         </>
       )}
     </div>
