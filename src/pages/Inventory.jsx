@@ -519,8 +519,6 @@ function MegaphoneModal({ open, onClose, onDone, myId }) {
       .catch((e) => setError(e.message))
   }, [open, myId])
 
-  const group = groups.find((g) => g.id === groupId)
-
   async function send() {
     if (!groupId) { setError('보낼 그룹을 선택해 주세요.'); return }
     if (!msg.trim()) { setError('보낼 메시지를 입력해 주세요.'); return }
@@ -538,16 +536,12 @@ function MegaphoneModal({ open, onClose, onDone, myId }) {
         <ItemHead id="megaphone" name="확성기" sub="그룹 멤버 전원에게 알림을 보내요" emoji="📣" />
         {error && <div className="alert alert-error">{error}</div>}
         <label className="field">
-          <span>보낼 그룹</span>
+          <span>그룹</span>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{groups.length ? '그룹 선택' : '보낼 수 있는 그룹이 없어요'}</option>
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </label>
-        <div className="field">
-          <span>제목</span>
-          <input value={group ? `[${group.name}] 확성기가 켜졌어요` : '[그룹] 확성기가 켜졌어요'} disabled readOnly />
-        </div>
         <label className="field">
           <span>메시지</span>
           <textarea rows={3} value={msg} maxLength={500} placeholder="멤버들에게 보낼 메시지를 입력하세요"
