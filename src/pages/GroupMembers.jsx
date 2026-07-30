@@ -29,11 +29,13 @@ function annivLabel(s) {
 }
 
 // 멍냥꽁냥 / 미니 게임 존의 가로 스크롤 카드
-function PlayCard({ emoji, bg, title, sub, onClick }) {
+function PlayCard({ emoji, img, bg, title, sub, onClick }) {
   return (
     <button type="button" className={`csx-card ${onClick ? '' : 'csx-card-soft'}`}
       onClick={onClick} aria-disabled={!onClick}>
-      <span className="csx-card-ico" style={{ background: bg }}>{emoji}</span>
+      <span className="csx-card-ico" style={{ background: bg }}>
+        {img ? <img className="csx-card-img" src={img} alt="" /> : emoji}
+      </span>
       <span className="csx-card-t">{title}</span>
       <span className="csx-card-s">{sub}</span>
     </button>
@@ -249,7 +251,7 @@ export default function GroupMembers() {
             {/* 타로 카페: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
             {isAdmin && <PlayCard emoji="🔮" bg="#eeebfe" title="타로 카페" sub="오늘의 카드" onClick={() => go('tarot')} />}
             {/* 익명 게시판: 개설되면 전원 노출(미개설이면 관리자에게만). 카드 이름은 '비밀 게시판' 고정 */}
-            {(boardName || isAdmin) && <PlayCard emoji="🤫" bg="#eeebfe" title="비밀 게시판" sub="익명 이야기" onClick={() => go('board')} />}
+            {(boardName || isAdmin) && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
             {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
           </div>
         </div>
@@ -350,7 +352,7 @@ export default function GroupMembers() {
           <div className="csx-zone">
             <div className="csx-zone-title">커뮤니티</div>
             <div className="csx-scroll">
-              {(boardName || isAdmin) && <PlayCard emoji="🤫" bg="#eeebfe" title="비밀 게시판" sub="익명 이야기" onClick={() => go('board')} />}
+              {(boardName || isAdmin) && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
               <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
               {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
             </div>
