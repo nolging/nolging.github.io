@@ -2857,58 +2857,96 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 상점/인벤토리 썸네일용 테마 효과 미리보기 (하트와 동일 패턴) */
 .store-bubbles, .store-fw, .store-wp { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 
-/* ===== 워터파크 테마: 위에서 본 수영장 물(찰랑) + 튜브·비치볼이 둥둥 ===== */
-.app-shell.gd-bg-waterpark { background: linear-gradient(160deg, #7fdaf0 0%, #38b6de 55%, #1f95c4 100%); }
+/* ===== 워터파크 테마: 위에서 본 수영장(타일 바닥+물결) + 튜브·공·꽃·트로피컬 잎 ===== */
+.app-shell.gd-bg-waterpark { background: linear-gradient(160deg, #8ed9ef 0%, #52bde4 58%, #33a7d6 100%); }
 .app-shell.gd-bg-waterpark .topbar,
 .app-shell.gd-bg-waterpark .content { background: transparent; }
 .app-shell.gd-bg-waterpark .topbar,
 .app-shell.gd-bg-waterpark .topbar-heading { color: #fff; }
 .app-shell.gd-bg-waterpark .gd-head h1 { color: #fff; text-shadow: 0 1px 3px rgba(0,55,85,.28); }
 .app-shell.gd-bg-waterpark .gd-title-text .muted { color: rgba(255,255,255,.9); }
-.group-card.group-tile.tile-waterpark { background: linear-gradient(150deg, #7fdaf0 0%, #38b6de 55%, #1f95c4 100%); }
-.tile-waterpark .group-badge, .tile-waterpark .tile-name, .tile-waterpark .tile-desc, .tile-waterpark .tile-members { position: relative; z-index: 1; }
+.group-card.group-tile.tile-waterpark { background: linear-gradient(150deg, #8ed9ef 0%, #52bde4 58%, #33a7d6 100%); isolation: isolate; }
+.tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 물/튜브/공/꽃/잎을 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 .tile-waterpark .tile-name { color: #fff; text-shadow: 0 1px 3px rgba(0,55,85,.3); }
 .tile-waterpark .tile-desc, .tile-waterpark .muted { color: rgba(255,255,255,.92); }
 
-/* 물/튜브/공은 콘텐츠 뒤(배경 레이어) */
 .theme-wp { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .theme-wp.gd-wp-over { position: fixed; inset: 0; z-index: 0; }
 .gd-themed > .theme-wp { z-index: 0; }
+
+/* 수영장 바닥 타일(격자) */
+.wp-tiles { position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg,  rgba(255,255,255,.16) 0 2px, transparent 2px 46px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.16) 0 2px, transparent 2px 46px);
+}
 /* 찰랑이는 물빛(caustics) */
 .wp-water { position: absolute; inset: 0;
   background:
-    radial-gradient(55% 40% at 22% 28%, rgba(255,255,255,.22), transparent 60%),
-    radial-gradient(50% 38% at 72% 58%, rgba(255,255,255,.16), transparent 60%),
-    radial-gradient(45% 30% at 46% 82%, rgba(255,255,255,.14), transparent 60%);
+    radial-gradient(55% 40% at 22% 28%, rgba(255,255,255,.20), transparent 60%),
+    radial-gradient(50% 38% at 72% 58%, rgba(255,255,255,.15), transparent 60%),
+    radial-gradient(45% 30% at 46% 82%, rgba(255,255,255,.13), transparent 60%);
   animation: wp-shimmer 8s ease-in-out infinite alternate;
 }
 .wp-water::after { content: ''; position: absolute; inset: -25%;
-  background: repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 5px, transparent 5px 24px);
-  animation: wp-caustic 10s linear infinite; opacity: .6;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,.08) 0 5px, transparent 5px 24px);
+  animation: wp-caustic 10s linear infinite; opacity: .55;
 }
 @keyframes wp-shimmer { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(-4%,3%) scale(1.07); } }
 @keyframes wp-caustic { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+
 /* 비치볼(색색 웨지 + 하이라이트) */
 .wp-ball { position: absolute; border-radius: 50%;
   background:
     radial-gradient(circle at 34% 28%, rgba(255,255,255,.9) 0 9%, rgba(255,255,255,0) 30%),
     conic-gradient(from 20deg, #ff5c6e 0 25%, #fff 25% 50%, #ffd23f 50% 75%, #4aa3ff 75% 100%);
-  box-shadow: 0 4px 6px rgba(0,55,85,.28);
+  box-shadow: 0 4px 6px rgba(0,55,85,.26);
   animation: wp-bob ease-in-out infinite;
 }
+.wp-ball.pink { background:
+  radial-gradient(circle at 34% 28%, rgba(255,255,255,.92) 0 9%, rgba(255,255,255,0) 30%),
+  conic-gradient(from 20deg, #ff9ec4 0 25%, #fff 25% 50%, #ff9ec4 50% 75%, #fff 75% 100%); }
 /* 튜브(도넛 링) */
 .wp-ring { position: absolute; border-radius: 50%;
   background:
     radial-gradient(circle at 36% 32%, rgba(255,255,255,.55) 0 6%, rgba(255,255,255,0) 26%),
     radial-gradient(circle, rgba(255,255,255,0) 0 37%, var(--c, #ff8aa6) 41% 62%, rgba(0,0,0,.10) 66% 70%, rgba(255,255,255,0) 71%);
-  filter: drop-shadow(0 4px 5px rgba(0,55,85,.26));
+  filter: drop-shadow(0 4px 5px rgba(0,55,85,.24));
   animation: wp-bob ease-in-out infinite;
 }
+/* 구명 튜브(빨강·흰 4분할) */
+.wp-ring.striped {
+  background: conic-gradient(#ec5544 0 25%, #fff 0 50%, #ec5544 0 75%, #fff 0 100%);
+  -webkit-mask: radial-gradient(circle, transparent 0 37%, #000 41% 63%, transparent 66%);
+          mask: radial-gradient(circle, transparent 0 37%, #000 41% 63%, transparent 66%);
+}
+.wp-ring.striped::after { content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 36% 32%, rgba(255,255,255,.5) 0 6%, rgba(255,255,255,0) 26%); }
+/* 물에 뜬 플루메리아(흰 5장 꽃잎 + 노란 중심) */
+.wp-flower { position: absolute;
+  background:
+    radial-gradient(circle at 50% 22%, #fff 0 19%, transparent 21%),
+    radial-gradient(circle at 76% 41%, #fff 0 19%, transparent 21%),
+    radial-gradient(circle at 66% 73%, #fff 0 19%, transparent 21%),
+    radial-gradient(circle at 34% 73%, #fff 0 19%, transparent 21%),
+    radial-gradient(circle at 24% 41%, #fff 0 19%, transparent 21%),
+    radial-gradient(circle at 50% 50%, #ffd54a 0 13%, transparent 15%);
+  filter: drop-shadow(0 1px 1px rgba(0,60,90,.14));
+  animation: wp-bob ease-in-out infinite;
+}
+/* 트로피컬 잎(네 귀퉁이, 살짝 밖으로) */
+.wp-plant { position: absolute; width: 108px; height: 138px; }
+.wp-plant .wp-leaf { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(0,55,85,.18)); }
+.wp-plant.tl { top: -42px;  left: -34px;  transform: rotate(-24deg); }
+.wp-plant.tr { top: -48px;  right: -38px; transform: rotate(24deg) scaleX(-1); }
+.wp-plant.bl { bottom: -46px; left: -38px; transform: rotate(206deg); }
+.wp-plant.br { bottom: -42px; right: -34px; transform: rotate(154deg); }
+
 @keyframes wp-bob {
   0%, 100% { transform: translateY(0) rotate(calc(var(--rot, 0deg) * -1)); }
   50%      { transform: translateY(-7px) rotate(var(--rot, 0deg)); }
 }
-@media (prefers-reduced-motion: reduce) { .wp-water, .wp-water::after, .wp-ball, .wp-ring { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .wp-water, .wp-water::after, .wp-ball, .wp-ring, .wp-flower { animation: none; } }
 /* 워터파크 FAB */
 .gd-theme-waterpark .fab { background: linear-gradient(140deg, #4fd6ef, #2f9fd0); box-shadow: 0 10px 24px rgba(47,159,208,.42); }
 
