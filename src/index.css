@@ -2726,9 +2726,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   animation: bubble-float var(--dur, 6s) var(--delay, 0s) infinite cubic-bezier(.4, .05, .55, .95);
   will-change: bottom, transform;
 }
-/* 비눗방울 본체 — 홀로그램처럼 파스텔 무지개가 은은하게 섞인 반투명 방울. 팝 순간 순식간에 사라짐 */
+/* --hole: 중심에서 커지는 '투명 구멍' 반경(%) → 팝 때 방울이 가운데부터 바깥으로 사라짐 */
+@property --hole { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+/* 비눗방울 본체 — 홀로그램처럼 파스텔 무지개가 은은하게 섞인 반투명 방울 */
 .tb-body {
   position: absolute; inset: 0; border-radius: 50%; opacity: 0;
+  --hole: 0%;
   background:
     radial-gradient(circle at 30% 26%, rgba(255,255,255,.98) 0 3%, rgba(255,255,255,.5) 9%, rgba(255,255,255,0) 20%),  /* 하이라이트 */
     radial-gradient(circle at 68% 72%, rgba(255,255,255,.55) 0 3%, rgba(255,255,255,0) 13%),                          /* 보조 하이라이트 */
@@ -2738,6 +2741,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
       rgba(255,235,160,.55), rgba(205,165,255,.62), rgba(255,150,210,.62));                                          /* 무지개 이리데센스 */
   box-shadow: inset 0 0 7px rgba(255,255,255,.7), inset 0 -3px 7px rgba(180,150,240,.28), 0 1px 4px rgba(140,150,210,.16);
   border: 1px solid rgba(255,255,255,.45);
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 var(--hole), #000 calc(var(--hole) + 12%));
+          mask: radial-gradient(circle at 50% 50%, transparent 0 var(--hole), #000 calc(var(--hole) + 12%));
   animation: bubble-body var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
 /* 팝: 원형으로 배치된 짧은 점선(대시)이 톡 짧게 퍼졌다 금방 사라짐 */
@@ -2746,7 +2751,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .tb-dash {
   position: absolute; left: 50%; top: 50%; width: var(--dw, 1.4px); height: var(--dh, 4px); border-radius: 2px;
   background: linear-gradient(165deg,
-    rgba(255,190,225,.55) 0%, rgba(185,220,255,.5) 34%, rgba(190,240,218,.48) 64%, rgba(226,200,255,.55) 100%);
+    rgba(255,175,220,.85) 0%, rgba(170,212,255,.78) 34%, rgba(175,238,212,.75) 64%, rgba(220,192,255,.85) 100%);
   opacity: 0;
   animation: bubble-dash var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
@@ -2755,24 +2760,25 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   0%   { bottom: -12%; transform: translateX(0) scale(.5); }
   10%  { transform: translateX(calc(var(--dx) * .16)) scale(.92); }
   55%  { transform: translateX(calc(var(--dx) * .64)) scale(1); }
-  88%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1); }
-  90%  { transform: translateX(var(--dx)) scale(1.1); }             /* 팝 직전 아주 살짝 부풀기 */
-  92%, 100% { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.12); }
+  84%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1); }   /* 도착 */
+  86%  { transform: translateX(var(--dx)) scale(1.06); }                        /* 팝 직전 살짝 부풀기 */
+  88%, 100% { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.08); }
 }
+/* 본체: 팝 순간 가운데(중심)부터 바깥으로 빠르게 페이드아웃(--hole 이 커짐). opacity 는 폴백. */
 @keyframes bubble-body {
-  0%   { opacity: 0; }
-  10%  { opacity: .9; }
-  87%  { opacity: .96; }
-  89%  { opacity: 1; }     /* 팝 직전까지 또렷 */
-  90.5% { opacity: 0; }    /* 펑! 순식간에 사라짐 */
-  100% { opacity: 0; }
+  0%   { opacity: 0; --hole: 0%; }
+  10%  { opacity: .92; }
+  84%  { opacity: 1; --hole: 0%; }        /* 온전 */
+  92%  { opacity: 1; --hole: 135%; }      /* 중심→바깥 페이드아웃 */
+  94%  { opacity: 0; --hole: 135%; }      /* @property 미지원 폴백 */
+  100% { opacity: 0; --hole: 135%; }
 }
-/* 대시: 방울 테두리(--pr)에서 아주 짧게 밖으로 톡 튀었다가 '순식간에' 사라짐(rotate 후 translateY=반경 방향) */
+/* 대시: 본체가 사라지는 것과 '동시에' 테두리에서 짧게 톡 퍼졌다 사라짐(rotate 후 translateY=반경 방향) */
 @keyframes bubble-dash {
-  0%, 88%  { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px))) scaleY(.5); }
-  89.5%    { opacity: .7; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 1px)) scaleY(1); }
-  91%      { opacity: .6; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 2.5px)) scaleY(1); }
-  92%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 3px)) scaleY(.85); }
+  0%, 84%  { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px))) scaleY(.5); }
+  86%      { opacity: .9; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 1px)) scaleY(1); }
+  91%      { opacity: .82; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 5px)) scaleY(1); }
+  94%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 6px)) scaleY(.85); }
   100%     { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-dash { animation: none; opacity: 0; } }
