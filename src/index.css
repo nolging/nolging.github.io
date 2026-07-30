@@ -3977,7 +3977,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 미디어 URL 입력 모달 */
 .nc-link-head { display: flex; align-items: center; gap: 11px; }
-.nc-link-ico { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 23px; flex-shrink: 0; }
+.nc-link-ico { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 23px; flex-shrink: 0; overflow: hidden; }
 .nc-link-name { font-size: 17px; font-weight: 800; color: #191722; }
 .nc-link-sub { margin-top: 1px; font-size: 11.5px; color: #8b8798; }
 .nc-link-input { margin-top: 16px; display: flex; align-items: center; gap: 8px; border: 1.5px solid #efeef4; border-radius: 999px; padding: 8px 16px; box-sizing: border-box; }
