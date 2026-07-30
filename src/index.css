@@ -2209,10 +2209,16 @@ button.mlist-row:hover { background: #f6f5fa; }
 }
 .app-shell.gd-bg-heart .topbar .icon-btn:hover,
 .app-shell.gd-bg-bubble .topbar .icon-btn:hover { background: rgba(255, 255, 255, .7); }
-/* 폭죽(다크): 상단바 버튼은 이미 밝은 아이콘의 반투명 흰색 → blur 만 추가.
-   탭 바는 글자(어두운 인라인 색)가 읽히도록 밝은 톤을 유지하되 살짝만 투명하게 */
+/* 폭죽(다크): 상단바 버튼은 이미 밝은 아이콘의 반투명 흰색 → blur 만 추가 */
 .app-shell.gd-bg-firework .topbar .icon-btn { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-.gd-theme-firework .tabs { background: rgba(255, 255, 255, .72); }
+/* 폭죽 탭 바 = 프리미엄 상점 탭 바와 동일: 다크 반투명 바 + 꺼진 탭은 옅은 흰 글자.
+   탭 글자색은 인라인 color-mix(var(--muted), var(--text)) 라 변수만 바꿔주면 됨
+   (꺼짐=--muted 옅은흰 / 켜짐=--text 어두움 → 흰 알약 위에서 읽힘) */
+.gd-theme-firework .tabs {
+  background: rgba(255, 255, 255, .07);
+  --muted: rgba(244, 242, 253, .55);
+  --text: #2a2140;
+}
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px) {
   .fab-above-nav { bottom: 94px; }
@@ -2702,6 +2708,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 커플 기념일 폭죽 (캔버스 오버레이 — 상단바 앞, 하단 탭 아래) */
 .fireworks-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 15; }
+/* 카드/썸네일 안에 담기는 축소 폭죽 (포탈/fixed 대신 부모 채우기) */
+.fireworks-canvas.fireworks-contained { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 
 /* ===== 커플 기념일 당일: 데이트 페이지 다크 모드 ===== */
 .app-shell.csx-anniv-dark { background: linear-gradient(180deg, #2a2140 0%, #161320 58%); }
@@ -2848,7 +2856,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 
 /* ===== 폭죽 팡팡 테마: 다크 밤하늘 + 반짝이는 별 + 폭죽(커플 기념일 폭죽 재사용) ===== */
-.app-shell.gd-bg-firework { background: linear-gradient(180deg, #241d38 0%, #141120 60%); }
+/* 많이 진 노을(거의 밤): 위=어두운 남보라 → 보라 → 아래로 갈수록 자주·주황(무디게) */
+.app-shell.gd-bg-firework { background: linear-gradient(180deg, #100e1b 0%, #1d1633 30%, #3b2551 55%, #6b3a54 78%, #9c5638 100%); }
 .app-shell.gd-bg-firework .topbar,
 .app-shell.gd-bg-firework .content { background: transparent; }
 .app-shell.gd-bg-firework .topbar,
@@ -2865,7 +2874,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 대시보드 카드용 테마 미리보기 (카드 안에 담김) */
 /* .premium / .friend 카드 배경(0,3,0)을 이기도록 동일 특이도 + 뒤에 정의 */
 .group-card.group-tile.tile-bubble { background: linear-gradient(165deg, #d9eff8 0%, #e2e5fb 55%, #ece0fb 100%); }
-.group-card.group-tile.tile-fw { background: linear-gradient(165deg, #2a2140 0%, #16121f 100%); }
+.group-card.group-tile.tile-fw { background: linear-gradient(180deg, #14111f 0%, #2c2047 42%, #5e3350 74%, #9c5638 100%); }
 .group-tile.tile-fw .tile-name { color: #f4f1fa; }
 .group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
 .theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }

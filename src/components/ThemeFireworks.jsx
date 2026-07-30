@@ -16,13 +16,6 @@ const CARD_STARS = [
   { top: 52, left: 66, s: 1.4, c: '#ffe9b0', dur: 2.6, d: 1.5 },
   { top: 84, left: 48, s: 1.2, c: '#d9d2ff', dur: 3.0, d: 0.9 },
 ]
-// 폭죽 두 발(터지는 위치·색·타이밍 다르게)
-const BURSTS = [
-  { cx: 32, cy: 34, c: '#ffd75e', r: 18, dur: 2.6, d: 0.1 },
-  { cx: 70, cy: 30, c: '#ff5c8a', r: 16, dur: 2.6, d: 1.35 },
-]
-const PARTS = 12
-
 export default function ThemeFireworks({ page = false }) {
   if (page) {
     return (
@@ -32,6 +25,7 @@ export default function ThemeFireworks({ page = false }) {
       </>
     )
   }
+  // 카드/썸네일: 별 + 그룹 상세와 '동일한' 쏘아올려 터지는 폭죽(카드 크기에 맞춰 축소)
   return (
     <div className="theme-fw-card" aria-hidden="true">
       {CARD_STARS.map((st, i) => (
@@ -39,16 +33,7 @@ export default function ThemeFireworks({ page = false }) {
           style={{ top: `${st.top}%`, left: `${st.left}%`, width: st.s, height: st.s, background: st.c,
             animationDuration: `${st.dur}s`, animationDelay: `${st.d}s` }} />
       ))}
-      {BURSTS.map((b, i) => (
-        <span key={i} className="fw-burst" style={{ left: `${b.cx}%`, top: `${b.cy}%`, color: b.c }}>
-          <span className="fw-flash" style={{ animationDuration: `${b.dur}s`, animationDelay: `${b.d}s` }} />
-          {Array.from({ length: PARTS }).map((_, j) => (
-            <i key={j} className="fw-p"
-              style={{ '--a': `${j * (360 / PARTS)}deg`, '--r': `${b.r}px`,
-                animationDuration: `${b.dur}s`, animationDelay: `${b.d}s` }} />
-          ))}
-        </span>
-      ))}
+      <Fireworks contained />
     </div>
   )
 }
