@@ -60,7 +60,8 @@ export default function Inventory() {
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
   const [nameTagOpen, setNameTagOpen] = useState(false) // 명찰(닉네임 변경) 모달
-  const [boardOpen, setBoardOpen] = useState(false)     // 익명 게시판 개설 모달
+  const [boardOpen, setBoardOpen] = useState(false)     // 비밀 게시판 개설 모달
+  const [boardItemName, setBoardItemName] = useState('') // 아이템 이름(관리자에서 변경 가능 → 하드코딩 금지)
   const [megaphoneOpen, setMegaphoneOpen] = useState(false) // 확성기 모달
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
 
@@ -134,7 +135,7 @@ export default function Inventory() {
     else if (g.id === 'friend-ring') setFriendOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
-    else if (g.id === 'secret-board') setBoardOpen(true)
+    else if (g.id === 'secret-board') { setBoardItemName(g.name); setBoardOpen(true) }
     else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
@@ -244,7 +245,7 @@ export default function Inventory() {
       <StickerUseModal item={stickerUse} coupleGroupId={coupleGroupIds[0]} onClose={() => setStickerUse(null)} onDone={reload} navigate={navigate} />
 
       <NameTagModal open={nameTagOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setNameTagOpen(false)} onDone={reload} />
-      <SecretBoardApplyModal open={boardOpen} onClose={() => setBoardOpen(false)} onDone={reload} />
+      <SecretBoardApplyModal open={boardOpen} itemName={boardItemName} onClose={() => setBoardOpen(false)} onDone={reload} />
       <MegaphoneModal open={megaphoneOpen} myId={user?.id} onClose={() => setMegaphoneOpen(false)} onDone={reload} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
@@ -453,8 +454,8 @@ function ThemeModal({ open, onClose, myId, item, onDone }) {
   )
 }
 
-// ---- 익명 게시판 개설 (프리미엄 그룹 · 미개설) ----
-function SecretBoardApplyModal({ open, onClose, onDone }) {
+// ---- 비밀 게시판 개설 (프리미엄 그룹 · 미개설) ----
+function SecretBoardApplyModal({ open, onClose, onDone, itemName }) {
   const [groups, setGroups] = useState([])
   const [groupId, setGroupId] = useState('')
   const [name, setName] = useState('')
@@ -481,7 +482,7 @@ function SecretBoardApplyModal({ open, onClose, onDone }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
-        <ItemHead id="secret-board" name="익명 게시판" sub="프리미엄 그룹에 익명 게시판을 만들어요" emoji="🤫" />
+        <ItemHead id="secret-board" name={itemName || '비밀 게시판'} sub="프리미엄 그룹에 만들어요" emoji="🤫" />
         {error && <div className="alert alert-error">{error}</div>}
         <label className="field">
           <span>추가할 그룹</span>
@@ -492,13 +493,12 @@ function SecretBoardApplyModal({ open, onClose, onDone }) {
         </label>
         <label className="field">
           <span>게시판 이름</span>
-          <input value={name} maxLength={20} placeholder="예: 우리끼리 익명방"
+          <input value={name} maxLength={20} placeholder="게시판 이름을 입력하세요"
             onChange={(e) => setName(e.target.value)} />
         </label>
         <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId || !name.trim()} onClick={add}>
           {busy ? '추가 중…' : '추가하기'}
         </button>
-        <p className="nc-fineprint">추가하면 그 그룹의 멤버 목록(커플은 데이트 · 멍냥꽁냥) 페이지에 이 이름으로 게시판이 생겨요. 아이템은 1개 사용돼요.</p>
       </div>
     </Modal>
   )

@@ -215,6 +215,7 @@ export function BoardCompose() {
   const [pfOpen, setPfOpen] = useState(false)
   const [empty, setEmpty] = useState(true)
   const [titleFocused, setTitleFocused] = useState(false) // 제목 입력 포커스 시 스타일 툴바 숨김
+  const [bodyFocused, setBodyFocused] = useState(false)   // 본문 포커스(키패드) 여부 → 툴바 하단 여백 조절
   const editorRef = useRef(null)
   const seededRef = useRef(false)
   const [bottomEl, setBottomEl] = useState(null)
@@ -303,6 +304,7 @@ export function BoardCompose() {
             {empty && <div className="sb-editor-ph">내용을 입력하세요</div>}
             <div className="sb-body-area sb-editor sb-rich" contentEditable suppressContentEditableWarning
               ref={editorRef} onInput={() => setEmpty(!editorRef.current.textContent.trim())}
+              onFocus={() => setBodyFocused(true)} onBlur={() => setBodyFocused(false)}
               onPaste={(e) => {
                 e.preventDefault()
                 const html = e.clipboardData?.getData('text/html')
@@ -312,7 +314,7 @@ export function BoardCompose() {
                 setEmpty(!editorRef.current.textContent.trim())
               }} />
           </div>
-          {bottomEl && !titleFocused && createPortal(<RichToolbar editorRef={editorRef} />, bottomEl)}
+          {bottomEl && !titleFocused && createPortal(<RichToolbar editorRef={editorRef} keyboardUp={bodyFocused} />, bottomEl)}
         </>
       )}
     </div>
@@ -610,7 +612,7 @@ const AlignIcon = ({ kind }) => {
     </svg>
   )
 }
-function RichToolbar({ editorRef }) {
+function RichToolbar({ editorRef, keyboardUp }) {
   const [palette, setPalette] = useState(null)   // 'fore' | 'back' | null
   const exec = (cmd, val) => {
     const el = editorRef.current; if (!el) return
@@ -623,7 +625,7 @@ function RichToolbar({ editorRef }) {
       onMouseDown={(e) => { e.preventDefault(); exec(cmd) }}>{label}</button>
   )
   return (
-    <div className="sb-rttoolbar">
+    <div className={`sb-rttoolbar${keyboardUp ? '' : ' rest'}`}>
       {palette && (
         <div className="sb-rt-palette" onMouseDown={(e) => e.preventDefault()}>
           {(palette === 'fore' ? RT_TEXT_COLORS : RT_BG_COLORS).map((c) => (
