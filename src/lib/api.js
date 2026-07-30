@@ -1125,6 +1125,17 @@ export async function boardEligibleGroups() {
   }
   return data ?? []
 }
+// 게시판 이름 변경(방장/관리자). 설정 페이지에서 사용.
+export async function renameBoard(groupId, name) {
+  const { data, error } = await supabase.rpc('board_rename', { p_group: groupId, p_name: name })
+  if (error) {
+    if (error.code === 'PGRST202' || /board_rename/.test(error.message || '')) {
+      throw new Error('게시판 이름 변경 기능이 아직 DB에 설정되지 않았습니다. (board-rename.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
 // 게시판 개설(아이템 1개 소모)
 export async function setupSecretBoard(groupId, name) {
   const { data, error } = await supabase.rpc('board_setup', { p_group: groupId, p_name: name })

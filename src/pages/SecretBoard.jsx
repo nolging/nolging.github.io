@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate, useLocation, useSearchParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import Modal from '../components/Modal'
 import {
-  getGroup, getGroupBoard, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
+  getGroup, getGroupBoard, renameBoard, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
   listBoardPosts, createBoardPost, updateBoardPost, deleteBoardPost,
   listBoardComments, addBoardComment, updateBoardComment, deleteBoardComment,
 } from '../lib/api'
@@ -82,7 +81,6 @@ export default function SecretBoard() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [prefixMgr, setPrefixMgr] = useState(false)
   const [filterPrefix, setFilterPrefix] = useState('') // '' = 전체
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -108,12 +106,12 @@ export default function SecretBoard() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, load])
 
-  // 관리 권한(방장/관리자)이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
+  // 관리 권한(방장/관리자)이면 상단바 우측 톱니바퀴 → 설정 페이지. 페이지를 벗어나면 등록 해제.
   useEffect(() => {
-    if (canManage) setHeaderGear(() => () => setPrefixMgr(true))
+    if (canManage) setHeaderGear(() => () => navigate(boardPath(groupId, '/settings')))
     else setHeaderGear(null)
     return () => setHeaderGear(null)
-  }, [canManage, setHeaderGear])
+  }, [canManage, setHeaderGear, navigate, groupId])
 
   if (access === 'loading') return <BoardLoading />
   if (access === 'no') return <NotReady />
@@ -186,12 +184,6 @@ export default function SecretBoard() {
         <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/search'))}>검색하기</button>
         <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>글쓰기</button>
       </nav>
-
-      {prefixMgr && (
-        <PrefixManager groupId={groupId} prefixes={prefixes}
-          onClose={() => setPrefixMgr(false)}
-          onChanged={async () => setPrefixes(await listBoardPrefixes(groupId))} />
-      )}
     </div>
   )
 }
@@ -1091,8 +1083,81 @@ export function BoardComments() {
   )
 }
 
-// ---- 말머리 관리 (방장/관리자) — 목록에서 톱니바퀴로 여는 모달 ----
-function PrefixManager({ groupId, prefixes, onClose, onChanged }) {
+// ============ 비밀 게시판 설정 (이름 변경 + 말머리 관리) — 방장/관리자 ============
+export function BoardSettings() {
+  const { groupId } = useParams()
+  const navigate = useNavigate()
+  const { profile, isAdmin } = useAuth()
+  const uid = profile?.id
+  const access = useBoardAccess(groupId)
+
+  const [group, setGroup] = useState(null)
+  const [name, setName] = useState('')        // 저장된 현재 이름
+  const [nameInput, setNameInput] = useState('')
+  const [prefixes, setPrefixes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [savingName, setSavingName] = useState(false)
+  const [nameErr, setNameErr] = useState('')
+  const [nameSaved, setNameSaved] = useState(false)
+
+  const load = useCallback(async () => {
+    try {
+      const [g, nm, pf] = await Promise.all([
+        getGroup(groupId).catch(() => null),
+        getGroupBoard(groupId).catch(() => ''),
+        listBoardPrefixes(groupId),
+      ])
+      setGroup(g); setName(nm || ''); setNameInput(nm || ''); setPrefixes(pf)
+    } finally { setLoading(false) }
+  }, [groupId])
+  useEffect(() => { load() }, [load])
+
+  const canManage = isAdmin || (group && group.owner_id === uid)
+
+  async function saveName() {
+    const v = nameInput.trim()
+    if (!v || v === name || savingName) return
+    setSavingName(true); setNameErr(''); setNameSaved(false)
+    try {
+      const saved = await renameBoard(groupId, v)
+      setName(saved || v); setNameInput(saved || v); setNameSaved(true)
+      setTimeout(() => setNameSaved(false), 1500)
+    } catch (e) { setNameErr(e.message) } finally { setSavingName(false) }
+  }
+
+  if (access === 'loading' || loading) return <BoardLoading />
+  if (access === 'no') return <NotReady />
+  if (!canManage) return (
+    <div className="page sb-page"><div className="sb-soon"><span>🔒</span><p>설정 권한이 없어요</p></div></div>
+  )
+
+  return (
+    <div className="page sb-page sb-settings-page">
+      <section className="sb-set-section">
+        <h3 className="sb-set-title">게시판 이름</h3>
+        {nameErr && <div className="alert alert-error">{nameErr}</div>}
+        <div className="sb-prefix-add">
+          <input className="sb-input" value={nameInput} maxLength={20} placeholder="게시판 이름을 입력하세요"
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveName() } }} />
+          <button type="button" className="btn btn-primary sb-send" onClick={saveName}
+            disabled={savingName || !nameInput.trim() || nameInput.trim() === name}>
+            {savingName ? '저장 중…' : nameSaved ? '저장됨' : '저장'}
+          </button>
+        </div>
+      </section>
+
+      <section className="sb-set-section">
+        <h3 className="sb-set-title">말머리</h3>
+        <PrefixEditor groupId={groupId} prefixes={prefixes}
+          onChanged={async () => setPrefixes(await listBoardPrefixes(groupId))} />
+      </section>
+    </div>
+  )
+}
+
+// ---- 말머리 편집(설정 페이지 섹션) — 방장/관리자 ----
+function PrefixEditor({ groupId, prefixes, onChanged }) {
   const [items, setItems] = useState(prefixes)
   const [adding, setAdding] = useState('')
   const [editing, setEditing] = useState(null)
@@ -1120,38 +1185,35 @@ function PrefixManager({ groupId, prefixes, onClose, onChanged }) {
   }
 
   return (
-    <Modal open onClose={onClose} cardClassName="sb-modal">
-      <div className="sb-prefix-mgr">
-        <h3 className="sb-modal-title">말머리 관리</h3>
-        {err && <div className="alert alert-error">{err}</div>}
-        <div className="sb-prefix-add">
-          <input className="sb-input" placeholder="새 말머리 (20자 이내)" value={adding} maxLength={20}
-            onChange={(e) => setAdding(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-          <button type="button" className="btn btn-primary sb-send" onClick={add} disabled={busy || !adding.trim()}>추가</button>
-        </div>
-        {items.length === 0 ? <p className="sb-nocomments">등록된 말머리가 없어요.</p> : (
-          <ul className="sb-prefix-items">
-            {items.map((pf) => (
-              <li key={pf.id}>
-                {editing === pf.id ? (
-                  <>
-                    <input className="sb-input" value={editText} maxLength={20} onChange={(e) => setEditText(e.target.value)} />
-                    <button type="button" className="sb-link strong" onClick={() => save(pf.id)} disabled={busy}>저장</button>
-                    <button type="button" className="sb-link" onClick={() => setEditing(null)}>취소</button>
-                  </>
-                ) : (
-                  <>
-                    <span className="sb-prefix-chip">[{pf.label}]</span>
-                    <button type="button" className="sb-link" onClick={() => { setEditing(pf.id); setEditText(pf.label) }}>수정</button>
-                    <button type="button" className="sb-link danger" onClick={() => remove(pf.id)}>삭제</button>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="sb-prefix-mgr">
+      {err && <div className="alert alert-error">{err}</div>}
+      <div className="sb-prefix-add">
+        <input className="sb-input" placeholder="새 말머리 (20자 이내)" value={adding} maxLength={20}
+          onChange={(e) => setAdding(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
+        <button type="button" className="btn btn-primary sb-send" onClick={add} disabled={busy || !adding.trim()}>추가</button>
       </div>
-    </Modal>
+      {items.length === 0 ? <p className="sb-nocomments">등록된 말머리가 없어요.</p> : (
+        <ul className="sb-prefix-items">
+          {items.map((pf) => (
+            <li key={pf.id}>
+              {editing === pf.id ? (
+                <>
+                  <input className="sb-input" value={editText} maxLength={20} onChange={(e) => setEditText(e.target.value)} />
+                  <button type="button" className="sb-link strong" onClick={() => save(pf.id)} disabled={busy}>저장</button>
+                  <button type="button" className="sb-link" onClick={() => setEditing(null)}>취소</button>
+                </>
+              ) : (
+                <>
+                  <span className="sb-prefix-chip">[{pf.label}]</span>
+                  <button type="button" className="sb-link" onClick={() => { setEditing(pf.id); setEditText(pf.label) }}>수정</button>
+                  <button type="button" className="sb-link danger" onClick={() => remove(pf.id)}>삭제</button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

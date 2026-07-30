@@ -2006,6 +2006,11 @@ button.mention-chip:active { opacity: .6; }
 .sb-detail-refresh { flex: 0 0 64px; }
 
 .sb-prefix-add { display: flex; gap: 8px; }
+/* 비밀 게시판 설정 페이지 */
+.sb-settings-page { display: flex; flex-direction: column; gap: 20px; padding-top: 8px; }
+.sb-set-section { display: flex; flex-direction: column; gap: 11px; background: var(--surface);
+  border-radius: 14px; padding: 16px 14px; box-shadow: var(--card-shadow); }
+.sb-set-title { margin: 0; font-size: 15px; font-weight: 800; color: #191722; }
 .sb-prefix-items { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .sb-prefix-items li { display: flex; align-items: center; gap: 10px; }
 .sb-prefix-chip { flex: 1; color: #7363e8; font-weight: 800; font-size: 14px; }
@@ -4408,7 +4413,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .csx-card:active { transform: scale(.97); }
 .csx-card-soft, .csx-card-soft:active { cursor: default; transform: none; }
 .csx-card-ico { width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; }
-.csx-card-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.csx-card-img { width: 84%; height: 84%; object-fit: contain; display: block; }
 .csx-card-t { margin-top: auto; font-size: 14px; font-weight: 700; color: #191722; max-width: 100%;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .csx-card-s { margin-top: 1px; font-size: 10.5px; color: #8b8798; max-width: 100%;

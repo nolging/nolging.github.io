@@ -185,6 +185,7 @@ export default function Layout() {
   const boardMatch = useMatch('/groups/:groupId/board')
   const boardNewMatch = useMatch('/groups/:groupId/board/new')
   const boardSearchMatch = useMatch('/groups/:groupId/board/search')
+  const boardSettingsMatch = useMatch('/groups/:groupId/board/settings')
   const boardEditMatch = useMatch('/groups/:groupId/board/:postId/edit')
   const boardCommentsMatch = useMatch('/groups/:groupId/board/:postId/comments')
   const boardPostMatch = useMatch('/groups/:groupId/board/:postId')
@@ -542,6 +543,14 @@ export default function Layout() {
           onClick={() => setCommentSearchOpen(true)}><SearchIcon /></button>
       </header>
     )
+  } else if (boardSettingsMatch) {
+    // 비밀 게시판 설정: 좌측 뒤로, 제목 "비밀 게시판 설정"
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">비밀 게시판 설정</span>
+      </header>
+    )
   } else if (boardPostMatch) {
     // 비밀 게시판 글 상세: 좌측 뒤로(목록으로), 제목, (권한 시) 우측 ⋮ → 수정/삭제
     const hasPostMenu = headerPostMenu?.items?.length > 0
@@ -572,14 +581,14 @@ export default function Layout() {
       </header>
     )
   } else if (boardMatch) {
-    // 비밀 게시판: 좌측 뒤로, 제목, (관리 권한 시) 우측 톱니바퀴 → 말머리 관리
+    // 비밀 게시판: 좌측 뒤로, 제목, (관리 권한 시) 우측 톱니바퀴 → 설정 페이지
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {headerGear && (
           <button type="button" onClick={() => headerGear()} className="btn btn-ghost btn-sm icon-btn push-right"
-            aria-label="말머리 관리" title="말머리 관리"><GearIcon /></button>
+            aria-label="비밀 게시판 설정" title="비밀 게시판 설정"><GearIcon /></button>
         )}
       </header>
     )
