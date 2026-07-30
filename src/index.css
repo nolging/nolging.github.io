@@ -2856,8 +2856,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .store-bubbles, .store-fw { position: relative; width: 100%; height: 100%; overflow: hidden; display: block; isolation: isolate; }
 
 /* ===== 폭죽 팡팡 테마: 다크 밤하늘 + 반짝이는 별 + 폭죽(커플 기념일 폭죽 재사용) ===== */
-/* 많이 진 노을(거의 밤): 위=어두운 남보라 → 보라 → 아래로 갈수록 자주·주황(무디게) */
-.app-shell.gd-bg-firework { background: linear-gradient(180deg, #100e1b 0%, #1d1633 30%, #3b2551 55%, #6b3a54 78%, #9c5638 100%); }
+/* 많이 진 노을(거의 밤): 어두운 영역을 넓게(위 절반+), 보라·주황은 아래쪽에 좁게 */
+.app-shell.gd-bg-firework { background: linear-gradient(180deg, #0e0c16 0%, #14111f 52%, #2e2049 74%, #5e3350 90%, #9c5638 100%); }
 .app-shell.gd-bg-firework .topbar,
 .app-shell.gd-bg-firework .content { background: transparent; }
 .app-shell.gd-bg-firework .topbar,
@@ -2874,7 +2874,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 대시보드 카드용 테마 미리보기 (카드 안에 담김) */
 /* .premium / .friend 카드 배경(0,3,0)을 이기도록 동일 특이도 + 뒤에 정의 */
 .group-card.group-tile.tile-bubble { background: linear-gradient(165deg, #d9eff8 0%, #e2e5fb 55%, #ece0fb 100%); }
-.group-card.group-tile.tile-fw { background: linear-gradient(180deg, #14111f 0%, #2c2047 42%, #5e3350 74%, #9c5638 100%); }
+.group-card.group-tile.tile-fw { background: linear-gradient(150deg, #100e18 0%, #14111f 55%, #2e2049 76%, #5e3350 91%, #9c5638 100%); }
 .group-tile.tile-fw .tile-name { color: #f4f1fa; }
 .group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
 .theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }

@@ -23,8 +23,8 @@ export default function Fireworks({ className = '', contained = false }) {
       cv.width = W * dpr; cv.height = H * dpr
       ctx = cv.getContext('2d')
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      // 전체화면(H≈700)=1, 작은 카드=축소 → 속도/크기/중력을 함께 줄여 같은 형태 유지
-      k = Math.max(0.16, Math.min(1, H / 700))
+      // 전체화면=1, 작은 카드=축소(단 카드는 기준을 낮춰 폭죽을 2배+ 크게)
+      k = Math.max(contained ? 0.34 : 0.16, Math.min(1, H / (contained ? 320 : 700)))
     }
 
     const explode = (x, y, n, spd) => {
