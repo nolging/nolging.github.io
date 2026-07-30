@@ -2305,12 +2305,11 @@ button.mlist-row:hover { background: #f6f5fa; }
 /* 쿠팡플레이 추가/제거 토글 (우측 상단) */
 .mi-cp { position: absolute; top: 8px; right: 8px; z-index: 2; }
 .mi-cp-btn {
-  width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border, #e2e4ec);
-  background: var(--surface); color: var(--muted); font-size: 16px; line-height: 1;
+  width: 18px; height: 18px; border-radius: 50%; border: none;
+  background: #c9ccd6; color: #fff; font-size: 13px; line-height: 1;
   display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
-  box-shadow: 0 1px 3px rgba(20,22,40,.12);
 }
-.mi-cp-btn:hover { color: var(--text); }
+.mi-cp-btn:hover { background: #b8bcc8; }
 .mi-cp-menu {
   position: absolute; top: 26px; right: 0; background: var(--surface);
   border-radius: 10px; box-shadow: 0 4px 16px rgba(20,22,40,.18); padding: 4px; min-width: 116px;
