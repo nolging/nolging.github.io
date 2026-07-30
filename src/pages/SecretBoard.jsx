@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation, useSearchParams, useOutletContext 
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import {
-  getGroup, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
+  getGroup, getGroupBoard, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
   listBoardPosts, createBoardPost, updateBoardPost, deleteBoardPost,
   listBoardComments, addBoardComment, updateBoardComment, deleteBoardComment,
 } from '../lib/api'
@@ -47,12 +47,27 @@ const CaretDown = () => (
   </svg>
 )
 
-// 접근 준비 안 됨(관리자 아님) 공통 화면
+// 접근 준비 안 됨(미개설 그룹) 공통 화면
 const NotReady = () => (
   <div className="page sb-page">
     <div className="sb-soon"><span>🔒</span><p>비밀 게시판은 아직 준비 중이에요</p></div>
   </div>
 )
+const BoardLoading = () => <div className="page sb-page"><div className="spinner" /></div>
+
+// 게시판 접근 권한: 개설된 그룹의 멤버(또는 앱 관리자 미리보기). 'loading' | 'ok' | 'no'
+function useBoardAccess(groupId) {
+  const { isAdmin } = useAuth()
+  const [state, setState] = useState('loading')
+  useEffect(() => {
+    let on = true
+    getGroupBoard(groupId)
+      .then((name) => { if (on) setState((name || isAdmin) ? 'ok' : 'no') })
+      .catch(() => { if (on) setState(isAdmin ? 'ok' : 'no') })
+    return () => { on = false }
+  }, [groupId, isAdmin])
+  return state
+}
 
 // ============ 목록 ============
 export default function SecretBoard() {
@@ -71,6 +86,7 @@ export default function SecretBoard() {
   const [filterPrefix, setFilterPrefix] = useState('') // '' = 전체
   const [filterOpen, setFilterOpen] = useState(false)
 
+  const access = useBoardAccess(groupId)
   const canManage = isAdmin || (group && group.owner_id === uid)
 
   const load = useCallback(async () => {
@@ -92,14 +108,15 @@ export default function SecretBoard() {
     return () => setRefreshHandler(() => null)
   }, [setRefreshHandler, load])
 
-  // 관리 권한이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
+  // 관리 권한(방장/관리자)이면 상단바 우측 톱니바퀴 → 말머리 관리. 페이지를 벗어나면 등록 해제.
   useEffect(() => {
-    if (isAdmin && canManage) setHeaderGear(() => () => setPrefixMgr(true))
+    if (canManage) setHeaderGear(() => () => setPrefixMgr(true))
     else setHeaderGear(null)
     return () => setHeaderGear(null)
-  }, [isAdmin, canManage, setHeaderGear])
+  }, [canManage, setHeaderGear])
 
-  if (!isAdmin) return <NotReady />
+  if (access === 'loading') return <BoardLoading />
+  if (access === 'no') return <NotReady />
 
   const shown = filterPrefix ? posts.filter((p) => p.prefix_id === filterPrefix) : posts
   const filterLabel = filterPrefix ? (prefixes.find((p) => p.id === filterPrefix)?.label || '말머리') : '말머리 선택'
@@ -184,8 +201,8 @@ export function BoardCompose() {
   const { groupId, postId } = useParams()   // postId 있으면 수정
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAdmin } = useAuth()
   const { setHeaderSubmit } = useOutletContext()
+  const access = useBoardAccess(groupId)
   const editing = !!postId
 
   const [prefixes, setPrefixes] = useState([])
@@ -248,7 +265,8 @@ export function BoardCompose() {
     return () => setHeaderSubmit(null)
   }, [setHeaderSubmit])
 
-  if (!isAdmin) return <NotReady />
+  if (access === 'loading') return <BoardLoading />
+  if (access === 'no') return <NotReady />
 
   const prefixLabel = prefixId ? (prefixes.find((p) => p.id === prefixId)?.label || '말머리') : '말머리 없음'
 
@@ -336,7 +354,7 @@ function CommentCountBadge({ count, onClick }) {
 export function BoardSearch() {
   const { groupId } = useParams()
   const navigate = useNavigate()
-  const { isAdmin } = useAuth()
+  const access = useBoardAccess(groupId)
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('posts')       // posts | comments
   const [scope, setScope] = useState('both')    // both | title | body (게시글)
@@ -383,7 +401,8 @@ export function BoardSearch() {
       .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))   // 최신순 고정
   }, [kw, allComments])
 
-  if (!isAdmin) return <NotReady />
+  if (access === 'loading') return <BoardLoading />
+  if (access === 'no') return <NotReady />
 
   const count = tab === 'posts' ? postResults.length : commentResults.length
 
@@ -846,8 +865,8 @@ export function BoardPost() {
   const { groupId, postId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAdmin } = useAuth()
   const { setHeaderPostMenu, setRefreshHandler } = useOutletContext()
+  const access = useBoardAccess(groupId)
 
   const h = useBoardComments(postId, null)
   const c = useComposerToggle(h)
@@ -892,7 +911,8 @@ export function BoardPost() {
     return () => setHeaderPostMenu(null)
   }, [post, groupId, navigate, removePost, setHeaderPostMenu])
 
-  if (!isAdmin) return <NotReady />
+  if (access === 'loading') return <BoardLoading />
+  if (access === 'no') return <NotReady />
   if (gone) return <div className="page"><div className="comment-empty">삭제된 글이에요.</div></div>
   if (!post) return <div className="page"><div className="spinner" /></div>
 
@@ -968,8 +988,8 @@ export function BoardComments() {
   const { groupId, postId } = useParams()
   const navigate = useNavigate()
   const [sp] = useSearchParams()
-  const { isAdmin } = useAuth()
   const { setRefreshHandler, setHeaderCommentCount, commentSearch } = useOutletContext()
+  const access = useBoardAccess(groupId)
 
   const h = useBoardComments(postId, sp.get('c'))
   const c = useComposerToggle(h)
@@ -1013,7 +1033,8 @@ export function BoardComments() {
     return () => clearTimeout(t)
   }, [term, matches, curMatch])
 
-  if (!isAdmin) return <NotReady />
+  if (access === 'loading') return <BoardLoading />
+  if (access === 'no') return <NotReady />
 
   const scrollFirst = () => document.querySelector('.sb-cmt-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   // 새로고침 후 가장 최근 댓글(맨 아래)로 스크롤

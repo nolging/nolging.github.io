@@ -556,7 +556,6 @@ function MegaphoneModal({ open, onClose, onDone, myId }) {
         <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId || !msg.trim()} onClick={send}>
           {busy ? '보내는 중…' : '확인'}
         </button>
-        <p className="nc-fineprint">확인을 누르면 그룹 멤버 전원에게 즉시 알림이 가요. 아이템은 1개 사용돼요.</p>
       </div>
     </Modal>
   )
