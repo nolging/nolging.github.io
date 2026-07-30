@@ -20,14 +20,14 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
   if (id === 'theme-heart') {
     return (
       <span className={`${className} store-hearts`} aria-hidden="true">
-        <ThemeHearts durScale={1.5} />
+        <ThemeHearts durScale={0.7} />
       </span>
     )
   }
   if (id === 'theme-bubble') {
     return (
       <span className={`${className} store-bubbles`} aria-hidden="true">
-        <ThemeBubbles durScale={1.2} />
+        <ThemeBubbles durScale={0.6} />
       </span>
     )
   }
