@@ -2757,13 +2757,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   animation: bubble-dash var(--dur, 6s) var(--delay, 0s) infinite ease-out;
 }
 /* 가로(--dx)로 흐르며 살짝 대각선 위로 떠오르다 도착 → 살짝 부풀고 팝 */
+/* 도착 후 멈추지 않고 '터지는 동안에도 계속 상승' → 배율(durScale) 커도 멈춤/대기 없음 */
 @keyframes bubble-float {
-  0%   { bottom: -12%; transform: translateX(0) scale(.5); }
-  10%  { transform: translateX(calc(var(--dx) * .16)) scale(.92); }
-  55%  { transform: translateX(calc(var(--dx) * .64)) scale(1); }
-  84%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1); }   /* 도착 */
-  86%  { transform: translateX(var(--dx)) scale(1.06); }                        /* 팝 직전 살짝 부풀기 */
-  88%, 100% { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.08); }
+  0%   { bottom: -14%; transform: translateX(0) scale(.5); }
+  12%  { transform: translateX(calc(var(--dx) * .18)) scale(.92); }
+  60%  { transform: translateX(calc(var(--dx) * .66)) scale(1); }
+  92%  { bottom: var(--ry, 60%); transform: translateX(var(--dx)) scale(1.05); }             /* 팝 진행 중에도 계속 상승 */
+  100% { bottom: calc(var(--ry, 60%) + 7%); transform: translateX(var(--dx)) scale(1.05); }  /* 팝 이후(투명)에도 계속 떠오름 */
 }
 /* 본체: 팝 순간 가운데(중심)부터 바깥으로 빠르게 페이드아웃(--hole 이 커짐). opacity 는 폴백. */
 @keyframes bubble-body {
