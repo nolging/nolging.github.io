@@ -2195,6 +2195,24 @@ button.mlist-row:hover { background: #f6f5fa; }
   background: linear-gradient(140deg, #ffd45e, #ff6a9a);
   box-shadow: 0 10px 24px rgba(255, 120, 120, .45);
 }
+
+/* 테마 그룹 상세: 탭 바 + 상단바 버튼을 살짝 반투명(프로스티드)으로 → 뒤 테마 배경이 비침.
+   활성 탭 알약(.tab-underline)은 불투명 흰색 그대로 둠. */
+.gd-themed .tabs {
+  background: rgba(255, 255, 255, .5);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+}
+.app-shell.gd-bg-heart .topbar .icon-btn,
+.app-shell.gd-bg-bubble .topbar .icon-btn {
+  background: rgba(255, 255, 255, .5);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+}
+.app-shell.gd-bg-heart .topbar .icon-btn:hover,
+.app-shell.gd-bg-bubble .topbar .icon-btn:hover { background: rgba(255, 255, 255, .7); }
+/* 폭죽(다크): 상단바 버튼은 이미 밝은 아이콘의 반투명 흰색 → blur 만 추가.
+   탭 바는 글자(어두운 인라인 색)가 읽히도록 밝은 톤을 유지하되 살짝만 투명하게 */
+.app-shell.gd-bg-firework .topbar .icon-btn { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.gd-theme-firework .tabs { background: rgba(255, 255, 255, .72); }
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px) {
   .fab-above-nav { bottom: 94px; }
