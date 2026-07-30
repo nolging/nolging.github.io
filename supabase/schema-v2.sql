@@ -2472,11 +2472,12 @@ begin
   if v_item.status = 'used' and v_old is not null and v_old <> p_group_id then
     update public.groups set deco_theme = null where id = v_old and deco_theme = p_theme;
   end if;
-  -- 그룹당 테마 1개: 이 그룹에 적용돼 있던 '다른' 테마 아이템은 미적용(active)으로 되돌림
+  -- 그룹당 테마 1개: 이 그룹에 적용돼 있던 '다른' 테마 아이템은 (누구 것이든) 미적용(active)으로.
+  --  → 멤버1이 A 적용 중일 때 멤버2가 B를 적용하면 멤버1의 A 도 자동 해제됨
   update public.user_items
     set status = 'active', group_id = null
-    where user_id = auth.uid() and status = 'used' and group_id = p_group_id
-      and item_id like 'theme-%' and item_id <> ('theme-' || p_theme);
+    where status = 'used' and group_id = p_group_id
+      and item_id like 'theme-%' and id <> v_item.id;
   update public.user_items set status = 'used', group_id = p_group_id, used_at = now() where id = v_item.id;
   update public.groups set deco_theme = p_theme where id = p_group_id;
 end;
