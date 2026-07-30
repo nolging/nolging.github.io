@@ -2778,7 +2778,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @keyframes bubble-dash {
   0%, 85%  { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px))) scaleY(.6); }
   86%      { opacity: .9; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 1px)) scaleY(1); }   /* 나타남(피크) */
-  95%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 7px)) scaleY(.9); }   /* 퍼지면서 페이드아웃 완료 */
+  90%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 4px)) scaleY(.95); } /* 다 퍼지기 직전에 이미 사라짐(빠른 페이드) */
+  93%      { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--pr, 8px) - 6px)); }
   100%     { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .theme-bubble, .tb-body, .tb-dash { animation: none; opacity: 0; } }
