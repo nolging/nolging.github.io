@@ -32,11 +32,7 @@ export default function ThemeBubbles({ durScale = 1, className = '' }) {
             '--dh': `${Math.max(2, b.s * 0.16).toFixed(1)}px`,
           }}>
           <span className="tb-body" />
-          <span className="tb-pop">
-            {Array.from({ length: DASHES }).map((_, j) => (
-              <i key={j} className="tb-dash" style={{ '--a': `${j * (360 / DASHES)}deg` }} />
-            ))}
-          </span>
+          {/* 점선 팝 임시 제거 — 가운데부터 페이드아웃만으로 터지는 느낌 확인용 */}
         </span>
       ))}
     </div>
