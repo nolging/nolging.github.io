@@ -2771,14 +2771,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .tb-body {
   position: absolute; inset: 0; border-radius: 50%; opacity: 0;
   --hole: 0%;
+  /* 이음새 없는 방사형 파스텔 블렌드(conic 제거) + 테두리까지 부드럽게 사라지는 veil → 위/아래 띠 없음 */
   background:
-    radial-gradient(circle at 30% 26%, rgba(255,255,255,.98) 0 3%, rgba(255,255,255,.5) 9%, rgba(255,255,255,0) 20%),  /* 하이라이트(좌상단, 하나만) */
-    radial-gradient(circle at 50% 48%, rgba(255,255,255,.62) 0 24%, rgba(255,255,255,.14) 52%, rgba(255,255,255,0) 70%), /* 맑은 중심 */
-    conic-gradient(from 200deg at 50% 50%,
-      rgba(255,150,210,.62), rgba(150,200,255,.55), rgba(150,240,205,.55),
-      rgba(255,235,160,.55), rgba(205,165,255,.62), rgba(255,150,210,.62));                                          /* 무지개 이리데센스(원래 채도) */
-  box-shadow: inset 0 0 8px rgba(255,255,255,.6), 0 1px 4px rgba(140,150,210,.16);  /* 대칭 rim 글로우(방향성 음영 제거) */
-  border: 1px solid rgba(255,255,255,.42);
+    radial-gradient(circle at 32% 27%, rgba(255,255,255,.96) 0 4%, rgba(255,255,255,.42) 12%, rgba(255,255,255,0) 30%),  /* 하이라이트 */
+    radial-gradient(circle at 26% 36%, rgba(150,220,255,.55), rgba(150,220,255,0) 60%),   /* 블루 */
+    radial-gradient(circle at 72% 30%, rgba(175,240,205,.50), rgba(175,240,205,0) 60%),   /* 민트 */
+    radial-gradient(circle at 76% 70%, rgba(214,176,255,.55), rgba(214,176,255,0) 60%),   /* 퍼플 */
+    radial-gradient(circle at 32% 74%, rgba(255,166,210,.55), rgba(255,166,210,0) 60%),   /* 핑크 */
+    radial-gradient(circle at 58% 58%, rgba(255,240,180,.42), rgba(255,240,180,0) 46%),   /* 옐로(중심쪽) */
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.30) 0 18%, rgba(255,255,255,.05) 54%, rgba(255,255,255,0) 80%); /* 맑은 중심 veil */
+  box-shadow: inset 0 0 5px rgba(255,255,255,.28), 0 1px 4px rgba(140,150,210,.14);
+  border: 1px solid rgba(255,255,255,.26);
   /* 페더를 구멍의 '안쪽'에 두어(hole-12% → hole) 평상시(--hole:0)엔 구멍이 없이 꽉 차 보이게 */
   -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 calc(var(--hole) - 12%), #000 var(--hole));
           mask: radial-gradient(circle at 50% 50%, transparent 0 calc(var(--hole) - 12%), #000 var(--hole));
