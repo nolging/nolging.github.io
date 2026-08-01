@@ -10,6 +10,9 @@ import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, 
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
+// 꾸미기 유형: deco_slot 값이 곧 표시명. 레거시 영문 코드(head/face/glasses)만 한글로 매핑.
+const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경' }
+const slotLabel = (slot) => SLOT_LABEL[slot] || slot
 
 // 프리미엄 탭 배경에 뿌리는 반짝이 별(위치 %, 크기 px, 애니 지연) — 탭이 '띠'가 아니라 하늘처럼 보이게
 const TOOLBAR_STARS = [
@@ -207,7 +210,7 @@ export default function Store() {
                   <button key={item.id} type="button" className={`st-card ${item.premium ? 'st-card-prem' : ''}`} onClick={() => open(item)}>
                     <span className="st-card-thumb" style={{ background: item.imageBg || imgBgOf(item.id, item.premium) }}>
                       <StoreItemImage id={item.id} emoji={item.emoji} svg={item.imageSvg} className="st-card-img" />
-                      {decoSlot(item.id) && <span className="deco-slot-badge">{decoSlot(item.id) === 'head' ? '머리' : '얼굴'}</span>}
+                      {(item.decoSlot || decoSlot(item.id)) && <span className="deco-slot-badge">{slotLabel(item.decoSlot || decoSlot(item.id))}</span>}
                     </span>
                     <span className="st-card-name">{itemName(item.id, item.name)}</span>
                     <span className="st-card-price"><PawIcon className="st-paw" />{num(item.price)}</span>

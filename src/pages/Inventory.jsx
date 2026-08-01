@@ -20,9 +20,10 @@ import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MAX_WISH = 300
 const NAME_TAG_MS = 24 * 3600 * 1000
-// 꾸미기 유형(슬롯): 관리자 설정(카탈로그) 우선, 없으면 하드코딩 폴백. 라벨은 head/face만 한글화.
+// 꾸미기 유형(슬롯): 관리자 설정(카탈로그=표시명) 우선, 없으면 하드코딩 폴백.
+// deco_slot 값이 곧 표시명. 레거시 영문 코드만 한글로 매핑.
 const slotOf = (id) => catalogDecoSlot(id) || decoSlot(id)
-const slotLabel = (slot) => ({ head: '머리', face: '얼굴' }[slot] || slot)
+const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경' }[slot] || slot)
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 
