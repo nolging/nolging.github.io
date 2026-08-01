@@ -756,15 +756,11 @@ export default function Notes() {
                   </button>
                 )
               ) : gift ? (
-                mine && !open.anonymous ? (
-                  open.sender_active === false
-                    ? <div className="note-reply-off">탈퇴한 멤버에게는 답장할 수 없어요</div>
-                    : <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
-                ) : null
-              ) : !wish && !couple && !friend && !gift && mine && !open.anonymous ? (
-                open.sender_active === false
-                  ? <div className="note-reply-off">탈퇴한 멤버에게는 답장할 수 없어요</div>
-                  : <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
+                mine && !open.anonymous && open.sender_active !== false
+                  ? <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
+                  : null
+              ) : !wish && !couple && !friend && !gift && mine && !open.anonymous && open.sender_active !== false ? (
+                <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
               ) : null}
             </div>
           )
