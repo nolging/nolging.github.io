@@ -23,10 +23,13 @@ export default function WishCategoryEditor({ value, onChange }) {
                 onChange={(e) => patchAt(i, { emoji: lastGrapheme(e.target.value) })} />
               <input className="wc-name" value={c.name} maxLength={6} placeholder="유형 이름"
                 aria-label="유형 이름" onChange={(e) => patchAt(i, { name: e.target.value })} />
-              {MEDIA_LOOKUP_CATS.includes(c.name.trim()) && (
-                <span className="wc-tag" title="이 이름일 때만 작품 자동조회가 동작해요">자동조회</span>
-              )}
-              <button type="button" className="wc-del" aria-label="유형 삭제" onClick={() => removeAt(i)}>✕</button>
+              <button type="button" className="wc-del" aria-label="유형 삭제"
+                onClick={() => {
+                  const nm = c.name.trim()
+                  // 자동 조회 지원 유형(OTT/영화/독서/게임)은 삭제 전 확인
+                  if (MEDIA_LOOKUP_CATS.includes(nm) && !window.confirm(`${nm} 유형은 자동 조회를 지원해요. 정말 삭제할까요?`)) return
+                  removeAt(i)
+                }}>✕</button>
             </div>
             <div className="wc-swatches">
               {CATEGORY_COLOR_PRESETS.map((p) => {
@@ -42,7 +45,6 @@ export default function WishCategoryEditor({ value, onChange }) {
         ))}
       </div>
       <button type="button" className="wc-add" onClick={addOne}>+ 유형 추가</button>
-      <p className="wc-hint">OTT·영화·독서·게임은 그 이름일 때만 작품 정보가 자동으로 채워져요.<br />이름을 바꾸거나 삭제하면 자동조회 없이 메모형 유형이 됩니다.</p>
     </div>
   )
 }

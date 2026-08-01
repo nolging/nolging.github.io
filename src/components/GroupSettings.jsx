@@ -27,6 +27,7 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [nameErr, setNameErr] = useState('')
+  const [catsOpen, setCatsOpen] = useState(false) // 위시 유형 편집: 길어서 기본 접힘
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   async function save(e) {
@@ -119,12 +120,20 @@ export default function GroupSettings({ group, onSaved, onDelete }) {
           ))}
         </div>
 
-        {/* 위시 유형 편집 */}
+        {/* 위시 유형 편집 (접기/펼치기) */}
         <div className="cg-section cg-mt-24">
-          <div className="cg-section-title">위시 유형</div>
-          <div className="cg-section-sub">그룹원이 위시를 올릴 때 고르는 유형이에요. 이모지·배지 색까지 바꿀 수 있어요.</div>
+          <button type="button" className="cg-section-toggle" aria-expanded={catsOpen}
+            onClick={() => setCatsOpen((o) => !o)}>
+            <span className="cg-section-title">위시 유형</span>
+            <svg className={`cg-toggle-chev${catsOpen ? ' open' : ''}`} width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
         </div>
-        <WishCategoryEditor value={form.wish_categories} onChange={(next) => set({ wish_categories: next })} />
+        {catsOpen && (
+          <WishCategoryEditor value={form.wish_categories} onChange={(next) => set({ wish_categories: next })} />
+        )}
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
