@@ -127,6 +127,7 @@ export default function PraiseStickers() {
   const viewer = data?.viewer
   const members = data?.members || []
   const me = members.find((m) => m.user_id === viewer)
+  const isMember = !!me // 관리자가 미가입 커플 그룹을 볼 땐 false → 읽기 전용
   const partner = members.find((m) => m.user_id !== viewer)
   const owner = members.find((m) => m.user_id === tabOwner) || partner
   const isMine = owner?.user_id === viewer
@@ -158,7 +159,7 @@ export default function PraiseStickers() {
   if (loading) return <div className="page"><div className="spinner" /></div>
   if (error && !data) return <div className="page"><div className="alert alert-error">{error}</div></div>
 
-  const canAdd = !isMine && !viewingHist && !!ownerBoard && !ownerBoard.completed_at
+  const canAdd = isMember && !isMine && !viewingHist && !!ownerBoard && !ownerBoard.completed_at
   const completed = !!ownerBoard?.completed_at
   const claimed = !!ownerBoard?.claimed_at
   const claimable = isMine && completed && !claimed && !viewingHist
@@ -225,7 +226,7 @@ export default function PraiseStickers() {
 
       {/* 탭: 왼쪽=상대, 오른쪽=나 */}
       <div className="praise-tabs" style={{ background: cfg.tabBg }}>
-        {[partner, me].filter(Boolean).map((mem) => {
+        {(isMember ? [partner, me].filter(Boolean) : members).map((mem) => {
           const on = owner?.user_id === mem.user_id
           return (
             <button key={mem.user_id} type="button"
