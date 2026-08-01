@@ -12,6 +12,8 @@ export function usePushNavigation() {
   const navigate = useNavigate()
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
+    let cancelled = false
+    let polling = false
 
     const toPath = (raw) => {
       try {
@@ -28,17 +30,32 @@ export function usePushNavigation() {
     const clearPending = async () => {
       try { const c = await caches.open(NAV_CACHE); await c.delete(NAV_KEY) } catch { /* noop */ }
     }
-    // 재개 시: Cache 에 저장된 목적지 소비(메시지를 놓쳤어도 이걸로 확실히 이동)
-    const consumePending = async () => {
+    // Cache 에 저장된 목적지를 읽어(있으면 소비) 반환
+    const readPending = async () => {
       try {
-        if (!('caches' in window)) return
+        if (!('caches' in window)) return null
         const c = await caches.open(NAV_CACHE)
         const res = await c.match(NAV_KEY)
-        if (!res) return
+        if (!res) return null
         const url = (await res.text()).trim()
         await c.delete(NAV_KEY)
-        if (url) go(url)
-      } catch { /* noop */ }
+        return url || null
+      } catch { return null }
+    }
+    // 재개 시: 저장된 목적지 소비. SW 의 캐시 기록과 앱의 포그라운드 이벤트 사이에 미세한
+    // 레이스가 있어(특히 iOS PWA) 한 번만 읽으면 놓칠 수 있으므로, 짧은 창 동안 몇 번 재시도한다.
+    // 찾는 즉시 이동하고 종료. (없으면 조용히 끝 — 불필요한 이동 없음)
+    const consumePending = async () => {
+      if (polling) return
+      polling = true
+      const delays = [0, 150, 400, 900, 1600]
+      for (const d of delays) {
+        if (cancelled) break
+        if (d) await new Promise((r) => setTimeout(r, d))
+        const url = await readPending()
+        if (url) { go(url); break }
+      }
+      polling = false
     }
     // 살아있는 앱: SW 메시지 즉시 처리(빠른 경로)
     const onMessage = (e) => {
@@ -57,6 +74,7 @@ export function usePushNavigation() {
     consumePending() // 최초 로드(콜드 오픈/재개 후 reload 포함)
 
     return () => {
+      cancelled = true
       navigator.serviceWorker.removeEventListener('message', onMessage)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('pageshow', onVisible)
