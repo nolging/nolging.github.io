@@ -5209,9 +5209,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
 /* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
 .admin-store-tabbar {
-  position: sticky; top: 0; z-index: 6; background: var(--bg);
+  /* 상단바 바로 아래에 딱 붙게: 콘텐츠 상단 패딩(var(--pad-y))만큼 위로 붙여 sticky 고정 →
+     탭 위쪽 빈 공간으로 스크롤 콘텐츠가 비치지 않게(불투명 배경이 상단바까지 덮음). */
+  position: sticky; top: calc(-1 * var(--pad-y)); z-index: 6; background: var(--bg);
   margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 0;
-  padding: var(--pad-y) var(--pad-x) 10px;
+  padding: 8px var(--pad-x) 10px;
 }
 .admin-store-tabbar .seg-tabs { margin-bottom: 0; }
 .admin-cat { display: flex; flex-direction: column; gap: 8px; }
