@@ -5,7 +5,7 @@
 // 새싹·홍조는 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
-export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
@@ -198,6 +198,33 @@ function AlienShades() {
   )
 }
 
+// 하트 렌즈 path (중심 cx,cy · 반폭 a). 두 봉우리 + 아래 꼭짓점.
+const heartPath = (cx, cy, a) =>
+  `M${cx} ${cy - a * 0.30}`
+  + ` C${cx - a * 0.30} ${cy - a * 0.92} ${cx - a} ${cy - a * 0.80} ${cx - a} ${cy - a * 0.22}`
+  + ` C${cx - a} ${cy + a * 0.22} ${cx - a * 0.42} ${cy + a * 0.52} ${cx} ${cy + a * 0.98}`
+  + ` C${cx + a * 0.42} ${cy + a * 0.52} ${cx + a} ${cy + a * 0.22} ${cx + a} ${cy - a * 0.22}`
+  + ` C${cx + a} ${cy - a * 0.80} ${cx + a * 0.30} ${cy - a * 0.92} ${cx} ${cy - a * 0.30} Z`
+
+function HeartShades() {
+  // 하트 알 두 개 + 코 브릿지. 테는 분홍, 알은 까만색이지만 살짝 투명(프로필 사진이 비침).
+  const LC = 34, RC = 66, CY = 46, A = 15
+  const FRAME = '#ff77aa'
+  return (
+    <g>
+      <rect x="47" y="40" width="6" height="4" rx="2" fill={FRAME} />
+      {[LC, RC].map((cx, i) => (
+        <g key={i}>
+          <path d={heartPath(cx, CY, A)} fill="#141414" fillOpacity="0.6"
+            stroke={FRAME} strokeWidth="3" strokeLinejoin="round" />
+          <ellipse cx={cx - A * 0.34} cy={CY - A * 0.12} rx="2.6" ry="1.6" fill="#fff" opacity="0.5"
+            transform={`rotate(-25 ${cx - A * 0.34} ${CY - A * 0.12})`} />
+        </g>
+      ))}
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -210,6 +237,7 @@ const PREVIEW_VB = {
   'deco-alien-shades': '17 27 66 38',
   'deco-bandage': '64 51 36 24',
   'deco-gum': '36 67 28 28',
+  'deco-heart-shades': '16 30 68 35',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -251,6 +279,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-alien-shades' && <AlienShades />}
       {id === 'deco-bandage' && <Bandage />}
       {id === 'deco-gum' && <BubbleGum />}
+      {id === 'deco-heart-shades' && <HeartShades />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -268,7 +297,8 @@ const FaceArt = ({ face }) => (
       : face === 'deco-pixel-shades' ? <PixelShades />
         : face === 'deco-alien-shades' ? <AlienShades />
           : face === 'deco-bandage' ? <Bandage />
-            : face === 'deco-gum' ? <BubbleGum /> : null
+            : face === 'deco-gum' ? <BubbleGum />
+              : face === 'deco-heart-shades' ? <HeartShades /> : null
 )
 
 // layer: 'back'(귀 — 아바타 뒤) | 'front'(새싹·홍조 — 아바타 앞)

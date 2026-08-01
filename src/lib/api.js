@@ -1055,7 +1055,7 @@ export async function getGroupDecoMap(groupId) {
   const { data, error } = await supabase.rpc('list_group_avatar_decos', { p_group_id: groupId })
   if (error) return {}
   const map = {}
-  const FACE = new Set(['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum'])
+  const FACE = new Set(['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades'])
   for (const r of data ?? []) {
     const slot = FACE.has(r.item_id) ? 'face' : 'head'
     const m = (map[r.user_id] = map[r.user_id] || {})
