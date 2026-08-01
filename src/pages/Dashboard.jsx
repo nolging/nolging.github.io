@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { listMyGroups, unreadNotificationCount, listCoupleGroups, listFriendGroups, getMyLedBanner, getGroupDecoMap } from '../lib/api'
+import { listMyGroups, listAllGroups, unreadNotificationCount, listCoupleGroups, listFriendGroups, getMyLedBanner, getGroupDecoMap } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import GroupBadge from '../components/GroupBadge'
@@ -43,7 +43,7 @@ function dayGreeting() {
 }
 
 export default function Dashboard() {
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [groups, setGroups] = useState([])
@@ -61,11 +61,11 @@ export default function Dashboard() {
 
   async function load() {
     setLoading(true)
-    try { setGroups(await listMyGroups()) }
+    try { setGroups(await (isAdmin ? listAllGroups() : listMyGroups())) } // 관리자는 미가입 그룹도 표시
     catch (err) { setError(err.message) }
     finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [isAdmin])
   useEffect(() => { unreadNotificationCount().then(setUnread).catch(() => {}) }, [])
   useEffect(() => { reloadBanner() }, [])
   useEffect(() => {

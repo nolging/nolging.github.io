@@ -24,6 +24,19 @@ export async function listMyGroups() {
   return rows
 }
 
+// 관리자 전용: 내가 가입하지 않은 그룹까지 모든 그룹을 반환(멤버십 후필터 없음).
+// RLS 상 관리자는 모든 group_members 를 볼 수 있어 groups + inner 조인이 전체 그룹을 준다.
+// (그룹 카드의 '미가입' 반투명 처리는 Dashboard 가 멤버십으로 판단)
+export async function listAllGroups() {
+  const q = (cols) => supabase.from('groups').select(`*, group_members!inner(${cols})`)
+    .order('created_at', { ascending: false })
+    .order('joined_at', { referencedTable: 'group_members', ascending: true })
+  let { data, error } = await q('user_id, display_nickname, avatar_url, left_at')
+  if (error) { ({ data, error } = await q('user_id, display_nickname, avatar_url')) } // left_at 미배포 폴백
+  if (error) throw error
+  return (data ?? []).map((g) => ({ ...g, group_members: (g.group_members || []).filter((m) => !m.left_at) }))
+}
+
 export async function getGroup(groupId) {
   const { data, error } = await supabase.from('groups').select('*').eq('id', groupId).single()
   if (error) throw error
