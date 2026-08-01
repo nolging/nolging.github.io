@@ -198,22 +198,22 @@ function AlienShades() {
   )
 }
 
-// 하트 렌즈 path (중심 cx,cy · 반폭 a). 두 봉우리 + 아래 꼭짓점.
+// 하트 렌즈 path (중심 cx,cy · 반폭 a). 통통한 봉우리 + 짧고 둥근 아래 꼭짓점.
 const heartPath = (cx, cy, a) =>
-  `M${cx} ${cy - a * 0.30}`
-  + ` C${cx - a * 0.30} ${cy - a * 0.92} ${cx - a} ${cy - a * 0.80} ${cx - a} ${cy - a * 0.22}`
-  + ` C${cx - a} ${cy + a * 0.22} ${cx - a * 0.42} ${cy + a * 0.52} ${cx} ${cy + a * 0.98}`
-  + ` C${cx + a * 0.42} ${cy + a * 0.52} ${cx + a} ${cy + a * 0.22} ${cx + a} ${cy - a * 0.22}`
-  + ` C${cx + a} ${cy - a * 0.80} ${cx + a * 0.30} ${cy - a * 0.92} ${cx} ${cy - a * 0.30} Z`
+  `M${cx} ${cy - a * 0.36}`
+  + ` C${cx - a * 0.36} ${cy - a * 1.06} ${cx - a * 1.04} ${cy - a * 0.88} ${cx - a} ${cy - a * 0.14}`
+  + ` C${cx - a * 0.98} ${cy + a * 0.34} ${cx - a * 0.52} ${cy + a * 0.62} ${cx} ${cy + a * 0.88}`
+  + ` C${cx + a * 0.52} ${cy + a * 0.62} ${cx + a * 0.98} ${cy + a * 0.34} ${cx + a} ${cy - a * 0.14}`
+  + ` C${cx + a * 1.04} ${cy - a * 0.88} ${cx + a * 0.36} ${cy - a * 1.06} ${cx} ${cy - a * 0.36} Z`
 
 function HeartShades() {
   // 하트 알 두 개 + 코 브릿지. 테는 분홍, 알은 까만색이지만 살짝 투명(프로필 사진이 비침).
-  const LC = 30, RC = 70, CY = 46, A = 14.5
+  const LC = 30, RC = 70, CY = 47, A = 17
   const FRAME = '#ff77aa'
   return (
     <g>
       {/* 브릿지(하트 사이) — 먼저 깔고 하트 테가 양끝을 덮어 이어지게 */}
-      <rect x="43" y="42.5" width="14" height="4.2" rx="2.1" fill={FRAME} />
+      <rect x="45.5" y="43.5" width="9" height="4.2" rx="2.1" fill={FRAME} />
       {[LC, RC].map((cx, i) => (
         <path key={i} d={heartPath(cx, CY, A)} fill="#141414" fillOpacity="0.6"
           stroke={FRAME} strokeWidth="3" strokeLinejoin="round" />
@@ -234,7 +234,7 @@ const PREVIEW_VB = {
   'deco-alien-shades': '17 27 66 38',
   'deco-bandage': '64 51 36 24',
   'deco-gum': '36 67 28 28',
-  'deco-heart-shades': '16 30 68 35',
+  'deco-heart-shades': '11 28 78 37',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
