@@ -164,7 +164,7 @@ export default function AdminStore() {
   }
 
   return (
-    <div className="page admin-page">
+    <div className="page admin-page admin-store-page">
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="admin-store-tabbar">
