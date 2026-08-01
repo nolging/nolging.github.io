@@ -89,6 +89,15 @@ Deno.serve(async (req) => {
       return json({ ok: true })
     }
     if (action === 'delete') {
+      // 1) 그룹/쪽지 정리 먼저: 소유 그룹은 다음 가입자에게 소유권 이전(없으면 삭제),
+      //    모든 그룹에서 탈퇴 → 이후 이 사용자에게 쪽지 발송·답장이 자동 차단된다.
+      //    (프로필 삭제가 콘텐츠 FK 로 실패해도 그룹/쪽지 정리는 확실히 이뤄지도록 먼저 실행)
+      const { error: purgeErr } = await admin.rpc('admin_purge_user_memberships', { p_user: p.userId })
+      if (purgeErr) {
+        return json({ error: `그룹/쪽지 정리 실패: ${purgeErr.message} (user-delete-cleanup.sql 을 적용했는지 확인해 주세요)` }, 500)
+      }
+      // 2) 프로필/계정 삭제(작성한 콘텐츠 FK 가 있으면 프로필 행은 남을 수 있으나,
+      //    그룹/쪽지는 위에서 이미 정리됨)
       await admin.from('profiles').delete().eq('id', p.userId)
       await admin.auth.admin.deleteUser(p.userId).catch(() => {})
       return json({ ok: true })
