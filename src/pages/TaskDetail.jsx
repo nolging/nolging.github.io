@@ -495,10 +495,14 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
 
   // 댓글 ⋮ 메뉴 토글 — 버튼 위치를 기준으로 화면 고정(fixed) 좌표를 잡아, 임베드(PC)
   // 상세의 스크롤 영역(overflow) 밖으로 잘리거나 가려지지 않게 한다.
-  function toggleCommentMenu(e, id) {
+  function toggleCommentMenu(e, id, itemCount = 4) {
     if (menuId === id) { setMenuId(null); return }
     const r = e.currentTarget.getBoundingClientRect()
-    const openUp = r.bottom > window.innerHeight - 190 // 하단 근처면 위로 펼침
+    // 메뉴 예상 높이(항목 수 기반) + 하단 입력창·안전영역 여유를 고려해, 아래로 펼치면
+    // 입력창에 가려지는 경우 위로 펼친다.
+    const menuH = itemCount * 44 + 14
+    const bottomClear = 100 // 하단 댓글 입력창 + 여유
+    const openUp = r.bottom + 4 + menuH > window.innerHeight - bottomClear
     setMenuPos({
       right: Math.max(8, Math.round(window.innerWidth - r.right)),
       top: openUp ? 'auto' : Math.round(r.bottom + 4),
@@ -518,7 +522,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
             <span className="comment-author">{nameOf(c.author_id)}</span>
             <span className="comment-time">{formatTime(c.created_at)}</span>
             <div className="comment-menu-wrap">
-              <button className="comment-menu-btn" aria-label="더보기" onClick={(e) => toggleCommentMenu(e, c.id)}>
+              <button className="comment-menu-btn" aria-label="더보기" onClick={(e) => toggleCommentMenu(e, c.id, 2 + (canEdit ? 1 : 0) + (canDelete ? 1 : 0))}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
                 </svg>
