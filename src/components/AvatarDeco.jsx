@@ -221,6 +221,43 @@ function HeartShades() {
   )
 }
 
+// 후광(테두리 유형): 아바타 원 테두리를 금빛으로 감싸는 은은한 그라데이션 + 반짝임.
+const HALO_SPARKS = [
+  { a: -68, k: 1.4 }, { a: 20, k: 1.0 }, { a: 118, k: 1.6 }, { a: 200, k: 1.1 }, { a: 296, k: 0.9 },
+].map(({ a, k }, i) => { const rad = (a * Math.PI) / 180; return { x: +(50 + 50 * Math.cos(rad)).toFixed(1), y: +(50 + 50 * Math.sin(rad)).toFixed(1), k, i } })
+
+function Halo() {
+  return (
+    <g className="avd-halo">
+      <defs>
+        <radialGradient id="haloGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="64%" stopColor="#ffe89a" stopOpacity="0" />
+          <stop offset="83%" stopColor="#ffd23f" stopOpacity="0.62" />
+          <stop offset="100%" stopColor="#ffcf3a" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="haloRing" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff3ba" />
+          <stop offset="0.5" stopColor="#ffd23f" />
+          <stop offset="1" stopColor="#f4b400" />
+        </linearGradient>
+      </defs>
+      {/* 은은한 후광(아바타 밖으로 번짐) */}
+      <circle className="avd-halo-glow" cx="50" cy="50" r="62" fill="url(#haloGlow)" />
+      {/* 금빛 테두리 링 (흰 테두리 대체) + 안쪽 밝은 하이라이트 */}
+      <circle cx="50" cy="50" r="50" fill="none" stroke="url(#haloRing)" strokeWidth="5" />
+      <circle cx="50" cy="50" r="50" fill="none" stroke="#fff8dc" strokeWidth="1.4" strokeOpacity="0.7" />
+      {/* 반짝임 */}
+      <g className="avd-halo-spark" fill="#fff7d6">
+        {HALO_SPARKS.map((s) => (
+          <path key={s.i} className={`avd-spk avd-spk-${s.i % 3}`}
+            transform={`translate(${s.x} ${s.y}) scale(${s.k})`}
+            d="M0 -3 L0.9 -0.9 L3 0 L0.9 0.9 L0 3 L-0.9 0.9 L-3 0 L-0.9 -0.9 Z" />
+        ))}
+      </g>
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -234,6 +271,7 @@ const PREVIEW_VB = {
   'deco-bandage': '64 51 36 24',
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
+  'deco-halo': '-14 -14 128 128',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -276,6 +314,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-bandage' && <Bandage />}
       {id === 'deco-gum' && <BubbleGum />}
       {id === 'deco-heart-shades' && <HeartShades />}
+      {id === 'deco-halo' && <Halo />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -286,10 +325,13 @@ const ART = {
   'deco-sprout': Sprout, 'deco-jaguar': CatEars, 'deco-wolf': WolfEars,
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
-  'deco-heart-shades': HeartShades,
+  'deco-heart-shades': HeartShades, 'deco-halo': Halo,
 }
 // 뒤(back) 레이어로 그릴 아이템(귀) — 나머지는 앞(front). 슬롯이 아니라 아트 종류로 결정.
 const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf'])
+// 테두리(원형 테두리) 유형 아이템: 아바타의 흰 테두리를 대체 → CSS 로 box-shadow 를 끈다.
+export const BORDER_IDS = new Set(['deco-halo'])
+export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.has(d.id))
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
 export function decoItems(deco) {
