@@ -11,6 +11,14 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 
+// 프리미엄 탭 배경에 뿌리는 반짝이 별(위치 %, 크기 px, 애니 지연) — 탭이 '띠'가 아니라 하늘처럼 보이게
+const TOOLBAR_STARS = [
+  { l: 5, t: 26, s: 2.5, d: 0 }, { l: 14, t: 62, s: 1.8, d: 0.7 }, { l: 24, t: 34, s: 2, d: 1.4 },
+  { l: 40, t: 70, s: 1.6, d: 0.4 }, { l: 52, t: 22, s: 2.4, d: 1.1 }, { l: 63, t: 58, s: 1.8, d: 0.2 },
+  { l: 72, t: 30, s: 2, d: 1.7 }, { l: 83, t: 66, s: 1.6, d: 0.9 }, { l: 92, t: 38, s: 2.3, d: 0.5 },
+  { l: 34, t: 48, s: 1.5, d: 2.0 }, { l: 88, t: 20, s: 1.6, d: 1.3 },
+]
+
 export default function Store() {
   const { refreshCoin, setStorePremium } = useOutletContext()
   const { user, isAdmin } = useAuth()
@@ -39,18 +47,6 @@ export default function Store() {
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
-  const [scrolled, setScrolled] = useState(false) // 스크롤 시 sticky 탭에 그라데이션 페이드
-
-  // 본문 스크롤 여부 감지 → 탭 하단 페이드 on/off
-  useEffect(() => {
-    const sc = document.querySelector('.content')
-    if (!sc) return
-    const onScroll = () => setScrolled(sc.scrollTop > 4)
-    sc.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => sc.removeEventListener('scroll', onScroll)
-  }, [])
-
   useEffect(() => {
     let on = true
     listStoreItems()
@@ -169,7 +165,14 @@ export default function Store() {
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
       {hasPremium && (
-        <div className={`st-toolbar ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="st-toolbar">
+          {inPremium && (
+            <span className="st-toolbar-sky" aria-hidden="true">
+              {TOOLBAR_STARS.map((s, i) => (
+                <span key={i} style={{ left: `${s.l}%`, top: `${s.t}%`, width: s.s, height: s.s, animationDelay: `${s.d}s` }} />
+              ))}
+            </span>
+          )}
           <div className="st-seg" role="tablist">
             <button type="button" role="tab" aria-selected={!premiumView}
               className={!premiumView ? 'active' : ''} onClick={() => setPremiumView(false)}>일반 상점</button>

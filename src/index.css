@@ -2527,27 +2527,25 @@ button.mlist-row:hover { background: #f6f5fa; }
 .store-view .store-page > *:first-child:not(.st-toolbar) { margin-top: var(--pad-y, 16px); }
 @keyframes st-twinkle { 0%,100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.15); } }
 
-/* 툴바(세그먼트 토글): 스크롤해도 상단에 고정(sticky) — 스크롤 콘텐츠를 가리도록 배경 풀블리드 */
+/* 툴바(세그먼트 토글): 스크롤해도 상단에 고정(sticky). 배경을 불투명 솔리드로 깔아
+   스크롤 시 카드가 그라데이션 없이 깔끔히(빠른 스크롤에도 비침 없이) 탭 뒤로 사라진다. */
 .st-toolbar {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 10px;
-  margin: 0 calc(-1 * var(--pad-x, 20px)) -8px;
-  padding: 10px var(--pad-x, 20px) 0;
-  background: transparent;             /* 평상시 완전 투명 */
-  --st-fade: var(--bg);                /* 스크롤 페이드 색(일반=페이지색) */
-  /* sticky 요소를 별도 합성 레이어로 승격 → 빠른 관성 스크롤 시 리페인트 지연(카드 비침) 완화 */
+  margin: 0 calc(-1 * var(--pad-x, 20px));
+  padding: 10px var(--pad-x, 20px) 10px;   /* 하단 약간의 여백 */
+  background: var(--bg);                    /* 일반: 페이지색 솔리드 → 카드 가림 */
   will-change: transform;
 }
-/* 스크롤 시에만 나타나는 그라데이션 페이드(위=불투명 → 아래=투명). 카드가 자연스럽게 사라짐.
-   탭 영역은 충분히 불투명(솔리드 80%)하게 덮어 빠른 스크롤에도 비침 최소화. */
-.st-toolbar::after {
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 24px);
-  z-index: -1; pointer-events: none; opacity: 0; transition: opacity .12s ease;
-  background: linear-gradient(to bottom, var(--st-fade) 0, var(--st-fade) 80%, transparent 100%);
+/* 프리미엄: 배경을 백드롭과 동일한 그라데이션(뷰포트 고정)으로 깔아 '띠' 없이 하늘과 이어지게 +
+   그 위에 반짝이는 별을 띄워, 카드는 가리되(불투명) 별 반짝임은 보이게 한다. */
+.premium-shop .st-toolbar {
+  background: radial-gradient(130% 90% at 50% -8%, #322a68 0%, #201a4a 38%, #120e2e 70%, #0b0820 100%) fixed;
 }
-.st-toolbar.is-scrolled::after { opacity: 1; }
-.premium-shop .st-toolbar { --st-fade: #241d4a; }
-.st-seg { flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
+.st-toolbar-sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.st-toolbar-sky span { position: absolute; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 4px 1px rgba(255,255,255,.5); animation: st-twinkle 3s ease-in-out infinite; }
+.st-seg { position: relative; z-index: 1; flex: 1; display: flex; background: #f0eef7; border-radius: 999px; padding: 4px; }
 .st-seg button { flex: 1; border: none; background: none; cursor: pointer; border-radius: 999px; padding: 10px 0;
   font-size: 13px; font-weight: 700; color: #8b8798; transition: color .15s; }
 .st-seg button.active { background: #fff; color: #191722; box-shadow: 0 1px 3px rgba(25,23,34,.12); }
