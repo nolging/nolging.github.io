@@ -74,15 +74,18 @@ export default function Dashboard() {
     listFriendGroups().then(setFriendIds).catch(() => {})
   }, [profile?.id])
 
-  // 프리미엄 그룹의 아바타 데코 로드(그룹 카드에 표시)
+  // 아바타 데코 로드: 화면에 뜬 모든 그룹 대상(관리자가 보는 미가입 프리미엄 그룹 포함).
+  //  내가 속한 프리미엄 그룹만 로드하면 미가입 그룹 카드엔 꾸미기가 안 보였음.
+  const groupIdsKey = groups.map((g) => g.id).join(',')
   useEffect(() => {
-    const ids = [...new Set([...premiumIds, ...friendIds])]
-    if (!ids.length) return
+    const ids = groups.map((g) => g.id)
+    if (!ids.length) { setDecosByGroup({}); return }
     let on = true
     Promise.all(ids.map((id) => getGroupDecoMap(id).then((m) => [id, m]).catch(() => [id, {}])))
       .then((pairs) => { if (on) setDecosByGroup(Object.fromEntries(pairs)) })
     return () => { on = false }
-  }, [premiumIds, friendIds])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupIdsKey])
 
   const premiumSet = new Set(premiumIds)
   const friendSet = new Set(friendIds)
