@@ -174,7 +174,9 @@ export default function GroupMembers() {
   // ---- 커플 그룹: 데이트(커플 공간) ----
   if (couple) {
     const meC = members.find((m) => m.is_self) || members[0]
-    const partner = members.find((m) => !m.is_self) || members[1] || null
+    // partner = meC 가 아닌 다른 멤버. (관리자가 미가입 그룹을 볼 땐 is_self 가 없어
+    //  !is_self 로 찾으면 meC 와 같은 사람이 잡혀 양쪽이 똑같이 보이던 버그 → user_id 로 구분)
+    const partner = members.find((m) => m.user_id !== meC?.user_id) || null
     const today = new Date()
     const maxDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     // 명시적 기념일 없으면 커플 링 수령일을 기본값으로
