@@ -55,7 +55,8 @@ language sql security definer set search_path = public stable as $$
   select ui.user_id, ui.item_id, ui.deco_tf
   from public.user_items ui
   where ui.group_id = p_group_id and ui.status = 'used' and ui.item_id like 'deco-%'
-    and public.is_group_member(p_group_id, auth.uid());
+    -- 멤버 또는 앱 관리자(미가입 그룹 조회 시에도 꾸미기가 보이도록)
+    and (public.is_group_member(p_group_id, auth.uid()) or public.is_admin(auth.uid()));
 $$;
 grant execute on function public.list_group_avatar_decos(uuid) to authenticated;
 
