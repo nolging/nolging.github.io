@@ -945,11 +945,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 필터 시트: 제목 좌측 정렬 + 초기화, 유형 칩은 한 줄에 다 보이게 작게 */
 .filter-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .filter-title { margin: 0; text-align: left; }
-.filter-chips { flex-wrap: nowrap; overflow: visible; gap: 6px; }
-/* 유형 칩을 동일 폭으로 늘려 어떤 화면 폭에서도 한 줄에 꽉 차게 */
+.filter-chips { flex-wrap: wrap; overflow: visible; gap: 6px; justify-content: flex-start; }
+/* 칩은 내용 길이 그대로(늘리지 않음), 왼쪽 정렬. 많으면 다음 줄로 줄바꿈 */
 .filter-chips .chip {
-  flex: 1 1 0; min-width: 0; padding: 7px 4px; font-size: 12.5px;
-  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; padding: 7px 14px; font-size: 12.5px;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 /* 필터 시트 섹션 라벨(유형/그룹) — 좌측 정렬 */
 .filter-section-label { text-align: left; font-weight: 700; font-size: 13px; color: var(--muted); margin: 16px 0 8px; }
