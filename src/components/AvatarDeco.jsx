@@ -223,6 +223,17 @@ function HeartShades() {
 
 // 후광(테두리 유형): 솔리드 링 없이 금빛 그라데이션만 — 안쪽이 진하고 바깥으로 옅어지며 번짐.
 // 아바타 뒤(back)에 그려 다른 꾸미기보다 항상 뒤에 보인다. 펄스로 은은하게 퍼짐.
+// 그 위에 작은 반짝이 입자들이 각각 다른 타이밍으로 깜빡인다.
+const HALO_SPARK_PATH = 'M0,-1 C0.16,-0.16 0.16,-0.16 1,0 C0.16,0.16 0.16,0.16 0,1 C-0.16,0.16 -0.16,0.16 -1,0 C-0.16,-0.16 -0.16,-0.16 0,-1 Z'
+const HALO_SPARKS = [
+  { x: 50, y: -6, s: 3.6, d: 0, dur: 1.7 },
+  { x: 91, y: 16, s: 2.6, d: 0.5, dur: 2.1 },
+  { x: 105, y: 57, s: 3.1, d: 1.1, dur: 1.5 },
+  { x: 74, y: 103, s: 2.4, d: 0.8, dur: 2.3 },
+  { x: 26, y: 101, s: 3.3, d: 0.2, dur: 1.9 },
+  { x: -4, y: 61, s: 2.7, d: 1.4, dur: 1.6 },
+  { x: 9, y: 17, s: 2.9, d: 0.9, dur: 2.0 },
+]
 function Halo() {
   return (
     <g className="avd-halo">
@@ -235,6 +246,16 @@ function Halo() {
         </radialGradient>
       </defs>
       <circle className="avd-halo-glow" cx="50" cy="50" r="66" fill="url(#haloGlow)" />
+      {HALO_SPARKS.map((sp, i) => (
+        <g key={i} transform={`translate(${sp.x} ${sp.y}) scale(${sp.s})`}>
+          <path
+            className="avd-halo-spark"
+            style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}
+            d={HALO_SPARK_PATH}
+            fill="#fff6d0"
+          />
+        </g>
+      ))}
     </g>
   )
 }

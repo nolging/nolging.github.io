@@ -1561,7 +1561,10 @@ button.mention-chip:active { opacity: .6; }
 /* 후광: 그라데이션 글로우가 은은하게 퍼졌다 줄어드는 펄스(투명도 + 크기) */
 @keyframes avd-halo-pulse { 0%, 100% { opacity: .6; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.05); } }
 .avd-halo-glow { transform-box: fill-box; transform-origin: center; animation: avd-halo-pulse 2.4s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .avd-halo-glow { animation: none; } }
+@keyframes avd-halo-spark { 0%, 100% { opacity: 0; transform: scale(.25); } 50% { opacity: 1; transform: scale(1); } }
+.avd-halo-spark { transform-box: fill-box; transform-origin: center; animation: avd-halo-spark 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .avd-halo-glow, .avd-halo-spark { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .avd-halo-spark { opacity: .85; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
