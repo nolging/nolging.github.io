@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import AvatarDeco, { DECO_TF0, decoSlot } from './AvatarDeco'
+import AvatarDeco, { DECO_TF0 } from './AvatarDeco'
 import { memberColor } from './MemberAvatar'
 
 // 프로필 꾸미기 아이템을 그룹 프로필 사진에 맞춰 조정하는 편집기.
@@ -37,7 +37,6 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   const tfRef = useRef(tf)
   tfRef.current = tf || DECO_TF0
 
-  const slot = decoSlot(itemId)
   const cur = tf || DECO_TF0
   const apply = (patch) => onChange(clampTf({ ...tfRef.current, ...patch }))
 
@@ -111,10 +110,8 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <span className="deco-adj-face" style={src ? undefined : { background: c.bg, color: c.fg, fontSize: size * 0.34 }}>
           {src ? <img src={src} alt="" /> : initial}
         </span>
-        <AvatarDeco head={slot === 'head' ? itemId : undefined} face={slot === 'face' ? itemId : undefined}
-          headTf={slot === 'head' ? cur : undefined} faceTf={slot === 'face' ? cur : undefined} layer="back" />
-        <AvatarDeco head={slot === 'head' ? itemId : undefined} face={slot === 'face' ? itemId : undefined}
-          headTf={slot === 'head' ? cur : undefined} faceTf={slot === 'face' ? cur : undefined} layer="front" />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" />
       </div>
 
       <p className="deco-adj-hint">손가락으로도 위치, 크기, 각도 조정 가능해요.</p>

@@ -30,11 +30,20 @@ export default function AdminStoreItem() {
       setForm({
         id: it.id, name: it.name, price: String(it.price), emoji: it.emoji || '', description: it.description || '',
         sortOrder: String(it.sortOrder ?? ''), kind: flagsToKind(it.premium, it.tier), giftOnly: it.giftOnly, isActive: it.isActive, adminOnly: it.adminOnly,
-        imageSvg: it.imageSvg || '', imageBg: it.imageBg || '', category: it.category || '',
+        imageSvg: it.imageSvg || '', imageBg: it.imageBg || '', category: it.category || '', decoSlot: it.decoSlot || '',
       })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, id])
   useEffect(() => { load() }, [load])
+
+  // 데코 유형(슬롯) 자동완성 후보: 기존에 쓰인 슬롯 + 기본(head/face)
+  const [slotOptions, setSlotOptions] = useState(['head', 'face'])
+  useEffect(() => {
+    adminListStoreItems().then((items) => {
+      const used = items.map((x) => (x.decoSlot || '').trim()).filter(Boolean)
+      setSlotOptions([...new Set(['head', 'face', ...used])])
+    }).catch(() => { })
+  }, [])
 
   async function save(e) {
     e.preventDefault(); setError(''); setNotice('')
@@ -108,6 +117,14 @@ export default function AdminStoreItem() {
                 {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select></div>
           </div>
+          {form.id.startsWith('deco-') && (
+            <div className="field"><label htmlFor="si-decoslot">꾸미기 유형(슬롯)</label>
+              <input id="si-decoslot" list="deco-slot-opts" value={form.decoSlot} onChange={setField('decoSlot')}
+                placeholder="예: head, face, 또는 새 유형 직접 입력" autoCapitalize="none" />
+              <datalist id="deco-slot-opts">{slotOptions.map((s) => <option key={s} value={s} />)}</datalist>
+              <p className="si-hint" style={{ margin: '4px 0 0' }}>같은 유형(슬롯)끼리는 한 번에 하나만 장착돼요. 다른 유형은 동시에 장착 가능해요.</p>
+            </div>
+          )}
           <p className="si-hint" style={{ margin: '-4px 0 2px' }}>정렬 순서는 아이템 목록에서 ▲▼ 로 조정해요. 새 아이템은 목록 맨 끝에 추가돼요.</p>
           <div className="field"><label htmlFor="si-desc">설명</label>
             <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}

@@ -865,7 +865,7 @@ const isMissingColumn = (err) => !!err && (
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, category, sort_order')
+    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, category, deco_slot, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
@@ -901,7 +901,7 @@ export async function listStoreItems() {
     id: r.id, name: itemName(r.id, r.name), price: r.price, emoji: r.emoji,
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
     adminOnly: !!r.admin_only, imageSvg: r.image_svg || '', imageBg: r.image_bg || '',
-    category: r.category || '', sortOrder: r.sort_order ?? 0,
+    category: r.category || '', decoSlot: r.deco_slot || '', sortOrder: r.sort_order ?? 0,
   }))
 }
 
@@ -1048,19 +1048,16 @@ export async function unapplyAvatarDeco(itemId) {
     throw error
   }
 }
-// 그룹 멤버들의 장착 데코 → { [userId]: { head, face, headTf, faceTf } }. 미배포/실패 시 빈 객체.
-// headTf/faceTf 는 그룹 프로필 사진에 맞춘 위치·크기·각도 조정값({s,x,y,r}) — 없으면 undefined.
+// 그룹 멤버들의 장착 데코 → { [userId]: [{ id, tf }] }. 미배포/실패 시 빈 객체.
+// 슬롯(유형)은 백엔드가 배타 처리하므로, 프론트는 장착된 아이템을 그대로 모두 렌더한다.
+// tf 는 그룹 프로필 사진에 맞춘 위치·크기·각도 조정값({s,x,y,r}) — 없으면 null.
 export async function getGroupDecoMap(groupId) {
   if (!groupId) return {}
   const { data, error } = await supabase.rpc('list_group_avatar_decos', { p_group_id: groupId })
   if (error) return {}
   const map = {}
-  const FACE = new Set(['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades'])
   for (const r of data ?? []) {
-    const slot = FACE.has(r.item_id) ? 'face' : 'head'
-    const m = (map[r.user_id] = map[r.user_id] || {})
-    m[slot] = r.item_id
-    if (r.tf) m[slot === 'face' ? 'faceTf' : 'headTf'] = r.tf
+    (map[r.user_id] = map[r.user_id] || []).push({ id: r.item_id, tf: r.tf || null })
   }
   return map
 }
@@ -1828,7 +1825,7 @@ export async function adminGrantCoin({ userId, amount, reason }) {
 // ---- 관리자: 상점 아이템 관리 (RLS 상 store_items 쓰기는 관리자만 허용) ----
 // 비활성 포함 전체 목록 (sort_order 순).
 export async function adminListStoreItems() {
-  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only, image_svg, image_bg, category'
+  const cols = 'id, name, price, emoji, description, gift_only, sort_order, is_active, premium, tier, admin_only, image_svg, image_bg, category, deco_slot'
   let res = await supabase.from('store_items').select(cols).order('sort_order', { ascending: true })
   if (isMissingColumn(res.error)) {
     // premium/tier/admin_only/image_*/category 미배포 환경 폴백
@@ -1841,7 +1838,7 @@ export async function adminListStoreItems() {
     id: r.id, name: r.name, price: r.price, emoji: r.emoji, description: r.description ?? '',
     giftOnly: !!r.gift_only, sortOrder: r.sort_order ?? 0, isActive: r.is_active !== false,
     premium: !!r.premium, tier: r.tier || '', adminOnly: !!r.admin_only,
-    imageSvg: r.image_svg || '', imageBg: r.image_bg || '', category: r.category || '',
+    imageSvg: r.image_svg || '', imageBg: r.image_bg || '', category: r.category || '', decoSlot: r.deco_slot || '',
   }))
 }
 
@@ -1862,13 +1859,14 @@ export async function adminUpsertStoreItem(item) {
     image_svg: item.imageSvg ? String(item.imageSvg) : null,
     image_bg: item.imageBg ? String(item.imageBg) : null,
     category: item.category ? String(item.category) : null,
+    deco_slot: item.decoSlot ? String(item.decoSlot).trim() : null,
   }
   if (!row.id) throw new Error('아이템 ID를 입력해 주세요.')
   if (!row.name) throw new Error('아이템 이름을 입력해 주세요.')
   let res = await supabase.from('store_items').upsert(row).select().single()
   if (isMissingColumn(res.error)) {
-    // premium/tier/admin_only/image_*/category 미배포 환경 폴백
-    const { premium, tier, admin_only, image_svg, image_bg, category, ...rest } = row // eslint-disable-line no-unused-vars
+    // premium/tier/admin_only/image_*/category/deco_slot 미배포 환경 폴백
+    const { premium, tier, admin_only, image_svg, image_bg, category, deco_slot, ...rest } = row // eslint-disable-line no-unused-vars
     res = await supabase.from('store_items').upsert(rest).select().single()
   }
   if (res.error) throw res.error

@@ -21,7 +21,7 @@ function label(name) {
   return Array.from(s).slice(0, 2).join('') || '?'
 }
 
-import AvatarDeco from './AvatarDeco'
+import AvatarDeco, { decoItems } from './AvatarDeco'
 
 export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0.35, deco }) {
   const dim = { width: size, height: size, borderRadius: '50%', flexShrink: 0 }
@@ -36,12 +36,13 @@ export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0
           </span>
         )
       })()
-  if (!deco || (!deco.head && !deco.face)) return inner
+  const items = decoItems(deco)
+  if (!items.length) return inner
   return (
     <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0, isolation: 'isolate' }}>
-      <AvatarDeco {...deco} layer="back" />
+      <AvatarDeco items={items} layer="back" />
       {inner}
-      <AvatarDeco {...deco} layer="front" />
+      <AvatarDeco items={items} layer="front" />
     </span>
   )
 }

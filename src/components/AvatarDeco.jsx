@@ -8,7 +8,6 @@ export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
-const isEars = (head) => head === 'deco-jaguar' || head === 'deco-wolf'
 
 function Sprout() {
   // 줄기는 이파리 붙는 지점(1)까지만 + butt 캡 → 이파리 위로 튀어나오지 않음. 이파리도 더 작게.
@@ -282,41 +281,36 @@ export function DecoPreview({ id }) {
   )
 }
 
-// 슬롯별 장식 본체 (조정값 적용은 호출부에서 <Tf> 로 감싼다)
-const HeadArt = ({ head }) => (
-  head === 'deco-sprout' ? <Sprout />
-    : head === 'deco-jaguar' ? <CatEars />
-      : head === 'deco-wolf' ? <WolfEars /> : null
-)
-const FaceArt = ({ face }) => (
-  face === 'deco-blush' ? <Blush />
-    : face === 'deco-anger' ? <Anger />
-      : face === 'deco-pixel-shades' ? <PixelShades />
-        : face === 'deco-alien-shades' ? <AlienShades />
-          : face === 'deco-bandage' ? <Bandage />
-            : face === 'deco-gum' ? <BubbleGum />
-              : face === 'deco-heart-shades' ? <HeartShades /> : null
-)
+// 아이템 id → 장식 컴포넌트. (슬롯과 무관 — 렌더는 아이템별 아트로 결정)
+const ART = {
+  'deco-sprout': Sprout, 'deco-jaguar': CatEars, 'deco-wolf': WolfEars,
+  'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
+  'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
+  'deco-heart-shades': HeartShades,
+}
+// 뒤(back) 레이어로 그릴 아이템(귀) — 나머지는 앞(front). 슬롯이 아니라 아트 종류로 결정.
+const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf'])
 
-// layer: 'back'(귀 — 아바타 뒤) | 'front'(새싹·홍조 — 아바타 앞)
-// headTf/faceTf: 그룹 프로필 사진에 맞춘 { s, x, y, r } 조정값(선택)
-export default function AvatarDeco({ head, face, layer = 'front', headTf, faceTf }) {
-  if (layer === 'back') {
-    if (!isEars(head)) return null
-    return (
-      <svg className="avatar-deco avatar-deco-back" viewBox="0 0 100 100" width="100%" height="100%"
-        preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <Tf id={head} tf={headTf}><HeadArt head={head} /></Tf>
-      </svg>
-    )
+// deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
+export function decoItems(deco) {
+  if (Array.isArray(deco)) return deco.filter((d) => d && d.id)
+  if (deco && (deco.head || deco.face)) {
+    return [
+      deco.head && { id: deco.head, tf: deco.headTf },
+      deco.face && { id: deco.face, tf: deco.faceTf },
+    ].filter(Boolean)
   }
-  const hasFront = head === 'deco-sprout' || DECO_FACE.includes(face)
-  if (!hasFront) return null
+  return []
+}
+
+// items: [{ id, tf }] — 장착된 데코 목록(여러 유형 동시 렌더). layer: 'back' | 'front'
+export default function AvatarDeco({ items, layer = 'front' }) {
+  const show = decoItems(items).filter((d) => ART[d.id] && (BACK_IDS.has(d.id) === (layer === 'back')))
+  if (!show.length) return null
   return (
-    <svg className="avatar-deco avatar-deco-front" viewBox="0 0 100 100" width="100%" height="100%"
+    <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {head === 'deco-sprout' && <Tf id={head} tf={headTf}><Sprout /></Tf>}
-      {DECO_FACE.includes(face) && <Tf id={face} tf={faceTf}><FaceArt face={face} /></Tf>}
+      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art /></Tf> })}
     </svg>
   )
 }

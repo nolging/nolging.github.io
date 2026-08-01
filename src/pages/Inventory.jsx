@@ -15,11 +15,14 @@ import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
 import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
-import { setStoreCatalog, bgOf, useStoreCatalog, catalogName } from '../lib/storeCatalog'
+import { setStoreCatalog, bgOf, useStoreCatalog, catalogName, catalogDecoSlot } from '../lib/storeCatalog'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MAX_WISH = 300
 const NAME_TAG_MS = 24 * 3600 * 1000
+// 꾸미기 유형(슬롯): 관리자 설정(카탈로그) 우선, 없으면 하드코딩 폴백. 라벨은 head/face만 한글화.
+const slotOf = (id) => catalogDecoSlot(id) || decoSlot(id)
+const slotLabel = (slot) => ({ head: '머리', face: '얼굴' }[slot] || slot)
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 
@@ -216,7 +219,7 @@ export default function Inventory() {
                       <StoreItemImage id={g.id} emoji={g.emoji} svg={meta[g.id]?.imageSvg} className="inv-thumb-img" />
                       {showCount && <span className="inv-badge-count">×{countShown}</span>}
                       {badge && <span className="inv-badge-state">{badge}</span>}
-                      {decoSlot(g.id) && <span className="deco-slot-badge">{decoSlot(g.id) === 'head' ? '머리' : '얼굴'}</span>}
+                      {slotOf(g.id) && <span className="deco-slot-badge">{slotLabel(slotOf(g.id))}</span>}
                     </span>
                     <span className="inv-name">{g.name}</span>
                   </button>
@@ -297,17 +300,18 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
   const tfChanged = !changed && JSON.stringify(clampTf(tf)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0))
 
-  // 선택한 그룹에 이미 같은 슬롯(머리/얼굴)의 '다른' 데코가 장착돼 있으면, 적용 시 그게 해제된다 → 경고용
+  // 선택한 그룹에 이미 '같은 유형(슬롯)'의 다른 데코가 장착돼 있으면, 적용 시 그게 해제된다 → 경고용
   const [existing, setExisting] = useState(null) // { id, name } | null
   useEffect(() => {
     setExisting(null)
     if (!open || !item || !target) return
-    const slot = decoSlot(item.id)
+    const slot = catalogDecoSlot(item.id) || decoSlot(item.id) // 관리자 설정 슬롯 우선, 폴백 하드코딩
     let on = true
     getGroupDecoMap(target.id).then((dm) => {
       if (!on) return
-      const curId = dm?.[myId]?.[slot]
-      if (curId && curId !== item.id) setExisting({ id: curId, name: catalogName(curId) || '기존 아이템' })
+      const worn = dm?.[myId] || [] // [{ id, tf }]
+      const conflict = worn.find((d) => d.id !== item.id && (catalogDecoSlot(d.id) || decoSlot(d.id)) === slot)
+      if (conflict) setExisting({ id: conflict.id, name: catalogName(conflict.id) || '기존 아이템' })
     }).catch(() => { })
     return () => { on = false }
   }, [open, item, target, myId])
@@ -350,7 +354,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
         <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨"
-          sub={item ? (decoSlot(item.id) === 'face' ? '프로필 사진 얼굴에 장착해요' : '프로필 사진 머리 위에 장착해요') : ''} />
+          sub={item ? (slotOf(item.id) === 'face' ? '프로필 사진 얼굴에 장착해요' : slotOf(item.id) === 'head' ? '프로필 사진 머리 위에 장착해요' : '프로필 사진에 장착해요') : ''} />
         {error && <div className="alert alert-error">{error}</div>}
 
         {applied && (

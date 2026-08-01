@@ -37,4 +37,4 @@ export const CATEGORY_OPTIONS = [
   { value: 'theme', label: '테마' },
   { value: 'etc', label: '기타' },
 ]
-export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: false, imageSvg: '', imageBg: '', category: '' }
+export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: false, imageSvg: '', imageBg: '', category: '', decoSlot: '' }
