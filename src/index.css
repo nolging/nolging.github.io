@@ -1558,14 +1558,10 @@ button.mention-chip:active { opacity: .6; }
 .avatar-deco { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 /* 테두리 유형(후광 등) 장착 시 그룹 카드의 흰 테두리(box-shadow)를 끄고 데코가 대체 */
 .avatar.avatar-border-deco { box-shadow: none !important; }
-/* 후광: 은은한 글로우 맥동 + 반짝임 */
-@keyframes avd-halo-pulse { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
-@keyframes avd-halo-tw { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
-.avd-halo-glow { animation: avd-halo-pulse 2.6s ease-in-out infinite; }
-.avd-halo-spark .avd-spk { animation: avd-halo-tw 1.8s ease-in-out infinite; }
-.avd-halo-spark .avd-spk-1 { animation-delay: .6s; }
-.avd-halo-spark .avd-spk-2 { animation-delay: 1.2s; }
-@media (prefers-reduced-motion: reduce) { .avd-halo-glow, .avd-halo-spark .avd-spk { animation: none; } }
+/* 후광: 그라데이션 글로우가 은은하게 퍼졌다 줄어드는 펄스(투명도 + 크기) */
+@keyframes avd-halo-pulse { 0%, 100% { opacity: .6; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.05); } }
+.avd-halo-glow { transform-box: fill-box; transform-origin: center; animation: avd-halo-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .avd-halo-glow { animation: none; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
