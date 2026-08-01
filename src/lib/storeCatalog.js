@@ -9,12 +9,13 @@ const listeners = new Set()
 
 export function setStoreCatalog(items) {
   const next = {}
-  for (const s of items || []) next[s.id] = { imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
+  for (const s of items || []) next[s.id] = { imageBg: s.imageBg || '', imageSvg: s.imageSvg || '', name: s.name || '' }
   CATALOG = next; version += 1
   listeners.forEach((fn) => fn())
 }
 export const catalogSvg = (id) => CATALOG[id]?.imageSvg || ''
 export const catalogBg = (id) => CATALOG[id]?.imageBg || ''
+export const catalogName = (id) => CATALOG[id]?.name || ''
 // 배경색: 업로드 지정 우선 → 기존 기본(파스텔/프리미엄)
 export const bgOf = (id, premium) => catalogBg(id) || imgBgOf(id, premium)
 

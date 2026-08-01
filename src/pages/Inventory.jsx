@@ -9,13 +9,13 @@ import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
 import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
-import { setStoreCatalog, bgOf, useStoreCatalog } from '../lib/storeCatalog'
+import { setStoreCatalog, bgOf, useStoreCatalog, catalogName } from '../lib/storeCatalog'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
 const MAX_WISH = 300
@@ -297,6 +297,21 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
   const tfChanged = !changed && JSON.stringify(clampTf(tf)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0))
 
+  // 선택한 그룹에 이미 같은 슬롯(머리/얼굴)의 '다른' 데코가 장착돼 있으면, 적용 시 그게 해제된다 → 경고용
+  const [existing, setExisting] = useState(null) // { id, name } | null
+  useEffect(() => {
+    setExisting(null)
+    if (!open || !item || !target) return
+    const slot = decoSlot(item.id)
+    let on = true
+    getGroupDecoMap(target.id).then((dm) => {
+      if (!on) return
+      const curId = dm?.[myId]?.[slot]
+      if (curId && curId !== item.id) setExisting({ id: curId, name: catalogName(curId) || '기존 아이템' })
+    }).catch(() => { })
+    return () => { on = false }
+  }, [open, item, target, myId])
+
   // 그룹을 바꾸면(사진이 다르므로) 조정값을 기본으로 되돌린다
   useEffect(() => { if (changed) setTf({ ...DECO_TF0 }) }, [changed])
 
@@ -308,9 +323,12 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
 
   async function apply() {
     if (!target) { setError('그룹을 선택해 주세요.'); return }
+    const willApply = changed || !applied
+    // 같은 슬롯의 기존 데코가 해제되는 경우 확인
+    if (willApply && existing && !window.confirm(`기존에 장착 중이던 [${existing.name}] 아이템은 해제됩니다.`)) return
     setBusy(true); setError('')
     try {
-      if (changed || !applied) await applyAvatarDeco(item.id, target.id)
+      if (willApply) await applyAvatarDeco(item.id, target.id)
       // 조정값 저장은 "그 그룹에 장착 중" 이어야 가능해 적용 뒤에 호출한다.
       // 기본값이고 저장된 값도 없으면 호출을 건너뛴다(조정 기능 미배포 DB 호환).
       const v = clampTf(tf)
@@ -358,7 +376,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
 
         <button type="button" className="btn btn-primary btn-block" onClick={apply}
           disabled={busy || !target || (applied && !changed && !tfChanged)}>
-          {busy ? '적용 중…' : changed ? '이 그룹으로 변경' : applied ? '조정 저장' : '적용하기'}
+          {busy ? '적용 중…' : (applied && changed) ? '이 그룹으로 변경' : applied ? '조정 저장' : '적용하기'}
         </button>
         {applied && (
           <button type="button" className="btn btn-danger btn-block" onClick={unapply} disabled={busy}>

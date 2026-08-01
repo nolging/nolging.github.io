@@ -208,18 +208,15 @@ const heartPath = (cx, cy, a) =>
 
 function HeartShades() {
   // 하트 알 두 개 + 코 브릿지. 테는 분홍, 알은 까만색이지만 살짝 투명(프로필 사진이 비침).
-  const LC = 34, RC = 66, CY = 46, A = 15
+  const LC = 30, RC = 70, CY = 46, A = 14.5
   const FRAME = '#ff77aa'
   return (
     <g>
-      <rect x="47" y="40" width="6" height="4" rx="2" fill={FRAME} />
+      {/* 브릿지(하트 사이) — 먼저 깔고 하트 테가 양끝을 덮어 이어지게 */}
+      <rect x="43" y="42.5" width="14" height="4.2" rx="2.1" fill={FRAME} />
       {[LC, RC].map((cx, i) => (
-        <g key={i}>
-          <path d={heartPath(cx, CY, A)} fill="#141414" fillOpacity="0.6"
-            stroke={FRAME} strokeWidth="3" strokeLinejoin="round" />
-          <ellipse cx={cx - A * 0.34} cy={CY - A * 0.12} rx="2.6" ry="1.6" fill="#fff" opacity="0.5"
-            transform={`rotate(-25 ${cx - A * 0.34} ${CY - A * 0.12})`} />
-        </g>
+        <path key={i} d={heartPath(cx, CY, A)} fill="#141414" fillOpacity="0.6"
+          stroke={FRAME} strokeWidth="3" strokeLinejoin="round" />
       ))}
     </g>
   )
