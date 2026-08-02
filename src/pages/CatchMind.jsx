@@ -79,6 +79,7 @@ export default function CatchMind() {
   const myAvatar = useRef(profile?.avatar_url || null)
   const [myBal, setMyBal] = useState(0)
   const myBalRef = useRef(0)
+  const isMemberRef = useRef(false) // 이 그룹 멤버일 때만 presence track(관리자 미가입 미리보기는 접속표시 X)
   const [members, setMembers] = useState({})
   const membersRef = useRef(members); membersRef.current = members
   const drawing = useRef(null)
@@ -188,9 +189,10 @@ export default function CatchMind() {
     if (!groupId || !uid) return
     const ch = supabase.channel(`catch:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
     chanRef.current = ch
-    const retrack = () => { if (ch.state === 'joined') ch.track({ uid, name: myName.current, avatar: myAvatar.current, bal: myBalRef.current }).catch(() => {}) }
+    const retrack = () => { if (ch.state === 'joined' && isMemberRef.current) ch.track({ uid, name: myName.current, avatar: myAvatar.current, bal: myBalRef.current }).catch(() => {}) }
     getGroupMemberMap(groupId).then((mm) => {
       setMembers(mm)
+      isMemberRef.current = !!mm[uid]
       if (mm[uid]) { myName.current = mm[uid].name; myAvatar.current = mm[uid].avatar }
       retrack()
       if (!seenPeers.current.has(uid)) { seenPeers.current.add(uid); if (gRef.current.phase === 'lobby') setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${myName.current} 님 등장! 🐾` }]) }

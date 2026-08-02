@@ -79,6 +79,7 @@ export default function Puzzle() {
   const [draft, setDraft] = useState('')
   const [members, setMembers] = useState({})
   const myName = useRef(profile?.login_id || '나')
+  const isMemberRef = useRef(false) // 이 그룹 멤버일 때만 presence track(관리자 미가입 미리보기는 접속표시 X)
 
   // 진행 시간: 저장된 누적(base) + 내가 보고 있는 동안의 경과. 사람이 있을 때만 흐른다.
   const [elapsed, setElapsed] = useState(0)
@@ -145,7 +146,10 @@ export default function Puzzle() {
     getGroupMemberMap(groupId).then((mm) => {
       if (!alive) return
       setMembers(mm)
+      isMemberRef.current = !!mm[uid]
       if (mm[uid]?.name) myName.current = mm[uid].name
+      // 멤버로 확인되면(구독이 먼저 끝났을 수 있으니) 지금 track. 미가입(관리자)은 track 안 함.
+      if (isMemberRef.current && chanRef.current?.state === 'joined') chanRef.current.track({ uid, name: myName.current }).catch(() => {})
       // 내 입장도 채팅에 표시(캐치마인드와 동일) — 혼자 들어와도 알림이 보인다
       if (!seenRef.current.has(uid)) {
         seenRef.current.add(uid)
@@ -199,7 +203,7 @@ export default function Puzzle() {
       const nm = leftPresences?.[0]?.name || '멤버'
       setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, text: `${nm} 님 퇴장 👋` }])
     })
-    ch.subscribe(async (s) => { if (s === 'SUBSCRIBED') { try { await ch.track({ uid, name: myName.current }) } catch { /* noop */ } } })
+    ch.subscribe(async (s) => { if (s === 'SUBSCRIBED' && isMemberRef.current) { try { await ch.track({ uid, name: myName.current }) } catch { /* noop */ } } })
     return () => {
       alive = false; clearTimeout(toastT.current)
       Object.values(tipTimers.current).forEach(clearTimeout); tipTimers.current = {}

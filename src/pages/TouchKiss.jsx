@@ -50,11 +50,13 @@ export default function TouchKiss() {
   const [noVibe, setNoVibe] = useState(false) // 이 기기 진동 미지원
   const [partner, setPartner] = useState(null) // 부를 상대 {uid, name}
   const [callState, setCallState] = useState('idle') // idle | sending | done
+  const [isMember, setIsMember] = useState(false) // 이 그룹의 멤버인지(확정 전엔 false → 관리자 미가입이 잠깐도 track 되지 않게). 부르기 X·조작 X 도 이 값으로.
+  const isMemberRef = useRef(isMember); isMemberRef.current = isMember
   const meRef = useRef(me); meRef.current = me
 
-  // 접속 중 멤버 = 나 + (TTL 내에 갱신된) 상대들. presence 로만 계산하지 않고 present 맵으로 계산.
+  // 접속 중 멤버 = 나(멤버일 때만) + (TTL 내에 갱신된) 상대들. presence 로만 계산하지 않고 present 맵으로 계산.
   const members = [
-    { uid, name: myMeta.name, avatar: myMeta.avatar },
+    ...(isMember ? [{ uid, name: myMeta.name, avatar: myMeta.avatar }] : []),
     ...Object.entries(present).map(([k, v]) => ({ uid: k, name: v.name, avatar: v.avatar })),
   ]
   const peerCount = members.length
@@ -153,13 +155,15 @@ export default function TouchKiss() {
     })
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
-      let name = profile?.login_id || '', avatar = null
+      let name = profile?.login_id || '', avatar = null, mem = false
       try {
         const m = await getMyGroupMember(groupId, uid)
-        if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null }
+        if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null; mem = true }
       } catch { /* noop */ }
       setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
-      try { await ch.track({ uid, name, avatar, t: Date.now() }) } catch { /* noop */ }
+      // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) presence 를 track 하지 않아 다른 멤버에게 보이지 않는다.
+      setIsMember(mem); isMemberRef.current = mem
+      if (mem) { try { await ch.track({ uid, name, avatar, t: Date.now() }) } catch { /* noop */ } }
       // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
       if (pendRef.current?.down) sendFinger(pendRef.current)
     })
@@ -176,7 +180,7 @@ export default function TouchKiss() {
   useEffect(() => {
     const iv = setInterval(() => {
       const ch = chanRef.current
-      if (ch) ch.track({ uid, ...myMetaRef.current, t: Date.now() }).catch(() => { })
+      if (ch && isMemberRef.current) ch.track({ uid, ...myMetaRef.current, t: Date.now() }).catch(() => { })
     }, PRES_BEAT_MS)
     return () => clearInterval(iv)
   }, [uid])
@@ -256,6 +260,7 @@ export default function TouchKiss() {
     return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) }
   }
   function onDown(e) {
+    if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 입술 표시/전송 안 함
     e.currentTarget.setPointerCapture?.(e.pointerId)
     const n = norm(e); scheduleSend({ ...n, down: true })
   }
@@ -324,7 +329,7 @@ export default function TouchKiss() {
   return (
     <div className="page tk-page">
       <div className="tk-greet">
-        {partner && !members.some((m) => m.uid === partner.uid) && (
+        {isMember && partner && !members.some((m) => m.uid === partner.uid) && (
           <button type="button" className="tk-call" onClick={summon} disabled={callState === 'sending'}>
             {callState === 'done' ? '불렀어요!' : '부르기'}
           </button>

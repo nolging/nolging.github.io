@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { davinci } from '../lib/api'
+import { davinci, getMyGroupMember } from '../lib/api'
 
 const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
 const BackIcon = () => <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
@@ -50,6 +50,7 @@ export default function Davinci() {
   const [draft, setDraft] = useState('')
   const [ruleOn, setRuleOn] = useState(false)
   const chanRef = useRef(null)
+  const isMemberRef = useRef(false) // 이 그룹 멤버일 때만 presence track(관리자 미가입 미리보기는 접속표시 X)
   const matchRef = useRef(null)
   const chatEndRef = useRef(null)
   const rootRef = useRef(null)
@@ -180,10 +181,16 @@ export default function Davinci() {
   useEffect(() => {
     if (!groupId || !uid) return
     let alive = true; aliveRef.current = true
+    // 이 그룹 멤버가 아니면(관리자 미가입 미리보기) track 안 함 → 다른 멤버 접속표시에 안 뜸
+    getMyGroupMember(groupId, uid).then((m) => {
+      if (!alive) return
+      isMemberRef.current = !!m
+      if (m && chanRef.current?.state === 'joined') chanRef.current.track({ uid, bal: vRef.current?.myBalance }).catch(() => {})
+    }).catch(() => {})
     davinci('open', { groupId }).then((r) => {
       if (!alive) return; setV(r); matchRef.current = r.matchId; serverSeatsRef.current = r.seats
       // 내 보유 츄르를 프레즌스로 공유(베팅 상한 계산용)
-      chanRef.current?.track({ uid, bal: r.myBalance }).catch(() => {})
+      if (isMemberRef.current) chanRef.current?.track({ uid, bal: r.myBalance }).catch(() => {})
       if (!seenPeers.current.has(uid) && r.status === 'lobby') { seenPeers.current.add(uid); setChat((c) => [...c.slice(-80), { id: uuid(), sys: true, joinUid: uid }]) }
     }).catch((e) => { if (alive) setErr(e.message || '열기 실패') })
     const ch = supabase.channel(`davinci:${groupId}`, { config: { broadcast: { self: false }, presence: { key: uid } } })
@@ -229,7 +236,7 @@ export default function Davinci() {
     // 구독 완료(첫 연결·재연결) 시에도 상태를 다시 맞춘다 → 구독 전에 온 변경을 놓치지 않게
     ch.subscribe((s) => {
       if (s !== 'SUBSCRIBED') return
-      ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {})
+      if (isMemberRef.current) ch.track({ uid, bal: vRef.current?.myBalance }).catch(() => {})
       setTimeout(() => { refresh(); ping() }, 150)
     })
     return () => {

@@ -80,6 +80,8 @@ export default function DrawBoard() {
   const [canvasW, setCanvasW] = useState(0)   // 실제 캔버스 표시 너비(굵기 미리보기 = 실제 굵기)
   const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
   const [busy, setBusy] = useState(false)
+  const [isMember, setIsMember] = useState(false) // 이 그룹의 멤버인지(확정 전엔 false → 미가입이 잠깐도 낙서/track 되지 않게). 관전만.
+  const isMemberRef = useRef(isMember); isMemberRef.current = isMember
 
   // ---- 렌더 ----
   const redrawAll = useCallback(() => {
@@ -157,12 +159,14 @@ export default function DrawBoard() {
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
       // 아이디(login_id)는 절대 브로드캐스트하지 않음 — 그룹 표시명/아바타만 track
-      let meta = { uid, name: '', avatar: null }
+      let meta = { uid, name: '', avatar: null }, mem = false
       try {
         const m = await getMyGroupMember(groupId, uid)
-        if (m) meta = { uid, name: m.display_nickname || '', avatar: m.avatar_url || null }
+        if (m) { meta = { uid, name: m.display_nickname || '', avatar: m.avatar_url || null }; mem = true }
       } catch { /* noop */ }
-      try { await ch.track(meta) } catch { /* noop */ }
+      setIsMember(mem); isMemberRef.current = mem
+      // 미가입(관리자 미리보기)이면 track 하지 않아 다른 멤버의 접속표시에 뜨지 않는다.
+      if (mem) { try { await ch.track(meta) } catch { /* noop */ } }
       try {
         const rows = await listDrawingStrokes(groupId)
         for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, b: r.stroke.b, p: r.stroke.p })
@@ -190,6 +194,7 @@ export default function DrawBoard() {
     return [Math.round(x * 1e4) / 1e4, Math.round(y * 1e4) / 1e4]
   }
   function onDown(e) {
+    if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 낙서 불가
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -289,6 +294,7 @@ export default function DrawBoard() {
         </div>
       </div>
 
+      {isMember ? (
       <div className="draw-tools">
         <div className="draw-colors">
           {COLORS.map((c) => (
@@ -328,6 +334,9 @@ export default function DrawBoard() {
           </div>
         </div>
       </div>
+      ) : (
+        <div className="draw-viewonly">관전 중이에요 · 낙서는 멤버만 할 수 있어요</div>
+      )}
     </div>
   )
 }

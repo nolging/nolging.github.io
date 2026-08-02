@@ -4258,6 +4258,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .draw-more { display: inline-flex; align-items: center; justify-content: center; height: 30px; min-width: 30px;
   padding: 0 8px; margin-left: -11px; border-radius: 999px; background: #efedf5; border: 2px solid #fff;
   box-sizing: content-box; font-size: 12px; font-weight: 700; color: #6f6a80; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
+.draw-viewonly { text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); padding: 14px 12px 4px; }
 /* 낙서 영역: 스케치북처럼 — 상단 스프링 바인딩 공간을 두고 남는 공간을 꽉 채움 */
 .draw-wrap { position: relative; flex: 1; min-height: 0; padding-top: 10px;
   display: flex; align-items: stretch; justify-content: center; }

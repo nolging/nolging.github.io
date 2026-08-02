@@ -71,6 +71,7 @@ export default function TarotCafe() {
 
   // 최신 값을 채널 콜백에서 읽기 위한 ref (effect 는 한 번만 돌기 때문)
   const meRef = useRef(me); meRef.current = me
+  const isMemberRef = useRef(false) // 이 그룹 멤버일 때만 presence track(관리자 미가입 미리보기는 접속표시 X)
   const modeRef = useRef(mode); modeRef.current = mode
   const pickRef = useRef(null)
   pickRef.current = mode === 'duo' && picks[0] ? picks[0] : null
@@ -78,7 +79,7 @@ export default function TarotCafe() {
   // 내 상태를 presence 에 실어 보낸다(뽑은 카드까지)
   const publish = useCallback((next) => {
     const ch = chanRef.current
-    if (!ch) return
+    if (!ch || !isMemberRef.current) return   // 미가입(관리자 미리보기)은 track 안 함 → 접속표시에 안 뜸
     ch.track({ uid, ...meRef.current, mode: next.mode, pick: next.pick || null }).catch(() => { })
   }, [uid])
 
@@ -105,6 +106,7 @@ export default function TarotCafe() {
       try {
         const map = await getGroupMemberMap(groupId)
         const mine = map?.[uid]
+        isMemberRef.current = !!mine
         if (mine && alive) {
           const v = { name: mine.name || profile?.login_id || '나', avatar: mine.avatar || null }
           meRef.current = v; setMe(v)
