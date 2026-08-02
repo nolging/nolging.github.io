@@ -59,6 +59,7 @@ export default function Davinci() {
   const pendingStake = useRef(null)
   const seatInflight = useRef(false)
   const serverSeatsRef = useRef(null)
+  const syncSeatRef = useRef(null)   // syncSeatToServer 최신 참조(refresh 와의 의존성 순환 방지)
   const aliveRef = useRef(true)
   const [peerBals, setPeerBals] = useState({})
   const peerBalsRef = useRef({}); peerBalsRef.current = peerBals
@@ -78,17 +79,23 @@ export default function Davinci() {
     try {
       const r = await davinci('view', { matchId: mid })
       serverSeatsRef.current = r.seats
+      let mismatch = false
       setV((prev) => {
-        // 내 자리 선택이 아직 서버 반영 중이면(in-flight) 내 자리 의도는 로컬 값을 유지 →
-        // 주기 재조회가 방금 누른 선택을 되돌리지 않게. (상대 자리는 서버 값 그대로 반영)
-        if (prev && prev.status === 'lobby' && r.status === 'lobby' && seatInflight.current) {
+        // 로비에서 '내 자리' 는 내 로컬 클릭이 주도한다 → 지연 도착한 view(오래된 서버 상태)가
+        // 방금 고른 선공/후공을 되돌리지 못하게, 내 자리는 로컬을 유지하고 상대 자리만 서버로 반영.
+        // (양쪽 클라가 각자 자기 자리를 유지·재전송 → 서버에도 두 자리가 안정적으로 남는다.)
+        if (prev && prev.status === 'lobby' && r.status === 'lobby') {
           const mine = (prev.seats || []).indexOf(uid)
           const seats = (r.seats || [null, null]).map((s) => (s === uid ? null : s))
-          if (mine >= 0) seats[mine] = uid
+          // 서버에서 내 자리가 비어 있을 때만 로컬 유지(상대가 이미 그 자리면 양보 → 재전송 루프 방지)
+          if (mine >= 0 && !seats[mine]) seats[mine] = uid
+          if (seats.indexOf(uid) !== (r.seats || []).indexOf(uid)) mismatch = true
           return { ...r, seats }
         }
         return r
       })
+      // 내 자리가 서버와 다르면(=서버가 아직 내 선택을 모름) 다시 밀어 수렴시킨다.
+      if (mismatch) syncSeatRef.current?.()
     } catch { /* noop */ }
   }, [uid])
 
@@ -139,6 +146,7 @@ export default function Davinci() {
       .catch((e) => { setErr(e.message || '오류'); refresh() })
       .finally(() => { seatInflight.current = false; syncSeatToServer() })
   }, [uid, ping, refresh])
+  syncSeatRef.current = syncSeatToServer
 
   const toggleSeat = useCallback((idx) => {
     const cur = vRef.current; if (!cur || cur.status !== 'lobby') return
