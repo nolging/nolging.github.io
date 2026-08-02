@@ -3197,7 +3197,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .couple-msg-count { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--muted); }
 
 /* ---- 장착 중인 커플 링: 데이트 미리보기 모달 ---- */
-.crm { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 10px 4px 2px; }
+.crm { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 2px 2px; }
+.crm .nc-link-head { width: 100%; }
 .crm-pair { display: flex; align-items: flex-start; justify-content: center; gap: 14px; width: 100%; }
 .crm-person { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 88px; width: 88px; }
 .crm-name { max-width: 88px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3219,6 +3220,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .frm-av:first-child { margin-left: 0; }
 .frm-more { margin-left: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
 .frm-chev { flex-shrink: 0; }
+.frm-viewlink { align-self: center; border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 2px; margin-top: -4px; }
 
 /* ---- 소원권 사용 모달 ---- */
 .wish-modal { display: flex; flex-direction: column; gap: 14px; }

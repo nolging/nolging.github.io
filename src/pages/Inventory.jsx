@@ -220,9 +220,8 @@ export default function Inventory() {
                     // 우정 링: 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능(나눠 끼기 모달)
                     actionable = true
                   } else {
-                    // 우정 링: 장착 중인 것만 있으면 장착 그룹 목록 모달
-                    const usedGroupIds = g.rows.filter((r) => r.status === 'used').map((r) => r.group_id).filter(Boolean)
-                    onClick = () => setFriendView({ groupIds: usedGroupIds })
+                    // 우정 링: 장착 중인 것만 있으면 나눠 낀 그룹 목록 모달
+                    onClick = () => setFriendView({ groupIds: friendGroupIds })
                     actionable = true
                   }
                 }
@@ -251,7 +250,8 @@ export default function Inventory() {
       <CoupleRingModal view={coupleView} myId={user?.id} navigate={navigate}
         onClose={() => setCoupleView(null)}
         onShareSpare={() => { setCoupleView(null); setCoupleOpen(true) }} />
-      <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload} />
+      <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload}
+        equippedGroupIds={friendGroupIds} onViewEquipped={() => { setFriendOpen(false); setFriendView({ groupIds: friendGroupIds }) }} />
       <FriendRingModal view={friendView} navigate={navigate} onClose={() => setFriendView(null)} />
       <MediaSendModal open={cassetteOpen} itemId="cassette" onClose={() => setCassetteOpen(false)} onDone={reload} />
       <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
@@ -1062,6 +1062,7 @@ function CoupleRingModal({ view, myId, onClose, onShareSpare, navigate }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="crm">
+        <ItemHead id="couple-ring" name="커플 링" emoji="💍" sub="나눠 끼고 있어요" />
         {error && <div className="alert alert-error">{error}</div>}
         {loading ? <div className="spinner" /> : (
           <>
@@ -1181,7 +1182,7 @@ function FriendRingModal({ view, onClose, navigate }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
-        <ItemHead id="friend-ring" name="우정 링" emoji="🤝" sub="장착 중인 그룹" />
+        <ItemHead id="friend-ring" name="우정 링" emoji="🤝" sub="나눠 끼고 있어요" />
         {error && <div className="alert alert-error">{error}</div>}
         {loading ? <div className="spinner" /> : (
           <div className="frm-list">
@@ -1213,7 +1214,7 @@ function FriendRingModal({ view, onClose, navigate }) {
 }
 
 // ---- 우정 링 나눠 끼기 모달 (2명 이상 그룹, 즉시 적용) ----
-function FriendModal({ open, onClose, myId, excludeGroupIds, onDone }) {
+function FriendModal({ open, onClose, myId, excludeGroupIds, onDone, equippedGroupIds, onViewEquipped }) {
   const [groups, setGroups] = useState([])
   const [groupId, setGroupId] = useState('')
   const [message, setMessage] = useState('')
@@ -1267,6 +1268,9 @@ function FriendModal({ open, onClose, myId, excludeGroupIds, onDone }) {
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '적용 중…' : '나눠 끼기'}
         </button>
+        {equippedGroupIds?.length > 0 && (
+          <button type="button" className="frm-viewlink" onClick={onViewEquipped}>나눠 낀 그룹 보기</button>
+        )}
       </div>
     </Modal>
   )
