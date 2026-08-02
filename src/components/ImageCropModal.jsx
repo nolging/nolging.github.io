@@ -5,10 +5,12 @@ import Modal from './Modal'
 // 아바타는 원형이라 정방형만 크롭하며, 프레임 안에 원형 가이드를 함께 보여 준다.
 const OUT = 768        // 출력 해상도(정방형)
 const QUALITY = 0.85
+const ZOOM_MAX = 6     // 최소(cover) 대비 최대 배율
 
 export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
   const open = !!file
   const frameRef = useRef(null)
+  const trackRef = useRef(null)
   const [url, setUrl] = useState('')
   const [img, setImg] = useState(null)      // HTMLImageElement
   const [frame, setFrame] = useState(0)     // 프레임 한 변(px)
@@ -19,6 +21,7 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
   const scaleRef = useRef(scale); scaleRef.current = scale
   const ptrs = useRef(new Map())            // pointerId -> {x,y} (드래그·핀치)
   const gestureRef = useRef(null)           // 직전 핀치 상태 {dist, cx, cy}
+  const slideRef = useRef(false)            // 슬라이더 조작 중
 
   // 파일 → 이미지 로드
   useEffect(() => {
@@ -46,7 +49,7 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
   useEffect(() => {
     if (!img || !frame) return
     const ms = Math.max(frame / img.width, frame / img.height)
-    setMinScale(ms); setScale(ms)
+    setMinScale(ms); setScale(ms); scaleRef.current = ms
     setPos({ x: (frame - img.width * ms) / 2, y: (frame - img.height * ms) / 2 })
   }, [img, frame])
 
@@ -60,17 +63,18 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
     }
   }, [img, frame])
 
-  const clampScale = useCallback((v) => Math.max(minScale, Math.min(minScale * 6, v)), [minScale])
+  const clampScale = useCallback((v) => Math.max(minScale, Math.min(minScale * ZOOM_MAX, v)), [minScale])
 
-  // (cx,cy) 프레임 좌표를 기준으로 배율을 ns 로 바꾸고, 추가 이동(panDx,panDy)을 더한다
-  const applyZoom = useCallback((ns, cx, cy, panDx = 0, panDy = 0) => {
-    setPos((p) => {
-      const s = scaleRef.current
-      const sx = (cx - p.x) / s, sy = (cy - p.y) / s
-      return clamp({ x: cx - sx * ns + panDx, y: cy - sy * ns + panDy }, ns)
-    })
+  // (fx,fy) 프레임 좌표의 이미지 지점을 고정한 채 배율을 ns 로 바꾸고, 추가 이동(panDx,panDy)을 더한다.
+  // ⚠ 이전 배율(scaleRef)을 setPos 이전에 캡처해야 초점이 튀지 않는다.
+  const applyZoom = useCallback((ns, fx, fy, panDx = 0, panDy = 0) => {
+    const s = scaleRef.current
     scaleRef.current = ns
     setScale(ns)
+    setPos((p) => {
+      const ix = (fx - p.x) / s, iy = (fy - p.y) / s   // (fx,fy) 아래의 이미지 지점
+      return clamp({ x: fx - ix * ns + panDx, y: fy - iy * ns + panDy }, ns)
+    })
   }, [clamp])
 
   const frameRect = () => frameRef.current?.getBoundingClientRect() || { left: 0, top: 0 }
@@ -79,7 +83,7 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
   function onDown(e) {
     e.currentTarget.setPointerCapture?.(e.pointerId)
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    gestureRef.current = null
+    gestureRef.current = null   // 손가락 수가 바뀌면 핀치 기준 재설정
   }
   function onMove(e) {
     if (!ptrs.current.has(e.pointerId)) return
@@ -92,7 +96,8 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
       const r = frameRect()
       const cx = (a.x + b.x) / 2 - r.left, cy = (a.y + b.y) / 2 - r.top
       const g = gestureRef.current
-      if (g && g.dist) applyZoom(clampScale(scaleRef.current * (dist / g.dist)), cx, cy, cx - g.cx, cy - g.cy)
+      // 직전 중심점(g.cx,g.cy)을 초점으로 확대하고, 중심 이동분만큼 함께 이동 → 손가락 사이가 그대로 확대/축소
+      if (g && g.dist) applyZoom(clampScale(scaleRef.current * (dist / g.dist)), g.cx, g.cy, cx - g.cx, cy - g.cy)
       gestureRef.current = { dist, cx, cy }
     } else {
       const dx = e.clientX - prev.x, dy = e.clientY - prev.y
@@ -108,7 +113,18 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
     const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08
     applyZoom(clampScale(scaleRef.current * factor), e.clientX - r.left, e.clientY - r.top)
   }
-  function onZoomSlider(e) { applyZoom(clampScale(Number(e.target.value)), frame / 2, frame / 2) }
+
+  // ---- 커스텀 슬라이더(끝까지 이동 + 채움 정확히) ----
+  const pct = minScale > 0 ? Math.max(0, Math.min(100, ((scale - minScale) / (minScale * (ZOOM_MAX - 1))) * 100)) : 0
+  const sliderSet = useCallback((clientX) => {
+    const el = trackRef.current; if (!el || !frame) return
+    const r = el.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientX - r.left) / r.width))
+    applyZoom(minScale + ratio * (minScale * (ZOOM_MAX - 1)), frame / 2, frame / 2)
+  }, [applyZoom, minScale, frame])
+  function sliderDown(e) { e.currentTarget.setPointerCapture?.(e.pointerId); slideRef.current = true; sliderSet(e.clientX) }
+  function sliderMove(e) { if (slideRef.current) sliderSet(e.clientX) }
+  function sliderUp() { slideRef.current = false }
 
   async function confirm() {
     if (!img || !frame || busy) return
@@ -145,8 +161,13 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
           <div className="crop-guide" aria-hidden="true" />
           {!img && <div className="crop-loading"><span className="spinner" /></div>}
         </div>
-        <input type="range" className="crop-zoom" min={minScale} max={minScale * 6} step="any"
-          value={scale} onChange={onZoomSlider} aria-label="확대" />
+        <div className="crop-slider">
+          <div ref={trackRef} className="crop-slider-track"
+            onPointerDown={sliderDown} onPointerMove={sliderMove} onPointerUp={sliderUp} onPointerCancel={sliderUp}>
+            <div className="crop-slider-fill" style={{ width: `${pct}%` }} />
+            <div className="crop-slider-thumb" style={{ left: `${pct}%` }} />
+          </div>
+        </div>
         <div className="crop-actions">
           <button type="button" className="crop-btn ghost" onClick={onCancel} disabled={busy}>취소</button>
           <button type="button" className="crop-btn primary" onClick={confirm} disabled={busy || !img}>

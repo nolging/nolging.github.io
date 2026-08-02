@@ -2436,7 +2436,13 @@ button.mlist-row:hover { background: #f6f5fa; }
 .crop-guide::after { content: ''; position: absolute; inset: 6px; border-radius: 50%;
   border: 2px solid rgba(255,255,255,.82); box-shadow: 0 0 0 9999px rgba(20,19,26,.4); }
 .crop-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.crop-zoom { width: 100%; accent-color: var(--primary); }
+/* 커스텀 확대 슬라이더 — 채움이 정확히 손잡이까지, 손잡이가 양 끝까지 이동 */
+.crop-slider { padding: 12px 0; }
+.crop-slider-track { position: relative; height: 6px; margin: 0 12px; border-radius: 999px;
+  background: #e3e1ea; touch-action: none; cursor: pointer; }
+.crop-slider-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--primary); }
+.crop-slider-thumb { position: absolute; top: 50%; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 5px rgba(20,22,40,.28); transform: translate(-50%, -50%); }
 .crop-actions { display: flex; gap: 10px; }
 .crop-btn { flex: 1; border: none; border-radius: 999px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; }
 .crop-btn.ghost { background: var(--surface-2, #eceaf2); color: var(--text); }
