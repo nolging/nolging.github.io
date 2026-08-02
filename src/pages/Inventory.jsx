@@ -48,6 +48,7 @@ export default function Inventory() {
   const [error, setError] = useState('')
   const [wishOpen, setWishOpen] = useState(false)
   const [coupleOpen, setCoupleOpen] = useState(false)
+  const [coupleView, setCoupleView] = useState(null) // 장착 중인 커플 링 → 데이트 미리보기 { groupId, hasSpare }
   const [friendOpen, setFriendOpen] = useState(false)
   const [friendGroupIds, setFriendGroupIds] = useState([]) // 이미 우정 링 적용된 그룹(내가 속한)
   const [cassetteOpen, setCassetteOpen] = useState(false)
@@ -206,10 +207,18 @@ export default function Inventory() {
                 else if (isDeco) badge = decoApplied ? '장착 중' : null
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
                 else if (equipped) {
-                  // 장착 중이어도 미사용(active) 스페어가 있으면 "장착 중" 뱃지 + ×(남은 개수),
-                  // 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능
-                  badge = '장착 중'; actionable = activeCount > 0
+                  // 장착 중이어도 미사용(active) 스페어가 있으면 "장착 중" 뱃지 + ×(남은 개수)
+                  badge = '장착 중'
                   countShown = activeCount; showCount = activeCount >= 1
+                  if (g.id === 'couple-ring') {
+                    // 장착 중인 커플 링 → 데이트 미리보기 모달(스페어 있으면 나눠 끼기도 가능)
+                    const usedGroupId = g.rows.find((r) => r.status === 'used')?.group_id
+                    onClick = () => setCoupleView({ groupId: usedGroupId, hasSpare: activeCount > 0 })
+                    actionable = true
+                  } else {
+                    // 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능
+                    actionable = activeCount > 0
+                  }
                 }
                 else if (pending) { badge = '수락 대기'; actionable = false }
                 else if (hasActive) badge = null
@@ -233,6 +242,9 @@ export default function Inventory() {
 
       <WishModal open={wishOpen} onClose={() => setWishOpen(false)} wishRows={wishRows} onUsed={reload} />
       <CoupleModal open={coupleOpen} onClose={() => setCoupleOpen(false)} myId={user?.id} excludeGroupIds={coupleGroupIds} onDone={reload} />
+      <CoupleRingModal view={coupleView} myId={user?.id} navigate={navigate}
+        onClose={() => setCoupleView(null)}
+        onShareSpare={() => { setCoupleView(null); setCoupleOpen(true) }} />
       <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload} />
       <MediaSendModal open={cassetteOpen} itemId="cassette" onClose={() => setCassetteOpen(false)} onDone={reload} />
       <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
@@ -1014,6 +1026,57 @@ function WishModal({ open, onClose, wishRows, onUsed }) {
         <button type="button" className="btn btn-primary btn-block" onClick={grant} disabled={sending}>
           {sending ? '비는 중…' : '소원 빌기'}
         </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 장착 중인 커플 링: 데이트 미리보기 모달 (나 ♥ 상대 → 데이트하러 가기) ----
+function CoupleRingModal({ view, myId, onClose, onShareSpare, navigate }) {
+  const open = !!view
+  const groupId = view?.groupId
+  const [cards, setCards] = useState([])
+  const [decoMap, setDecoMap] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open || !groupId) return
+    setLoading(true); setError('')
+    Promise.all([listMemberCards(groupId), getGroupDecoMap(groupId).catch(() => ({}))])
+      .then(([cs, dm]) => { setCards(cs || []); setDecoMap(dm || {}) })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [open, groupId])
+
+  const me = cards.find((c) => c.is_self) || null
+  const partner = cards.find((c) => !c.is_self && !c.is_left) || cards.find((c) => !c.is_self) || null
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="crm">
+        {error && <div className="alert alert-error">{error}</div>}
+        {loading ? <div className="spinner" /> : (
+          <>
+            <div className="crm-pair">
+              <div className="crm-person">
+                <Avatar src={me?.avatar_url} name={me?.display_nickname || '나'} size={88} deco={decoMap[myId]} />
+                <span className="crm-name">{me?.display_nickname || '나'}</span>
+              </div>
+              <svg className="crm-heart" viewBox="0 0 24 24" fill="#ec6a8f" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+              <div className="crm-person">
+                <Avatar src={partner?.avatar_url} name={partner?.display_nickname || '상대'} size={88} deco={partner ? decoMap[partner.user_id] : null} />
+                <span className="crm-name">{partner?.display_nickname || '상대 없음'}</span>
+              </div>
+            </div>
+            <button type="button" className="crm-go" onClick={() => { onClose(); if (groupId) navigate(`/groups/${groupId}`) }}>
+              데이트하러 가기
+            </button>
+            {view?.hasSpare && (
+              <button type="button" className="crm-share" onClick={onShareSpare}>다른 그룹에 나눠 끼기</button>
+            )}
+          </>
+        )}
       </div>
     </Modal>
   )

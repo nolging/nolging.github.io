@@ -3196,6 +3196,19 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .couple-msg { position: relative; }
 .couple-msg-count { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--muted); }
 
+/* ---- 장착 중인 커플 링: 데이트 미리보기 모달 ---- */
+.crm { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 10px 4px 2px; }
+.crm-pair { display: flex; align-items: flex-start; justify-content: center; gap: 14px; width: 100%; }
+.crm-person { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 88px; width: 88px; }
+.crm-name { max-width: 88px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-heart { flex: 0 0 32px; width: 32px; height: 32px; margin-top: 28px; display: block;
+  filter: drop-shadow(0 6px 14px rgba(236, 106, 143, .45)); transform-origin: center; animation: csx-beat 1.8s ease-in-out infinite; }
+.crm-go { width: 100%; border: none; border-radius: 999px; padding: 14px; background: var(--text); color: #fff;
+  font-size: 15px; font-weight: 800; letter-spacing: -.2px; cursor: pointer; }
+.crm-go:active { opacity: .9; }
+.crm-share { border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 2px; margin-top: -8px; }
+@media (prefers-reduced-motion: reduce) { .crm-heart { animation: none; } }
+
 /* ---- 소원권 사용 모달 ---- */
 .wish-modal { display: flex; flex-direction: column; gap: 14px; }
 .wish-to { display: flex; align-items: center; gap: 10px; }
