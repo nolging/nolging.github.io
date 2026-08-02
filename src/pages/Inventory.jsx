@@ -50,6 +50,7 @@ export default function Inventory() {
   const [coupleOpen, setCoupleOpen] = useState(false)
   const [coupleView, setCoupleView] = useState(null) // 장착 중인 커플 링 → 데이트 미리보기 { groupId, hasSpare }
   const [friendOpen, setFriendOpen] = useState(false)
+  const [friendView, setFriendView] = useState(null) // 장착 중인 우정 링만 있을 때 → 장착 그룹 목록 { groupIds }
   const [friendGroupIds, setFriendGroupIds] = useState([]) // 이미 우정 링 적용된 그룹(내가 속한)
   const [cassetteOpen, setCassetteOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
@@ -215,9 +216,14 @@ export default function Inventory() {
                     const usedGroupId = g.rows.find((r) => r.status === 'used')?.group_id
                     onClick = () => setCoupleView({ groupId: usedGroupId, hasSpare: activeCount > 0 })
                     actionable = true
+                  } else if (activeCount > 0) {
+                    // 우정 링: 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능(나눠 끼기 모달)
+                    actionable = true
                   } else {
-                    // 스페어가 있으면 클릭해 다른 그룹에 추가 사용 가능
-                    actionable = activeCount > 0
+                    // 우정 링: 장착 중인 것만 있으면 장착 그룹 목록 모달
+                    const usedGroupIds = g.rows.filter((r) => r.status === 'used').map((r) => r.group_id).filter(Boolean)
+                    onClick = () => setFriendView({ groupIds: usedGroupIds })
+                    actionable = true
                   }
                 }
                 else if (pending) { badge = '수락 대기'; actionable = false }
@@ -246,6 +252,7 @@ export default function Inventory() {
         onClose={() => setCoupleView(null)}
         onShareSpare={() => { setCoupleView(null); setCoupleOpen(true) }} />
       <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload} />
+      <FriendRingModal view={friendView} navigate={navigate} onClose={() => setFriendView(null)} />
       <MediaSendModal open={cassetteOpen} itemId="cassette" onClose={() => setCassetteOpen(false)} onDone={reload} />
       <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
       <MediaSendModal open={videoOpen} itemId="video" onClose={() => setVideoOpen(false)} onDone={reload} />
@@ -1069,7 +1076,7 @@ function CoupleRingModal({ view, myId, onClose, onShareSpare, navigate }) {
                 <span className="crm-name">{partner?.display_nickname || '상대 없음'}</span>
               </div>
             </div>
-            <button type="button" className="crm-go" onClick={() => { onClose(); if (groupId) navigate(`/groups/${groupId}`) }}>
+            <button type="button" className="crm-go" onClick={() => { onClose(); if (groupId) navigate(`/groups/${groupId}/members`) }}>
               데이트하러 가기
             </button>
             {view?.hasSpare && (
@@ -1149,6 +1156,57 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
         <button type="button" className="btn btn-primary btn-block" onClick={share} disabled={!group || sending}>
           {sending ? '보내는 중…' : '나눠 끼기'}
         </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 장착 중인 우정 링: 장착 그룹 목록 모달 (그룹명 + 겹친 아바타 → 놀이터로 이동) ----
+function FriendRingModal({ view, onClose, navigate }) {
+  const open = !!view
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setLoading(true); setError('')
+    const set = new Set(view?.groupIds || [])
+    listMyGroups()
+      .then((gs) => setGroups((gs || []).filter((g) => set.has(g.id))))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [open, view])
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="couple-modal">
+        <ItemHead id="friend-ring" name="우정 링" emoji="🤝" sub="장착 중인 그룹" />
+        {error && <div className="alert alert-error">{error}</div>}
+        {loading ? <div className="spinner" /> : (
+          <div className="frm-list">
+            {groups.map((g) => {
+              const ms = g.group_members || []
+              const shown = ms.slice(0, 3)
+              const extra = ms.length - shown.length
+              return (
+                <button key={g.id} type="button" className="frm-row"
+                  onClick={() => { onClose(); navigate(`/groups/${g.id}/members`) }}>
+                  <span className="frm-gname">{g.name}</span>
+                  <span className="frm-avstack">
+                    {shown.map((m, i) => (
+                      <span key={m.user_id} className="frm-av" style={{ zIndex: shown.length - i }}>
+                        <Avatar src={m.avatar_url} name={m.display_nickname || '멤버'} size={30} />
+                      </span>
+                    ))}
+                    {extra > 0 && <span className="frm-more">+{extra}</span>}
+                  </span>
+                  <svg className="frm-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </Modal>
   )

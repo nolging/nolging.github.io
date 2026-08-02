@@ -3209,6 +3209,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .crm-share { border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 2px; margin-top: -8px; }
 @media (prefers-reduced-motion: reduce) { .crm-heart { animation: none; } }
 
+/* ---- 장착 중인 우정 링: 장착 그룹 목록 ---- */
+.frm-list { display: flex; flex-direction: column; gap: 8px; }
+.frm-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line, #ececf2); border-radius: 14px; background: var(--surface); cursor: pointer; }
+.frm-row:active { opacity: .9; }
+.frm-gname { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frm-avstack { display: flex; align-items: center; flex-shrink: 0; }
+.frm-av { display: block; margin-left: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); }
+.frm-av:first-child { margin-left: 0; }
+.frm-more { margin-left: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.frm-chev { flex-shrink: 0; }
+
 /* ---- 소원권 사용 모달 ---- */
 .wish-modal { display: flex; flex-direction: column; gap: 14px; }
 .wish-to { display: flex; align-items: center; gap: 10px; }
