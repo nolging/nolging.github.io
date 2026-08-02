@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag } from '../lib/api'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
+import { formatBirthKo } from '../lib/birthday'
 import { openCompose } from '../lib/composeWindow'
 import { SETTINGS_EVENT } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
@@ -12,11 +13,7 @@ function telHref(s) {
   const digits = cleaned.replace(/\D/g, '')
   return digits.length >= 3 ? `tel:${cleaned}` : ''
 }
-function birthLabel(s) {
-  if (!s) return ''
-  const [y, mo, d] = String(s).split('-')
-  return `${y}년 ${Number(mo)}월 ${Number(d)}일`
-}
+const birthLabel = (s) => formatBirthKo(s)
 
 function PaperPlane() {
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard } from '../lib/api'
+import { formatBirthDot } from '../lib/birthday'
 import { useAuth } from '../context/AuthContext'
 import { openMember } from '../lib/memberModal'
 import MemberAvatar from '../components/MemberAvatar'
@@ -58,11 +59,7 @@ function Chevron() {
   )
 }
 
-function birthLabel(s) {
-  if (!s) return null
-  const [y, mo, d] = String(s).split('-')
-  return `${y}.${Number(mo)}.${Number(d)}`
-}
+const birthLabel = (s) => formatBirthDot(s)
 
 export default function GroupMembers() {
   const { groupId } = useParams()

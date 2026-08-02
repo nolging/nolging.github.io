@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { requestAccess } from '../lib/api'
 import Brand from '../components/Brand'
+import BirthdayInput from '../components/BirthdayInput'
 
 // 숫자만 입력받아 한국 전화번호 형식으로 자동 하이픈 삽입
 function formatPhone(input) {
@@ -87,7 +88,8 @@ export default function RequestAccess() {
               </label>
               <label className="field">
                 <span>생년월일 (선택)</span>
-                <input type="date" value={form.birthdate} onChange={set('birthdate')} />
+                <BirthdayInput value={form.birthdate} onChange={(v) => setForm((f) => ({ ...f, birthdate: v }))} />
+                <span className="ra-birth-hint">생년을 모르면 월·일만 입력해도 돼요.</span>
               </label>
               {error && <div className="alert alert-error">{error}</div>}
               <button className="btn btn-primary btn-block" disabled={busy}>

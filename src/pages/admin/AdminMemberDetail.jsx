@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin, adminSetPassword } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
+import { formatBirthDot } from '../../lib/birthday'
 import { STATUS } from './adminMeta'
 
 // 회원 상세 — 정보 나열 + 역할 수정(관리자 부여) + 츄르 지급/차감 + 삭제
@@ -80,7 +81,7 @@ export default function AdminMemberDetail() {
     ['상태', STATUS[user.status]?.label || user.status],
     ['보유 츄르', formatCoin(balance)],
     ['연락처', user.contact || '—'],
-    ['생년월일', user.birthdate || '—'],
+    ['생년월일', formatBirthDot(user.birthdate) || '—'],
   ]
 
   return (

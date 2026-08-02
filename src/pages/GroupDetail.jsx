@@ -7,6 +7,7 @@ import {
   regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit, updateTask,
 } from '../lib/api'
 import { isAnnivToday, parseYMD } from '../lib/anniv'
+import { formatBirthDot } from '../lib/birthday'
 import {
   taskTerms, TASK_STATUSES, resolveCategories, catMeta, catChipStyle, formatWhen, repeatCycleText, mediaCardLine,
 } from '../lib/constants'
@@ -112,11 +113,7 @@ const OwnerBadge = () => (
     </svg>
   </span>
 )
-function birthLabel(s) {
-  if (!s) return null
-  const [y, mo, d] = String(s).split('-')
-  return `${y}.${Number(mo)}.${Number(d)}`
-}
+const birthLabel = (s) => formatBirthDot(s)
 // 커플 D-day: 기념일부터 오늘까지 며칠째(기념일=1일차)
 function daysSince(dateStr) {
   const start = parseYMD(dateStr)

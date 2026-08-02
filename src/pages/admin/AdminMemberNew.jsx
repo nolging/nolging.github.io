@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminCreateUser } from '../../lib/api'
+import BirthdayInput from '../../components/BirthdayInput'
 
 // 신규 계정 생성 페이지
 export default function AdminMemberNew() {
@@ -40,7 +41,7 @@ export default function AdminMemberNew() {
           <div className="field"><label htmlFor="mn-contact">연락처 (선택)</label>
             <input id="mn-contact" defaultValue={form.contact} onChange={set('contact')} placeholder="010-1234-5678" /></div>
           <div className="field"><label htmlFor="mn-birth">생년월일 (선택)</label>
-            <input id="mn-birth" type="date" defaultValue={form.birthdate} onChange={set('birthdate')} /></div>
+            <BirthdayInput value={form.birthdate} onChange={(v) => setForm((f) => ({ ...f, birthdate: v }))} /></div>
           <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '생성 중…' : '계정 생성'}</button>
         </form>
       </div>

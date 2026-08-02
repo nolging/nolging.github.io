@@ -632,6 +632,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .me-field > .me-field-label { margin-bottom: 7px; }
 .me-field-note { font-size: 11.5px; font-weight: 600; color: #a2a2ac; }
 .me-input { width: 100%; box-sizing: border-box; background: var(--surface-sunken, #f4f3f7); border: none; border-radius: 14px; padding: 14px 16px; font-size: 14px; font-weight: 500; color: var(--text); font-family: inherit; }
+/* 생년월일 입력(년 선택 · 월 · 일) */
+.birthday-input { display: flex; gap: 8px; }
+.birthday-sel { flex: 1 1 0; min-width: 0; padding-left: 13px; padding-right: 8px; }
+.birthday-year { flex: 1.35 1 0; }
+.birthday-input.bi-sunken .birthday-sel { background: var(--surface-sunken, #f4f3f7); border: none; border-radius: 14px; font-weight: 500; }
+.ra-birth-hint { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
 .me-ott-list { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 2px 16px; }
 .me-ott-row { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-bottom: 1px solid var(--divider, #f2f1f5); }
 .me-ott-row:last-child { border-bottom: none; }

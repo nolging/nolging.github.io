@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, getMyGrade, changeMyPassword } from '../lib/api'
 import { OTT_BY_KEY } from '../lib/constants'
+import { formatBirthDot } from '../lib/birthday'
 import { GRADE_LABEL, GRADE_SUB } from '../lib/membership'
 
 export default function MemberInfo() {
@@ -50,7 +51,7 @@ export default function MemberInfo() {
   }
   async function handleLogout() { await logout(); navigate('/login') }
 
-  const birth = info?.birthdate ? String(info.birthdate).slice(0, 10) : ''
+  const birth = formatBirthDot(info?.birthdate)
   const otts = Array.isArray(info?.subscribed_ott) ? info.subscribed_ott : []
 
   return (

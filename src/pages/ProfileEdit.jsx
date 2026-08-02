@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getMyProfile, updateMyProfile } from '../lib/api'
 import { SUBSCRIBABLE_OTTS } from '../lib/constants'
+import BirthdayInput from '../components/BirthdayInput'
 
 // 한국 전화번호 자동 하이픈: 숫자만 입력해도 010-1111-1234 형태로 표시
 function formatPhone(value) {
@@ -78,8 +79,8 @@ export default function ProfileEdit() {
 
           <div className="me-field">
             <div className="me-field-label">생년월일</div>
-            <input className="me-input" type="date" value={form.birthdate}
-              onChange={(e) => set({ birthdate: e.target.value })} />
+            <BirthdayInput className="bi-sunken" value={form.birthdate} onChange={(v) => set({ birthdate: v })} />
+            <p className="muted sm me-hint">생년을 모르면 "년(선택)" 을 비우고 월·일만 입력해도 돼요.</p>
           </div>
 
           <div className="me-field">
