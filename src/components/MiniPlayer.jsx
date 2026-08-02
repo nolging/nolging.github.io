@@ -50,6 +50,8 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
   const tabDragRef = useRef(null)
   const ytRef = useRef(null)      // YT.Player 인스턴스
   const ytHostRef = useRef(null)  // 유튜브 플레이어가 들어갈 div
+  const ytReadyRef = useRef(false)   // YT 플레이어 onReady 완료 여부
+  const pendingYtIdRef = useRef(null) // 재생 대기 중인 최신 videoId(준비 전 요청 보관)
   const scRef = useRef(null)      // SC.Widget 인스턴스
   const scIframeRef = useRef(null)
   const trackRef = useRef(null)
@@ -84,25 +86,38 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
       },
     }
   }
+  // 준비된 플레이어에 '가장 최근 요청된' videoId 를 적용해 재생.
+  // prewarm 으로 만든 플레이어가 아직 준비 전이면 pendingYtIdRef 에 담아 뒀다가 onReady 에서 반영한다.
+  function ytApplyPending() {
+    const id = pendingYtIdRef.current
+    const p = ytRef.current
+    if (id && p && ytReadyRef.current && p.loadVideoById) {
+      p.loadVideoById(id)
+      p.playVideo?.()
+    }
+  }
   function ytPlay(id) {
-    // 이미 생성(prewarm)된 플레이어면 '탭 제스처 안에서 동기 재생' → iOS 자동재생 차단 회피.
-    // (탭 후 비동기로 플레이어를 만들면 제스처가 만료돼 소리가 안 남)
-    if (ytRef.current && ytRef.current.loadVideoById) {
+    // 항상 '최신 요청' 을 기억 → 준비 전/재사용 어떤 경우에도 요청한 곡이 재생되게(이전 곡 고착 방지)
+    pendingYtIdRef.current = id
+    // 이미 생성·준비된 플레이어면 즉시 교체 재생(탭 제스처 안에서 동기 실행 → iOS 자동재생 차단 회피)
+    if (ytRef.current && ytReadyRef.current && ytRef.current.loadVideoById) {
       ytRef.current.loadVideoById(id)
       ytRef.current.playVideo?.()
       return
     }
-    // 폴백: 아직 없으면 API 로드 후 생성(최초 1회). onReady 에서 재생.
+    // 플레이어는 있으나 아직 준비 전(prewarm 직후) → 중복 생성하지 말고 onReady 에서 pending 재생
+    if (ytRef.current) return
+    // 최초 1회만 생성. onReady 에서 pending(=최신 id) 을 재생한다.
     loadYT().then((YT) => {
-      if (ytRef.current && ytRef.current.loadVideoById) {
-        ytRef.current.loadVideoById(id); ytRef.current.playVideo?.()
-      } else {
-        ytRef.current = new YT.Player(ytHostRef.current, {
-          videoId: id,
-          playerVars: { playsinline: 1, rel: 0 },
-          events: { onReady: (e) => e.target.playVideo(), ...ytStateEvents(YT) },
-        })
-      }
+      if (ytRef.current) { ytApplyPending(); return }
+      ytRef.current = new YT.Player(ytHostRef.current, {
+        videoId: id,
+        playerVars: { playsinline: 1, rel: 0 },
+        events: {
+          onReady: () => { ytReadyRef.current = true; ytApplyPending() },
+          ...ytStateEvents(YT),
+        },
+      })
     }).catch(() => {})
   }
   function ytToggle() {
@@ -219,7 +234,8 @@ export default forwardRef(function MiniPlayer({ onState }, ref) {
         if (!ytRef.current && ytHostRef.current) {
           ytRef.current = new YT.Player(ytHostRef.current, {
             playerVars: { playsinline: 1, rel: 0 },
-            events: ytStateEvents(YT),
+            // onReady 에서 준비 완료를 기록하고, 그 사이 들어온 재생 요청(pending)이 있으면 반영
+            events: { onReady: () => { ytReadyRef.current = true; ytApplyPending() }, ...ytStateEvents(YT) },
           })
         }
       }).catch(() => {})
