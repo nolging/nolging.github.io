@@ -465,11 +465,10 @@ export default function Layout() {
       </header>
     )
   } else if (settingsMatch) {
-    // 설정 페이지: 좌측 뒤로(그룹으로), 제목 "설정"
-    const id = settingsMatch.params.groupId
+    // 내 정보 수정 페이지: 좌측 뒤로는 직전 페이지로(멤버 상세 → 톱니로 들어온 경우 그 상세로 복귀)
     topbar = (
       <header className="topbar">
-        <Link to={`/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">내 정보 수정</span>
       </header>
     )
