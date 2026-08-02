@@ -89,7 +89,6 @@ export default function RequestAccess() {
               <label className="field">
                 <span>생년월일 (선택)</span>
                 <BirthdayInput value={form.birthdate} onChange={(v) => setForm((f) => ({ ...f, birthdate: v }))} />
-                <span className="ra-birth-hint">생년을 모르면 월·일만 입력해도 돼요.</span>
               </label>
               {error && <div className="alert alert-error">{error}</div>}
               <button className="btn btn-primary btn-block" disabled={busy}>

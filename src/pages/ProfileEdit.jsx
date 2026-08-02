@@ -80,7 +80,6 @@ export default function ProfileEdit() {
           <div className="me-field">
             <div className="me-field-label">생년월일</div>
             <BirthdayInput className="bi-sunken" value={form.birthdate} onChange={(v) => set({ birthdate: v })} />
-            <p className="muted sm me-hint">생년을 모르면 "년(선택)" 을 비우고 월·일만 입력해도 돼요.</p>
           </div>
 
           <div className="me-field">
