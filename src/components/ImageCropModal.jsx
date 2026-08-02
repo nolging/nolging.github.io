@@ -151,7 +151,6 @@ export default function ImageCropModal({ file, onCancel, onCropped, onError }) {
     <Modal open={open} onClose={busy ? undefined : onCancel} cardClassName="crop-modal-card">
       <div className="crop-modal">
         <div className="crop-title">사진 편집</div>
-        <div className="crop-hint">드래그로 위치, 확대해서 정방형으로 잘라요</div>
         <div ref={frameRef} className="crop-frame" onWheel={onWheel}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           {img && frame > 0 && (
