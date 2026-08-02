@@ -2421,6 +2421,28 @@ button.mlist-row:hover { background: #f6f5fa; }
 .avatar-menu button:hover { background: rgba(0,0,0,.05); }
 .avatar-menu .menu-danger { color: var(--danger); }
 
+/* ---- 프로필 사진 크롭 모달 ---- */
+.crop-modal { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.crop-title { text-align: center; font-size: 16px; font-weight: 800; color: var(--text); }
+.crop-hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: -6px; }
+.crop-frame {
+  position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 12px;
+  background: #14131a; touch-action: none; user-select: none; cursor: grab;
+}
+.crop-frame:active { cursor: grabbing; }
+.crop-img { position: absolute; top: 0; left: 0; max-width: none; pointer-events: none; user-select: none; }
+/* 원형 아바타 가이드 — 원 밖은 살짝 어둡게, 원 테두리 표시(정방형 전체가 저장 대상) */
+.crop-guide { position: absolute; inset: 0; pointer-events: none; }
+.crop-guide::after { content: ''; position: absolute; inset: 6px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.82); box-shadow: 0 0 0 9999px rgba(20,19,26,.4); }
+.crop-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.crop-zoom { width: 100%; accent-color: var(--primary); }
+.crop-actions { display: flex; gap: 10px; }
+.crop-btn { flex: 1; border: none; border-radius: 999px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; }
+.crop-btn.ghost { background: var(--surface-2, #eceaf2); color: var(--text); }
+.crop-btn.primary { background: var(--primary); color: #fff; }
+.crop-btn:disabled { opacity: .55; cursor: default; }
+
 /* ---- 태스크 내 담당자(인라인 아바타) ---- */
 .task-person { display: inline-flex; align-items: center; gap: 4px; }
 

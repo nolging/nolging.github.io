@@ -1,28 +1,34 @@
 import { useRef, useState } from 'react'
-import { fileToSquareBlob } from '../lib/image'
 import { uploadAvatar, deleteAvatarByUrl } from '../lib/storage'
 import Avatar from './Avatar'
+import ImageCropModal from './ImageCropModal'
 
 // 원형·가운데 프로필 사진 + 클릭 시 변경/제거 메뉴 (설정/가입/생성 공용)
 // 선택 즉시 스토리지에 업로드하고 public URL 을 onChange 로 전달한다.
 export default function AvatarEditor({ value, onChange, name, userId, onError, emptyIcon = false }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [cropFile, setCropFile] = useState(null) // 크롭 대기 중인 원본 파일
   const fileRef = useRef(null)
   const lastUploadRef = useRef(null) // 이 세션에서 방금 올린 파일(교체/제거 시 정리)
 
-  async function pickImage(e) {
+  // 앨범에서 고른 사진 → 크롭 모달로 넘긴다(바로 업로드하지 않음)
+  function pickImage(e) {
     const file = e.target.files?.[0]
     e.target.value = '' // 같은 파일 다시 선택 가능하도록 초기화
     if (!file) return
-    setBusy(true)
     onError?.('')
+    setCropFile(file)
+  }
+  // 크롭 완료(정방형 Blob) → 스토리지 업로드 후 URL 전달
+  async function handleCropped(blob) {
+    setBusy(true)
     try {
-      const blob = await fileToSquareBlob(file)
       const url = await uploadAvatar(blob, userId)
       if (lastUploadRef.current) deleteAvatarByUrl(lastUploadRef.current)
       lastUploadRef.current = url
       onChange(url)
+      setCropFile(null)
     } catch (err) { onError?.(err.message) } finally { setBusy(false) }
   }
   function chooseChange() { setMenuOpen(false); fileRef.current?.click() }
@@ -68,6 +74,8 @@ export default function AvatarEditor({ value, onChange, name, userId, onError, e
         </>
       )}
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickImage} />
+      <ImageCropModal file={cropFile} onCancel={() => setCropFile(null)}
+        onCropped={handleCropped} onError={onError} />
     </div>
   )
 }
