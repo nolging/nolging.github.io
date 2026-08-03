@@ -229,7 +229,7 @@ export default function Layout() {
       : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 상세')
         : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 상세')
           : p.startsWith('/admin/notifs') ? '알림 메시지 수정'
-            : p.startsWith('/admin/reports') ? '오류 상세'
+            : p.startsWith('/admin/reports') ? '오류 리포트'
             : '관리자'
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'

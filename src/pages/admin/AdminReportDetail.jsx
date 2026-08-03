@@ -2,16 +2,23 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { adminGetErrorReport, adminErrorReportThread, adminSendErrorReport, adminResolveErrorReport } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
-import SystemAvatar from '../../components/SystemAvatar'
 
+const SendIcon = () => (
+  <svg width="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
+  </svg>
+)
+const pad = (n) => String(n).padStart(2, '0')
+const hhmm = (iso) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}` }
+const dayKey = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` }
+const dayLabel = (iso) => { const d = new Date(iso); return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일` }
 function fmt(ts) {
   if (!ts) return ''
   const d = new Date(ts)
-  const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// 관리자: 오류 리포트 상세 — 제목/내용/회원/시각 + SYSTEM 쪽지 스레드 + 해결 완료
+// 관리자: 오류 리포트 상세 — 채팅 UI. 회원(상대) 왼쪽 / SYSTEM(나) 오른쪽. 실시간 반영.
 export default function AdminReportDetail() {
   const { id } = useParams()
   const [report, setReport] = useState(null)
@@ -32,7 +39,16 @@ export default function AdminReportDetail() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [id])
   useEffect(() => { load() }, [load])
-  useEffect(() => { endRef.current?.scrollIntoView({ block: 'nearest' }) }, [thread])
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [thread, loading])
+
+  // 키보드가 올라와(visualViewport 축소) 채팅 영역이 줄면 마지막 메시지가 보이게 스크롤
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const toEnd = () => requestAnimationFrame(() => endRef.current?.scrollIntoView({ block: 'end' }))
+    vv.addEventListener('resize', toEnd)
+    return () => vv.removeEventListener('resize', toEnd)
+  }, [])
 
   // 실시간: 어느 쪽이든 메시지를 보내면 'refresh' → 스레드를 다시 읽어 온다(정확히 반영)
   const reloadThread = useCallback(() => {
@@ -46,7 +62,8 @@ export default function AdminReportDetail() {
     return () => { supabase.removeChannel(ch); chanRef.current = null }
   }, [id, reloadThread])
 
-  async function send() {
+  async function send(e) {
+    e?.preventDefault?.()
     const text = msg.trim()
     if (!text || busy) return
     setBusy(true); setError('')
@@ -61,6 +78,7 @@ export default function AdminReportDetail() {
   async function toggleResolved() {
     if (busy || !report) return
     const next = !report.resolved
+    if (!window.confirm(next ? '이 리포트를 해결 완료로 처리할까요?' : '미해결로 되돌릴까요?')) return
     setBusy(true); setError('')
     try {
       await adminResolveErrorReport(id, next)
@@ -72,56 +90,52 @@ export default function AdminReportDetail() {
   if (loading) return <div className="page admin-page"><div className="spinner" /></div>
   if (!report) return <div className="page admin-page"><div className="alert alert-error">{error || '리포트를 찾을 수 없어요.'}</div></div>
 
+  const rows = []
+  let prevDay = null
+  for (const m of thread) {
+    const dk = dayKey(m.created_at)
+    if (dk !== prevDay) { rows.push(<div key={`d-${m.id}`} className="rc-date">{dayLabel(m.created_at)}</div>); prevDay = dk }
+    rows.push(
+      // SYSTEM(내가 보낸 것) = 오른쪽(mine), 회원(상대) = 왼쪽(sys)
+      <div key={m.id} className={`rc-msg ${m.from_system ? 'mine' : 'sys'}`}>
+        <div className="rc-bubble">{m.body}</div>
+        <span className="rc-time">{hhmm(m.created_at)}</span>
+      </div>,
+    )
+  }
+
   return (
-    <div className="page admin-page">
+    <div className="page admin-page admin-report-chat">
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="card">
-        <div className="admin-list-head">
-          <h3 className="card-title" style={{ margin: 0 }}>{report.title}</h3>
-          <span className={`badge ${report.resolved ? 'badge-done' : 'badge-open'}`}>{report.resolved ? '해결 완료' : '미해결'}</span>
-        </div>
-        <p className="rep-body">{report.body}</p>
-        <dl className="admin-detail">
-          <div className="admin-detail-row"><dt>회원 아이디</dt><dd>{report.reporter_login}</dd></div>
-          <div className="admin-detail-row"><dt>리포트 시각</dt><dd>{fmt(report.created_at)}</dd></div>
-          {report.resolved && <div className="admin-detail-row"><dt>해결 시각</dt><dd>{fmt(report.resolved_at)}</dd></div>}
-        </dl>
-      </div>
-
-      <div className="card">
-        <h3 className="card-title">SYSTEM 쪽지</h3>
-        <div className="rep-thread">
-          {thread.length === 0 ? (
-            <p className="muted sm">아직 주고받은 쪽지가 없어요. 추가 질문을 보내 보세요.</p>
-          ) : thread.map((m) => (
-            <div key={m.id} className={`rep-msg ${m.from_system ? 'sys' : 'user'}`}>
-              {m.from_system && <span className="rep-msg-ava"><SystemAvatar size={28} /></span>}
-              <div className="rep-msg-bubble">
-                <div className="rep-msg-who">{m.from_system ? 'SYSTEM' : report.reporter_login}</div>
-                <div className="rep-msg-text">{m.body}</div>
-                <div className="rep-msg-time">{fmt(m.created_at)}</div>
-              </div>
-            </div>
-          ))}
-          <div ref={endRef} />
-        </div>
-        <div className="rep-compose">
-          <textarea value={msg} rows={2} maxLength={1000} placeholder="추가 질문을 SYSTEM 쪽지로 보내요"
-            style={{ resize: 'vertical' }} onChange={(e) => setMsg(e.target.value)} />
-          <button type="button" className="btn btn-primary" disabled={busy || !msg.trim()} onClick={send}>
-            {busy ? '…' : '보내기'}
+      <div className="arc-report">
+        <div className="arc-report-top">
+          <h3 className="arc-report-title">{report.title}</h3>
+          <button type="button" className={`badge arc-status ${report.resolved ? 'badge-done' : 'badge-open'}`}
+            disabled={busy} onClick={toggleResolved} title="해결 여부 변경">
+            {report.resolved ? '해결 완료' : '미해결'}
           </button>
         </div>
+        <p className="arc-report-body">{report.body}</p>
+        <div className="arc-report-meta">
+          <span className="arc-report-login">{report.reporter_login}</span>
+          <span className="arc-report-time">{fmt(report.created_at)}</span>
+        </div>
       </div>
 
-      <div className="card">
-        <h3 className="card-title">처리</h3>
-        <button type="button" className={`btn btn-block ${report.resolved ? 'btn-ghost' : 'btn-primary'}`} disabled={busy} onClick={toggleResolved}>
-          {report.resolved ? '미해결로 되돌리기' : '해결 완료로 처리'}
-        </button>
-        {!report.resolved && <p className="muted sm" style={{ marginTop: 8 }}>해결 완료하면 유저는 이 리포트에 더 이상 답장할 수 없어요.</p>}
+      <div className="arc-thread-label">채팅 문의</div>
+      <div className="arc-thread">
+        {thread.length === 0 ? (
+          <p className="arc-empty">추가 질문을 보내면 채팅이 열려요</p>
+        ) : rows}
+        <div ref={endRef} />
       </div>
+
+      <form className="rc-input" onSubmit={send}>
+        <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="메시지를 입력하세요" maxLength={1000} enterKeyHint="send"
+          onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
+        <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !msg.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
+      </form>
     </div>
   )
 }
