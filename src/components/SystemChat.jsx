@@ -57,8 +57,18 @@ export default function SystemChat({ note, onDeleted }) {
     try {
       await replyErrorReport(reportId, text)
       setInput('')
-      const t = await errorReportThread(reportId)   // 내 답변 포함해 서버에서 확정 로드
-      setMsgs(t || [])
+      // 내 답변은 즉시 오른쪽에 표시(낙관적) → 서버 확정 로드로 재조정하되,
+      // 아직 서버에 안 잡히면 로컬 표시를 유지해 "내가 보낸 메시지가 안 보이는" 문제를 막는다.
+      const localId = `local-${(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now()}`
+      const local = { id: localId, from_system: false, body: text, created_at: new Date().toISOString(), _local: true }
+      setMsgs((prev) => [...prev, local])
+      errorReportThread(reportId).then((server) => {
+        const srv = server || []
+        setMsgs((prev) => {
+          const keep = prev.filter((m) => m._local && !srv.some((s) => !s.from_system && s.body === m.body))
+          return [...srv, ...keep]
+        })
+      }).catch(() => {})
       chanRef.current?.send({ type: 'broadcast', event: 'refresh', payload: {} })
     } catch (e2) { setError(e2.message) } finally { setBusy(false) }
   }
@@ -100,7 +110,6 @@ export default function SystemChat({ note, onDeleted }) {
           <>
             {report && (
               <div className="rc-report">
-                <div className="rc-report-label">내가 보낸 리포트</div>
                 <div className="rc-report-title">{report.title}</div>
                 <p className="rc-report-body">{report.body}</p>
               </div>
