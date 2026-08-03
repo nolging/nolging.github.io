@@ -32,9 +32,8 @@ function MegaphoneIcon() {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z" />
-      <path d="M14 8a4 4 0 0 1 0 8" />
-      <path d="M8 14v3a2 2 0 0 0 4 0v-2" />
+      <path d="m3 11 18-5v12L3 14v-3z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
     </svg>
   )
 }
