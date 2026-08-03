@@ -824,6 +824,7 @@ export async function listSentNotes(userId, limit = 15, offset = 0) {
   const { data, error } = await supabase
     .from('notes').select(SENT_NOTE_COLS)
     .eq('sender_id', userId)
+    .is('report_id', null)   // 오류 리포트(SYSTEM) 답장은 보낸함에 안 보이게
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
   if (error) {
@@ -831,6 +832,54 @@ export async function listSentNotes(userId, limit = 15, offset = 0) {
     throw error
   }
   return { rows: data ?? [], hasMore: (data?.length ?? 0) >= limit }
+}
+
+// ---- 오류 리포트 ------------------------------------------------
+const REPORT_NOT_READY = '오류 리포트 기능이 아직 설정되지 않았어요. (error-reports.sql 을 먼저 적용해 주세요)'
+function reportErr(error) {
+  if (error.code === 'PGRST202' || /error_report|submit_error_report/.test(error.message || '')) return new Error(REPORT_NOT_READY)
+  return error
+}
+
+// 유저: 오류 리포트 제출
+export async function submitErrorReport(title, body) {
+  const { data, error } = await supabase.rpc('submit_error_report', { p_title: title, p_body: body })
+  if (error) throw reportErr(error)
+  return data
+}
+// 유저: SYSTEM 쪽지에 답장(해결 완료 전까지)
+export async function replyErrorReport(reportId, body) {
+  const { error } = await supabase.rpc('reply_error_report', { p_report_id: reportId, p_body: body })
+  if (error) throw reportErr(error)
+  invalidateNotesCache()
+}
+// 관리자: 리포트 목록
+export async function adminListErrorReports() {
+  const { data, error } = await supabase.rpc('admin_list_error_reports')
+  if (error) throw reportErr(error)
+  return data ?? []
+}
+// 관리자: 리포트 상세
+export async function adminGetErrorReport(id) {
+  const { data, error } = await supabase.rpc('admin_get_error_report', { p_id: id })
+  if (error) throw reportErr(error)
+  return (data && data[0]) || null
+}
+// 관리자: 상세 스레드(주고받은 SYSTEM 쪽지)
+export async function adminErrorReportThread(id) {
+  const { data, error } = await supabase.rpc('admin_error_report_thread', { p_id: id })
+  if (error) throw reportErr(error)
+  return data ?? []
+}
+// 관리자: SYSTEM 쪽지 보내기(추가 질문)
+export async function adminSendErrorReport(reportId, body) {
+  const { error } = await supabase.rpc('admin_send_error_report', { p_report_id: reportId, p_body: body })
+  if (error) throw reportErr(error)
+}
+// 관리자: 해결 완료 토글
+export async function adminResolveErrorReport(id, resolved) {
+  const { error } = await supabase.rpc('admin_resolve_error_report', { p_id: id, p_resolved: resolved })
+  if (error) throw reportErr(error)
 }
 
 export async function sendNote({ groupId, recipientId, body, anonymous = false, timerSeconds = null }) {

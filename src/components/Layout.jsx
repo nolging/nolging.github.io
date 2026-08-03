@@ -15,6 +15,7 @@ import MiniPlayer from './MiniPlayer'
 import BlurayPlayer from './BlurayPlayer'
 import NotifDropdown from './NotifDropdown'
 import AccountSwitcher from './AccountSwitcher'
+import ErrorReportModal from './ErrorReportModal'
 import { hasAdminSaved } from '../lib/accountSwitch'
 
 function SwapIcon() {
@@ -23,6 +24,17 @@ function SwapIcon() {
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="17 2 21 6 17 10" /><path d="M21 6H7" />
       <polyline points="7 22 3 18 7 14" /><path d="M3 18h14" />
+    </svg>
+  )
+}
+
+function MegaphoneIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z" />
+      <path d="M14 8a4 4 0 0 1 0 8" />
+      <path d="M8 14v3a2 2 0 0 0 4 0v-2" />
     </svg>
   )
 }
@@ -211,14 +223,15 @@ export default function Layout() {
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
   // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
-  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs'].includes(location.pathname)
+  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs', '/admin/reports'].includes(location.pathname)
   const adminSub = location.pathname.startsWith('/admin/') && !adminSection
   const adminSubTitle = (p) =>
     p.startsWith('/admin/members') ? (p.endsWith('/new') ? '계정 생성' : '회원 상세')
       : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 상세')
         : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 상세')
           : p.startsWith('/admin/notifs') ? '알림 메시지 수정'
-          : '관리자'
+            : p.startsWith('/admin/reports') ? '오류 상세'
+            : '관리자'
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'
 
@@ -245,6 +258,7 @@ export default function Layout() {
   const [headerGear, setHeaderGear] = useState(null)
   // 마이 페이지 상단바: 계정 전환(관리자용) 모달 열림 상태
   const [acctOpen, setAcctOpen] = useState(false)
+  const [errOpen, setErrOpen] = useState(false)
   // 비밀 게시판 글쓰기: 상단바 "등록" 이 호출할 제출 핸들러(페이지가 등록)
   const [headerSubmit, setHeaderSubmit] = useState(null)
   // 비밀 게시판 글 상세: 상단바 우측 ⋮(수정/삭제) 메뉴 — 권한자만 페이지가 등록
@@ -801,6 +815,8 @@ export default function Layout() {
         <span className="topbar-heading topbar-title-lg">마이 페이지</span>
         <div className="topbar-right">
           {isAdmin && <Link to="/admin" className="topbar-admin">관리자</Link>}
+          <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="오류 리포트" title="오류 리포트"
+            onClick={() => setErrOpen(true)}><MegaphoneIcon /></button>
           {showAcct && (
             <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="계정 전환" title="계정 전환"
               onClick={() => setAcctOpen(true)}><SwapIcon /></button>
@@ -875,6 +891,7 @@ export default function Layout() {
           <NavLink to="/admin/store">상점 관리</NavLink>
           <NavLink to="/admin/quests">퀘스트 관리</NavLink>
           <NavLink to="/admin/notifs">알림 관리</NavLink>
+          <NavLink to="/admin/reports">오류 관리</NavLink>
         </nav>
       </header>
     )
@@ -983,6 +1000,7 @@ export default function Layout() {
           <AccountSwitcher onClose={() => setAcctOpen(false)} />
         </Modal>
       )}
+      <ErrorReportModal open={errOpen} onClose={() => setErrOpen(false)} />
       <PushPrompt />
     </div>
   )

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { safeUrl } from '../lib/safeUrl'
 import Avatar from '../components/Avatar'
+import SystemAvatar from '../components/SystemAvatar'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
@@ -10,7 +11,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { itemName, resolveItemText } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, replyErrorReport } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -101,6 +102,8 @@ export default function Notes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
+  const [sysReply, setSysReply] = useState('') // SYSTEM(오류 리포트) 쪽지 답장 입력
+  const [sysBusy, setSysBusy] = useState(false)
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
@@ -477,7 +480,7 @@ export default function Notes() {
   }
   function onCardClick(n) {
     if (suppressClickRef.current) { suppressClickRef.current = false; return }
-    setOpen(n)
+    setOpen(n); setSysReply('')
     // 상세(동봉 아이템)는 목록이 아니라 여기서, 열린 쪽지 것만 조회
     if (n.kind === 'gift') fetchNoteItems(n.id)
     // 받은 쪽지를 열면 읽음 처리(카드 점 제거 + 하단 탭 점 갱신)
@@ -514,6 +517,14 @@ export default function Notes() {
         me: { name: n.recipient_name, avatar: n.recipient_avatar },
       },
     })
+  }
+
+  // SYSTEM(오류 리포트) 쪽지에 답장 — 리포트 스레드로 전송(해결 완료 전까지만 가능)
+  async function sendSysReply(n) {
+    if (!sysReply.trim() || sysBusy) return
+    setSysBusy(true); setError('')
+    try { await replyErrorReport(n.report_id, sysReply.trim()); setSysReply(''); setOpen(null) }
+    catch (e) { setError(e.message) } finally { setSysBusy(false) }
   }
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
@@ -566,6 +577,7 @@ export default function Notes() {
             const link = n.kind === 'link'
             const video = n.kind === 'video'
             const bluray = n.kind === 'bluray'
+            const system = n.kind === 'system'   // 오류 리포트 SYSTEM 쪽지
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
@@ -580,11 +592,12 @@ export default function Notes() {
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
                         : video ? ['📼 비디오', 'note-tag note-tag-video']
                           : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                            : null
+                            : system ? ['🐞 오류 리포트', 'note-tag note-tag-system']
+                              : null
             return (
               <li key={n.id}>
                 <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
-                  <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />
+                  {system ? <SystemAvatar size={40} /> : <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />}
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
@@ -647,6 +660,7 @@ export default function Notes() {
           const link = open.kind === 'link'
           const video = open.kind === 'video'
           const bluray = open.kind === 'bluray'
+          const system = open.kind === 'system'
           const mine = open.recipient_id === user?.id
           const tagInfo = wish ? ['🌟 소원', 'note-tag']
             : couple ? [open.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
@@ -656,11 +670,12 @@ export default function Notes() {
                     : link ? ['🎁 선물', 'note-tag note-tag-link']
                       : video ? ['📼 비디오', 'note-tag note-tag-video']
                         : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                          : null
+                          : system ? ['🐞 오류 리포트', 'note-tag note-tag-system']
+                            : null
           return (
             <div className="note-view">
               <div className="note-view-head">
-                <Avatar src={anonAva(open) ? null : p.avatar} name={anonAva(open) ? '?' : p.name} size={44} deco={anonAva(open) ? undefined : peerDeco(p)} />
+                {system ? <SystemAvatar size={44} /> : <Avatar src={anonAva(open) ? null : p.avatar} name={anonAva(open) ? '?' : p.name} size={44} deco={anonAva(open) ? undefined : peerDeco(p)} />}
                 <div className="note-view-who">
                   <span className="note-view-peer">
                     <span className="note-view-name">{p.name} <span className="note-card-rel">{p.label}</span></span>
@@ -755,11 +770,24 @@ export default function Notes() {
                     {busy ? '수령 중…' : '수령하기'}
                   </button>
                 )
+              ) : system && mine ? (
+                open.report_resolved ? (
+                  <p className="note-sys-closed">해결 완료된 리포트라 답장할 수 없어요.</p>
+                ) : (
+                  <div className="note-sys-reply">
+                    <textarea className="note-sys-input" value={sysReply} rows={3} maxLength={1000}
+                      placeholder="오류 관련 답장을 적어 주세요" style={{ resize: 'vertical' }}
+                      onChange={(e) => setSysReply(e.target.value)} />
+                    <button type="button" className="btn btn-primary btn-block" disabled={sysBusy || !sysReply.trim()} onClick={() => sendSysReply(open)}>
+                      {sysBusy ? '보내는 중…' : '답장 보내기'}
+                    </button>
+                  </div>
+                )
               ) : gift ? (
                 mine && !open.anonymous && open.sender_active !== false
                   ? <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
                   : null
-              ) : !wish && !couple && !friend && !gift && mine && !open.anonymous && open.sender_active !== false ? (
+              ) : !wish && !couple && !friend && !gift && !system && mine && !open.anonymous && open.sender_active !== false ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
               ) : null}
             </div>

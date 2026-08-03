@@ -25,6 +25,8 @@ export const NOTIF_ICONS = {
   board_reply: '↩︎',
   praise_new: '🌟',
   megaphone: '📣',
+  error_report: '🐞',
+  system_note: '🐱',
 }
 
 export function timeAgo(iso) {
@@ -39,11 +41,12 @@ export function timeAgo(iso) {
   } catch { return '' }
 }
 
-// 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권 등
-const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video'])
+// 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권 등 + SYSTEM(오류 리포트) 쪽지
+const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note'])
 
 // 알림 클릭 시 이동할 경로(없으면 null → 클릭 불가)
 export function notifTarget(n) {
+  if (n.type === 'error_report' && n.report_id) return `/admin/reports/${n.report_id}`   // 관리자: 오류 상세
   if (NOTE_TYPES.has(n.type)) return '/notes'
   if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
   if ((n.type === 'praise' || n.type === 'praise_new') && n.group_id) return `/groups/${n.group_id}/praise?mine=1`

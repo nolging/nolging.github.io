@@ -60,10 +60,12 @@ Deno.serve(async (req) => {
     // 선물/커플 링/소원권 등 쪽지 유형은 받은 쪽지함으로. (수령 상태별 세부 분기는
     // 앱에서 처리되지만, 푸시는 최소한 알림센터와 같은 기본 목적지로 보낸다.)
     const NOTE_TYPES = new Set([
-      'gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video',
+      'gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note',
     ])
     let url = '/'
-    if (NOTE_TYPES.has(record.type as string)) {
+    if (record.type === 'error_report' && record.report_id) {
+      url = `/admin/reports/${record.report_id}` // 관리자: 오류 리포트 상세
+    } else if (NOTE_TYPES.has(record.type as string)) {
       url = '/notes' // 쪽지 유형 → 받은 쪽지함
     } else if (record.type === 'touch_call' && record.group_id) {
       url = `/groups/${record.group_id}/touch` // 우심뽀까 알림 → 우심뽀까 페이지
