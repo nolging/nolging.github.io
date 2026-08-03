@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { supabase, nicknameToEmail } from '../lib/supabase'
 import { syncPushToCurrentUser, detachPushFromServer } from '../lib/push'
 import { refreshStoredAccount } from '../lib/accountSwitch'
-import { touchActivity } from '../lib/api'
 
 const AuthContext = createContext(null)
 
@@ -194,24 +193,6 @@ export function AuthProvider({ children }) {
       window.removeEventListener('pageshow', check)
     }
   }, [loadProfile])
-
-  // 접속 하트비트: 앱이 화면에 보이는 동안 주기적으로 '지금 접속 중' 표식을 남긴다.
-  // → 오류 리포트 채팅에서 상대가 앱에 머무는 중이면 서버(send-push)가 푸시를 생략한다.
-  useEffect(() => {
-    const uid = session?.user?.id
-    if (!uid) return
-    const ping = () => { if (document.visibilityState === 'visible') touchActivity() }
-    ping()
-    const iv = setInterval(ping, 20000)
-    const onVis = () => { if (document.visibilityState === 'visible') ping() }
-    document.addEventListener('visibilitychange', onVis)
-    window.addEventListener('focus', onVis)
-    return () => {
-      clearInterval(iv)
-      document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('focus', onVis)
-    }
-  }, [session?.user?.id])
 
   const login = useCallback(async (loginId, password) => {
     const email = nicknameToEmail(loginId)

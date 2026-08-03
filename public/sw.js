@@ -16,7 +16,17 @@ self.addEventListener('push', (event) => {
     data: { url: data.url || '/' },
     tag: data.tag,           // 있으면 같은 태그 알림을 갱신
   }
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil((async () => {
+    // silent = 오류 리포트 채팅 등 '푸시 전용' 알림.
+    // 지금 앱을 보고 있으면(포커스/보임) 실시간으로 이미 확인하므로 표시하지 않는다.
+    // 백그라운드·홈화면이면 window client 가 hidden 상태라 정상적으로 표시된다.
+    // (수신 시점에 실제 클라이언트 상태로 판단 → iOS PWA 에서도 정확)
+    if (data.silent) {
+      const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      if (cs.some((c) => c.visibilityState === 'visible' || c.focused)) return
+    }
+    await self.registration.showNotification(title, options)
+  })())
 })
 
 // 알림 클릭 시 이동 목적지를 Cache 에 저장 → 앱이 재개될 때(visible) 소비한다.

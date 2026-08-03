@@ -755,14 +755,6 @@ export async function unreadNotificationCount() {
   return count ?? 0
 }
 
-// 앱이 화면에 보일 때 주기적으로 호출 → '지금 접속 중' 표식(오류 리포트 채팅 푸시 억제용)
-export async function touchActivity() {
-  const { error } = await supabase.rpc('touch_activity')
-  if (error && !(error.code === 'PGRST202' || /touch_activity/.test(error.message || ''))) {
-    // 미배포(함수 없음)면 조용히 무시, 그 외 오류도 삼킨다(하트비트는 실패해도 앱에 영향 X)
-  }
-}
-
 export async function markNotificationRead(id) {
   const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id)
   if (error) throw error
