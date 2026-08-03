@@ -589,12 +589,15 @@ export default function Notes() {
                               : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   {system ? <SystemAvatar size={40} /> : <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />}
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
-                        {p.name} <span className="note-card-rel">{p.label}</span>
+                        {p.name}{' '}
+                        {system
+                          ? <span className={`${tagInfo[1]} note-tag-pill note-syscard-badge`}>{tagInfo[0]}</span>
+                          : <span className="note-card-rel">{p.label}</span>}
                       </span>
                       <span className="note-card-when">
                         <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
@@ -614,7 +617,7 @@ export default function Notes() {
                       ) : (
                         <p className="note-card-body">{resolveItemText(n.body)}</p>
                       )}
-                      {tagInfo && (
+                      {tagInfo && !system && (
                         <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
                           <span className={`${tagInfo[1]} note-tag-pill ${needClaim ? 'note-tag-seesaw' : ''}`}>{tagInfo[0]}</span>
                         </span>

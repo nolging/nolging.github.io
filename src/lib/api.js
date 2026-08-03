@@ -877,6 +877,12 @@ export async function errorReportThread(reportId) {
   if (error) throw reportErr(error)
   return data ?? []
 }
+// 유저: 내 리포트 원문(채팅창 상단)
+export async function errorReportInfo(reportId) {
+  const { data, error } = await supabase.rpc('error_report_info', { p_report_id: reportId })
+  if (error) throw reportErr(error)
+  return (data && data[0]) || null
+}
 // 유저: 리포트 채팅 카드 삭제(받은함에서만 숨김)
 export async function deleteErrorReportForUser(reportId) {
   const { error } = await supabase.rpc('delete_error_report_for_user', { p_report_id: reportId })

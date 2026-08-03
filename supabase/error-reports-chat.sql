@@ -109,6 +109,16 @@ language sql security definer set search_path = public stable as $$
 $$;
 grant execute on function public.error_report_thread(uuid) to authenticated;
 
+-- 유저: 내 리포트 원문(채팅창 상단 회색 영역용)
+create or replace function public.error_report_info(p_report_id uuid)
+returns table(id uuid, title text, body text, resolved boolean, created_at timestamptz)
+language sql security definer set search_path = public stable as $$
+  select r.id, r.title, r.body, r.resolved, r.created_at
+    from public.error_reports r
+   where r.id = p_report_id and r.reporter_id = auth.uid();
+$$;
+grant execute on function public.error_report_info(uuid) to authenticated;
+
 -- 6) 유저: 카드 삭제 = 받은함에서만 숨김(관리자엔 유지) ---------------
 create or replace function public.delete_error_report_for_user(p_report_id uuid)
 returns void language plpgsql security definer set search_path = public as $$

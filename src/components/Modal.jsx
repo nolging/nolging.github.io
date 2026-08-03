@@ -35,6 +35,8 @@ export default function Modal({ open, onClose, children, title, cardClassName = 
     const apply = () => {
       const el = rootRef.current
       if (!el) return
+      // 키보드가 올라와 가시 영역이 줄면(vv.height↓) --vvh 로 카드가 그만큼 작아지게 한다
+      el.style.setProperty('--vvh', `${vv.height}px`)
       const shift = (vv.offsetTop + vv.height / 2) - (el.clientHeight / 2)
       el.style.setProperty('--kb-shift', `${shift}px`)
     }
@@ -45,6 +47,7 @@ export default function Modal({ open, onClose, children, title, cardClassName = 
       vv.removeEventListener('resize', apply)
       vv.removeEventListener('scroll', apply)
       rootRef.current?.style.removeProperty('--kb-shift')
+      rootRef.current?.style.removeProperty('--vvh')
     }
   }, [open, mounted])
 

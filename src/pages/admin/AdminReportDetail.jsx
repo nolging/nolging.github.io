@@ -34,17 +34,17 @@ export default function AdminReportDetail() {
   useEffect(() => { load() }, [load])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'nearest' }) }, [thread])
 
-  // 실시간: 유저 답변이 도착하면 아래에 이어 붙이고, 내 문의/해결은 유저 화면에 브로드캐스트
+  // 실시간: 어느 쪽이든 메시지를 보내면 'refresh' → 스레드를 다시 읽어 온다(정확히 반영)
+  const reloadThread = useCallback(() => {
+    adminErrorReportThread(id).then((t) => setThread(t || [])).catch(() => {})
+  }, [id])
   useEffect(() => {
     const ch = supabase.channel(`report:${id}`, { config: { broadcast: { self: false } } })
     chanRef.current = ch
-    ch.on('broadcast', { event: 'msg' }, ({ payload }) => {
-      setThread((t) => (t.some((x) => x.id === payload.id) ? t
-        : [...t, { id: payload.id, from_system: payload.from_system, body: payload.body, created_at: payload.at }]))
-    })
+    ch.on('broadcast', { event: 'refresh' }, () => reloadThread())
     ch.subscribe()
     return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [id])
+  }, [id, reloadThread])
 
   async function send() {
     const text = msg.trim()
@@ -52,11 +52,10 @@ export default function AdminReportDetail() {
     setBusy(true); setError('')
     try {
       await adminSendErrorReport(id, text)
-      const mid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `sys-${Date.now()}`
-      const at = new Date().toISOString()
-      setThread((t) => [...t, { id: mid, from_system: true, body: text, created_at: at }])
-      chanRef.current?.send({ type: 'broadcast', event: 'msg', payload: { id: mid, from_system: true, body: text, at } })
       setMsg('')
+      const t = await adminErrorReportThread(id)
+      setThread(t || [])
+      chanRef.current?.send({ type: 'broadcast', event: 'refresh', payload: {} })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   async function toggleResolved() {
