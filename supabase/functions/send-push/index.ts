@@ -31,6 +31,21 @@ Deno.serve(async (req) => {
     const record = payload?.record ?? payload
     if (!record?.user_id) return json({ skipped: 'no user_id' })
 
+    // silent = '푸시만(알림센터 미표시)' 알림(오류 리포트 채팅 등).
+    // 수신자가 지금 앱에 머무는 중이면(최근 활동) 푸시를 보내지 않는다.
+    if (record.silent) {
+      const ACTIVE_WINDOW_MS = 45000 // 하트비트(≈20초) 여유를 둔 '접속 중' 판정 창
+      const { data: act } = await supabase
+        .from('user_activity')
+        .select('last_active_at')
+        .eq('user_id', record.user_id)
+        .maybeSingle()
+      if (act?.last_active_at) {
+        const age = Date.now() - new Date(act.last_active_at as string).getTime()
+        if (age >= 0 && age < ACTIVE_WINDOW_MS) return json({ skipped: 'active', age })
+      }
+    }
+
     // 카테고리별 푸시 설정 확인 — OFF 면 푸시만 생략(알림 행은 이미 생성됨).
     // 댓글 알림(comment) = task_comment + reply
     const TYPE_TO_CAT: Record<string, string> = {

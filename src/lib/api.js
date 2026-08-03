@@ -730,18 +730,37 @@ export async function deleteReview(reviewId) {
 // ---- 알림 ----------------------------------------------------
 
 export async function listNotifications(limit = 50) {
-  const { data, error } = await supabase
-    .from('notifications').select('*')
+  // silent=true 는 '푸시 전용' 알림(오류 리포트 채팅 등) → 알림센터엔 표시하지 않음.
+  let { data, error } = await supabase
+    .from('notifications').select('*').eq('silent', false)
     .order('created_at', { ascending: false }).limit(limit)
+  if (error && isMissingColumn(error)) { // silent 컬럼 미배포 폴백
+    ({ data, error } = await supabase
+      .from('notifications').select('*')
+      .order('created_at', { ascending: false }).limit(limit))
+  }
   if (error) throw error
   return data ?? []
 }
 
 export async function unreadNotificationCount() {
-  const { count, error } = await supabase
-    .from('notifications').select('id', { count: 'exact', head: true }).eq('is_read', false)
+  let { count, error } = await supabase
+    .from('notifications').select('id', { count: 'exact', head: true })
+    .eq('is_read', false).eq('silent', false)
+  if (error && isMissingColumn(error)) { // silent 컬럼 미배포 폴백
+    ({ count, error } = await supabase
+      .from('notifications').select('id', { count: 'exact', head: true }).eq('is_read', false))
+  }
   if (error) throw error
   return count ?? 0
+}
+
+// 앱이 화면에 보일 때 주기적으로 호출 → '지금 접속 중' 표식(오류 리포트 채팅 푸시 억제용)
+export async function touchActivity() {
+  const { error } = await supabase.rpc('touch_activity')
+  if (error && !(error.code === 'PGRST202' || /touch_activity/.test(error.message || ''))) {
+    // 미배포(함수 없음)면 조용히 무시, 그 외 오류도 삼킨다(하트비트는 실패해도 앱에 영향 X)
+  }
 }
 
 export async function markNotificationRead(id) {
