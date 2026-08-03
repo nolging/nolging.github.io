@@ -49,6 +49,15 @@ export default function SystemChat({ note, onDeleted }) {
 
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [msgs, loading])
 
+  // 키보드가 올라와(visualViewport 축소) 채팅 영역이 줄면 마지막 메시지가 보이게 스크롤
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const toEnd = () => requestAnimationFrame(() => endRef.current?.scrollIntoView({ block: 'end' }))
+    vv.addEventListener('resize', toEnd)
+    return () => vv.removeEventListener('resize', toEnd)
+  }, [])
+
   async function send(e) {
     e?.preventDefault?.()
     const text = input.trim()
@@ -123,7 +132,8 @@ export default function SystemChat({ note, onDeleted }) {
         <div className="rc-closed">처리 완료된 리포트입니다</div>
       ) : (
         <form className="rc-input" onSubmit={send}>
-          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="답변을 적어 주세요" maxLength={1000} enterKeyHint="send" />
+          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="답변을 적어 주세요" maxLength={1000} enterKeyHint="send"
+            onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
           <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !input.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
         </form>
       )}

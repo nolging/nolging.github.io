@@ -3496,7 +3496,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .rc-msg.mine { align-self: flex-end; flex-direction: row-reverse; }
 .rc-bubble { border-radius: 15px; padding: 9px 13px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 .rc-msg.sys .rc-bubble { background: var(--surface-sunken, #f4f3f7); color: var(--text); border-bottom-left-radius: 5px; }
-.rc-msg.mine .rc-bubble { background: #6250e0; color: #fff; border-bottom-right-radius: 5px; }
+.rc-msg.mine .rc-bubble { background: #ece8fd; color: #191722; border-bottom-right-radius: 5px; }
 .rc-time { font-size: 10px; color: var(--muted); flex-shrink: 0; padding-bottom: 2px; white-space: nowrap; }
 .rc-input { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 7px 7px 7px 15px; margin-top: 8px; flex-shrink: 0; }
 .rc-input input { flex: 1; min-width: 0; border: none; background: transparent; outline: none; font: inherit; font-size: 14px; min-height: 0 !important; height: auto; padding: 0; }

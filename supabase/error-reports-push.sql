@@ -106,6 +106,10 @@ begin
   insert into public.notes(sender_id, sender_name, recipient_name, body, kind, report_id, is_anchor, is_read)
     values (auth.uid(), '나', '', btrim(p_body), 'system', p_report_id, false, true);
 
+  -- 받은함 카드(앵커) 미리보기 = 마지막 메시지(내가 보낸 답장)로 갱신. 내가 보낸 거라 읽음 유지.
+  update public.notes set body = btrim(p_body), created_at = now(), is_read = true
+   where report_id = p_report_id and is_anchor = true;
+
   select nickname into v_name from public.profiles where id = auth.uid();
   -- 관리자에게 푸시만(알림센터 미표시). 접속 중인 관리자는 send-push 가 생략.
   -- 문구는 관리자 '알림 관리'의 error_chat_user 템플릿을 렌더(미배포 시 폴백).
