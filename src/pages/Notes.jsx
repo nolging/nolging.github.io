@@ -528,9 +528,11 @@ export default function Notes() {
   }
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
-  const peer = (n) => tab === 'received'
-    ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
-    : { name: n.recipient_name, avatar: n.recipient_avatar, label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
+  const peer = (n) => n.kind === 'system'
+    ? { name: '깜냥', avatar: null, label: '님이 보냄', userId: null, groupId: null }
+    : tab === 'received'
+      ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
+      : { name: n.recipient_name, avatar: n.recipient_avatar, label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
   // 익명(지우개) 쪽지의 아바타는 받은 쪽지함에서 발신자를 '?'로 가림
   const anonAva = (n) => tab === 'received' && n.anonymous
   const peerDeco = (p) => (p.groupId && p.userId ? decosByGroup[p.groupId]?.[p.userId] : undefined)
@@ -592,7 +594,7 @@ export default function Notes() {
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
                         : video ? ['📼 비디오', 'note-tag note-tag-video']
                           : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                            : system ? ['🐞 오류 리포트', 'note-tag note-tag-system']
+                            : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
                               : null
             return (
               <li key={n.id}>
@@ -670,7 +672,7 @@ export default function Notes() {
                     : link ? ['🎁 선물', 'note-tag note-tag-link']
                       : video ? ['📼 비디오', 'note-tag note-tag-video']
                         : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                          : system ? ['🐞 오류 리포트', 'note-tag note-tag-system']
+                          : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
                             : null
           return (
             <div className="note-view">
@@ -776,7 +778,7 @@ export default function Notes() {
                 ) : (
                   <div className="note-sys-reply">
                     <textarea className="note-sys-input" value={sysReply} rows={3} maxLength={1000}
-                      placeholder="오류 관련 답장을 적어 주세요" style={{ resize: 'vertical' }}
+                      placeholder="답변을 적어 주세요" style={{ resize: 'vertical' }}
                       onChange={(e) => setSysReply(e.target.value)} />
                     <button type="button" className="btn btn-primary btn-block" disabled={sysBusy || !sysReply.trim()} onClick={() => sendSysReply(open)}>
                       {sysBusy ? '보내는 중…' : '답장 보내기'}
