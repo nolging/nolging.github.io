@@ -871,6 +871,26 @@ export async function adminErrorReportThread(id) {
   if (error) throw reportErr(error)
   return data ?? []
 }
+// 유저: 내 리포트 채팅 스레드
+export async function errorReportThread(reportId) {
+  const { data, error } = await supabase.rpc('error_report_thread', { p_report_id: reportId })
+  if (error) throw reportErr(error)
+  return data ?? []
+}
+// 유저: 리포트 채팅 카드 삭제(받은함에서만 숨김)
+export async function deleteErrorReportForUser(reportId) {
+  const { error } = await supabase.rpc('delete_error_report_for_user', { p_report_id: reportId })
+  if (error) throw reportErr(error)
+  invalidateNotesCache()
+}
+// 유저: 리포트 채팅 카드(앵커) 읽음 처리
+export async function markReportRead(reportId) {
+  const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: null }))
+  const uid = sess?.session?.user?.id
+  if (!uid) return
+  await supabase.from('notes').update({ is_read: true })
+    .eq('report_id', reportId).eq('recipient_id', uid).eq('is_anchor', true)
+}
 // 관리자: SYSTEM 쪽지 보내기(추가 질문)
 export async function adminSendErrorReport(reportId, body) {
   const { error } = await supabase.rpc('admin_send_error_report', { p_report_id: reportId, p_body: body })

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { adminGetErrorReport, adminErrorReportThread, adminSendErrorReport, adminResolveErrorReport } from '../../lib/api'
+import { supabase } from '../../lib/supabase'
 import SystemAvatar from '../../components/SystemAvatar'
 
 function fmt(ts) {
@@ -20,6 +21,7 @@ export default function AdminReportDetail() {
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const endRef = useRef(null)
+  const chanRef = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -32,17 +34,40 @@ export default function AdminReportDetail() {
   useEffect(() => { load() }, [load])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'nearest' }) }, [thread])
 
+  // 실시간: 유저 답변이 도착하면 아래에 이어 붙이고, 내 문의/해결은 유저 화면에 브로드캐스트
+  useEffect(() => {
+    const ch = supabase.channel(`report:${id}`, { config: { broadcast: { self: false } } })
+    chanRef.current = ch
+    ch.on('broadcast', { event: 'msg' }, ({ payload }) => {
+      setThread((t) => (t.some((x) => x.id === payload.id) ? t
+        : [...t, { id: payload.id, from_system: payload.from_system, body: payload.body, created_at: payload.at }]))
+    })
+    ch.subscribe()
+    return () => { supabase.removeChannel(ch); chanRef.current = null }
+  }, [id])
+
   async function send() {
-    if (!msg.trim() || busy) return
+    const text = msg.trim()
+    if (!text || busy) return
     setBusy(true); setError('')
-    try { await adminSendErrorReport(id, msg.trim()); setMsg(''); await load() }
-    catch (err) { setError(err.message) } finally { setBusy(false) }
+    try {
+      await adminSendErrorReport(id, text)
+      const mid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `sys-${Date.now()}`
+      const at = new Date().toISOString()
+      setThread((t) => [...t, { id: mid, from_system: true, body: text, created_at: at }])
+      chanRef.current?.send({ type: 'broadcast', event: 'msg', payload: { id: mid, from_system: true, body: text, at } })
+      setMsg('')
+    } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   async function toggleResolved() {
     if (busy || !report) return
+    const next = !report.resolved
     setBusy(true); setError('')
-    try { await adminResolveErrorReport(id, !report.resolved); await load() }
-    catch (err) { setError(err.message) } finally { setBusy(false) }
+    try {
+      await adminResolveErrorReport(id, next)
+      chanRef.current?.send({ type: 'broadcast', event: 'resolved', payload: { resolved: next } })
+      await load()
+    } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
   if (loading) return <div className="page admin-page"><div className="spinner" /></div>

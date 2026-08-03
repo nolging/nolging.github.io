@@ -3457,13 +3457,30 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-tag-system { color: #6250e0; background: rgba(98, 80, 224, .14); }
 .avatar.avatar-system { background: transparent; overflow: hidden; }
 .avatar.avatar-system svg { display: block; }
-.note-sys-reply { display: flex; flex-direction: column; gap: 10px; }
-.note-sys-input { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; font: inherit; font-size: 14px; }
-.note-sys-closed { text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); padding: 10px 4px 2px; }
-.note-sys-sent { display: flex; flex-direction: column; gap: 8px; }
-.note-sys-sent-item { align-self: flex-end; max-width: 88%; background: #ece9fe; border-radius: 14px; padding: 8px 12px; }
-.note-sys-sent-label { display: block; font-size: 11px; font-weight: 700; color: #6250e0; margin-bottom: 2px; }
-.note-sys-sent-text { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+/* SYSTEM 쪽지 = 채팅 모달 */
+.modal-card.modal-syschat { display: flex; flex-direction: column; }
+.rc { display: flex; flex-direction: column; height: min(70vh, 560px); }
+.rc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--divider, #f2f1f5); }
+.rc-who { display: flex; flex-direction: column; }
+.rc-name { font-size: 16px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.rc-badge { margin-top: 2px; align-self: flex-start; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; color: #6250e0; background: rgba(98, 80, 224, .14); }
+.rc-trash { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; display: inline-flex; align-self: flex-start; }
+.rc-trash:active { opacity: .6; }
+.rc-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px 2px; }
+.rc-empty { text-align: center; margin: auto; }
+.rc-msg { display: flex; align-items: flex-end; gap: 6px; max-width: 82%; }
+.rc-msg.sys { align-self: flex-start; }
+.rc-msg.me { align-self: flex-end; }
+.rc-msg-ava { flex-shrink: 0; }
+.rc-bubble { border-radius: 15px; padding: 9px 13px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.rc-msg.sys .rc-bubble { background: var(--surface-sunken, #f4f3f7); color: var(--text); border-bottom-left-radius: 5px; }
+.rc-msg.me .rc-bubble { background: #6250e0; color: #fff; border-bottom-right-radius: 5px; }
+.rc-input { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 7px 7px 7px 15px; margin-top: 6px; }
+.rc-input input { flex: 1; min-width: 0; border: none; background: transparent; outline: none; font: inherit; font-size: 14px; min-height: 0 !important; height: auto; padding: 0; }
+.rc-send { width: 32px; height: 32px; flex-shrink: 0; border: none; border-radius: 50%; background: #6250e0; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.rc-send:active { transform: scale(.92); }
+.rc-send:disabled { opacity: .45; cursor: default; }
+.rc-closed { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); padding: 13px; background: var(--surface-sunken, #f4f3f7); border-radius: 12px; margin-top: 6px; }
 
 /* ---- 오류 리포트 모달 ---- */
 .err-report { display: flex; flex-direction: column; gap: 14px; }

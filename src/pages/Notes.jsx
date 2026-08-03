@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { safeUrl } from '../lib/safeUrl'
 import Avatar from '../components/Avatar'
 import SystemAvatar from '../components/SystemAvatar'
+import SystemChat from '../components/SystemChat'
 import Modal from '../components/Modal'
 import MusicPlayer from '../components/MusicPlayer'
 import VideoPlayer from '../components/VideoPlayer'
@@ -11,7 +12,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { itemName, resolveItemText } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, replyErrorReport } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -102,9 +103,6 @@ export default function Notes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
-  const [sysReply, setSysReply] = useState('') // SYSTEM(오류 리포트) 쪽지 답장 입력
-  const [sysBusy, setSysBusy] = useState(false)
-  const [sysSent, setSysSent] = useState({})   // 이번 세션에 보낸 답변: { [noteId]: [내용, …] } → 해당 쪽지 밑에 표시
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
@@ -481,7 +479,7 @@ export default function Notes() {
   }
   function onCardClick(n) {
     if (suppressClickRef.current) { suppressClickRef.current = false; return }
-    setOpen(n); setSysReply('')
+    setOpen(n)
     // 상세(동봉 아이템)는 목록이 아니라 여기서, 열린 쪽지 것만 조회
     if (n.kind === 'gift') fetchNoteItems(n.id)
     // 받은 쪽지를 열면 읽음 처리(카드 점 제거 + 하단 탭 점 갱신)
@@ -518,19 +516,6 @@ export default function Notes() {
         me: { name: n.recipient_name, avatar: n.recipient_avatar },
       },
     })
-  }
-
-  // SYSTEM(오류 리포트) 쪽지에 답장 — 리포트 스레드로 전송(해결 완료 전까지만 가능)
-  // 전송 후 모달을 닫지 않고 보낸 내용을 해당 쪽지 바로 밑에 이어 보여 준다.
-  async function sendSysReply(n) {
-    const text = sysReply.trim()
-    if (!text || sysBusy) return
-    setSysBusy(true); setError('')
-    try {
-      await replyErrorReport(n.report_id, text)
-      setSysSent((s) => ({ ...s, [n.id]: [...(s[n.id] || []), text] }))
-      setSysReply('')
-    } catch (e) { setError(e.message) } finally { setSysBusy(false) }
   }
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
@@ -657,8 +642,10 @@ export default function Notes() {
           : open?.kind === 'bluray' && safeUrl(open.media_url) ? <BluraySlot url={open.media_url} player={blurayPlayer} />
           : open?.kind === 'cassette' && safeUrl(open.media_url) ? <MusicPlayer url={open.media_url} player={player} title={`${open.sender_name || '익명'} 님의 음악 선물`} />
           : null}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
-        {open && (() => {
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'system' ? 'modal-syschat' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
+        {open && open.kind === 'system' ? (
+          <SystemChat note={open} onDeleted={() => { setOpen(null); fetchNotes().catch(() => {}) }} />
+        ) : open && (() => {
           const p = peer(open)
           const wish = open.kind === 'wish'
           const couple = open.kind === 'couple_ring'
@@ -704,16 +691,6 @@ export default function Notes() {
                 </div>
               ) : (
                 <p className="note-view-body">{resolveItemText(open.body)}</p>
-              )}
-              {system && (sysSent[open.id] || []).length > 0 && (
-                <div className="note-sys-sent">
-                  {(sysSent[open.id] || []).map((t, i) => (
-                    <div key={i} className="note-sys-sent-item">
-                      <span className="note-sys-sent-label">내 답변</span>
-                      <p className="note-sys-sent-text">{t}</p>
-                    </div>
-                  ))}
-                </div>
               )}
               {isWater(open) && tab === 'received' && waterPopped && timeMachines > 0 && (
                 <div className="note-tm-row">
@@ -787,19 +764,6 @@ export default function Notes() {
                   <button type="button" className="btn btn-primary btn-block" onClick={() => acceptFriend(open)} disabled={busy}>
                     {busy ? '수령 중…' : '수령하기'}
                   </button>
-                )
-              ) : system && mine ? (
-                open.report_resolved ? (
-                  <p className="note-sys-closed">해결 완료된 리포트라 답장할 수 없어요.</p>
-                ) : (
-                  <div className="note-sys-reply">
-                    <textarea className="note-sys-input" value={sysReply} rows={3} maxLength={1000}
-                      placeholder="답변을 적어 주세요" style={{ resize: 'vertical' }}
-                      onChange={(e) => setSysReply(e.target.value)} />
-                    <button type="button" className="btn btn-primary btn-block" disabled={sysBusy || !sysReply.trim()} onClick={() => sendSysReply(open)}>
-                      {sysBusy ? '보내는 중…' : '답장 보내기'}
-                    </button>
-                  </div>
                 )
               ) : gift ? (
                 mine && !open.anonymous && open.sender_active !== false
