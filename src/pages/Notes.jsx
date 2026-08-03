@@ -76,8 +76,8 @@ function formatNoteTime(iso) {
     const d = new Date(iso)
     const diff = (Date.now() - d.getTime()) / 1000
     if (diff < 60) return '방금'
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
+    if (diff < 3600) return `${Math.floor(diff / 60)} 분 전`
+    if (diff < 86400) return `${Math.floor(diff / 3600)} 시간 전`
     return `${d.getMonth() + 1} 월 ${d.getDate()} 일`
   } catch { return '' }
 }
@@ -104,6 +104,7 @@ export default function Notes() {
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
   const [sysReply, setSysReply] = useState('') // SYSTEM(오류 리포트) 쪽지 답장 입력
   const [sysBusy, setSysBusy] = useState(false)
+  const [sysSent, setSysSent] = useState({})   // 이번 세션에 보낸 답변: { [noteId]: [내용, …] } → 해당 쪽지 밑에 표시
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
@@ -520,11 +521,16 @@ export default function Notes() {
   }
 
   // SYSTEM(오류 리포트) 쪽지에 답장 — 리포트 스레드로 전송(해결 완료 전까지만 가능)
+  // 전송 후 모달을 닫지 않고 보낸 내용을 해당 쪽지 바로 밑에 이어 보여 준다.
   async function sendSysReply(n) {
-    if (!sysReply.trim() || sysBusy) return
+    const text = sysReply.trim()
+    if (!text || sysBusy) return
     setSysBusy(true); setError('')
-    try { await replyErrorReport(n.report_id, sysReply.trim()); setSysReply(''); setOpen(null) }
-    catch (e) { setError(e.message) } finally { setSysBusy(false) }
+    try {
+      await replyErrorReport(n.report_id, text)
+      setSysSent((s) => ({ ...s, [n.id]: [...(s[n.id] || []), text] }))
+      setSysReply('')
+    } catch (e) { setError(e.message) } finally { setSysBusy(false) }
   }
 
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
@@ -698,6 +704,16 @@ export default function Notes() {
                 </div>
               ) : (
                 <p className="note-view-body">{resolveItemText(open.body)}</p>
+              )}
+              {system && (sysSent[open.id] || []).length > 0 && (
+                <div className="note-sys-sent">
+                  {(sysSent[open.id] || []).map((t, i) => (
+                    <div key={i} className="note-sys-sent-item">
+                      <span className="note-sys-sent-label">내 답변</span>
+                      <p className="note-sys-sent-text">{t}</p>
+                    </div>
+                  ))}
+                </div>
               )}
               {isWater(open) && tab === 'received' && waterPopped && timeMachines > 0 && (
                 <div className="note-tm-row">
