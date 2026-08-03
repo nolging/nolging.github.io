@@ -18,12 +18,13 @@ self.addEventListener('push', (event) => {
   }
   event.waitUntil((async () => {
     // silent = 오류 리포트 채팅 등 '푸시 전용' 알림.
-    // 지금 앱을 보고 있으면(포커스/보임) 실시간으로 이미 확인하므로 표시하지 않는다.
-    // 백그라운드·홈화면이면 window client 가 hidden 상태라 정상적으로 표시된다.
-    // (수신 시점에 실제 클라이언트 상태로 판단 → iOS PWA 에서도 정확)
+    // 지금 앱을 보고 있으면(창이 focus 됨) 실시간으로 이미 확인하므로 표시하지 않는다.
+    // 판정은 '수신 시점의 실제 창 focus' 로만 한다. iOS 홈화면 PWA 는
+    // visibilityState 가 백그라운드에서도 'visible' 로 남는 버그가 있어 쓰지 않는다.
+    // (홈화면·백그라운드면 focused=false → 정상적으로 표시됨)
     if (data.silent) {
       const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      if (cs.some((c) => c.visibilityState === 'visible' || c.focused)) return
+      if (cs.some((c) => c.focused)) return
     }
     await self.registration.showNotification(title, options)
   })())
