@@ -21,6 +21,13 @@
 -- 1) 컬럼: 알림센터에 표시하지 않는 '푸시 전용' 알림 -----------------
 alter table public.notifications add column if not exists silent boolean not null default false;
 
+-- 1-1) 3단계(채팅) 푸시 문구 템플릿 → 관리자 페이지 '알림 관리'에서 수정 가능
+--      (신규 key 최초 삽입 시에만 기본 문구 세팅, 이후 관리자 편집 보존)
+insert into public.notif_templates (key, label, title, body, vars, sort_order) values
+  ('error_chat_admin', '오류 리포트 채팅: SYSTEM→회원', '깜냥',    '{text}', '{text} = 보낸 메시지', 92),
+  ('error_chat_user',  '오류 리포트 채팅: 회원→관리자', '{actor}', '{text}', '{actor} = 회원 닉네임, {text} = 보낸 메시지, {title} = 리포트 제목', 93)
+on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
+
 -- 2) 활동(하트비트) 테이블 + 갱신 RPC ------------------------------
 create table if not exists public.user_activity (
   user_id        uuid primary key references public.profiles(id) on delete cascade,
@@ -73,9 +80,12 @@ begin
       values (v_rep, 'system_note', coalesce(v_t, 'SYSTEM 문의'),
               coalesce(v_b, '오류 리포트에 SYSTEM 이 문의를 남겼어요'), p_report_id);
   else
-    -- 이후 문의: 푸시만(알림센터 미표시) + 접속 중이면 send-push 가 생략
+    -- 이후 문의: 푸시만(알림센터 미표시) + 접속 중이면 send-push 가 생략.
+    -- 문구는 관리자 '알림 관리'의 error_chat_admin 템플릿을 렌더(미배포 시 폴백).
+    select rr.title, rr.body into v_t, v_b
+      from public.notif_render('error_chat_admin', jsonb_build_object('text', btrim(p_body))) rr;
     insert into public.notifications(user_id, type, title, body, report_id, silent)
-      values (v_rep, 'system_note', '깜냥', btrim(p_body), p_report_id, true);
+      values (v_rep, 'system_note', coalesce(v_t, '깜냥'), coalesce(v_b, btrim(p_body)), p_report_id, true);
   end if;
 end;
 $$;
@@ -85,7 +95,7 @@ grant execute on function public.admin_send_error_report(uuid, text) to authenti
 --    유저 답변은 항상 채팅(앵커 생성 이후)이므로 언제나 3단계 규칙(푸시만).
 create or replace function public.reply_error_report(p_report_id uuid, p_body text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_rep uuid; v_resolved boolean; v_title text; v_name text;
+declare v_rep uuid; v_resolved boolean; v_title text; v_name text; v_t text; v_b text;
 begin
   if p_body is null or btrim(p_body) = '' then raise exception '내용을 입력해 주세요.'; end if;
   select reporter_id, resolved, title into v_rep, v_resolved, v_title from public.error_reports where id = p_report_id;
@@ -98,8 +108,13 @@ begin
 
   select nickname into v_name from public.profiles where id = auth.uid();
   -- 관리자에게 푸시만(알림센터 미표시). 접속 중인 관리자는 send-push 가 생략.
+  -- 문구는 관리자 '알림 관리'의 error_chat_user 템플릿을 렌더(미배포 시 폴백).
+  select rr.title, rr.body into v_t, v_b
+    from public.notif_render('error_chat_user',
+           jsonb_build_object('actor', coalesce(v_name, '회원'), 'text', btrim(p_body), 'title', coalesce(v_title, ''))) rr;
   insert into public.notifications(user_id, actor_id, type, title, body, report_id, silent)
-    select p.id, auth.uid(), 'error_report', coalesce(v_name, '회원'), btrim(p_body), p_report_id, true
+    select p.id, auth.uid(), 'error_report',
+           coalesce(v_t, coalesce(v_name, '회원')), coalesce(v_b, btrim(p_body)), p_report_id, true
       from public.profiles p where p.role = 'admin';
 end;
 $$;
