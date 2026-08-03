@@ -85,7 +85,7 @@ export default function SystemChat({ note, onDeleted }) {
     const dk = dayKey(m.created_at)
     if (dk !== prevDay) { rows.push(<div key={`d-${m.id}`} className="rc-date">{dayLabel(m.created_at)}</div>); prevDay = dk }
     rows.push(
-      <div key={m.id} className={`rc-msg ${m.from_system ? 'sys' : 'me'}`}>
+      <div key={m.id} className={`rc-msg ${m.from_system ? 'sys' : 'mine'}`}>
         <div className="rc-bubble">{m.body}</div>
         <span className="rc-time">{hhmm(m.created_at)}</span>
       </div>,
