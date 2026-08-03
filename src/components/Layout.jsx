@@ -815,8 +815,10 @@ export default function Layout() {
         <span className="topbar-heading topbar-title-lg">마이 페이지</span>
         <div className="topbar-right">
           {isAdmin && <Link to="/admin" className="topbar-admin">관리자</Link>}
-          <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="오류 리포트" title="오류 리포트"
-            onClick={() => setErrOpen(true)}><MegaphoneIcon /></button>
+          {!isAdmin && (
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="오류 리포트" title="오류 리포트"
+              onClick={() => setErrOpen(true)}><MegaphoneIcon /></button>
+          )}
           {showAcct && (
             <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="계정 전환" title="계정 전환"
               onClick={() => setAcctOpen(true)}><SwapIcon /></button>

@@ -12,7 +12,9 @@ export default function SystemAvatar({ size = 34 }) {
         </defs>
         <g clipPath="url(#sysAvaClip)">
           <rect width="64" height="64" fill="url(#sysAvaBg)" />
-          <g transform="translate(0 12)" fill="#191722">
+          {/* 고양이 얼굴 아래 직선(몸통 윗변)이 원 좌우 끝에 닿고, 그 아래는 몸통 까만색으로 꽉 채움 */}
+          <rect x="0" y="51" width="64" height="13" fill="#191722" />
+          <g transform="translate(0 17)" fill="#191722">
             <path d="M8 27 L11.3 10 Q11.5 5.5 16 7.8 L30 17 Z" />
             <path d="M56 27 L52.7 10 Q52.5 5.5 48 7.8 L34 17 Z" />
             <path d="M6 34 A26 22 0 0 1 58 34 Z" />
