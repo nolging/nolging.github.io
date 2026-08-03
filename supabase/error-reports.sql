@@ -42,7 +42,7 @@ alter table public.notifications add column if not exists report_id uuid;
 
 -- 4) 알림 템플릿 등록(문구는 관리자 페이지 알림 관리에서 수정 가능) ----
 insert into public.notif_templates (key, label, title, body, vars, sort_order) values
-  ('error_report', '오류 리포트 접수(관리자)', '새 오류 리포트', '{actor} 님이 오류를 리포트했어요', '{actor} = 리포터', 90),
+  ('error_report', '오류 리포트 접수(관리자)', '새 오류 리포트', '{actor} 님이 "{title}" 오류를 리포트했어요', '{actor} = 리포터, {title} = 리포트 제목', 90),
   ('system_note',  'SYSTEM 문의 도착(유저)',   'SYSTEM 문의',     '오류 리포트에 SYSTEM 이 문의를 남겼어요', '(치환자 없음)', 91)
 on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
   -- title/body 는 관리자 편집 보존을 위해 갱신하지 않음
@@ -62,11 +62,12 @@ begin
 
   select nickname into v_name from public.profiles where id = auth.uid();
   select rr.title, rr.body into v_t, v_b
-    from public.notif_render('error_report', jsonb_build_object('actor', coalesce(v_name, '회원'))) rr;
+    from public.notif_render('error_report',
+           jsonb_build_object('actor', coalesce(v_name, '회원'), 'title', btrim(p_title))) rr;
   insert into public.notifications(user_id, actor_id, type, title, body, report_id)
     select p.id, auth.uid(), 'error_report',
            coalesce(v_t, '새 오류 리포트'),
-           coalesce(v_b, coalesce(v_name, '회원') || ' 님이 오류를 리포트했어요'),
+           coalesce(v_b, coalesce(v_name, '회원') || ' 님이 "' || btrim(p_title) || '" 오류를 리포트했어요'),
            r.id
       from public.profiles p where p.role = 'admin';
   return r;
@@ -133,10 +134,10 @@ grant execute on function public.admin_send_error_report(uuid, text) to authenti
 -- 10) 유저: SYSTEM 쪽지에 답장(해결 완료면 차단) → 관리자 알림 --------
 create or replace function public.reply_error_report(p_report_id uuid, p_body text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_rep uuid; v_resolved boolean; v_name text; v_t text; v_b text;
+declare v_rep uuid; v_resolved boolean; v_title text; v_name text; v_t text; v_b text;
 begin
   if p_body is null or btrim(p_body) = '' then raise exception '내용을 입력해 주세요.'; end if;
-  select reporter_id, resolved into v_rep, v_resolved from public.error_reports where id = p_report_id;
+  select reporter_id, resolved, title into v_rep, v_resolved, v_title from public.error_reports where id = p_report_id;
   if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
   if v_rep <> auth.uid() then raise exception '본인 리포트에만 답장할 수 있어요.'; end if;
   if v_resolved then raise exception '이미 해결 완료된 리포트라 답장할 수 없어요.'; end if;
@@ -146,11 +147,12 @@ begin
 
   select nickname into v_name from public.profiles where id = auth.uid();
   select rr.title, rr.body into v_t, v_b
-    from public.notif_render('error_report', jsonb_build_object('actor', coalesce(v_name, '회원'))) rr;
+    from public.notif_render('error_report',
+           jsonb_build_object('actor', coalesce(v_name, '회원'), 'title', coalesce(v_title, ''))) rr;
   insert into public.notifications(user_id, actor_id, type, title, body, report_id)
     select p.id, auth.uid(), 'error_report',
            coalesce(v_t, '오류 리포트 답장'),
-           coalesce(v_name, '회원') || ' 님이 오류 리포트에 답장했어요',
+           coalesce(v_b, coalesce(v_name, '회원') || ' 님이 오류 리포트에 답장했어요'),
            p_report_id
       from public.profiles p where p.role = 'admin';
 end;
