@@ -6,12 +6,12 @@ const NAV_KEY = '__pending_nav__'
 const NAV_CHANNEL = 'nolging-push-nav'
 
 // 푸시 알림 클릭 → 서비스워커가 이동 목적지를 (1) postMessage 로, (2) BroadcastChannel 로
-// 알리고 (3) Cache 에도 저장한다. iOS 홈화면 PWA 는 백그라운드에서 JS 가 얼어 메시지를
-// 놓치거나, 재개 시 앱이 reload 되어 메시지가 사라지는 경우가 있어 '보이게 될 때마다' Cache
-// 를 다시 읽는 안전장치를 둔다. 다만 이 안전장치는 visibilitychange/focus 처럼 상태가
-// '바뀔 때'만 발동하므로, 앱이 이미 포그라운드에 계속 머물러 있던 채로 알림을 눌렀을 땐
-// 발동하지 않는다 — 그 경우를 위해 postMessage 가 유실돼도 도착 가능성이 더 높은
-// BroadcastChannel 을 이중 경로로 함께 듣는다(특정 WindowClient 참조에 기대지 않음).
+// 알리고 (3) Cache 에도 저장한다. 메시지 전달(postMessage/BroadcastChannel)은 iOS 홈화면
+// PWA 에서 잘 유실된다(백그라운드에서 JS 가 얼거나, standalone 모드에서 SW↔페이지 메시징
+// 자체가 불안정한 사례가 있음) — 그래서 메시지가 실제로 오는지에 기대지 않고, 앱이 떠 있는
+// 동안 Cache 를 주기적으로 직접 확인(폴링)해 pending 목적지가 있으면 이동한다. 이게 유일한
+// '확실한' 경로이고, 메시지 리스너들은 그보다 빠르게 반응하기 위한 보조 수단일 뿐이다.
+const POLL_MS = 2000
 export function usePushNavigation() {
   const navigate = useNavigate()
   useEffect(() => {
@@ -83,6 +83,9 @@ export function usePushNavigation() {
     window.addEventListener('pageshow', onVisible)
     window.addEventListener('focus', onVisible)
     consumePending() // 최초 로드(콜드 오픈/재개 후 reload 포함)
+    // 앱이 계속 포그라운드였어도(상태 전환 이벤트가 안 옴) 확실히 잡히도록 가볍게 주기 확인
+    // (consumePending 의 재시도 캐스케이드는 여기선 불필요 — 매번 한 번만 읽는다)
+    const poll = setInterval(() => { if (!cancelled) readPending().then((url) => { if (url) go(url) }) }, POLL_MS)
 
     return () => {
       cancelled = true
@@ -91,6 +94,7 @@ export function usePushNavigation() {
       window.removeEventListener('pageshow', onVisible)
       window.removeEventListener('focus', onVisible)
       bc?.close()
+      clearInterval(poll)
     }
   }, [navigate])
 }
