@@ -130,17 +130,17 @@ export default function TouchKiss() {
     })
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState()
-      // 상대들의 최신 t(하트비트 시각)로 present 맵 갱신. 정상 leave 면 st 에서 빠져
-      // 바로 사라진다. leave 가 안 와도(백그라운드 등) presence 엔 남아 있으므로,
-      // t 가 TTL 을 넘긴 상대는 여기서도 제외한다(안 그러면 sweep 이 지운 걸 sync 가 되살림).
+      // 상대가 st 에 보이면 "방금 확인됨" 으로 갱신. t 는 상대 기기가 보낸 시각이
+      // 아니라 이 클라이언트가 관측한 로컬 시각을 쓴다 — 기기 간 시계가 어긋나 있으면
+      // (시간대·자동시각 설정 차이 등) 실제로는 정상 접속 중인데도 즉시 TTL 을 넘긴
+      // 것으로 오판해 "상대가 나감" 으로 잘못 표시되는 문제가 있었다.
       setPresent((prev) => {
         const now = Date.now()
         const next = {}
         for (const [k, arr] of Object.entries(st)) {
           if (k === uid) continue
           const m = arr[0]; if (!m) continue
-          const t = m.t || prev[k]?.t || now
-          if (now - t < PRES_TTL) next[k] = { name: m.name, avatar: m.avatar, t }
+          next[k] = { name: m.name, avatar: m.avatar, t: now }
         }
         return next
       })
@@ -163,7 +163,7 @@ export default function TouchKiss() {
       setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
       // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) presence 를 track 하지 않아 다른 멤버에게 보이지 않는다.
       setIsMember(mem); isMemberRef.current = mem
-      if (mem) { try { await ch.track({ uid, name, avatar, t: Date.now() }) } catch { /* noop */ } }
+      if (mem) { try { await ch.track({ uid, name, avatar }) } catch { /* noop */ } }
       // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
       if (pendRef.current?.down) sendFinger(pendRef.current)
     })
@@ -180,7 +180,7 @@ export default function TouchKiss() {
   useEffect(() => {
     const iv = setInterval(() => {
       const ch = chanRef.current
-      if (ch && isMemberRef.current) ch.track({ uid, ...myMetaRef.current, t: Date.now() }).catch(() => { })
+      if (ch && isMemberRef.current) ch.track({ uid, ...myMetaRef.current }).catch(() => { })
     }, PRES_BEAT_MS)
     return () => clearInterval(iv)
   }, [uid])
