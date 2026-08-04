@@ -3452,6 +3452,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-card.note-gift { background: linear-gradient(135deg, #fdf1e6, #fdf7ee); box-shadow: 0 2px 12px rgba(217, 138, 78, .14); position: relative; }
 .modal-card.modal-gift { background: linear-gradient(160deg, #fdf1e6, #fdf7ee); }
 .modal-gift .note-view-body { background: rgba(255,255,255,.6); }
+/* 채팅 없이 깜냥 명의로 지급된 보상 쪽지: 처리 완료 채팅 카드와 동일한 옅은 네이비 */
+.modal-card.modal-gift-sys { background: #eaeef7; }
+.modal-gift-sys .note-view-body { background: rgba(255,255,255,.55); }
 
 /* ---- SYSTEM(오류 리포트) 쪽지 ---- */
 .note-tag-system { color: #6250e0; background: rgba(98, 80, 224, .14); }

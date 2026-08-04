@@ -12,7 +12,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { itemName, resolveItemText } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, deleteReportGiftNote } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -26,6 +26,11 @@ const ClockIcon = () => (
 // 되돌리기(반시계 원형 화살표)
 const UndoIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 8 8 8" /></svg>
+)
+const TrashIcon = () => (
+  <svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" />
+  </svg>
 )
 // 타임머신 아트(자체 반짝이 제거, 시계에 맞춰 크롭) — 확인 모달용
 function TimeMachineArt() {
@@ -392,6 +397,18 @@ export default function Notes() {
     finally { setBusy(false) }
   }
 
+  // 깜냥 명의 보상 쪽지 삭제(아이템을 전부 수령한 뒤에만 가능)
+  async function delSysGift(n) {
+    if (busy) return
+    setBusy(true); setError('')
+    try {
+      await deleteReportGiftNote(n.id)
+      setOpen(null)
+      await fetchNotes()
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
+  }
+
   const list = tab === 'received' ? received : sent
 
   // ---- 탭(받은/보낸) 좌우 스와이프 + 흰색 알약 인디케이터 ----
@@ -518,8 +535,10 @@ export default function Notes() {
     })
   }
 
+  // 오류 리포트 추가 문의(채팅)가 없던 상태에서 깜냥 명의로 지급된 보상 쪽지(kind=gift + report_id)
+  const isSysGift = (n) => n.kind === 'gift' && !!n.report_id
   // 쪽지의 상대(카드/모달에 표시할 사람) 정보
-  const peer = (n) => n.kind === 'system'
+  const peer = (n) => (n.kind === 'system' || isSysGift(n))
     ? { name: '깜냥', avatar: null, label: '님이 보냄', userId: null, groupId: null }
     : tab === 'received'
       ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
@@ -566,6 +585,7 @@ export default function Notes() {
             const couple = n.kind === 'couple_ring'
             const friend = n.kind === 'friend_ring'
             const gift = n.kind === 'gift'
+            const sysGift = isSysGift(n) // 채팅 없이 깜냥 명의로 지급된 보상 쪽지
             const cassette = n.kind === 'cassette'
             const link = n.kind === 'link'
             const video = n.kind === 'video'
@@ -593,8 +613,8 @@ export default function Notes() {
                               : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${sysResolved ? 'note-syscard-resolved' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
-                  {system ? <SystemAvatar size={40} /> : <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />}
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift && !sysGift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${sysResolved || sysGift ? 'note-syscard-resolved' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                  {(system || sysGift) ? <SystemAvatar size={40} /> : <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />}
                   <div className="note-card-main">
                     <div className="note-card-head">
                       <span className="note-card-peer">
@@ -656,7 +676,7 @@ export default function Notes() {
           : open?.kind === 'bluray' && safeUrl(open.media_url) ? <BluraySlot url={open.media_url} player={blurayPlayer} />
           : open?.kind === 'cassette' && safeUrl(open.media_url) ? <MusicPlayer url={open.media_url} player={player} title={`${open.sender_name || '익명'} 님의 음악 선물`} />
           : null}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'system' ? 'modal-syschat' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : isSysGift(open || {}) ? 'modal-gift-sys' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'system' ? 'modal-syschat' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && open.kind === 'system' ? (
           <SystemChat note={open} onDeleted={() => { setOpen(null); fetchNotes().catch(() => {}) }} />
         ) : open && (() => {
@@ -665,12 +685,15 @@ export default function Notes() {
           const couple = open.kind === 'couple_ring'
           const friend = open.kind === 'friend_ring'
           const gift = open.kind === 'gift'
+          const sysGift = isSysGift(open) // 채팅 없이 깜냥 명의로 지급된 보상 쪽지
           const cassette = open.kind === 'cassette'
           const link = open.kind === 'link'
           const video = open.kind === 'video'
           const bluray = open.kind === 'bluray'
           const system = open.kind === 'system'
           const mine = open.recipient_id === user?.id
+          const gItems = gift ? giftItemsOf(open) : []
+          const allGiftClaimed = gItems.length === 0 || gItems.every((it) => it.claimed)
           const tagInfo = wish ? ['🌟 소원', 'note-tag']
             : couple ? [open.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
               : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
@@ -684,7 +707,7 @@ export default function Notes() {
           return (
             <div className="note-view">
               <div className="note-view-head">
-                {system ? <SystemAvatar size={44} /> : <Avatar src={anonAva(open) ? null : p.avatar} name={anonAva(open) ? '?' : p.name} size={44} deco={anonAva(open) ? undefined : peerDeco(p)} />}
+                {(system || sysGift) ? <SystemAvatar size={44} /> : <Avatar src={anonAva(open) ? null : p.avatar} name={anonAva(open) ? '?' : p.name} size={44} deco={anonAva(open) ? undefined : peerDeco(p)} />}
                 <div className="note-view-who">
                   <span className="note-view-peer">
                     <span className="note-view-name">{p.name} <span className="note-card-rel">{p.label}</span></span>
@@ -696,6 +719,10 @@ export default function Notes() {
                   <span className={`note-water-clock ${!waterPopped && waterLeft != null && waterLeft <= 5 ? 'is-blink' : ''}`}>
                     <ClockIcon />{mmss(waterLeft != null ? waterLeft : open.timer_seconds)}
                   </span>
+                )}
+                {sysGift && mine && allGiftClaimed && (
+                  <button type="button" className="rc-trash" aria-label="쪽지 삭제" title="쪽지 삭제"
+                    onClick={() => delSysGift(open)} disabled={busy}><TrashIcon /></button>
                 )}
               </div>
               {isWater(open) && tab === 'received' ? (
@@ -729,7 +756,6 @@ export default function Notes() {
                 </a>
               )}
               {gift && (() => {
-                const gItems = giftItemsOf(open)
                 if (!gItems.length) return null
                 const anyUnclaimed = gItems.some((it) => !it.claimed)
                 return (
@@ -780,9 +806,11 @@ export default function Notes() {
                   </button>
                 )
               ) : gift ? (
-                mine && !open.anonymous && open.sender_active !== false
-                  ? <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
-                  : null
+                sysGift
+                  ? null // 깜냥 명의 보상 쪽지는 답장 불가(삭제는 상단 휴지통 버튼으로)
+                  : mine && !open.anonymous && open.sender_active !== false
+                    ? <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
+                    : null
               ) : !wish && !couple && !friend && !gift && !system && mine && !open.anonymous && open.sender_active !== false ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
               ) : null}

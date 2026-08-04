@@ -900,6 +900,12 @@ export async function deleteErrorReportForUser(reportId) {
   if (error) throw reportErr(error)
   invalidateNotesCache()
 }
+// 유저: 깜냥 명의 보상 쪽지(채팅 없이 지급된 경우) 삭제 — 아이템을 전부 수령해야 가능
+export async function deleteReportGiftNote(noteId) {
+  const { error } = await supabase.rpc('delete_report_gift_note', { p_note_id: noteId })
+  if (error) throw reportErr(error)
+  invalidateNotesCache()
+}
 // 유저: 리포트 채팅 카드(앵커) 읽음 처리
 export async function markReportRead(reportId) {
   const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: null }))
