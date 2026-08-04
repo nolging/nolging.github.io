@@ -183,11 +183,13 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   // 직전 SPA 히스토리가 없을 때(예: 푸시 알림 콜드스타트로 곧장 진입) navigate(-1) 은
-  // 갈 곳이 없어 아무 반응도 하지 않는다. location.key 는 이 세션에서 라우터가 처음
-  // 로드된 진입점(=직전 히스토리 없음)일 때만 'default' 이므로, 그때는 지정된 상위
-  // 페이지로 이동하고, 그 외엔 평소처럼 뒤로 간다.
+  // 갈 곳이 없어 아무 반응도 하지 않는다. window.history.state.idx 는 라우터가 내부적으로
+  // 관리하는 위치이며, push 때만 증가하고 replace 로는 그대로다 — location.key 는 replace
+  // 에도 매번 새로 발급돼(우심뽀까→데이트처럼 폴백을 연달아 거치면 두 번째부터 'default'
+  // 가 아니게 돼 오판함) 못 쓴다. idx 가 0(진짜 진입점)이면 replace 로 상위 페이지로
+  // 이동(다음 뒤로가기에서도 idx 는 그대로 0 이라 체인이 이어짐), 아니면 평소처럼 뒤로.
   const backOr = (fallbackPath) => {
-    if (location.key === 'default') navigate(fallbackPath, { replace: true })
+    if ((window.history.state?.idx ?? 0) === 0) navigate(fallbackPath, { replace: true })
     else navigate(-1)
   }
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
