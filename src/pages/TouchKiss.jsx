@@ -85,6 +85,18 @@ export default function TouchKiss() {
     sendFinger({ x: p.x, y: p.y, down: false })
   }, [sendFinger])
 
+  // 접속 알림도 Presence API 대신 finger 와 같은 Broadcast 로 보낸다 — Presence sync 는
+  // 간헐적으로(또는 이 프로젝트 환경에서 아예) 전파가 안 되는 경우가 있었는데, 같은 채널의
+  // Broadcast(finger) 는 항상 정상 동작해 왔다. t 는 로컬 수신 시각을 쓴다(기기 시계 오차 방지).
+  const sayHello = useCallback(() => {
+    const { uid: u } = idRef.current || {}
+    if (!u || !isMemberRef.current) return
+    chanRef.current?.send({
+      type: 'broadcast', event: 'hello',
+      payload: { uid: u, name: myMetaRef.current.name, avatar: myMetaRef.current.avatar },
+    })
+  }, [])
+
   // 그룹의 상대 멤버(부르기 대상) 확정
   useEffect(() => {
     if (!groupId || !uid) return
@@ -115,7 +127,7 @@ export default function TouchKiss() {
   useEffect(() => {
     if (!groupId || !uid) return
     const ch = supabase.channel(`touch:${groupId}`, {
-      config: { broadcast: { self: false }, presence: { key: uid } },
+      config: { broadcast: { self: false } },
     })
     chanRef.current = ch
     ch.on('broadcast', { event: 'finger' }, ({ payload: pl }) => {
@@ -128,30 +140,23 @@ export default function TouchKiss() {
         return next
       })
     })
-    ch.on('presence', { event: 'sync' }, () => {
-      const st = ch.presenceState()
-      // 상대가 st 에 보이면 "방금 확인됨" 으로 갱신. t 는 상대 기기가 보낸 시각이
-      // 아니라 이 클라이언트가 관측한 로컬 시각을 쓴다 — 기기 간 시계가 어긋나 있으면
-      // (시간대·자동시각 설정 차이 등) 실제로는 정상 접속 중인데도 즉시 TTL 을 넘긴
-      // 것으로 오판해 "상대가 나감" 으로 잘못 표시되는 문제가 있었다.
-      setPresent((prev) => {
-        const now = Date.now()
-        const next = {}
-        for (const [k, arr] of Object.entries(st)) {
-          if (k === uid) continue
-          const m = arr[0]; if (!m) continue
-          next[k] = { name: m.name, avatar: m.avatar, t: now }
-        }
-        return next
-      })
-      // 나간 사람의 입술은 즉시 치운다. 단 presence 가 아직 비어 있는 순간
-      // (구독 직후) 에는 방금 받은 브로드캐스트를 지워 버리지 않도록 건너뛴다.
-      if (Object.keys(st).length === 0) return
-      setPeers((prev) => {
-        const next = {}
-        for (const k of Object.keys(prev)) if (st[k]) next[k] = prev[k]
-        return next
-      })
+    // 접속 여부는 Presence API 대신 Broadcast(hello/bye/ask) 로 판정한다. t 는 상대
+    // 기기가 보낸 시각이 아니라 이 클라이언트가 수신한 로컬 시각을 쓴다 — 기기 간 시계가
+    // 어긋나 있어도(시간대·자동시각 설정 차이 등) TTL 판정이 흔들리지 않는다.
+    ch.on('broadcast', { event: 'hello' }, ({ payload: pl }) => {
+      if (!pl?.uid || pl.uid === uid) return
+      setPresent((prev) => ({ ...prev, [pl.uid]: { name: pl.name, avatar: pl.avatar, t: Date.now() } }))
+    })
+    ch.on('broadcast', { event: 'bye' }, ({ payload: pl }) => {
+      if (!pl?.uid || pl.uid === uid) return
+      setPresent((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
+      setPeers((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
+    })
+    // 새로 들어온 사람이 ask 를 보내면, 이미 있던 사람들이 즉시 hello 로 응답 →
+    // 하트비트(4초)를 기다리지 않고도 바로 서로를 인지한다.
+    ch.on('broadcast', { event: 'ask' }, ({ payload: pl }) => {
+      if (!pl?.uid || pl.uid === uid) return
+      sayHello()
     })
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return
@@ -161,29 +166,29 @@ export default function TouchKiss() {
         if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null; mem = true }
       } catch { /* noop */ }
       setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
-      // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) presence 를 track 하지 않아 다른 멤버에게 보이지 않는다.
+      // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) hello 를 보내지 않아 다른 멤버에게 보이지 않는다.
       setIsMember(mem); isMemberRef.current = mem
-      if (mem) { try { await ch.track({ uid, name, avatar }) } catch { /* noop */ } }
+      if (mem) {
+        sayHello()
+        try { ch.send({ type: 'broadcast', event: 'ask', payload: { uid } }) } catch { /* noop */ }
+      }
       // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
       if (pendRef.current?.down) sendFinger(pendRef.current)
     })
     return () => {
       // 나가면서 누르고 있었다면 "놓음" 을 먼저 알려, 상대 화면에 입술이 남지 않게
       if (pendRef.current?.down) { try { sendFinger({ ...pendRef.current, down: false }) } catch { /* noop */ } }
-      try { ch.untrack() } catch { /* noop */ }
+      if (isMemberRef.current) { try { ch.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ } }
       supabase.removeChannel(ch); chanRef.current = null
     }
-  }, [groupId, uid, profile?.login_id, sendFinger])
+  }, [groupId, uid, profile?.login_id, sendFinger, sayHello])
 
-  // ---- 내 존재를 주기적으로 갱신(presence 하트비트) ----
+  // ---- 내 존재를 주기적으로 갱신(hello 하트비트) ----
   // 상대가 내 t 를 계속 새로 받아, 내가 갑자기 사라지면(백그라운드/종료) TTL 로 정리할 수 있다.
   useEffect(() => {
-    const iv = setInterval(() => {
-      const ch = chanRef.current
-      if (ch && isMemberRef.current) ch.track({ uid, ...myMetaRef.current }).catch(() => { })
-    }, PRES_BEAT_MS)
+    const iv = setInterval(() => { sayHello() }, PRES_BEAT_MS)
     return () => clearInterval(iv)
-  }, [uid])
+  }, [sayHello])
 
   // ---- 갱신이 끊긴 상대는 나간 것으로 정리 ----
   // presence leave 가 전파되지 않는 경우(백그라운드 전환 등)에도 상대가 계속 접속 중으로
