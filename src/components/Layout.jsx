@@ -724,7 +724,9 @@ export default function Layout() {
       <header className="topbar">
         {taskBackTo === 'back'
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-          : <Link to={taskBackTo || `/groups/${id}`} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
+          // replace: push 로 쌓으면(콜드스타트로 곧장 진입한 경우 등) 뒤로가기를 반복할 때
+          // 이 항목이 실제 히스토리에 남아 있어 자꾸 이 페이지로 되튕기는 문제가 있었다.
+          : <Link to={taskBackTo || `/groups/${id}`} replace className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
         {taskBackTo === 'back' && (
           <Link to={`/groups/${id}`} replace state={{ from: location.state?.from }}
@@ -776,7 +778,9 @@ export default function Layout() {
       <header className="topbar">
         {(gFrom === 'notifications' || gFrom === 'schedule')
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-          : <Link to="/" className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
+          // replace: push 로 쌓으면 콜드스타트로 곧장 진입한 경우 등에서 이 항목이 실제
+          // 히스토리에 남아, 뒤로가기를 반복할 때 자꾸 이 페이지로 되튕기는 문제가 있었다.
+          : <Link to="/" replace className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
         {headerFilter && (
           <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
             aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
