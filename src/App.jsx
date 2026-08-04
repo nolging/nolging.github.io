@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { usePushNavigation } from './lib/pushNav'
+import { useForegroundHeartbeat } from './lib/focusHeartbeat'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
@@ -58,6 +59,7 @@ function GroupDetailKeyed() {
 
 export default function App() {
   usePushNavigation()   // 푸시 알림 클릭 시 서비스워커가 알려 준 경로로 이동
+  useForegroundHeartbeat() // 서비스워커에 포그라운드 상태 하트비트(silent 푸시 억제용)
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
