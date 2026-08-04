@@ -444,4 +444,62 @@ end;
 $$;
 grant execute on function public.delete_report_gift_note(uuid) to authenticated;
 
+-- 10) admin_send_error_report: 유저가 채팅 카드를 삭제(user_hidden=true)한 뒤 관리자가
+--     리포트를 재오픈해 새 메시지(또는 보상)를 보내면, 지금까지는 user_hidden 이 그대로
+--     남아 있어 안 읽음 배지는 뜨는데 정작 받은함에는 카드가 안 보이는 문제가 있었다.
+--     새 메시지가 오면 다시 보이도록 user_hidden 을 해제한다.
+create or replace function public.admin_send_error_report(
+  p_report_id uuid, p_body text, p_items jsonb default null, p_coin integer default null
+) returns void language plpgsql security definer set search_path = public as $$
+declare v_rep uuid; v_first boolean := false; v_t text; v_b text; v_note_id uuid;
+        v_it jsonb; v_item_id text; v_qty integer; v_name text;
+begin
+  if not public.is_admin(auth.uid()) then raise exception '관리자만 사용할 수 있어요.'; end if;
+  if p_body is null or btrim(p_body) = '' then raise exception '내용을 입력해 주세요.'; end if;
+  select reporter_id into v_rep from public.error_reports where id = p_report_id;
+  if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
+
+  -- 스레드 메시지(발신 SYSTEM: sender_id=null, recipient=null)
+  insert into public.notes(sender_name, recipient_name, body, kind, report_id, is_anchor, is_read, reward_coin)
+    values ('SYSTEM', '', btrim(p_body), 'system', p_report_id, false, false, p_coin)
+    returning id into v_note_id;
+
+  if p_items is not null then
+    for v_it in select * from jsonb_array_elements(p_items) loop
+      v_item_id := v_it->>'item_id';
+      v_qty := greatest(1, coalesce((v_it->>'qty')::int, 1));
+      v_name := coalesce(v_it->>'item_name', v_item_id);
+      insert into public.note_items(note_id, item_id, item_name, qty) values (v_note_id, v_item_id, v_name, v_qty);
+    end loop;
+  end if;
+
+  -- 받은함 카드(앵커) 갱신 or 생성 → 미리보기=최신 문의, 안 읽음, 최신으로 끌어올림
+  update public.notes set body = btrim(p_body), is_read = false, created_at = now()
+   where report_id = p_report_id and is_anchor = true;
+  if not found then
+    v_first := true;   -- 앵커가 없었다 = 이번이 '최초 추가 문의'
+    insert into public.notes(recipient_id, sender_name, recipient_name, body, kind, report_id, is_anchor, is_read)
+      values (v_rep, 'SYSTEM', '', btrim(p_body), 'system', p_report_id, true, false);
+  end if;
+
+  -- 유저가 예전에 이 채팅 카드를 삭제했었더라도, 새 메시지가 왔으니 다시 보이게 한다.
+  update public.error_reports set user_hidden = false where id = p_report_id;
+
+  if v_first then
+    -- 최초 문의: 알림센터 + 푸시(기존 그대로)
+    select rr.title, rr.body into v_t, v_b from public.notif_render('system_note', jsonb_build_object()) rr;
+    insert into public.notifications(user_id, type, title, body, report_id)
+      values (v_rep, 'system_note', coalesce(v_t, 'SYSTEM 문의'),
+              coalesce(v_b, '오류 리포트에 SYSTEM 이 문의를 남겼어요'), p_report_id);
+  else
+    -- 이후 문의: 푸시만(알림센터 미표시) + 접속 중이면 send-push 가 생략.
+    select rr.title, rr.body into v_t, v_b
+      from public.notif_render('error_chat_admin', jsonb_build_object('text', btrim(p_body))) rr;
+    insert into public.notifications(user_id, type, title, body, report_id, silent)
+      values (v_rep, 'system_note', coalesce(v_t, '깜냥'), coalesce(v_b, btrim(p_body)), p_report_id, true);
+  end if;
+end;
+$$;
+grant execute on function public.admin_send_error_report(uuid, text, jsonb, integer) to authenticated;
+
 notify pgrst, 'reload schema';
