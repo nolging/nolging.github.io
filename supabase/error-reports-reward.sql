@@ -225,4 +225,25 @@ end;
 $$;
 grant execute on function public.admin_grant_report_reward(uuid, jsonb, integer, text) to authenticated;
 
+-- 6) note_items RLS 확장 — 오류 리포트 채팅 메시지(kind='system')는 recipient_id/sender_id
+--    가 둘 다 null(SYSTEM 발신 스레드 메시지)이라 기존 정책(수신자/발신자만 조회 가능)을
+--    통과하지 못해, SECURITY DEFINER 함수로 조회해도 note_items 가 항상 빈 배열로 보였다.
+--    리포트 소유자(reporter) 및 관리자도 조회할 수 있게 확장.
+drop policy if exists note_items_select on public.note_items;
+create policy note_items_select on public.note_items for select to authenticated using (
+  exists (
+    select 1 from public.notes n
+    where n.id = note_id
+      and (
+        n.recipient_id = auth.uid()
+        or n.sender_id = auth.uid()
+        or (n.kind = 'system' and exists (
+              select 1 from public.error_reports er
+              where er.id = n.report_id and er.reporter_id = auth.uid()
+            ))
+        or public.is_admin(auth.uid())
+      )
+  )
+);
+
 notify pgrst, 'reload schema';
