@@ -552,7 +552,7 @@ export default function Layout() {
       </header>
     ) : (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${boardCommentsMatch.params.groupId}/board/${boardCommentsMatch.params.postId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">댓글{headerCommentCount != null && (<>{' '}<span className="sb-cmt-count-num">{headerCommentCount}</span></>)}</span>
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="댓글 검색" title="댓글 검색"
           onClick={() => setCommentSearchOpen(true)}><SearchIcon /></button>
@@ -571,7 +571,7 @@ export default function Layout() {
     const hasPostMenu = headerPostMenu?.items?.length > 0
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${boardPostMatch.params.groupId}/board`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {hasPostMenu && (
           <div className="task-menu-wrap push-right">
@@ -629,7 +629,7 @@ export default function Layout() {
     const hasMenu = headerMenu?.items?.length > 0
     topbar = (
       <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${praiseMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
         {hasMenu && (
           <div className="praise-menu-wrap">
