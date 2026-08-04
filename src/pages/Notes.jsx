@@ -676,7 +676,7 @@ export default function Notes() {
           : open?.kind === 'bluray' && safeUrl(open.media_url) ? <BluraySlot url={open.media_url} player={blurayPlayer} />
           : open?.kind === 'cassette' && safeUrl(open.media_url) ? <MusicPlayer url={open.media_url} player={player} title={`${open.sender_name || '익명'} 님의 음악 선물`} />
           : null}
-        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : isSysGift(open || {}) ? 'modal-gift-sys' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'system' ? 'modal-syschat' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
+        cardClassName={`${open?.kind === 'wish' ? 'modal-wish' : open?.kind === 'couple_ring' ? 'modal-couple' : open?.kind === 'friend_ring' ? 'modal-friend' : isSysGift(open || {}) ? '' : open?.kind === 'gift' ? 'modal-gift' : open?.kind === 'system' ? 'modal-syschat' : ''}${open?.anonymous ? ' modal-anon' : ''}${isWater(open) && (tab === 'sent' || waterPopped) ? ' modal-water-pop' : ''}`}>
         {open && open.kind === 'system' ? (
           <SystemChat note={open} onDeleted={() => { setOpen(null); fetchNotes().catch(() => {}) }} />
         ) : open && (() => {
@@ -730,6 +730,12 @@ export default function Notes() {
                   <p className={`note-view-body ${waterPopped ? 'note-water-blur' : ''}`}>{resolveItemText(open.body)}</p>
                   {waterPopped && <span className="note-water-overlay">펑!</span>}
                 </div>
+              ) : sysGift ? (
+                <div className="note-view-body">
+                  <div className="rc-sysgift-title">{open.report_title}</div>
+                  <p className="rc-sysgift-report">{open.body}</p>
+                  <p className="rc-sysgift-done">처리 완료됐어요</p>
+                </div>
               ) : (
                 <p className="note-view-body">{resolveItemText(open.body)}</p>
               )}
@@ -761,7 +767,7 @@ export default function Notes() {
                 return (
                   <div className="note-gifts">
                     <div className="note-gifts-head">
-                      <span className="note-gifts-label">동봉된 아이템</span>
+                      <span className="note-gifts-label">{sysGift ? '오류 리포트 보상' : '동봉된 아이템'}</span>
                       {mine && gItems.length > 1 && anyUnclaimed && (
                         <button type="button" className="note-gift-all" onClick={() => claimAll(open)} disabled={busy}>일괄 수령</button>
                       )}
@@ -782,6 +788,17 @@ export default function Notes() {
                   </div>
                 )
               })()}
+              {sysGift && open.reward_coin > 0 && (
+                <div className="note-gifts">
+                  <div className="note-gifts-head"><span className="note-gifts-label">오류 리포트 보상</span></div>
+                  <ul className="note-gift-list">
+                    <li className="note-gift-row">
+                      <span className="note-gift-thumb note-gift-coin-thumb">🐾</span>
+                      <span className="note-gift-name">{open.reward_coin} 츄르 지급됐어요</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
               {couple && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 💍</button>
