@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { errorReportThread, errorReportInfo, replyErrorReport, deleteErrorReportForUser, markReportRead } from '../lib/api'
+import {
+  errorReportThread, errorReportInfo, replyErrorReport, deleteErrorReportForUser, markReportRead,
+  claimGiftItem, claimGiftNoteAll,
+} from '../lib/api'
 import SystemAvatar from './SystemAvatar'
+import StoreItemImage from './StoreItemImage'
+import { itemName } from '../lib/storeMeta'
+import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
 
 const SendIcon = () => (
   <svg width="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -20,12 +26,14 @@ const dayLabel = (iso) => { const d = new Date(iso); return `${d.getFullYear()}�
 
 // 오류 리포트 추가 문의 — 채팅 UI(유저 측). 깜냥(SYSTEM) 왼쪽 / 내 답변 오른쪽. 실시간 반영.
 export default function SystemChat({ note, onDeleted }) {
+  useStoreCatalog()
   const reportId = note.report_id
   const [report, setReport] = useState(null)   // 원문(제목/내용)
   const [msgs, setMsgs] = useState([])
   const [loading, setLoading] = useState(true)
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [claiming, setClaiming] = useState(false) // 보상 아이템 수령 중
   const [resolved, setResolved] = useState(!!note.report_resolved)
   const [error, setError] = useState('')
   const endRef = useRef(null)
@@ -88,11 +96,58 @@ export default function SystemChat({ note, onDeleted }) {
     catch (e) { setError(e.message) }
   }
 
+  // 보상 아이템 수령(개별/일괄) — 리포트 채팅에 첨부된 아이템을 인벤토리로
+  async function claimOne(m, it) {
+    if (claiming) return
+    setClaiming(true); setError('')
+    try {
+      await claimGiftItem(m.id, it.item_id)
+      setMsgs(await errorReportThread(reportId))
+    } catch (e) { setError(e.message) } finally { setClaiming(false) }
+  }
+  async function claimAll(m) {
+    if (claiming) return
+    setClaiming(true); setError('')
+    try {
+      await claimGiftNoteAll(m.id)
+      setMsgs(await errorReportThread(reportId))
+    } catch (e) { setError(e.message) } finally { setClaiming(false) }
+  }
+
   const rows = []
   let prevDay = null
   for (const m of msgs) {
     const dk = dayKey(m.created_at)
     if (dk !== prevDay) { rows.push(<div key={`d-${m.id}`} className="rc-date">{dayLabel(m.created_at)}</div>); prevDay = dk }
+    if (m.items && m.items.length > 0) {
+      rows.push(
+        <div key={m.id} className="rc-msg sys rc-reward-msg">
+          <div className="note-gifts">
+            <div className="note-gifts-head">
+              <span className="note-gifts-label">지급된 아이템</span>
+              {m.items.length > 1 && m.items.some((it) => !it.claimed) && (
+                <button type="button" className="note-gift-all" onClick={() => claimAll(m)} disabled={claiming}>일괄 수령</button>
+              )}
+            </div>
+            <ul className="note-gift-list">
+              {m.items.map((it) => (
+                <li key={it.item_id} className="note-gift-row">
+                  <span className="note-gift-thumb" style={{ background: bgOf(it.item_id) }}>
+                    <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
+                  </span>
+                  <span className="note-gift-name">{itemName(it.item_id, it.item_name)}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
+                  {it.claimed
+                    ? <span className="note-gift-done">수령 완료</span>
+                    : <button type="button" className="note-gift-claim" onClick={() => claimOne(m, it)} disabled={claiming}>수령하기</button>}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <span className="rc-time">{hhmm(m.created_at)}</span>
+        </div>,
+      )
+      continue
+    }
     rows.push(
       <div key={m.id} className={`rc-msg ${m.from_system ? 'sys' : 'mine'}`}>
         <div className="rc-bubble">{m.body}</div>

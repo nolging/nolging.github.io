@@ -3529,6 +3529,21 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .arc-thread { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 4px 2px 6px; }
 .arc-empty { margin: auto; text-align: center; font-size: 13px; color: var(--muted); }
 
+/* 해결 처리 + 보상 지급 모달 */
+.arc-resolve-modal { text-align: left; }
+.arc-reward-sec { margin-top: 16px; }
+.arc-reward-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 7px; }
+.arc-gift-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.arc-coin-reason { margin-top: 8px; }
+.arc-resolve-modal .btn-block { margin-top: 0; }
+.arc-resolve-modal > .btn-block { margin-top: 18px; }
+
+/* 채팅 안 보상 아이템 메시지(박스 형태) */
+.rc-reward-msg { max-width: 92%; }
+.rc-reward-msg .note-gifts { background: var(--surface-sunken, #f4f3f7); border-radius: 15px; padding: 11px 13px; }
+.rc-reward-msg.sys .note-gifts { border-bottom-left-radius: 5px; }
+.rc-reward-msg.mine .note-gifts { border-bottom-right-radius: 5px; }
+
 /* ---- 오류 리포트 모달 ---- */
 .err-report { display: flex; flex-direction: column; gap: 14px; }
 .err-report-head { display: flex; align-items: center; gap: 11px; }

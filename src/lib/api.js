@@ -918,6 +918,24 @@ export async function adminResolveErrorReport(id, resolved) {
   const { error } = await supabase.rpc('admin_resolve_error_report', { p_id: id, p_resolved: resolved })
   if (error) throw reportErr(error)
 }
+// 관리자: 리포트 해결 처리 시 보상 지급용 — 리포터 기준 아이템별 지급 가능 여부/보유 수량
+export async function adminReportRewardContext(reportId) {
+  const { data, error } = await supabase.rpc('admin_report_reward_context', { p_report_id: reportId })
+  if (error) throw reportErr(error)
+  return data ?? []
+}
+// 관리자: 리포트 보상 지급(아이템 여러 개+수량 및/또는 츄르). items 없거나 빈 배열, coin 없거나 0이면 아무것도 지급하지 않음.
+// 보상은 즉시 지급되지 않고(아이템) 리포트 채팅의 새 메시지로 전달된다 — 유저가 채팅에서 수령.
+export async function adminGrantReportReward(reportId, { items, coin, reason } = {}) {
+  const { data, error } = await supabase.rpc('admin_grant_report_reward', {
+    p_report_id: reportId,
+    p_items: items && items.length ? items.map((g) => ({ item_id: g.id, qty: g.qty })) : null,
+    p_coin: coin || null,
+    p_reason: reason || null,
+  })
+  if (error) throw reportErr(error)
+  return data || {}
+}
 
 export async function sendNote({ groupId, recipientId, body, anonymous = false, timerSeconds = null }) {
   // p_anonymous 는 익명일 때만 전달(구버전 RPC 와 호환 유지)
