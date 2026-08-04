@@ -143,10 +143,12 @@ begin
   select reporter_id into v_rep from public.error_reports where id = p_report_id;
   if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
 
-  v_couple := exists (select 1 from public.user_items
-    where user_id = v_rep and item_id = 'couple-ring' and status = 'used');
-  v_friend := exists (select 1 from public.user_items
-    where user_id = v_rep and item_id = 'friend-ring' and status = 'used');
+  -- RETURNS TABLE 의 item_id 가 plpgsql 변수로도 잡혀, 테이블 별칭 없이 쓰면
+  -- "column reference item_id is ambiguous" 가 남 → user_items 에 별칭(ui)을 붙여 한정.
+  v_couple := exists (select 1 from public.user_items ui
+    where ui.user_id = v_rep and ui.item_id = 'couple-ring' and ui.status = 'used');
+  v_friend := exists (select 1 from public.user_items ui
+    where ui.user_id = v_rep and ui.item_id = 'friend-ring' and ui.status = 'used');
 
   return query
     select
