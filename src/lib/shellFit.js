@@ -62,39 +62,46 @@ export function attachShellFit(getEl) {
     // body 로 포탈된 바텀시트(.sheet)가 키보드 뒤로 가려지지 않게 하단 인셋 노출
     document.documentElement.style.setProperty('--kb-inset', `${m.kbInset}px`)
   }
+  // textarea 에서 블러되며 곧바로 버튼을 탭하는 흐름(예: 댓글 "등록")에서 apply() 가
+  // 동기적으로 셸 높이를 되돌리면, 같은 제스처의 touchend→click 이 도착하기 전에 버튼이
+  // 화면상 다른 위치로 밀려나 클릭이 빈 자리를 때리는 문제가 있었다(첫 탭은 키보드만
+  // 내려가고, 레이아웃이 안정된 뒤 두 번째 탭에서야 실제로 눌림). iOS 는 focusout 만
+  // 이 시점에 동기 발화하지만, 안드로이드는 키보드가 내려가며 visualViewport 의 resize
+  // 이벤트도 같은 제스처 안에서 동기적으로 온다 — 그래서 focusout 뿐 아니라 resize/
+  // scroll 로 인한 재측정도 전부 다음 매크로태스크로 미뤄, 어느 이벤트가 먼저 오든
+  // 레이아웃 변경이 이번 제스처의 click 을 가로채지 않게 한다. 짧게 몰려오는 여러
+  // 이벤트는 플래그로 한 번만 실행되게 합친다(디바운스).
+  let applyScheduled = false
+  const scheduleApply = () => {
+    if (applyScheduled) return
+    applyScheduled = true
+    const t = setTimeout(() => { applyScheduled = false; apply() }, 0)
+    timers.push(t)
+  }
   // 복귀 직후엔 측정값이 아직 갱신되지 않을 수 있어 몇 번 더 재측정
   const remeasure = () => {
-    apply()
+    scheduleApply()
     timers.push(setTimeout(apply, 60), setTimeout(apply, 250), setTimeout(apply, 600))
-  }
-  // focusout 전용: textarea 에서 블러되며 곧바로 버튼을 탭하는 흐름(예: 댓글 "등록")에서
-  // apply() 가 동기적으로 셸 높이를 되돌리면, 같은 제스처의 touchend→click 이 도착하기
-  // 전에 버튼이 화면상 다른 위치로 밀려나 클릭이 빈 자리를 때리는 문제가 있었다(첫 탭은
-  // 키보드만 내려가고, 레이아웃이 안정된 뒤 두 번째 탭에서야 실제로 눌림). 이번 제스처의
-  // click 디스패치가 끝난 다음 매크로태스크로 미뤄 레이아웃 변경이 클릭을 가로채지 않게 한다.
-  const remeasureAfterClick = () => {
-    const t = setTimeout(remeasure, 0)
-    timers.push(t)
   }
   // 복귀: 원인이 무엇이든 남아 있던 축소 상태를 먼저 원상복구한 뒤 다시 계산
   const onResume = () => { justResumed = true; reset(); remeasure() }
   // 사용자가 다시 입력을 탭한 순간부터 정상적으로 키보드 대응
   const onFocusIn = () => { justResumed = false; remeasure() }
 
-  vv.addEventListener('resize', apply)
-  vv.addEventListener('scroll', apply)
+  vv.addEventListener('resize', scheduleApply)
+  vv.addEventListener('scroll', scheduleApply)
   document.addEventListener('focusin', onFocusIn)
-  document.addEventListener('focusout', remeasureAfterClick)
+  document.addEventListener('focusout', remeasure)
   document.addEventListener('visibilitychange', onResume)
   window.addEventListener('pageshow', onResume)
   window.addEventListener('orientationchange', remeasure)
-  apply()
+  apply() // 최초 부착 시점(제스처 경합 없음)엔 바로 반영
 
   return () => {
-    vv.removeEventListener('resize', apply)
-    vv.removeEventListener('scroll', apply)
+    vv.removeEventListener('resize', scheduleApply)
+    vv.removeEventListener('scroll', scheduleApply)
     document.removeEventListener('focusin', onFocusIn)
-    document.removeEventListener('focusout', remeasureAfterClick)
+    document.removeEventListener('focusout', remeasure)
     document.removeEventListener('visibilitychange', onResume)
     window.removeEventListener('pageshow', onResume)
     window.removeEventListener('orientationchange', remeasure)

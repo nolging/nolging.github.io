@@ -31,14 +31,15 @@ export function usePushNavigation() {
       const cur = window.location.pathname + window.location.search + window.location.hash
       if (to && to !== cur) navigate(to, { state: { from: 'push' } })
     }
-    // 콜드스타트 진입 URL(= SW 가 openWindow 로 연 목적지). SW 의 알림 클릭 처리가 중복
-    // 실행되는 등의 이유로 이 목적지가 Cache 에 뒤늦게/거듭 남아 있다가 폴링에 잡히면 —
-    // 이미 사용자가 다른 페이지로 이동한 뒤라도 — 처음 그 목적지로 도로 이동시켜 버리는
-    // 문제가 있었다(예: 뒤로가기를 연달아 눌러 다른 페이지로 이동했는데 갑자기 원래
-    // 콜드스타트 페이지로 되돌아감). Cache 폴링으로 읽힌 목적지가 '이 세션이 애초에
-    // 열렸던 그 페이지 자신'과 같으면 항상 잔여 기록으로 간주해 조용히 버린다(이동하지
-    // 않음) — 그 URL로의 진짜 새 이동은 앱이 이미 떠 있는 동안은 메시지/브로드캐스트
-    // 즉시 경로로 오지 이 폴링 경로를 타지 않으므로, 이 판단을 시간으로 제한할 필요는 없다.
+    // 콜드스타트 진입 URL(= SW 가 openWindow 로 연 목적지). notificationclick 이 한 제스처에
+    // 중복 발화하면(일부 안드로이드/Chrome 에서 실제로 관측되는 케이스) 두 번째 호출은 이미
+    // 열려 있는 창을 찾아 postMessage/BroadcastChannel(즉시 경로) 로도, Cache(폴링 경로) 로도
+    // 같은 콜드스타트 목적지를 다시 흘려보낸다 — 이미 사용자가 다른 페이지로 이동한 뒤라도
+    // 처음 그 목적지로 도로 이동시켜 버리는 문제가 있었다(예: 뒤로가기를 연달아 눌러 다른
+    // 페이지로 이동했는데 갑자기 원래 콜드스타트 페이지로 되돌아감). 어느 경로로 읽혔든
+    // 목적지가 '이 세션이 애초에 열렸던 그 페이지 자신'과 같으면 항상 잔여 신호로 간주해
+    // 조용히 버린다(이동하지 않음) — 그 URL로의 진짜 새 알림이 온 경우도 이미 그 페이지에
+    // 있다는 뜻이라 어차피 이동할 필요가 없으므로 안전하다.
     const initialPath = window.location.pathname + window.location.search + window.location.hash
     const consumeUrl = (raw) => {
       const to = toPath(raw)
@@ -81,7 +82,7 @@ export function usePushNavigation() {
       if (!d || d.type !== 'navigate' || typeof d.url !== 'string') return
       try { e.ports?.[0]?.postMessage({ ok: true }) } catch { /* noop */ }
       clearPending()
-      go(d.url)
+      consumeUrl(d.url)
     }
     const onVisible = () => { if (document.visibilityState === 'visible') consumePending() }
 
