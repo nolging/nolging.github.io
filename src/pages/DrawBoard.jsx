@@ -287,7 +287,9 @@ export default function DrawBoard() {
           {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
         </div>
         <div className="draw-members">
-          {(members.length ? members : [{ uid: 'me', name: '', avatar: null }]).slice(0, 5).map((m) => (
+          {/* 접속자가 없을 때의 "나" 자리표시 아바타는 실제 멤버에게만 — 미가입 관리자는
+              접속 중인 사람이 없으면 아바타 자체를 표시하지 않는다(관전자는 자리에 없다). */}
+          {(members.length ? members : (isMember ? [{ uid: 'me', name: '', avatar: null }] : [])).slice(0, 5).map((m) => (
             <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
           ))}
           {members.length > 5 && <span className="draw-more">+{members.length - 5}</span>}
