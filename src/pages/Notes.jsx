@@ -573,6 +573,8 @@ export default function Notes() {
             const system = n.kind === 'system'   // 오류 리포트 SYSTEM 쪽지
             const sysResolved = system && !!n.report_resolved // 처리 완료된 리포트 채팅
             const cardTime = sysResolved && n.report_resolved_at ? n.report_resolved_at : n.created_at
+            const sysHasReward = system && !!n.report_has_reward_item // 아이템 보상이 한 번이라도 지급된 리포트
+            const sysRewardPending = system && !!n.report_reward_pending // 아직 안 받은 아이템 보상 있음
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
@@ -624,6 +626,11 @@ export default function Notes() {
                       {tagInfo && !system && (
                         <span className={`note-card-tag ${needClaim ? 'note-tag-bounce' : ''}`}>
                           <span className={`${tagInfo[1]} note-tag-pill ${needClaim ? 'note-tag-seesaw' : ''}`}>{tagInfo[0]}</span>
+                        </span>
+                      )}
+                      {sysHasReward && (
+                        <span className={`note-card-tag ${sysRewardPending ? 'note-tag-bounce' : ''}`}>
+                          <span className={`note-tag note-tag-gift note-tag-pill ${sysRewardPending ? 'note-tag-seesaw' : ''}`}>📦 아이템</span>
                         </span>
                       )}
                     </div>

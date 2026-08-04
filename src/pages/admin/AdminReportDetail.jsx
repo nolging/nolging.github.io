@@ -171,22 +171,27 @@ export default function AdminReportDetail() {
     if (m.items && m.items.length > 0) {
       // 보상 아이템 메시지 — 관리자는 열람만(수령은 회원 쪽에서만)
       rows.push(
-        <div key={m.id} className="rc-msg mine rc-reward-msg">
-          <div className="note-gifts">
-            <div className="note-gifts-head"><span className="note-gifts-label">지급된 아이템</span></div>
-            <ul className="note-gift-list">
-              {m.items.map((it) => (
-                <li key={it.item_id} className="note-gift-row">
-                  <span className="note-gift-thumb" style={{ background: bgOf(it.item_id) }}>
-                    <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
-                  </span>
-                  <span className="note-gift-name">{itemName(it.item_id, it.item_name)}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
-                  <span className="note-gift-done">{it.claimed ? '수령 완료' : '수령 대기'}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <span className="rc-time">{hhmm(m.created_at)}</span>
+        <div key={m.id} className="rc-reward-row">
+          <ul className="note-gift-list">
+            {m.items.map((it) => (
+              <li key={it.item_id} className="note-gift-row">
+                <span className="note-gift-thumb" style={{ background: bgOf(it.item_id) }}>
+                  <StoreItemImage id={it.item_id} emoji="🎁" className="note-gift-img" />
+                </span>
+                <span className="note-gift-name">{itemName(it.item_id, it.item_name)}{it.qty > 1 && <span className="note-gift-qty">×{it.qty}</span>}</span>
+                <span className="note-gift-done">{it.claimed ? '수령 완료' : '수령 대기'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>,
+      )
+      continue
+    }
+    if (m.reward_coin != null && m.reward_coin > 0) {
+      rows.push(
+        <div key={m.id} className="rc-reward-coin">
+          <span className="rc-reward-coin-emoji">🐾</span>
+          <span>{m.body}</span>
         </div>,
       )
       continue

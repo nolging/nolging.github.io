@@ -46,11 +46,15 @@ begin
 end; $$;
 grant execute on function public.claim_gift_item(uuid, text) to authenticated;
 
--- 2) admin_send_error_report: 아이템(선택) 첨부 지원 추가.
+-- 2) admin_send_error_report: 아이템/츄르(선택) 첨부 지원 추가.
 --    p_items = [{"item_id":"...", "item_name":"...", "qty": n}, ...] 또는 null(기존과 동일).
+--    p_coin = 이 메시지가 나타내는 츄르 지급액(구조화 표시용) 또는 null(기존과 동일).
+alter table public.notes add column if not exists reward_coin integer;
 drop function if exists public.admin_send_error_report(uuid, text);
-create or replace function public.admin_send_error_report(p_report_id uuid, p_body text, p_items jsonb default null)
-returns void language plpgsql security definer set search_path = public as $$
+drop function if exists public.admin_send_error_report(uuid, text, jsonb);
+create or replace function public.admin_send_error_report(
+  p_report_id uuid, p_body text, p_items jsonb default null, p_coin integer default null
+) returns void language plpgsql security definer set search_path = public as $$
 declare v_rep uuid; v_first boolean := false; v_t text; v_b text; v_note_id uuid;
         v_it jsonb; v_item_id text; v_qty integer; v_name text;
 begin
@@ -60,8 +64,8 @@ begin
   if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
 
   -- 스레드 메시지(발신 SYSTEM: sender_id=null, recipient=null)
-  insert into public.notes(sender_name, recipient_name, body, kind, report_id, is_anchor, is_read)
-    values ('SYSTEM', '', btrim(p_body), 'system', p_report_id, false, false)
+  insert into public.notes(sender_name, recipient_name, body, kind, report_id, is_anchor, is_read, reward_coin)
+    values ('SYSTEM', '', btrim(p_body), 'system', p_report_id, false, false, p_coin)
     returning id into v_note_id;
 
   if p_items is not null then
@@ -97,19 +101,20 @@ begin
   end if;
 end;
 $$;
-grant execute on function public.admin_send_error_report(uuid, text, jsonb) to authenticated;
+grant execute on function public.admin_send_error_report(uuid, text, jsonb, integer) to authenticated;
 
--- 3) 스레드 조회에 첨부 아이템(items) 추가 — 유저용/관리자용 모두.
+-- 3) 스레드 조회에 첨부 아이템(items)/츄르(reward_coin) 추가 — 유저용/관리자용 모두.
 --    (반환 컬럼이 늘어나므로 create or replace 대신 drop 후 재생성)
 drop function if exists public.error_report_thread(uuid);
 create function public.error_report_thread(p_report_id uuid)
-returns table(id uuid, from_system boolean, body text, created_at timestamptz, items jsonb)
+returns table(id uuid, from_system boolean, body text, created_at timestamptz, items jsonb, reward_coin integer)
 language sql security definer set search_path = public stable as $$
   select n.id, (n.sender_id is null), n.body, n.created_at,
     (select coalesce(jsonb_agg(jsonb_build_object(
         'item_id', ni.item_id, 'item_name', ni.item_name, 'qty', ni.qty, 'claimed', ni.claimed
       ) order by ni.created_at), '[]'::jsonb)
-     from public.note_items ni where ni.note_id = n.id) as items
+     from public.note_items ni where ni.note_id = n.id) as items,
+    n.reward_coin
     from public.notes n
     join public.error_reports er on er.id = n.report_id
    where n.report_id = p_report_id and coalesce(n.is_anchor, false) = false and er.reporter_id = auth.uid()
@@ -119,13 +124,14 @@ grant execute on function public.error_report_thread(uuid) to authenticated;
 
 drop function if exists public.admin_error_report_thread(uuid);
 create function public.admin_error_report_thread(p_id uuid)
-returns table(id uuid, from_system boolean, body text, created_at timestamptz, items jsonb)
+returns table(id uuid, from_system boolean, body text, created_at timestamptz, items jsonb, reward_coin integer)
 language sql security definer set search_path = public stable as $$
   select n.id, (n.sender_id is null), n.body, n.created_at,
     (select coalesce(jsonb_agg(jsonb_build_object(
         'item_id', ni.item_id, 'item_name', ni.item_name, 'qty', ni.qty, 'claimed', ni.claimed
       ) order by ni.created_at), '[]'::jsonb)
-     from public.note_items ni where ni.note_id = n.id) as items
+     from public.note_items ni where ni.note_id = n.id) as items,
+    n.reward_coin
     from public.notes n
    where n.report_id = p_id and coalesce(n.is_anchor, false) = false and public.is_admin(auth.uid())
    order by n.created_at asc;
@@ -217,7 +223,7 @@ begin
     insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id, created_by)
       values (v_rep, p_coin, coalesce(nullif(btrim(p_reason), ''), '오류 리포트 보상'), 'error_report_reward', p_report_id, auth.uid());
     select coalesce(sum(delta), 0)::integer into v_balance from public.coin_ledger where user_id = v_rep;
-    perform public.admin_send_error_report(p_report_id, '오류 리포트 보상으로 ' || p_coin || ' 츄르 지급됐어요');
+    perform public.admin_send_error_report(p_report_id, '오류 리포트 보상으로 ' || p_coin || ' 츄르 지급됐어요', null, p_coin);
   end if;
 
   return jsonb_build_object('coin_balance', v_balance);
@@ -245,5 +251,48 @@ create policy note_items_select on public.note_items for select to authenticated
       )
   )
 );
+
+-- 7) 받은함 카드: 아이템 보상이 있으면(수령 전이면 통통 튀는) 배지 표시용 플래그 추가.
+drop function if exists public.list_received_notes(integer, integer);
+create function public.list_received_notes(p_limit integer default 15, p_offset integer default 0)
+returns table(
+  id uuid, group_id uuid, sender_id uuid, recipient_id uuid,
+  sender_name text, recipient_name text, sender_avatar text, recipient_avatar text,
+  body text, kind text, is_read boolean, created_at timestamptz,
+  item_id text, item_name text, claimed boolean, rejected boolean, media_url text, anonymous boolean, qty integer,
+  timer_seconds integer, opened_at timestamptz, sender_active boolean,
+  report_id uuid, report_resolved boolean, report_resolved_at timestamptz,
+  report_has_reward_item boolean, report_reward_pending boolean
+) language sql security definer set search_path = public stable as $$
+  select
+    n.id, n.group_id,
+    case when n.anonymous then null else n.sender_id end,
+    n.recipient_id,
+    case when n.anonymous then '익명' else n.sender_name end,
+    n.recipient_name,
+    case when n.anonymous then null else n.sender_avatar end,
+    n.recipient_avatar,
+    n.body, n.kind, n.is_read, n.created_at,
+    n.item_id, n.item_name, n.claimed, n.rejected, n.media_url, n.anonymous, coalesce(n.qty, 1),
+    n.timer_seconds, n.opened_at,
+    public.is_group_member(n.group_id, n.sender_id),
+    n.report_id,
+    (select er.resolved from public.error_reports er where er.id = n.report_id),
+    (select er.resolved_at from public.error_reports er where er.id = n.report_id),
+    exists (select 1 from public.note_items ni join public.notes tn on tn.id = ni.note_id
+             where tn.report_id = n.report_id and coalesce(tn.is_anchor, false) = false),
+    exists (select 1 from public.note_items ni join public.notes tn on tn.id = ni.note_id
+             where tn.report_id = n.report_id and coalesce(tn.is_anchor, false) = false and not ni.claimed)
+  from public.notes n
+  where n.recipient_id = auth.uid()
+    and not (n.kind = 'system' and (
+          coalesce(n.is_anchor, false) = false
+          or coalesce((select er.user_hidden from public.error_reports er where er.id = n.report_id), false)
+        ))
+  order by n.created_at desc
+  limit greatest(1, least(coalesce(p_limit, 15), 100))
+  offset greatest(0, coalesce(p_offset, 0));
+$$;
+grant execute on function public.list_received_notes(integer, integer) to authenticated;
 
 notify pgrst, 'reload schema';
