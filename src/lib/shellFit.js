@@ -67,6 +67,15 @@ export function attachShellFit(getEl) {
     apply()
     timers.push(setTimeout(apply, 60), setTimeout(apply, 250), setTimeout(apply, 600))
   }
+  // focusout 전용: textarea 에서 블러되며 곧바로 버튼을 탭하는 흐름(예: 댓글 "등록")에서
+  // apply() 가 동기적으로 셸 높이를 되돌리면, 같은 제스처의 touchend→click 이 도착하기
+  // 전에 버튼이 화면상 다른 위치로 밀려나 클릭이 빈 자리를 때리는 문제가 있었다(첫 탭은
+  // 키보드만 내려가고, 레이아웃이 안정된 뒤 두 번째 탭에서야 실제로 눌림). 이번 제스처의
+  // click 디스패치가 끝난 다음 매크로태스크로 미뤄 레이아웃 변경이 클릭을 가로채지 않게 한다.
+  const remeasureAfterClick = () => {
+    const t = setTimeout(remeasure, 0)
+    timers.push(t)
+  }
   // 복귀: 원인이 무엇이든 남아 있던 축소 상태를 먼저 원상복구한 뒤 다시 계산
   const onResume = () => { justResumed = true; reset(); remeasure() }
   // 사용자가 다시 입력을 탭한 순간부터 정상적으로 키보드 대응
@@ -75,7 +84,7 @@ export function attachShellFit(getEl) {
   vv.addEventListener('resize', apply)
   vv.addEventListener('scroll', apply)
   document.addEventListener('focusin', onFocusIn)
-  document.addEventListener('focusout', remeasure)
+  document.addEventListener('focusout', remeasureAfterClick)
   document.addEventListener('visibilitychange', onResume)
   window.addEventListener('pageshow', onResume)
   window.addEventListener('orientationchange', remeasure)
@@ -85,7 +94,7 @@ export function attachShellFit(getEl) {
     vv.removeEventListener('resize', apply)
     vv.removeEventListener('scroll', apply)
     document.removeEventListener('focusin', onFocusIn)
-    document.removeEventListener('focusout', remeasure)
+    document.removeEventListener('focusout', remeasureAfterClick)
     document.removeEventListener('visibilitychange', onResume)
     window.removeEventListener('pageshow', onResume)
     window.removeEventListener('orientationchange', remeasure)
