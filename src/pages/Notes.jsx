@@ -571,6 +571,8 @@ export default function Notes() {
             const video = n.kind === 'video'
             const bluray = n.kind === 'bluray'
             const system = n.kind === 'system'   // 오류 리포트 SYSTEM 쪽지
+            const sysResolved = system && !!n.report_resolved // 처리 완료된 리포트 채팅
+            const cardTime = sysResolved && n.report_resolved_at ? n.report_resolved_at : n.created_at
             const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
@@ -600,7 +602,7 @@ export default function Notes() {
                           : <span className="note-card-rel">{p.label}</span>}
                       </span>
                       <span className="note-card-when">
-                        <span className="note-card-date">{formatNoteTime(n.created_at)}</span>
+                        <span className="note-card-date">{formatNoteTime(cardTime)}</span>
                         {tab === 'received' && !n.is_read && <span className="note-card-unread-dot" aria-label="안 읽음" />}
                       </span>
                     </div>
@@ -614,6 +616,8 @@ export default function Notes() {
                         ) : (
                           <p className="note-card-body note-water-hidden">꽁꽁 싸매서 내용이 보이지 않아요</p>
                         )
+                      ) : sysResolved ? (
+                        <p className="note-card-body">처리 완료된 리포트입니다</p>
                       ) : (
                         <p className="note-card-body">{resolveItemText(n.body)}</p>
                       )}

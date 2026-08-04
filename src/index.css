@@ -3459,20 +3459,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .avatar.avatar-system svg { display: block; }
 .note-syscard-badge { vertical-align: middle; }
 
-/* 받은함 카드: 얇은 보라/민트 그라데이션 테두리가 카드를 빙빙 돈다 */
-@property --sysang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-.note-card.note-syscard { position: relative; }
-.note-card.note-syscard::before {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px; pointer-events: none; z-index: 0;
-  background: conic-gradient(from var(--sysang), #a78bfa, #5eead4, #a78bfa, #5eead4, #a78bfa);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: note-sysborder 4s linear infinite;
-}
-.note-card.note-syscard > * { position: relative; z-index: 1; }
-@keyframes note-sysborder { to { --sysang: 360deg; } }
-@media (prefers-reduced-motion: reduce) { .note-card.note-syscard::before { animation: none; } }
+/* 받은함 카드: 옅은 네이비 배경 */
+.note-card.note-syscard { background: #eaeef7; }
 
 /* SYSTEM 쪽지 = 채팅 모달 (키보드 올라오면 --vvh 만큼 카드가 작아져 다 보인다) */
 .modal-card.modal-syschat { display: flex; flex-direction: column; padding: 18px;
@@ -3482,7 +3470,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .rc-who { display: flex; flex-direction: column; }
 .rc-name { font-size: 16px; font-weight: 800; color: var(--text); line-height: 1.1; }
 .rc-badge { margin-top: 2px; align-self: flex-start; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; color: #6250e0; background: rgba(98, 80, 224, .14); }
-.rc-trash { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; display: inline-flex; align-self: flex-start; }
+.rc-trash {
+  margin-left: auto; width: 34px; height: 34px; flex-shrink: 0; align-self: center;
+  background: rgba(0, 0, 0, .06); border: none; border-radius: 50%; color: #e5484d; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 .rc-trash:active { opacity: .6; }
 .rc-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 12px 2px; }
 .rc-empty { text-align: center; margin: auto; }
