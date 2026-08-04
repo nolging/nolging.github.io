@@ -82,6 +82,11 @@ export function usePushNavigation() {
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('pageshow', onVisible)
     window.addEventListener('focus', onVisible)
+    // iOS 는 알림 탭으로 앱이 화면에 다시 보여도(visibilitychange/focus 발생 여부와
+    // 무관하게) JS 타이머·이벤트 루프가 곧바로 재개되지 않고, 화면을 실제로 한 번
+    // 터치해야 완전히 깨어나는 경우가 있다 — 그 경우 setInterval 폴링도 같이 멈춰
+    // 있어 못 잡는다. 첫 터치를 보조 깨우기 신호로 추가.
+    document.addEventListener('touchstart', onVisible, { passive: true })
     consumePending() // 최초 로드(콜드 오픈/재개 후 reload 포함)
     // 앱이 계속 포그라운드였어도(상태 전환 이벤트가 안 옴) 확실히 잡히도록 가볍게 주기 확인
     // (consumePending 의 재시도 캐스케이드는 여기선 불필요 — 매번 한 번만 읽는다)
@@ -93,6 +98,7 @@ export function usePushNavigation() {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('pageshow', onVisible)
       window.removeEventListener('focus', onVisible)
+      document.removeEventListener('touchstart', onVisible)
       bc?.close()
       clearInterval(poll)
     }
