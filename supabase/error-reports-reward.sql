@@ -50,6 +50,7 @@ grant execute on function public.claim_gift_item(uuid, text) to authenticated;
 --    p_items = [{"item_id":"...", "item_name":"...", "qty": n}, ...] 또는 null(기존과 동일).
 --    p_coin = 이 메시지가 나타내는 츄르 지급액(구조화 표시용) 또는 null(기존과 동일).
 alter table public.notes add column if not exists reward_coin integer;
+alter table public.notes add column if not exists user_hidden boolean not null default false;
 drop function if exists public.admin_send_error_report(uuid, text);
 drop function if exists public.admin_send_error_report(uuid, text, jsonb);
 create or replace function public.admin_send_error_report(
@@ -337,7 +338,9 @@ $$;
 grant execute on function public.admin_error_report_thread(uuid) to authenticated;
 
 -- admin_grant_report_reward 재정의: 채팅이 없으면 쪽지로, 있으면 기존처럼 채팅 메시지로.
-create or replace function public.admin_grant_report_reward(
+--    (혹시 이전 버전이 겹쳐 남아있지 않도록 drop 후 재생성)
+drop function if exists public.admin_grant_report_reward(uuid, jsonb, integer, text);
+create function public.admin_grant_report_reward(
   p_report_id uuid, p_items jsonb default null, p_coin integer default null, p_reason text default null
 ) returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -427,7 +430,6 @@ grant execute on function public.admin_grant_report_reward(uuid, jsonb, integer,
 -- 9) 깜냥 명의 보상 쪽지 삭제(숨김). RLS 상 notes 는 하드 delete 정책이 없어(수신자 UPDATE 만
 --    허용) user_hidden 플래그로 숨긴다 — 오류 리포트 채팅 카드 삭제(user_hidden)와 같은 방식.
 --    아이템을 전부 수령하기 전에는 삭제할 수 없다(아이템이 없으면 바로 삭제 가능).
-alter table public.notes add column if not exists user_hidden boolean not null default false;
 create or replace function public.delete_report_gift_note(p_note_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
 declare n public.notes;
@@ -501,5 +503,16 @@ begin
 end;
 $$;
 grant execute on function public.admin_send_error_report(uuid, text, jsonb, integer) to authenticated;
+
+-- 11) 일회성 복구: user_hidden 이 안 풀리던 버그로 인해 이미 꼬여있던 리포트들
+--     (안 읽음 배지는 뜨는데 받은함엔 카드가 안 보이던 상태) 되살리기.
+--     앵커가 안 읽음 상태인데 error_reports.user_hidden 이 true 로 남아있는 경우만 대상.
+update public.error_reports er
+set user_hidden = false
+where er.user_hidden = true
+  and exists (
+    select 1 from public.notes n
+    where n.report_id = er.id and n.is_anchor = true and n.is_read = false
+  );
 
 notify pgrst, 'reload schema';
