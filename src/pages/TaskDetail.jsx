@@ -9,7 +9,6 @@ import {
   updateTaskMedia,
 } from '../lib/api'
 import { taskTerms, repeatLabel, remindLabel, MEDIA_LOOKUP_CATS, formatWhen, resolveCategories } from '../lib/constants'
-import { navDebugLog } from '../lib/pushNav'
 import { resolveMentions, splitMentions } from '../lib/mentions'
 import { openMember } from '../lib/memberModal'
 import CategoryChip from '../components/CategoryChip'
@@ -92,11 +91,6 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const focusCommentId = searchParams.get('c') // 알림에서 넘어온 강조 대상 댓글
   const from = location.state?.from // 진입 경로별 뒤로가기 (일정/알림)
   const { setTaskHeading, setTaskBackTo } = useOutletContext()
-  useEffect(() => {
-    navDebugLog(`TaskDetail: MOUNT taskId=${taskId} groupId=${groupId} from=${from} idx=${window.history.state?.idx}`)
-    return () => navDebugLog(`TaskDetail: UNMOUNT taskId=${taskId}`)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)

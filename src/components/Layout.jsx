@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
-import { navDebugLog } from '../lib/pushNav'
 import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard, listStoreItems } from '../lib/api'
 import { setStoreCatalog } from '../lib/storeCatalog'
 import Brand from './Brand'
@@ -183,19 +182,9 @@ export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  // 항상 지정된 상위 페이지로 replace 이동(진짜 navigate(-1) 는 쓰지 않는다). 예전엔
-  // window.history.state.idx 가 0(=진짜 진입점)일 때만 replace, 아니면 navigate(-1) 을
-  // 썼는데 — 안드로이드 Chrome/WebAPK 는 "완전 종료"(최근 앱에서 스와이프)해도 백그라운드
-  // 프로세스가 실제로는 안 죽고 남아 있는 경우가 많아, idx 가 0 이 아닌(=예전 테스트에서
-  // 쌓인 진짜 히스토리가 남아 있는) 상태로 "콜드스타트"가 시작된다. 이때 navigate(-1) 은
-  // 그 오래된 히스토리를 그대로 타고 올라가 버려(예: 몇 시간 전 테스트했던 위시 페이지로
-  // 튕김) 되튕김 버그로 보였다. iOS 는 콜드스타트마다 진짜 새 프로세스라 idx 가 항상 0 이라
-  // 문제가 안 됐던 것. 어느 쪽이든 replace 로 고정 목적지를 쓰면 실제 히스토리 상태와
-  // 무관하게 항상 같은 결과가 나온다.
-  const backOr = (fallbackPath) => {
-    navDebugLog(`backOr: idx=${window.history.state?.idx} cur=${location.pathname}${location.search} -> replace ${fallbackPath}`)
-    navigate(fallbackPath, { replace: true })
-  }
+  // 항상 지정된 상위 페이지로 replace 이동. 실제 브라우저 히스토리(navigate(-1))에 기대지
+  // 않으므로, 콜드스타트로 곧장 진입한 경우든 아니든 뒤로가기 결과가 항상 예측 가능하다.
+  const backOr = (fallbackPath) => navigate(fallbackPath, { replace: true })
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
