@@ -165,6 +165,10 @@ export function AuthProvider({ children }) {
         if (data.session) lastSession.current = data.session // 복구용 최신 토큰 유지
         setSession(data.session)                  // 재개 후 세션/유저 상태 최신화(누락 시 stale)
         await loadProfile(data.session?.user?.id) // 프로필/권한 최신화
+        // iOS Safari 웹푸시는 구독(endpoint)이 주기적으로 회전된다. 로그인/계정전환
+        // 시에만 재동기화하면, 앱을 오래 켜놓고 쓰는 동안 회전된 새 구독이 서버에
+        // 등록되지 않아 이후 푸시가 조용히 유실된다 — 재개 때마다도 다시 맞춰준다.
+        if (data.session?.user?.id) syncPushToCurrentUser()
         recovering = false
       } catch {
         clearTimeout(hard)
