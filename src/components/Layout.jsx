@@ -182,6 +182,14 @@ export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  // 직전 SPA 히스토리가 없을 때(예: 푸시 알림 콜드스타트로 곧장 진입) navigate(-1) 은
+  // 갈 곳이 없어 아무 반응도 하지 않는다. location.key 는 이 세션에서 라우터가 처음
+  // 로드된 진입점(=직전 히스토리 없음)일 때만 'default' 이므로, 그때는 지정된 상위
+  // 페이지로 이동하고, 그 외엔 평소처럼 뒤로 간다.
+  const backOr = (fallbackPath) => {
+    if (location.key === 'default') navigate(fallbackPath, { replace: true })
+    else navigate(-1)
+  }
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
@@ -499,10 +507,10 @@ export default function Layout() {
       </header>
     )
   } else if (touchMatch) {
-    // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로
+    // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로, 직전 히스토리 없으면(푸시 콜드스타트) 데이트 페이지로
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${touchMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
@@ -667,10 +675,10 @@ export default function Layout() {
     )
   } else if (membersMatch) {
     // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 상세/대시보드 등), 제목 "멤버"
-    // (커플 그룹은 페이지가 제목을 "데이트"로 등록)
+    // (커플 그룹은 페이지가 제목을 "데이트"로 등록). 직전 히스토리 없으면(콜드스타트) 그룹 상세로.
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${membersMatch.params.groupId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{headerTitle || '멤버'}</span>
       </header>
     )
