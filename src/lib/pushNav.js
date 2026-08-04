@@ -31,6 +31,21 @@ export function usePushNavigation() {
       const cur = window.location.pathname + window.location.search + window.location.hash
       if (to && to !== cur) navigate(to, { state: { from: 'push' } })
     }
+    // 콜드스타트 진입 URL(= SW 가 openWindow 로 연 목적지). SW 의 Cache 기록과 이 페이지의
+    // 첫 읽기 재시도(cascade)가 레이스할 수 있어(레이스에 지면 기록이 늦게 도착), 그 기록이
+    // '늦게' 남아 있다가 나중에 폴링에 잡히면 — 이미 사용자가 다른 페이지로 이동한 뒤라도 —
+    // 처음 그 목적지로 도로 이동시켜 버리는 문제가 있었다(예: 뒤로가기를 연달아 눌러 다른
+    // 페이지로 이동했는데 몇 초 뒤 갑자기 원래 콜드스타트 페이지로 되돌아감). 진입 직후 일정
+    // 시간 동안은, 읽힌 목적지가 '지금 막 도착한 이 페이지 자신'과 같으면 그 잔여 기록으로
+    // 간주해 조용히 버린다(이동하지 않음).
+    const initialPath = window.location.pathname + window.location.search + window.location.hash
+    const mountedAt = Date.now()
+    const STALE_GUARD_MS = 10000
+    const consumeUrl = (raw) => {
+      const to = toPath(raw)
+      if (to === initialPath && Date.now() - mountedAt < STALE_GUARD_MS) return
+      go(raw)
+    }
     const clearPending = async () => {
       try { const c = await caches.open(NAV_CACHE); await c.delete(NAV_KEY) } catch { /* noop */ }
     }
@@ -57,7 +72,7 @@ export function usePushNavigation() {
         if (cancelled) break
         if (d) await new Promise((r) => setTimeout(r, d))
         const url = await readPending()
-        if (url) { go(url); break }
+        if (url) { consumeUrl(url); break }
       }
       polling = false
     }
@@ -90,7 +105,7 @@ export function usePushNavigation() {
     consumePending() // 최초 로드(콜드 오픈/재개 후 reload 포함)
     // 앱이 계속 포그라운드였어도(상태 전환 이벤트가 안 옴) 확실히 잡히도록 가볍게 주기 확인
     // (consumePending 의 재시도 캐스케이드는 여기선 불필요 — 매번 한 번만 읽는다)
-    const poll = setInterval(() => { if (!cancelled) readPending().then((url) => { if (url) go(url) }) }, POLL_MS)
+    const poll = setInterval(() => { if (!cancelled) readPending().then((url) => { if (url) consumeUrl(url) }) }, POLL_MS)
 
     return () => {
       cancelled = true
