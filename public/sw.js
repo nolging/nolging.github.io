@@ -75,6 +75,17 @@ async function savePendingNav(url) {
   } catch { /* noop */ }
 }
 
+// win.postMessage() 는 matchAll() 이 돌려준 WindowClient 참조가 가리키는 그 창에만
+// 전달되는데, 앱이 이미 포그라운드에 계속 머물러 있던 경우엔(백그라운드→재개 전환이
+// 없으므로) pending 캐시를 다시 읽는 안전장치(visibilitychange/focus, pushNav.js)가
+// 아예 발동하지 않는다 — 그 상태에서 메시지가 어떤 이유로든 전달되지 않으면 이동할
+// 방법이 없다. BroadcastChannel 은 특정 Client 참조에 기대지 않고 같은 출처의 열려
+// 있는 모든 탭에 곧장 전달되므로, 이중 경로로 postMessage 와 함께 보낸다.
+const NAV_CHANNEL = 'nolging-push-nav'
+function broadcastNav(url) {
+  try { new BroadcastChannel(NAV_CHANNEL).postMessage({ type: 'navigate', url }) } catch { /* noop */ }
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = (event.notification.data && event.notification.data.url) || '/'
@@ -86,8 +97,9 @@ self.addEventListener('notificationclick', (event) => {
     if (win) {
       // 먼저 포커스(사용자 제스처 컨텍스트를 잃기 전에)
       if ('focus' in win) { try { await win.focus() } catch { /* noop */ } }
-      // 살아있는 앱엔 즉시 알림(빠른 경로). 얼어 있으면 위 pending 을 재개 시 소비.
+      // 살아있는 앱엔 즉시 알림(빠른 경로, 이중 전달). 둘 다 얼어 있으면 위 pending 을 재개 시 소비.
       try { win.postMessage({ type: 'navigate', url }) } catch { /* noop */ }
+      broadcastNav(url)
       return
     }
     // 열린 창이 없으면(콜드 스타트) 해당 경로로 새 창 — pending 은 같은 경로라 재소비돼도 무해

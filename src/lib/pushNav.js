@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom'
 
 const NAV_CACHE = 'nolging-nav'
 const NAV_KEY = '__pending_nav__'
+const NAV_CHANNEL = 'nolging-push-nav'
 
-// 푸시 알림 클릭 → 서비스워커가 이동 목적지를 (1) postMessage 로 알리고 (2) Cache 에 저장한다.
-// iOS 홈화면 PWA 는 백그라운드에서 JS 가 얼어 postMessage 를 놓치거나, 재개 시 앱이
-// reload 되어 메시지가 사라지는 경우가 있다. 그래서 앱이 '보이게 될 때마다' Cache 에
-// 저장된 목적지를 읽어 이동한다(있으면 소비·삭제). 살아있을 땐 메시지로 즉시 이동.
+// 푸시 알림 클릭 → 서비스워커가 이동 목적지를 (1) postMessage 로, (2) BroadcastChannel 로
+// 알리고 (3) Cache 에도 저장한다. iOS 홈화면 PWA 는 백그라운드에서 JS 가 얼어 메시지를
+// 놓치거나, 재개 시 앱이 reload 되어 메시지가 사라지는 경우가 있어 '보이게 될 때마다' Cache
+// 를 다시 읽는 안전장치를 둔다. 다만 이 안전장치는 visibilitychange/focus 처럼 상태가
+// '바뀔 때'만 발동하므로, 앱이 이미 포그라운드에 계속 머물러 있던 채로 알림을 눌렀을 땐
+// 발동하지 않는다 — 그 경우를 위해 postMessage 가 유실돼도 도착 가능성이 더 높은
+// BroadcastChannel 을 이중 경로로 함께 듣는다(특정 WindowClient 참조에 기대지 않음).
 export function usePushNavigation() {
   const navigate = useNavigate()
   useEffect(() => {
@@ -67,6 +71,13 @@ export function usePushNavigation() {
     }
     const onVisible = () => { if (document.visibilityState === 'visible') consumePending() }
 
+    // BroadcastChannel(이중 경로): 앱이 계속 포그라운드였어도 확실히 받는다
+    let bc = null
+    try {
+      bc = new BroadcastChannel(NAV_CHANNEL)
+      bc.onmessage = (e) => onMessage(e)
+    } catch { /* 미지원 브라우저 — postMessage/Cache 경로로만 동작 */ }
+
     navigator.serviceWorker.addEventListener('message', onMessage)
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('pageshow', onVisible)
@@ -79,6 +90,7 @@ export function usePushNavigation() {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('pageshow', onVisible)
       window.removeEventListener('focus', onVisible)
+      bc?.close()
     }
   }, [navigate])
 }
