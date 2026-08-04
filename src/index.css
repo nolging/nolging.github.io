@@ -3459,8 +3459,24 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .avatar.avatar-system svg { display: block; }
 .note-syscard-badge { vertical-align: middle; }
 
-/* 받은함 카드: 옅은 네이비 배경 */
-.note-card.note-syscard { background: #eaeef7; }
+/* 받은함 카드(처리 완료 전): 얇은 보라/민트 그라데이션 테두리가 카드를 빙빙 돈다 */
+@property --sysang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.note-card.note-syscard { position: relative; }
+.note-card.note-syscard::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px; pointer-events: none; z-index: 0;
+  background: conic-gradient(from var(--sysang), #a78bfa, #5eead4, #a78bfa, #5eead4, #a78bfa);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: note-sysborder 4s linear infinite;
+}
+.note-card.note-syscard > * { position: relative; z-index: 1; }
+@keyframes note-sysborder { to { --sysang: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .note-card.note-syscard::before { animation: none; } }
+
+/* 받은함 카드(처리 완료): 그라데이션 테두리 대신 옅은 네이비 배경 */
+.note-card.note-syscard.note-syscard-resolved::before { content: none; }
+.note-card.note-syscard.note-syscard-resolved { background: #eaeef7; }
 
 /* SYSTEM 쪽지 = 채팅 모달 (키보드 올라오면 --vvh 만큼 카드가 작아져 다 보인다) */
 .modal-card.modal-syschat { display: flex; flex-direction: column; padding: 18px;

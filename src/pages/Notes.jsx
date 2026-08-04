@@ -591,7 +591,7 @@ export default function Notes() {
                               : null
             return (
               <li key={n.id}>
-                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
+                <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${sysResolved ? 'note-syscard-resolved' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
                   {system ? <SystemAvatar size={40} /> : <Avatar src={anonAva(n) ? null : p.avatar} name={anonAva(n) ? '?' : p.name} size={40} deco={anonAva(n) ? undefined : peerDeco(p)} />}
                   <div className="note-card-main">
                     <div className="note-card-head">
