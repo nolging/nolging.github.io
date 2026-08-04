@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
+import { navDebugLog } from '../lib/pushNav'
 import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard, listStoreItems } from '../lib/api'
 import { setStoreCatalog } from '../lib/storeCatalog'
 import Brand from './Brand'
@@ -189,7 +190,9 @@ export default function Layout() {
   // 가 아니게 돼 오판함) 못 쓴다. idx 가 0(진짜 진입점)이면 replace 로 상위 페이지로
   // 이동(다음 뒤로가기에서도 idx 는 그대로 0 이라 체인이 이어짐), 아니면 평소처럼 뒤로.
   const backOr = (fallbackPath) => {
-    if ((window.history.state?.idx ?? 0) === 0) navigate(fallbackPath, { replace: true })
+    const idx = window.history.state?.idx ?? 0
+    navDebugLog(`backOr: idx=${idx} cur=${location.pathname}${location.search} -> ${idx === 0 ? `replace ${fallbackPath}` : 'navigate(-1)'}`)
+    if (idx === 0) navigate(fallbackPath, { replace: true })
     else navigate(-1)
   }
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
@@ -724,9 +727,7 @@ export default function Layout() {
       <header className="topbar">
         {taskBackTo === 'back'
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-          // replace: push 로 쌓으면(콜드스타트로 곧장 진입한 경우 등) 뒤로가기를 반복할 때
-          // 이 항목이 실제 히스토리에 남아 있어 자꾸 이 페이지로 되튕기는 문제가 있었다.
-          : <Link to={taskBackTo || `/groups/${id}`} replace className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
+          : <button type="button" onClick={() => backOr(taskBackTo || `/groups/${id}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>}
         <span className="topbar-heading">{taskHeading || taskTerms(location.state?.groupType).noun}</span>
         {taskBackTo === 'back' && (
           <Link to={`/groups/${id}`} replace state={{ from: location.state?.from }}
@@ -778,9 +779,7 @@ export default function Layout() {
       <header className="topbar">
         {(gFrom === 'notifications' || gFrom === 'schedule')
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-          // replace: push 로 쌓으면 콜드스타트로 곧장 진입한 경우 등에서 이 항목이 실제
-          // 히스토리에 남아, 뒤로가기를 반복할 때 자꾸 이 페이지로 되튕기는 문제가 있었다.
-          : <Link to="/" replace className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></Link>}
+          : <button type="button" onClick={() => backOr('/')} className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></button>}
         {headerFilter && (
           <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
             aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>

@@ -24,6 +24,7 @@ import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
 import BottomSheet from '../components/BottomSheet'
 import TaskDetail from './TaskDetail'
+import { navDebugLog } from '../lib/pushNav'
 import GroupConfigPage from './GroupConfigPage'
 import GroupSettingsPage from './GroupSettingsPage'
 import TaskForm from '../components/TaskForm'
@@ -137,6 +138,11 @@ export default function GroupDetail() {
 
   const [searchParams] = useSearchParams()
   const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
+  useEffect(() => {
+    navDebugLog(`GroupDetail: MOUNT groupId=${groupId} search=${location.search} state=${JSON.stringify(location.state)} idx=${window.history.state?.idx}`)
+    return () => navDebugLog(`GroupDetail: UNMOUNT groupId=${groupId}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])

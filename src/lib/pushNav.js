@@ -12,6 +12,26 @@ const NAV_CHANNEL = 'nolging-push-nav'
 // 동안 Cache 를 주기적으로 직접 확인(폴링)해 pending 목적지가 있으면 이동한다. 이게 유일한
 // '확실한' 경로이고, 메시지 리스너들은 그보다 빠르게 반응하기 위한 보조 수단일 뿐이다.
 const POLL_MS = 2000
+
+// ---- 임시 디버그 오버레이 ----
+// 안드로이드는 USB 원격 디버깅 없이는 콘솔을 볼 수 없어, 되튕김 버그의 정확한 발생
+// 지점을 기기 화면에서 바로 읽을 수 있게 임시로 남긴다. 원인 확정되면 제거 예정.
+let dbgEl = null
+export function navDebugLog(msg) {
+  try {
+    if (!dbgEl) {
+      dbgEl = document.createElement('div')
+      dbgEl.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:999999;max-width:96vw;' +
+        'max-height:40vh;overflow:auto;background:rgba(0,0,0,.82);color:#7CFC7C;font:10px/1.4 monospace;' +
+        'padding:6px 8px;border-radius:6px;white-space:pre-wrap;pointer-events:auto'
+      dbgEl.addEventListener('click', () => { dbgEl.remove(); dbgEl = null })
+      document.body.appendChild(dbgEl)
+    }
+    const t = new Date().toISOString().slice(11, 23)
+    dbgEl.textContent += `[${t}] ${msg}\n`
+  } catch { /* noop */ }
+}
+
 export function usePushNavigation() {
   const navigate = useNavigate()
   useEffect(() => {
@@ -29,7 +49,8 @@ export function usePushNavigation() {
     const go = (raw) => {
       const to = toPath(raw)
       const cur = window.location.pathname + window.location.search + window.location.hash
-      if (to && to !== cur) navigate(to, { state: { from: 'push' } })
+      if (to && to !== cur) { navDebugLog(`go: NAVIGATE to=${to} (cur=${cur})`); navigate(to, { state: { from: 'push' } }) }
+      else navDebugLog(`go: no-op to=${to} cur=${cur}`)
     }
     // 콜드스타트 진입 URL(= SW 가 openWindow 로 연 목적지). notificationclick 이 한 제스처에
     // 중복 발화하면(일부 안드로이드/Chrome 에서 실제로 관측되는 케이스) 두 번째 호출은 이미
@@ -41,9 +62,11 @@ export function usePushNavigation() {
     // 조용히 버린다(이동하지 않음) — 그 URL로의 진짜 새 알림이 온 경우도 이미 그 페이지에
     // 있다는 뜻이라 어차피 이동할 필요가 없으므로 안전하다.
     const initialPath = window.location.pathname + window.location.search + window.location.hash
-    const consumeUrl = (raw) => {
+    navDebugLog(`mount: initialPath=${initialPath}`)
+    const consumeUrl = (raw, src) => {
       const to = toPath(raw)
-      if (to === initialPath) return
+      if (to === initialPath) { navDebugLog(`consumeUrl[${src}]: SUPPRESSED raw=${raw} to=${to}`); return }
+      navDebugLog(`consumeUrl[${src}]: pass raw=${raw} to=${to}`)
       go(raw)
     }
     const clearPending = async () => {
@@ -67,22 +90,26 @@ export function usePushNavigation() {
     const consumePending = async () => {
       if (polling) return
       polling = true
+      navDebugLog('consumePending: start')
       const delays = [0, 150, 400, 900, 1600]
+      let found = false
       for (const d of delays) {
         if (cancelled) break
         if (d) await new Promise((r) => setTimeout(r, d))
         const url = await readPending()
-        if (url) { consumeUrl(url); break }
+        if (url) { found = true; consumeUrl(url, `cascade@${d}ms`); break }
       }
+      if (!found) navDebugLog('consumePending: nothing found in cascade')
       polling = false
     }
     // 살아있는 앱: SW 메시지 즉시 처리(빠른 경로)
     const onMessage = (e) => {
       const d = e.data
       if (!d || d.type !== 'navigate' || typeof d.url !== 'string') return
+      navDebugLog(`onMessage: got url=${d.url}`)
       try { e.ports?.[0]?.postMessage({ ok: true }) } catch { /* noop */ }
       clearPending()
-      consumeUrl(d.url)
+      consumeUrl(d.url, 'message')
     }
     const onVisible = () => { if (document.visibilityState === 'visible') consumePending() }
 
@@ -105,7 +132,7 @@ export function usePushNavigation() {
     consumePending() // 최초 로드(콜드 오픈/재개 후 reload 포함)
     // 앱이 계속 포그라운드였어도(상태 전환 이벤트가 안 옴) 확실히 잡히도록 가볍게 주기 확인
     // (consumePending 의 재시도 캐스케이드는 여기선 불필요 — 매번 한 번만 읽는다)
-    const poll = setInterval(() => { if (!cancelled) readPending().then((url) => { if (url) consumeUrl(url) }) }, POLL_MS)
+    const poll = setInterval(() => { if (!cancelled) readPending().then((url) => { if (url) consumeUrl(url, 'poll') }) }, POLL_MS)
 
     return () => {
       cancelled = true
