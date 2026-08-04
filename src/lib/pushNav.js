@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const NAV_CACHE = 'nolging-nav'
@@ -34,6 +34,16 @@ export function navDebugLog(msg) {
 
 export function usePushNavigation() {
   const navigate = useNavigate()
+  // react-router-dom v6 는 useNavigate() 가 반환하는 함수를 URL(pathname)이 바뀔 때마다
+  // 새로 만든다(내부적으로 locationPathname 이 의존성에 들어감). 아래 effect 의 의존성
+  // 배열에 navigate 를 직접 넣으면 "페이지 이동할 때마다" cleanup 후 재실행되어 — SW
+  // 메시지 리스너/Cache 폴링이 매 이동마다 다시 시작되고, initialPath 도 그때그때 "지금
+  // 있는 페이지"로 재설정돼 버린다. 그 결과 SW 가 뒤늦게(또는 중복으로) Cache 에 남긴
+  // 예전 목적지가, 한참 뒤 전혀 다른 페이지에 있을 때 새로 시작된 폴링에 걸려 엉뚱하게
+  // 재생되는 문제가 실제로 관측됐다(안드로이드에서 뒤로가기 되튕김). ref 로 최신 navigate
+  // 만 참조하고 effect 자체는 앱 전체 수명 동안 딱 한 번만 설정되도록 고정한다.
+  const navigateRef = useRef(navigate)
+  useEffect(() => { navigateRef.current = navigate }, [navigate])
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
     let cancelled = false
@@ -49,7 +59,7 @@ export function usePushNavigation() {
     const go = (raw) => {
       const to = toPath(raw)
       const cur = window.location.pathname + window.location.search + window.location.hash
-      if (to && to !== cur) { navDebugLog(`go: NAVIGATE to=${to} (cur=${cur})`); navigate(to, { state: { from: 'push' } }) }
+      if (to && to !== cur) { navDebugLog(`go: NAVIGATE to=${to} (cur=${cur})`); navigateRef.current(to, { state: { from: 'push' } }) }
       else navDebugLog(`go: no-op to=${to} cur=${cur}`)
     }
     // 콜드스타트 진입 URL(= SW 가 openWindow 로 연 목적지). notificationclick 이 한 제스처에
@@ -144,5 +154,5 @@ export function usePushNavigation() {
       bc?.close()
       clearInterval(poll)
     }
-  }, [navigate])
+  }, [])
 }
