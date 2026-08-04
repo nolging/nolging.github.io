@@ -183,17 +183,18 @@ export default function Layout() {
   const { profile, isAdmin } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  // 직전 SPA 히스토리가 없을 때(예: 푸시 알림 콜드스타트로 곧장 진입) navigate(-1) 은
-  // 갈 곳이 없어 아무 반응도 하지 않는다. window.history.state.idx 는 라우터가 내부적으로
-  // 관리하는 위치이며, push 때만 증가하고 replace 로는 그대로다 — location.key 는 replace
-  // 에도 매번 새로 발급돼(우심뽀까→데이트처럼 폴백을 연달아 거치면 두 번째부터 'default'
-  // 가 아니게 돼 오판함) 못 쓴다. idx 가 0(진짜 진입점)이면 replace 로 상위 페이지로
-  // 이동(다음 뒤로가기에서도 idx 는 그대로 0 이라 체인이 이어짐), 아니면 평소처럼 뒤로.
+  // 항상 지정된 상위 페이지로 replace 이동(진짜 navigate(-1) 는 쓰지 않는다). 예전엔
+  // window.history.state.idx 가 0(=진짜 진입점)일 때만 replace, 아니면 navigate(-1) 을
+  // 썼는데 — 안드로이드 Chrome/WebAPK 는 "완전 종료"(최근 앱에서 스와이프)해도 백그라운드
+  // 프로세스가 실제로는 안 죽고 남아 있는 경우가 많아, idx 가 0 이 아닌(=예전 테스트에서
+  // 쌓인 진짜 히스토리가 남아 있는) 상태로 "콜드스타트"가 시작된다. 이때 navigate(-1) 은
+  // 그 오래된 히스토리를 그대로 타고 올라가 버려(예: 몇 시간 전 테스트했던 위시 페이지로
+  // 튕김) 되튕김 버그로 보였다. iOS 는 콜드스타트마다 진짜 새 프로세스라 idx 가 항상 0 이라
+  // 문제가 안 됐던 것. 어느 쪽이든 replace 로 고정 목적지를 쓰면 실제 히스토리 상태와
+  // 무관하게 항상 같은 결과가 나온다.
   const backOr = (fallbackPath) => {
-    const idx = window.history.state?.idx ?? 0
-    navDebugLog(`backOr: idx=${idx} cur=${location.pathname}${location.search} -> ${idx === 0 ? `replace ${fallbackPath}` : 'navigate(-1)'}`)
-    if (idx === 0) navigate(fallbackPath, { replace: true })
-    else navigate(-1)
+    navDebugLog(`backOr: idx=${window.history.state?.idx} cur=${location.pathname}${location.search} -> replace ${fallbackPath}`)
+    navigate(fallbackPath, { replace: true })
   }
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
