@@ -44,6 +44,11 @@ self.addEventListener('push', (event) => {
     badge: '/icon-192.png',
     data: { url: data.url || '/' },
     tag: data.tag,           // 있으면 같은 태그 알림을 갱신
+    // tag 가 같으면 브라우저가 기존 알림을 "조용히" 교체만 하고 새로 알리지 않을 수 있다
+    // (진동/소리 없음, 화면에 다시 나타나지 않기도 함). 이전에 같은 태그의 알림이 안 지워진
+    // 채 남아 있으면(예: 우심뽀까 부르기를 여러 번) 다음 알림이 안 온 것처럼 보인다.
+    // renotify 로 매번 새 알림처럼 다시 알리게 강제한다.
+    renotify: !!data.tag,
   }
   event.waitUntil((async () => {
     // silent = 오류 리포트 채팅 등 '푸시 전용' 알림. 지금 앱을 보고 있으면(포그라운드)
