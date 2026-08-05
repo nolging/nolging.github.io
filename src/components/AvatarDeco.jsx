@@ -262,7 +262,7 @@ function Halo() {
 }
 
 // 천사 링(머리 유형): 후광(halo)과 달리 아바타 테두리가 아니라 머리 위 공간에 뜨는 독립된
-// 금빛 링 — 앞(front) 레이어로 그려 살짝 기울어진 채 둥실둥실 떠 있다(CSS 로 상하 bob).
+// 금빛 링 — 앞(front) 레이어로 그려 위아래로만 아주 살짝 둥실댄다(CSS 로 상하 bob, 회전 없음).
 function AngelRing() {
   return (
     <g className="avd-angel-ring">
@@ -278,11 +278,10 @@ function AngelRing() {
           <stop offset="100%" stopColor="#ffc93f" />
         </linearGradient>
       </defs>
-      <ellipse cx="50" cy="-15" rx="26" ry="11" fill="url(#angelRingGlow)" />
-      <ellipse cx="50" cy="-15" rx="18" ry="6.4" fill="none" stroke="url(#angelRingMetal)" strokeWidth="3.2" />
-      <ellipse cx="50" cy="-16.6" rx="14.4" ry="4" fill="none" stroke="#fffef2" strokeWidth="1" opacity="0.75" />
-      <path className="avd-angel-spark" d={HALO_SPARK_PATH} transform="translate(29 -19) scale(2.4)" fill="#fff6d0" />
-      <path className="avd-angel-spark avd-angel-spark-2" d={HALO_SPARK_PATH} transform="translate(71 -11) scale(2)" fill="#fff6d0" />
+      <ellipse cx="50" cy="-7" rx="26" ry="11" fill="url(#angelRingGlow)" />
+      <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="url(#angelRingMetal)" strokeWidth="3.2" />
+      <path className="avd-angel-spark" d={HALO_SPARK_PATH} transform="translate(29 -11) scale(2.4)" fill="#fff6d0" />
+      <path className="avd-angel-spark avd-angel-spark-2" d={HALO_SPARK_PATH} transform="translate(71 -3) scale(2)" fill="#fff6d0" />
     </g>
   )
 }
@@ -293,11 +292,11 @@ function AngelRing() {
 // 표면장력으로 미세하게 일렁이는 느낌은 순수 CSS 로: 링 전체를 가로/세로 번갈아 살짝
 // 눌렀다 늘렸다(scale) 하는 것만으로 원이 미묘하게 찌그러져 보인다.
 const BUBBLE_SPARKS = [
-  { x: 20, y: 12, s: 3.2, d: 0, dur: 2.1 },
-  { x: 85, y: 22, s: 2.1, d: 0.6, dur: 1.8 },
-  { x: 90, y: 63, s: 2.5, d: 1.2, dur: 2.3 },
-  { x: 30, y: 91, s: 2.3, d: 0.3, dur: 1.9 },
-  { x: 70, y: 90, s: 1.7, d: 1.6, dur: 1.6 },
+  { x: 15, y: 6, s: 4.6, d: 0, dur: 2.1 },
+  { x: 91, y: 17, s: 3.4, d: 0.6, dur: 1.8 },
+  { x: 97, y: 65, s: 4.0, d: 1.2, dur: 2.3 },
+  { x: 27, y: 98, s: 3.6, d: 0.3, dur: 1.9 },
+  { x: 73, y: 97, s: 2.8, d: 1.6, dur: 1.6 },
 ]
 function Bubble() {
   return (
@@ -305,8 +304,9 @@ function Bubble() {
       <defs>
         <radialGradient id="bubbleWash" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="70%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="100%" stopColor="#caa4f2" stopOpacity="0.24" />
+          <stop offset="40%" stopColor="#e6d3fb" stopOpacity="0.05" />
+          <stop offset="72%" stopColor="#b9d0ff" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#caa4f2" stopOpacity="0.34" />
         </radialGradient>
         <linearGradient id="bubbleRim" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#ffb3d6" />
@@ -314,13 +314,21 @@ function Bubble() {
           <stop offset="65%" stopColor="#9fc2ff" />
           <stop offset="100%" stopColor="#ffe9b3" />
         </linearGradient>
+        <radialGradient id="bubbleSparkGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="55%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      <circle cx="50" cy="50" r="48" fill="url(#bubbleWash)" />
-      <circle cx="50" cy="50" r="48" fill="none" stroke="url(#bubbleRim)" strokeWidth="2.2" opacity="0.85" />
-      <path d="M14 34 A 48 48 0 0 1 33 12.5" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+      <circle cx="50" cy="50" r="56" fill="url(#bubbleWash)" />
+      <circle cx="50" cy="50" r="56" fill="none" stroke="url(#bubbleRim)" strokeWidth="2.6" opacity="0.9" />
+      <path d="M8 31 A 56 56 0 0 1 30 6" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
       {BUBBLE_SPARKS.map((sp, i) => (
-        <path key={i} className="avd-halo-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}
-          d={HALO_SPARK_PATH} transform={`translate(${sp.x} ${sp.y}) scale(${sp.s})`} fill="#ffffff" />
+        <g key={i} className="avd-bubble-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}
+          transform={`translate(${sp.x} ${sp.y})`}>
+          <circle r={sp.s * 2.1} fill="url(#bubbleSparkGlow)" />
+          <path d={HALO_SPARK_PATH} transform={`scale(${sp.s})`} fill="#ffffff" />
+        </g>
       ))}
     </g>
   )
@@ -340,8 +348,8 @@ const PREVIEW_VB = {
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
-  'deco-angel-ring': '18 -30 64 42',
-  'deco-bubble': '-6 -6 112 112',
+  'deco-angel-ring': '18 -22 64 42',
+  'deco-bubble': '-16 -16 132 132',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
