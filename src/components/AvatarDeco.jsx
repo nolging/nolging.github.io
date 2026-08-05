@@ -314,20 +314,23 @@ function Bubble() {
           <stop offset="100%" stopColor="#ffdb80" />
         </linearGradient>
         {/* 중심(0)→테두리(100)를 표준 offset(0=중심,100=테두리)으로 보면: 테두리에서
-            안쪽으로 40(=offset 60)까지는 서서히 옅어지고, 그보다 안쪽(offset 0~60)은
-            완전히 비워 사진이 그대로 비친다. 60→85→100 3단 스탑으로 완만하게 이어
-            "뚝" 끊기지 않게. */}
+            안쪽으로 40(=offset 60) 지점에서 이미 "거의 투명"에 가깝고, 거기서 더
+            안쪽으로 갈수록 자연스럽게 완전히 사라진다. "뚝" 끊기는 kink 가 안 보이게
+            스탑을 여러 단으로 나눠 기울기가 점점 커지는(ease-in) 곡선을 흉내낸다. */}
         <radialGradient id="bubbleFadeMask" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#000" />
-          <stop offset="60%" stopColor="#000" />
-          <stop offset="85%" stopColor="#fff" stopOpacity="0.42" />
+          <stop offset="42%" stopColor="#000" />
+          <stop offset="58%" stopColor="#fff" stopOpacity="0.04" />
+          <stop offset="70%" stopColor="#fff" stopOpacity="0.14" />
+          <stop offset="82%" stopColor="#fff" stopOpacity="0.4" />
+          <stop offset="92%" stopColor="#fff" stopOpacity="0.72" />
           <stop offset="100%" stopColor="#fff" />
         </radialGradient>
         <mask id="bubbleFade">
           <circle cx="50" cy="50" r="54" fill="url(#bubbleFadeMask)" />
         </mask>
         <radialGradient id="bubbleHighlight" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="bubbleSparkGlow" cx="50%" cy="50%" r="50%">
