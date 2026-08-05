@@ -291,43 +291,47 @@ function AngelRing() {
 // 다른 테두리(후광)와 달리 항상 다른 모든 꾸미기보다 앞(맨 위)에 그려짐 → FRONTMOST_IDS.
 // 표면장력으로 미세하게 일렁이는 느낌은 순수 CSS 로: 링 전체를 가로/세로 번갈아 살짝
 // 눌렀다 늘렸다(scale) 하는 것만으로 원이 미묘하게 찌그러져 보인다.
+// (반짝임 위치는 링 반지름 52 기준. 각 요소는 "위치용 바깥 g(transform 속성)" +
+// "애니메이션용 안쪽 g(CSS 클래스)"로 분리 — 같은 엘리먼트에 transform 속성과 CSS
+// transform 애니메이션을 같이 걸면 CSS 쪽이 속성을 통째로 덮어써 위치가 원점으로
+// 튀어버린다(반짝임이 안 보이던 원인). 아래처럼 두 겹으로 나누면 안전하다.)
 const BUBBLE_SPARKS = [
-  { x: 15, y: 6, s: 4.6, d: 0, dur: 2.1 },
-  { x: 91, y: 17, s: 3.4, d: 0.6, dur: 1.8 },
-  { x: 97, y: 65, s: 4.0, d: 1.2, dur: 2.3 },
-  { x: 27, y: 98, s: 3.6, d: 0.3, dur: 1.9 },
-  { x: 73, y: 97, s: 2.8, d: 1.6, dur: 1.6 },
+  { x: 18, y: 9, s: 4.0, d: 0, dur: 2.1, c: '#ffd9ec' },
+  { x: 88, y: 19, s: 3.0, d: 0.6, dur: 1.8, c: '#cfe0ff' },
+  { x: 94, y: 64, s: 3.6, d: 1.2, dur: 2.3, c: '#fff0c9' },
+  { x: 29, y: 95, s: 3.2, d: 0.3, dur: 1.9, c: '#f0d9ff' },
+  { x: 71, y: 94, s: 2.4, d: 1.6, dur: 1.6, c: '#d9ecff' },
 ]
 function Bubble() {
   return (
     <g className="avd-bubble">
       <defs>
-        <radialGradient id="bubbleWash" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="40%" stopColor="#e6d3fb" stopOpacity="0.05" />
-          <stop offset="72%" stopColor="#b9d0ff" stopOpacity="0.16" />
-          <stop offset="100%" stopColor="#caa4f2" stopOpacity="0.34" />
-        </radialGradient>
         <linearGradient id="bubbleRim" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#ffb3d6" />
           <stop offset="35%" stopColor="#d7aef8" />
           <stop offset="65%" stopColor="#9fc2ff" />
           <stop offset="100%" stopColor="#ffe9b3" />
         </linearGradient>
+        <filter id="bubbleSoftEdge" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5.5" />
+        </filter>
         <radialGradient id="bubbleSparkGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
           <stop offset="55%" stopColor="#ffffff" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle cx="50" cy="50" r="56" fill="url(#bubbleWash)" />
-      <circle cx="50" cy="50" r="56" fill="none" stroke="url(#bubbleRim)" strokeWidth="2.6" opacity="0.9" />
-      <path d="M8 31 A 56 56 0 0 1 30 6" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
+      {/* 굵게 두른 무지갯빛 스트로크를 강하게 블러 → 선명한 링 경계 없이 안쪽까지
+          색이 자연스럽게 번지는 그라데이션처럼 보인다(테두리 쪽이 가장 진하고
+          중심으로 갈수록 옅어짐). 가운데는 그대로 비어 있어 사진이 그대로 비침. */}
+      <circle cx="50" cy="50" r="52" fill="none" stroke="url(#bubbleRim)" strokeWidth="15" opacity="0.55" filter="url(#bubbleSoftEdge)" />
+      <path d="M10 32 A 52 52 0 0 1 31 9" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
       {BUBBLE_SPARKS.map((sp, i) => (
-        <g key={i} className="avd-bubble-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}
-          transform={`translate(${sp.x} ${sp.y})`}>
-          <circle r={sp.s * 2.1} fill="url(#bubbleSparkGlow)" />
-          <path d={HALO_SPARK_PATH} transform={`scale(${sp.s})`} fill="#ffffff" />
+        <g key={i} transform={`translate(${sp.x} ${sp.y})`}>
+          <g className="avd-bubble-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}>
+            <circle r={sp.s * 2.1} fill="url(#bubbleSparkGlow)" />
+            <path d={HALO_SPARK_PATH} transform={`scale(${sp.s})`} fill={sp.c} />
+          </g>
         </g>
       ))}
     </g>
@@ -349,7 +353,7 @@ const PREVIEW_VB = {
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
   'deco-angel-ring': '18 -22 64 42',
-  'deco-bubble': '-16 -16 132 132',
+  'deco-bubble': '-12 -12 124 124',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -431,7 +435,9 @@ export function decoItems(deco) {
 // items: [{ id, tf }] — 장착된 데코 목록(여러 유형 동시 렌더). layer: 'back' | 'front'
 export default function AvatarDeco({ items, layer = 'front' }) {
   // 그리는 순서(뒤→앞) = 테두리(후광) → 일반 꾸미기 → FRONTMOST(비눗방울, 항상 맨 위)
-  const rank = (id) => (BORDER_IDS.has(id) ? 0 : FRONTMOST_IDS.has(id) ? 2 : 1)
+  // FRONTMOST_IDS 를 먼저 확인해야 한다 — 비눗방울은 BORDER_IDS 에도 들어 있어서
+  // (흰 테두리 대체용) 순서를 반대로 하면 항상 뒤로 가라앉아 버린다.
+  const rank = (id) => (FRONTMOST_IDS.has(id) ? 2 : BORDER_IDS.has(id) ? 0 : 1)
   const show = decoItems(items)
     .filter((d) => ART[d.id] && (BACK_IDS.has(d.id) === (layer === 'back')))
     .sort((a, b) => rank(a.id) - rank(b.id))
