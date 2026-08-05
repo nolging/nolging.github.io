@@ -308,24 +308,26 @@ function Bubble() {
     <g className="avd-bubble">
       <defs>
         <linearGradient id="bubbleRim" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffb3d6" />
-          <stop offset="35%" stopColor="#d7aef8" />
-          <stop offset="65%" stopColor="#9fc2ff" />
-          <stop offset="100%" stopColor="#ffe9b3" />
+          <stop offset="0%" stopColor="#ff8dc4" />
+          <stop offset="35%" stopColor="#c48ff5" />
+          <stop offset="65%" stopColor="#7ab0ff" />
+          <stop offset="100%" stopColor="#ffdb80" />
         </linearGradient>
-        {/* 중심(불투명 0)→테두리(불투명 1) 로만 번지는 마스크. 원 자체(fill)는 블러 없이
-            r=52 에서 그대로 끝나 바깥 경계는 항상 또렷하고, 색은 안쪽으로만 옅어진다. */}
+        {/* 중심(0)→테두리(100)를 표준 offset(0=중심,100=테두리)으로 보면: 테두리에서
+            안쪽으로 40(=offset 60)까지는 서서히 옅어지고, 그보다 안쪽(offset 0~60)은
+            완전히 비워 사진이 그대로 비친다. 60→85→100 3단 스탑으로 완만하게 이어
+            "뚝" 끊기지 않게. */}
         <radialGradient id="bubbleFadeMask" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#000" />
-          <stop offset="38%" stopColor="#000" />
-          <stop offset="72%" stopColor="#fff" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#000" />
+          <stop offset="85%" stopColor="#fff" stopOpacity="0.42" />
           <stop offset="100%" stopColor="#fff" />
         </radialGradient>
         <mask id="bubbleFade">
-          <circle cx="50" cy="50" r="52" fill="url(#bubbleFadeMask)" />
+          <circle cx="50" cy="50" r="54" fill="url(#bubbleFadeMask)" />
         </mask>
         <radialGradient id="bubbleHighlight" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="bubbleSparkGlow" cx="50%" cy="50%" r="50%">
@@ -335,12 +337,12 @@ function Bubble() {
         </radialGradient>
       </defs>
       {/* 무지갯빛 채우기 + 안쪽으로만 번지는 마스크 → 바깥 경계(원 자체)는 또렷하고
-          색은 테두리에서 중심으로 갈수록 자연스럽게 옅어짐. 가운데는 비어 있어 사진이
-          그대로 비침. */}
-      <circle cx="50" cy="50" r="52" fill="url(#bubbleRim)" mask="url(#bubbleFade)" />
-      {/* 왼쪽 위 유리 하이라이트: 선이 아니라 그 자리에서 가장 진하고 바깥으로 갈수록
-          옅어지는 흰 그라데이션 반점 */}
-      <ellipse cx="22" cy="19" rx="13" ry="7.5" fill="url(#bubbleHighlight)" transform="rotate(-32 22 19)" />
+          색은 테두리에서 중심으로 갈수록 자연스럽게 옅어짐. 전체 opacity 를 낮춰
+          가장 진한 테두리조차 완전히 불투명하지 않게(사진이 은은하게 비침). */}
+      <circle cx="50" cy="50" r="54" fill="url(#bubbleRim)" mask="url(#bubbleFade)" opacity="0.82" />
+      {/* 왼쪽 위 유리 하이라이트: 그 자리에서 가장 진하고 바깥으로 갈수록 옅어지는
+          흰 그라데이션 반점 — 더 크고 길쭉한 타원으로 */}
+      <ellipse cx="21" cy="18" rx="19" ry="9" fill="url(#bubbleHighlight)" transform="rotate(-32 21 18)" />
       {BUBBLE_SPARKS.map((sp, i) => (
         <g key={i} transform={`translate(${sp.x} ${sp.y})`}>
           <g className="avd-bubble-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}>
@@ -368,7 +370,7 @@ const PREVIEW_VB = {
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
   'deco-angel-ring': '18 -22 64 42',
-  'deco-bubble': '-12 -12 124 124',
+  'deco-bubble': '-14 -14 128 128',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
