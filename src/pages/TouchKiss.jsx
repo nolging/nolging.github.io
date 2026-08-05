@@ -262,17 +262,27 @@ export default function TouchKiss() {
     return () => clearInterval(iv)
   }, [])
 
-  // ---- 화면을 벗어나면 누르고 있던 손가락을 놓은 것으로 알림 ----
-  // 백그라운드에서는 rAF 가 돌지 않아 pointerup 이 전달되지 않을 수 있다.
+  // ---- 화면을 벗어나면 누르고 있던 손가락을 놓은 것으로 + 나간 것으로 알림 ----
+  // 백그라운드에서는 rAF 가 돌지 않아 pointerup 이 전달되지 않을 수 있다. pagehide 는
+  // 완전 종료(작업 목록에서 밀어서 끄기 포함)를 앞두고 페이지가 사라지기 직전 마지막
+  // 으로 확실히 실행되는 이벤트라, 여기서 bye 도 함께 보내 상대 화면에 "나간 것"이
+  // 하트비트 TTL(13초)을 기다리지 않고 바로 반영되게 한다. 잠깐 다른 앱을 봤다
+  // 돌아오는 정도로도 pagehide 가 뜰 수 있어 순간적으로 "나감"이 깜빡일 수 있지만,
+  // 화면에 돌아오면 즉시 hello 를 다시 보내 금방 재등록되므로 실질적 영향은 적다.
+  const sayByeNow = useCallback(() => {
+    if (!isMemberRef.current) return
+    try { chanRef.current?.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ }
+  }, [uid])
   useEffect(() => {
-    const onVis = () => { if (document.hidden) releaseNow() }
-    window.addEventListener('pagehide', releaseNow)
+    const onHide = () => { releaseNow(); sayByeNow() }
+    const onVis = () => { if (document.hidden) onHide(); else sayHello() }
+    window.addEventListener('pagehide', onHide)
     document.addEventListener('visibilitychange', onVis)
     return () => {
-      window.removeEventListener('pagehide', releaseNow)
+      window.removeEventListener('pagehide', onHide)
       document.removeEventListener('visibilitychange', onVis)
     }
-  }, [releaseNow])
+  }, [releaseNow, sayHello, sayByeNow])
 
   // ---- 내 손가락 위치 전송(rAF 스로틀) ----
   function sendPending() {
