@@ -287,6 +287,45 @@ function AngelRing() {
   )
 }
 
+// 비눗방울(테두리 유형): 아바타 전체를 무지갯빛 막으로 감싼다. 가운데는 거의 투명해 프로필
+// 사진이 그대로 비치고, 테두리 쪽에만 은은한 색 번짐 + 흰 하이라이트 호 + 반짝임이 있다.
+// 다른 테두리(후광)와 달리 항상 다른 모든 꾸미기보다 앞(맨 위)에 그려짐 → FRONTMOST_IDS.
+// 표면장력으로 미세하게 일렁이는 느낌은 순수 CSS 로: 링 전체를 가로/세로 번갈아 살짝
+// 눌렀다 늘렸다(scale) 하는 것만으로 원이 미묘하게 찌그러져 보인다.
+const BUBBLE_SPARKS = [
+  { x: 20, y: 12, s: 3.2, d: 0, dur: 2.1 },
+  { x: 85, y: 22, s: 2.1, d: 0.6, dur: 1.8 },
+  { x: 90, y: 63, s: 2.5, d: 1.2, dur: 2.3 },
+  { x: 30, y: 91, s: 2.3, d: 0.3, dur: 1.9 },
+  { x: 70, y: 90, s: 1.7, d: 1.6, dur: 1.6 },
+]
+function Bubble() {
+  return (
+    <g className="avd-bubble">
+      <defs>
+        <radialGradient id="bubbleWash" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="70%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#caa4f2" stopOpacity="0.24" />
+        </radialGradient>
+        <linearGradient id="bubbleRim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffb3d6" />
+          <stop offset="35%" stopColor="#d7aef8" />
+          <stop offset="65%" stopColor="#9fc2ff" />
+          <stop offset="100%" stopColor="#ffe9b3" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="48" fill="url(#bubbleWash)" />
+      <circle cx="50" cy="50" r="48" fill="none" stroke="url(#bubbleRim)" strokeWidth="2.2" opacity="0.85" />
+      <path d="M14 34 A 48 48 0 0 1 33 12.5" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+      {BUBBLE_SPARKS.map((sp, i) => (
+        <path key={i} className="avd-halo-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}
+          d={HALO_SPARK_PATH} transform={`translate(${sp.x} ${sp.y}) scale(${sp.s})`} fill="#ffffff" />
+      ))}
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -302,6 +341,7 @@ const PREVIEW_VB = {
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
   'deco-angel-ring': '18 -30 64 42',
+  'deco-bubble': '-6 -6 112 112',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -346,6 +386,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-heart-shades' && <HeartShades />}
       {id === 'deco-halo' && <Halo />}
       {id === 'deco-angel-ring' && <AngelRing />}
+      {id === 'deco-bubble' && <Bubble />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -357,11 +398,14 @@ const ART = {
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
   'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
+  'deco-bubble': Bubble,
 }
-// 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체하고, 항상 다른 꾸미기보다 뒤에 보이게.
-export const BORDER_IDS = new Set(['deco-halo'])
+// 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
+// (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
+export const BORDER_IDS = new Set(['deco-halo', 'deco-bubble'])
 export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.has(d.id))
-// 뒤(back) 레이어로 그릴 아이템(귀 + 테두리) — 나머지는 앞(front). 아트 종류로 결정.
+const FRONTMOST_IDS = new Set(['deco-bubble'])
+// 뒤(back) 레이어로 그릴 아이템(귀 + 후광) — 나머지는 앞(front). 아트 종류로 결정.
 const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo'])
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
@@ -378,10 +422,11 @@ export function decoItems(deco) {
 
 // items: [{ id, tf }] — 장착된 데코 목록(여러 유형 동시 렌더). layer: 'back' | 'front'
 export default function AvatarDeco({ items, layer = 'front' }) {
+  // 그리는 순서(뒤→앞) = 테두리(후광) → 일반 꾸미기 → FRONTMOST(비눗방울, 항상 맨 위)
+  const rank = (id) => (BORDER_IDS.has(id) ? 0 : FRONTMOST_IDS.has(id) ? 2 : 1)
   const show = decoItems(items)
     .filter((d) => ART[d.id] && (BACK_IDS.has(d.id) === (layer === 'back')))
-    // 테두리(후광 등)를 먼저 그려 같은 레이어의 다른 꾸미기보다 항상 뒤에 오게
-    .sort((a, b) => (BORDER_IDS.has(a.id) ? 0 : 1) - (BORDER_IDS.has(b.id) ? 0 : 1))
+    .sort((a, b) => rank(a.id) - rank(b.id))
   if (!show.length) return null
   return (
     <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"

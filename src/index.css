@@ -1578,6 +1578,16 @@ button.mention-chip:active { opacity: .6; }
 .avd-angel-spark { transform-box: fill-box; transform-origin: center; animation: avd-angel-spark 1.7s ease-in-out infinite; }
 .avd-angel-spark-2 { animation-duration: 2.1s; animation-delay: .4s; }
 @media (prefers-reduced-motion: reduce) { .avd-angel-ring, .avd-angel-spark { animation: none; } }
+/* 비눗방울: 가로/세로를 번갈아 살짝 눌렀다 늘렸다 해 표면장력으로 미세하게 일렁이는 느낌.
+   반짝임은 avd-halo-spark 재사용(트윙클 패턴이 동일). */
+@keyframes avd-bubble-wobble {
+  0%, 100% { transform: scale(1, 1); }
+  25% { transform: scale(1.018, 0.986); }
+  50% { transform: scale(0.986, 1.016); }
+  75% { transform: scale(1.012, 0.99); }
+}
+.avd-bubble { transform-box: fill-box; transform-origin: center; animation: avd-bubble-wobble 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .avd-bubble { animation: none; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
