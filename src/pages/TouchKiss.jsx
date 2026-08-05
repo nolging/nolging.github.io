@@ -124,58 +124,83 @@ export default function TouchKiss() {
   }
 
   // ---- 실시간 채널 ----
+  // WebSocket 은 모바일 네트워크 전환(와이파이↔셀룰러, 화면 잠금 등)으로 중간에 끊길 수
+  // 있다. subscribe 콜백이 'SUBSCRIBED' 가 아닌 상태(TIMED_OUT/CHANNEL_ERROR/CLOSED)를
+  // 무시하기만 하면, 한 번 끊긴 뒤로는 아무도 재연결을 시도하지 않아 새로고침 전까지
+  // 서로의 hello/finger 가 전혀 오가지 않는 채로 남는다(상대가 계속 나간 것처럼 보이고
+  // 손가락도 안 보이던 원인). 끊기면 짧은 지연 뒤 채널을 새로 만들어 다시 구독한다.
   useEffect(() => {
     if (!groupId || !uid) return
-    const ch = supabase.channel(`touch:${groupId}`, {
-      config: { broadcast: { self: false } },
-    })
-    chanRef.current = ch
-    ch.on('broadcast', { event: 'finger' }, ({ payload: pl }) => {
-      if (!pl?.uid || pl.uid === uid) return
-      setPeers((prev) => {
-        const next = { ...prev }
-        // t = 마지막 소식 시각. 만료 검사(sweep)의 기준.
-        if (pl.down) next[pl.uid] = { x: pl.x, y: pl.y, name: pl.name, t: Date.now() }
-        else delete next[pl.uid]
-        return next
+    let alive = true
+    let retryTimer = null
+
+    function connect() {
+      const ch = supabase.channel(`touch:${groupId}`, {
+        config: { broadcast: { self: false } },
       })
-    })
-    // 접속 여부는 Presence API 대신 Broadcast(hello/bye/ask) 로 판정한다. t 는 상대
-    // 기기가 보낸 시각이 아니라 이 클라이언트가 수신한 로컬 시각을 쓴다 — 기기 간 시계가
-    // 어긋나 있어도(시간대·자동시각 설정 차이 등) TTL 판정이 흔들리지 않는다.
-    ch.on('broadcast', { event: 'hello' }, ({ payload: pl }) => {
-      if (!pl?.uid || pl.uid === uid) return
-      setPresent((prev) => ({ ...prev, [pl.uid]: { name: pl.name, avatar: pl.avatar, t: Date.now() } }))
-    })
-    ch.on('broadcast', { event: 'bye' }, ({ payload: pl }) => {
-      if (!pl?.uid || pl.uid === uid) return
-      setPresent((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
-      setPeers((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
-    })
-    // 새로 들어온 사람이 ask 를 보내면, 이미 있던 사람들이 즉시 hello 로 응답 →
-    // 하트비트(4초)를 기다리지 않고도 바로 서로를 인지한다.
-    ch.on('broadcast', { event: 'ask' }, ({ payload: pl }) => {
-      if (!pl?.uid || pl.uid === uid) return
-      sayHello()
-    })
-    ch.subscribe(async (status) => {
-      if (status !== 'SUBSCRIBED') return
-      let name = profile?.login_id || '', avatar = null, mem = false
-      try {
-        const m = await getMyGroupMember(groupId, uid)
-        if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null; mem = true }
-      } catch { /* noop */ }
-      setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
-      // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) hello 를 보내지 않아 다른 멤버에게 보이지 않는다.
-      setIsMember(mem); isMemberRef.current = mem
-      if (mem) {
+      chanRef.current = ch
+      ch.on('broadcast', { event: 'finger' }, ({ payload: pl }) => {
+        if (!pl?.uid || pl.uid === uid) return
+        setPeers((prev) => {
+          const next = { ...prev }
+          // t = 마지막 소식 시각. 만료 검사(sweep)의 기준.
+          if (pl.down) next[pl.uid] = { x: pl.x, y: pl.y, name: pl.name, t: Date.now() }
+          else delete next[pl.uid]
+          return next
+        })
+      })
+      // 접속 여부는 Presence API 대신 Broadcast(hello/bye/ask) 로 판정한다. t 는 상대
+      // 기기가 보낸 시각이 아니라 이 클라이언트가 수신한 로컬 시각을 쓴다 — 기기 간 시계가
+      // 어긋나 있어도(시간대·자동시각 설정 차이 등) TTL 판정이 흔들리지 않는다.
+      ch.on('broadcast', { event: 'hello' }, ({ payload: pl }) => {
+        if (!pl?.uid || pl.uid === uid) return
+        setPresent((prev) => ({ ...prev, [pl.uid]: { name: pl.name, avatar: pl.avatar, t: Date.now() } }))
+      })
+      ch.on('broadcast', { event: 'bye' }, ({ payload: pl }) => {
+        if (!pl?.uid || pl.uid === uid) return
+        setPresent((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
+        setPeers((prev) => { if (!prev[pl.uid]) return prev; const next = { ...prev }; delete next[pl.uid]; return next })
+      })
+      // 새로 들어온 사람이 ask 를 보내면, 이미 있던 사람들이 즉시 hello 로 응답 →
+      // 하트비트(4초)를 기다리지 않고도 바로 서로를 인지한다.
+      ch.on('broadcast', { event: 'ask' }, ({ payload: pl }) => {
+        if (!pl?.uid || pl.uid === uid) return
         sayHello()
-        try { ch.send({ type: 'broadcast', event: 'ask', payload: { uid } }) } catch { /* noop */ }
-      }
-      // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
-      if (pendRef.current?.down) sendFinger(pendRef.current)
-    })
+      })
+      ch.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          let name = profile?.login_id || '', avatar = null, mem = false
+          try {
+            const m = await getMyGroupMember(groupId, uid)
+            if (m) { name = m.display_nickname || profile?.login_id || ''; avatar = m.avatar_url || null; mem = true }
+          } catch { /* noop */ }
+          setMyMeta({ name, avatar }); myMetaRef.current = { name, avatar }
+          // 이 그룹의 멤버가 아니면(관리자 미가입 미리보기) hello 를 보내지 않아 다른 멤버에게 보이지 않는다.
+          setIsMember(mem); isMemberRef.current = mem
+          if (mem) {
+            sayHello()
+            try { ch.send({ type: 'broadcast', event: 'ask', payload: { uid } }) } catch { /* noop */ }
+          }
+          // 재접속(SUBSCRIBED 재진입) 이면 상대는 내 마지막 상태를 모른다 → 다시 알린다
+          if (pendRef.current?.down) sendFinger(pendRef.current)
+          return
+        }
+        if (!alive) return
+        if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          try { supabase.removeChannel(ch) } catch { /* noop */ }
+          if (chanRef.current === ch) chanRef.current = null
+          if (retryTimer) clearTimeout(retryTimer)
+          retryTimer = setTimeout(() => { if (alive) connect() }, 1000)
+        }
+      })
+    }
+    connect()
+
     return () => {
+      alive = false
+      if (retryTimer) clearTimeout(retryTimer)
+      const ch = chanRef.current
+      if (!ch) return
       // 나가면서 누르고 있었다면 "놓음" 을 먼저 알려, 상대 화면에 입술이 남지 않게
       if (pendRef.current?.down) { try { sendFinger({ ...pendRef.current, down: false }) } catch { /* noop */ } }
       if (isMemberRef.current) { try { ch.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ } }
