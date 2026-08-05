@@ -1,10 +1,11 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
-//  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)  → 하나만
+//  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
+//    | deco-angel-ring(천사 링·앞)  → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) | deco-gum(풍선껌) → 하나만
 // 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
 // 새싹·홍조는 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -260,6 +261,32 @@ function Halo() {
   )
 }
 
+// 천사 링(머리 유형): 후광(halo)과 달리 아바타 테두리가 아니라 머리 위 공간에 뜨는 독립된
+// 금빛 링 — 앞(front) 레이어로 그려 살짝 기울어진 채 둥실둥실 떠 있다(CSS 로 상하 bob).
+function AngelRing() {
+  return (
+    <g className="avd-angel-ring">
+      <defs>
+        <radialGradient id="angelRingGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stopColor="#fff6d0" stopOpacity="0.85" />
+          <stop offset="55%" stopColor="#ffe58a" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#ffe58a" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="angelRingMetal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fffbe6" />
+          <stop offset="45%" stopColor="#ffe17a" />
+          <stop offset="100%" stopColor="#ffc93f" />
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="-15" rx="26" ry="11" fill="url(#angelRingGlow)" />
+      <ellipse cx="50" cy="-15" rx="18" ry="6.4" fill="none" stroke="url(#angelRingMetal)" strokeWidth="3.2" />
+      <ellipse cx="50" cy="-16.6" rx="14.4" ry="4" fill="none" stroke="#fffef2" strokeWidth="1" opacity="0.75" />
+      <path className="avd-angel-spark" d={HALO_SPARK_PATH} transform="translate(29 -19) scale(2.4)" fill="#fff6d0" />
+      <path className="avd-angel-spark avd-angel-spark-2" d={HALO_SPARK_PATH} transform="translate(71 -11) scale(2)" fill="#fff6d0" />
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -274,6 +301,7 @@ const PREVIEW_VB = {
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
+  'deco-angel-ring': '18 -30 64 42',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -317,6 +345,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-gum' && <BubbleGum />}
       {id === 'deco-heart-shades' && <HeartShades />}
       {id === 'deco-halo' && <Halo />}
+      {id === 'deco-angel-ring' && <AngelRing />}
       {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
@@ -327,7 +356,7 @@ const ART = {
   'deco-sprout': Sprout, 'deco-jaguar': CatEars, 'deco-wolf': WolfEars,
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
-  'deco-heart-shades': HeartShades, 'deco-halo': Halo,
+  'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체하고, 항상 다른 꾸미기보다 뒤에 보이게.
 export const BORDER_IDS = new Set(['deco-halo'])

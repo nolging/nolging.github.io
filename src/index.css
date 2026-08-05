@@ -1571,6 +1571,13 @@ button.mention-chip:active { opacity: .6; }
 .avd-halo-spark { transform-box: fill-box; transform-origin: center; animation: avd-halo-spark 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .avd-halo-glow, .avd-halo-spark { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .avd-halo-spark { opacity: .85; } }
+/* 천사 링: 머리 위에서 좌우로 살짝 기울며 둥실둥실 위아래로 뜬다(자체 바운딩박스 기준 %) */
+@keyframes avd-ring-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10%) rotate(3deg); } }
+.avd-angel-ring { transform-box: fill-box; transform-origin: center; animation: avd-ring-bob 3s ease-in-out infinite; }
+@keyframes avd-angel-spark { 0%, 100% { opacity: .25; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.15); } }
+.avd-angel-spark { transform-box: fill-box; transform-origin: center; animation: avd-angel-spark 1.7s ease-in-out infinite; }
+.avd-angel-spark-2 { animation-duration: 2.1s; animation-delay: .4s; }
+@media (prefers-reduced-motion: reduce) { .avd-angel-ring, .avd-angel-spark { animation: none; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
