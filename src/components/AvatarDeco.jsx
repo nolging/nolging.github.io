@@ -286,8 +286,9 @@ function AngelRing() {
   )
 }
 
-// 비눗방울(테두리 유형): 아바타 전체를 무지갯빛 막으로 감싼다. 가운데는 거의 투명해 프로필
-// 사진이 그대로 비치고, 테두리 쪽에만 은은한 색 번짐 + 흰 하이라이트 호 + 반짝임이 있다.
+// 비눗방울(테두리 유형): 아바타 전체를 무지갯빛 막으로 감싼다. 바깥 경계(원 자체)는
+// 또렷하고, 색은 mask 로 테두리→중심 방향으로만 옅어져 가운데는 거의 투명해 프로필
+// 사진이 그대로 비친다. 왼쪽 위엔 흰 그라데이션 하이라이트 반점, 반짝임도 있다.
 // 다른 테두리(후광)와 달리 항상 다른 모든 꾸미기보다 앞(맨 위)에 그려짐 → FRONTMOST_IDS.
 // 표면장력으로 미세하게 일렁이는 느낌은 순수 CSS 로: 링 전체를 가로/세로 번갈아 살짝
 // 눌렀다 늘렸다(scale) 하는 것만으로 원이 미묘하게 찌그러져 보인다.
@@ -296,11 +297,11 @@ function AngelRing() {
 // transform 애니메이션을 같이 걸면 CSS 쪽이 속성을 통째로 덮어써 위치가 원점으로
 // 튀어버린다(반짝임이 안 보이던 원인). 아래처럼 두 겹으로 나누면 안전하다.)
 const BUBBLE_SPARKS = [
-  { x: 18, y: 9, s: 4.0, d: 0, dur: 2.1, c: '#ffd9ec' },
-  { x: 88, y: 19, s: 3.0, d: 0.6, dur: 1.8, c: '#cfe0ff' },
-  { x: 94, y: 64, s: 3.6, d: 1.2, dur: 2.3, c: '#fff0c9' },
-  { x: 29, y: 95, s: 3.2, d: 0.3, dur: 1.9, c: '#f0d9ff' },
-  { x: 71, y: 94, s: 2.4, d: 1.6, dur: 1.6, c: '#d9ecff' },
+  { x: 18, y: 9, s: 4.0, d: 0, dur: 2.1 },
+  { x: 88, y: 19, s: 3.0, d: 0.6, dur: 1.8 },
+  { x: 94, y: 64, s: 3.6, d: 1.2, dur: 2.3 },
+  { x: 29, y: 95, s: 3.2, d: 0.3, dur: 1.9 },
+  { x: 71, y: 94, s: 2.4, d: 1.6, dur: 1.6 },
 ]
 function Bubble() {
   return (
@@ -312,25 +313,39 @@ function Bubble() {
           <stop offset="65%" stopColor="#9fc2ff" />
           <stop offset="100%" stopColor="#ffe9b3" />
         </linearGradient>
-        <filter id="bubbleSoftEdge" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="5.5" />
-        </filter>
+        {/* 중심(불투명 0)→테두리(불투명 1) 로만 번지는 마스크. 원 자체(fill)는 블러 없이
+            r=52 에서 그대로 끝나 바깥 경계는 항상 또렷하고, 색은 안쪽으로만 옅어진다. */}
+        <radialGradient id="bubbleFadeMask" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#000" />
+          <stop offset="38%" stopColor="#000" />
+          <stop offset="72%" stopColor="#fff" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#fff" />
+        </radialGradient>
+        <mask id="bubbleFade">
+          <circle cx="50" cy="50" r="52" fill="url(#bubbleFadeMask)" />
+        </mask>
+        <radialGradient id="bubbleHighlight" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
         <radialGradient id="bubbleSparkGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="55%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {/* 굵게 두른 무지갯빛 스트로크를 강하게 블러 → 선명한 링 경계 없이 안쪽까지
-          색이 자연스럽게 번지는 그라데이션처럼 보인다(테두리 쪽이 가장 진하고
-          중심으로 갈수록 옅어짐). 가운데는 그대로 비어 있어 사진이 그대로 비침. */}
-      <circle cx="50" cy="50" r="52" fill="none" stroke="url(#bubbleRim)" strokeWidth="15" opacity="0.55" filter="url(#bubbleSoftEdge)" />
-      <path d="M10 32 A 52 52 0 0 1 31 9" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+      {/* 무지갯빛 채우기 + 안쪽으로만 번지는 마스크 → 바깥 경계(원 자체)는 또렷하고
+          색은 테두리에서 중심으로 갈수록 자연스럽게 옅어짐. 가운데는 비어 있어 사진이
+          그대로 비침. */}
+      <circle cx="50" cy="50" r="52" fill="url(#bubbleRim)" mask="url(#bubbleFade)" />
+      {/* 왼쪽 위 유리 하이라이트: 선이 아니라 그 자리에서 가장 진하고 바깥으로 갈수록
+          옅어지는 흰 그라데이션 반점 */}
+      <ellipse cx="22" cy="19" rx="13" ry="7.5" fill="url(#bubbleHighlight)" transform="rotate(-32 22 19)" />
       {BUBBLE_SPARKS.map((sp, i) => (
         <g key={i} transform={`translate(${sp.x} ${sp.y})`}>
           <g className="avd-bubble-spark" style={{ animationDelay: `${sp.d}s`, animationDuration: `${sp.dur}s` }}>
-            <circle r={sp.s * 2.1} fill="url(#bubbleSparkGlow)" />
-            <path d={HALO_SPARK_PATH} transform={`scale(${sp.s})`} fill={sp.c} />
+            <circle r={sp.s * 1.2} fill="url(#bubbleSparkGlow)" />
+            <path d={HALO_SPARK_PATH} transform={`scale(${sp.s})`} fill="#ffffff" />
           </g>
         </g>
       ))}
