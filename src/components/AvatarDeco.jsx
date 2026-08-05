@@ -316,15 +316,19 @@ function Bubble() {
         {/* 중심(0)→테두리(100)를 표준 offset(0=중심,100=테두리)으로 보면: 테두리에서
             안쪽으로 40(=offset 60) 지점에서 이미 "거의 투명"에 가깝고, 거기서 더
             안쪽으로 갈수록 자연스럽게 완전히 사라진다. "뚝" 끊기는 kink 가 안 보이게
-            스탑을 여러 단으로 나눠 기울기가 점점 커지는(ease-in) 곡선을 흉내낸다. */}
+            스탑을 여러 단으로 나눠 기울기가 점점 커지는(ease-in) 곡선을 흉내낸다.
+            색은 항상 흰색으로 고정하고 stopOpacity 만 바꿔야 한다 — 검정(#000)에서
+            흰색(#fff)으로 넘어가는 구간을 만들면 색상 채널과 투명도 채널이 각각
+            보간되면서 중간 지점의 실효 밝기가 양쪽 끝보다 커지는 "가짜 링"이 생긴다
+            (실제로 발생했던 문제). */}
         <radialGradient id="bubbleFadeMask" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#000" />
-          <stop offset="42%" stopColor="#000" />
+          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="42%" stopColor="#fff" stopOpacity="0" />
           <stop offset="58%" stopColor="#fff" stopOpacity="0.04" />
           <stop offset="70%" stopColor="#fff" stopOpacity="0.14" />
           <stop offset="82%" stopColor="#fff" stopOpacity="0.4" />
           <stop offset="92%" stopColor="#fff" stopOpacity="0.72" />
-          <stop offset="100%" stopColor="#fff" />
+          <stop offset="100%" stopColor="#fff" stopOpacity="1" />
         </radialGradient>
         <mask id="bubbleFade">
           <circle cx="50" cy="50" r="54" fill="url(#bubbleFadeMask)" />
