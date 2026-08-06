@@ -1674,6 +1674,15 @@ export async function getQuests() {
   }
   return data
 }
+// 완료돼서 "받기" 가능한 퀘스트가 하나라도 있는지(하단 탭 배지용, 가벼운 조회). RPC 미배포 시 false.
+export async function hasClaimableQuest() {
+  const { data, error } = await supabase.rpc('has_claimable_quest')
+  if (error) {
+    if (error.code === 'PGRST202' || /has_claimable_quest/.test(error.message || '')) return false
+    throw error
+  }
+  return !!data
+}
 // 퀘스트 보상 수령 → 새 잔액 반환
 export async function claimQuest(key) {
   const { data, error } = await supabase.rpc('claim_quest', { p_key: key })

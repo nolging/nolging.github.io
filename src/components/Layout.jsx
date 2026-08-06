@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
-import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, getGroupBoard, listStoreItems } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, hasClaimableQuest, getGroupBoard, listStoreItems } from '../lib/api'
 import { setStoreCatalog } from '../lib/storeCatalog'
 import Brand from './Brand'
 import PawIcon from './PawIcon'
@@ -433,6 +433,16 @@ export default function Layout() {
     return () => clearInterval(iv)
   }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { refreshNoteUnread() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 하단 탭 '마이' 점: 완료돼서 "받기" 가능한 퀘스트가 있으면 표시
+  const [questClaimable, setQuestClaimable] = useState(false)
+  const refreshQuestClaimable = () => hasClaimableQuest().then(setQuestClaimable).catch(() => {})
+  useEffect(() => {
+    refreshQuestClaimable()
+    const iv = setInterval(refreshQuestClaimable, 60000)
+    return () => clearInterval(iv)
+  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refreshQuestClaimable() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
   const [coin, setCoin] = useState(null)
@@ -989,7 +999,7 @@ export default function Layout() {
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
           <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>
           <NavLink to="/notes"><span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span><span>쪽지</span></NavLink>
-          <NavLink to="/me"><MyIcon /><span>마이</span></NavLink>
+          <NavLink to="/me"><span className="nav-ico-wrap"><MyIcon />{questClaimable && <span className="nav-dot" aria-label="받을 수 있는 퀘스트" />}</span><span>마이</span></NavLink>
         </nav>
       )}
       {/* 페이지가 Portal 로 하단 고정 바(댓글 입력 등)를 넣는 슬롯 */}
