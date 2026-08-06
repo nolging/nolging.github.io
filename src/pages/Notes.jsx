@@ -96,6 +96,64 @@ function formatNoteFull(iso) {
   } catch { return '' }
 }
 
+// 폴라로이드 사진 뷰어: animate=true 일 때만 "카메라 → 인화(줌인) → 30초 리빌" 연출을 태우고,
+// animate=false(이미 인화된 사진을 다시 볼 때)면 처음부터 다 드러난 채로 즉시 보여준다.
+// 단계: camera(카메라+까만 필름 배출, 0.9초) → print(카메라 사라지며 프레임이 확대돼 자리잡음, 0.65초)
+// → revealing(자리잡은 사진이 30초에 걸쳐 서서히 드러남). 카메라 연출은 열람 세션당 한 번만
+// (‹ › 로 사진을 넘겨도 다시 재생 안 함), 리빌은 photo.id 를 key 로 삼아 처음 보는 사진마다 새로 재생된다.
+function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
+  const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
+
+  useEffect(() => {
+    if (!polaroidView.animate) { setStage('static'); return }
+    setStage('camera')
+    const t1 = setTimeout(() => setStage('print'), 900)
+    const t2 = setTimeout(() => setStage('revealing'), 900 + 650)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [polaroidView.animate, polaroidView.noteId])
+
+  const photos = notePhotos[polaroidView.noteId] || []
+  if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
+  const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
+  const photo = photos[idx]
+  const revealing = stage === 'revealing'
+  const showCamera = stage === 'camera' || stage === 'print'
+
+  return (
+    <div className="pv-wrap">
+      {showCamera && (
+        <div className={`pv-camera ${stage === 'print' ? 'is-out' : ''}`}>
+          <div className="pv-camera-top">
+            <span className="pv-camera-brand">NOLGING</span>
+            <span className="pv-camera-dial" />
+            <span className="pv-camera-btn" />
+          </div>
+          <div className="pv-camera-lens">
+            <span className="pv-camera-lens-ring" />
+            <span className="pv-camera-flash" />
+          </div>
+          <div className="pv-camera-slot"><span className="pv-camera-slot-photo" /></div>
+        </div>
+      )}
+      <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>
+        <div className="pv-photo">
+          <img key={photo.id} src={photo.url} alt="" className={revealing ? 'pv-reveal-anim' : (stage === 'print' ? 'pv-photo-black' : '')} />
+        </div>
+      </div>
+      {(stage === 'revealing' || stage === 'static') && photos.length > 1 && (
+        <div className="pv-nav">
+          <button type="button" className="pv-nav-btn" aria-label="이전 사진" disabled={idx === 0}
+            onClick={() => onNav(idx - 1)}>‹</button>
+          <span className="pv-nav-count">{idx + 1} / {photos.length}</span>
+          <button type="button" className="pv-nav-btn" aria-label="다음 사진" disabled={idx === photos.length - 1}
+            onClick={() => onNav(idx + 1)}>›</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Notes() {
   const { user } = useAuth()
   useStoreCatalog()
@@ -408,7 +466,10 @@ export default function Notes() {
   }
 
   // 인화하기: 폴라로이드 쪽지 공개(사진은 그 뒤 fetchNotePhotos 로 다시 조회해야 실제로 보임) →
-  // 성공하면 바로 뷰어를 연다(애니메이션은 나중에 시안 적용 예정, 지금은 즉시 열림).
+  // 성공하면 바로 뷰어를 여는데, 이번엔 animate:true 로 열어 실제 필름처럼 까맣던 사진이
+  // 30초에 걸쳐 서서히 드러나는 연출을 태운다. 이 애니메이션은 "방금 인화한 이번 열람"
+  // 에만 재생 — 이후 "사진 보기"로 다시 열면(claimed 는 이미 true) animate:false 라
+  // 처음부터 다 드러난 채로 보인다.
   async function developPolaroid(n) {
     setBusy(true); setError('')
     try {
@@ -416,14 +477,14 @@ export default function Notes() {
       await load()
       await fetchNotePhotos(n.id)
       setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
-      setPolaroidView({ noteId: n.id, index: 0 })
+      setPolaroidView({ noteId: n.id, index: 0, animate: true })
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
   }
-  // 이미 인화됐거나(수신자) 내가 보낸 쪽지(발신자)면 바로 뷰어를 연다.
+  // 이미 인화됐거나(수신자) 내가 보낸 쪽지(발신자)면 바로 뷰어를 연다(애니메이션 없이).
   function openPolaroidViewer(n) {
     fetchNotePhotos(n.id)
-    setPolaroidView({ noteId: n.id, index: 0 })
+    setPolaroidView({ noteId: n.id, index: 0, animate: false })
   }
 
   // 깜냥 명의 보상 쪽지 삭제(아이템을 전부 수령한 뒤에만 가능)
@@ -891,30 +952,15 @@ export default function Notes() {
       </Modal>
 
       {/* 폴라로이드 사진 뷰어: 필름 프레임 안에 사진, 여러 장이면 </> 로 넘김.
-          "인화" 애니메이션은 나중에 시안 적용 예정 — 지금은 즉시 열림. */}
+          인화 직후(animate:true)엔 카메라 연출 → 인화(줌인) → 30초 리빌, 이미 인화된 걸 다시 보면 즉시 표시. */}
       <Modal open={!!polaroidView} onClose={() => setPolaroidView(null)} cardClassName="modal-polaroid-viewer">
-        {polaroidView && (() => {
-          const photos = notePhotos[polaroidView.noteId] || []
-          if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
-          const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
-          const photo = photos[idx]
-          return (
-            <div className="pv-wrap">
-              <div className="pv-frame">
-                <div className="pv-photo"><img src={photo.url} alt="" /></div>
-              </div>
-              {photos.length > 1 && (
-                <div className="pv-nav">
-                  <button type="button" className="pv-nav-btn" aria-label="이전 사진" disabled={idx === 0}
-                    onClick={() => setPolaroidView((v) => ({ ...v, index: v.index - 1 }))}>‹</button>
-                  <span className="pv-nav-count">{idx + 1} / {photos.length}</span>
-                  <button type="button" className="pv-nav-btn" aria-label="다음 사진" disabled={idx === photos.length - 1}
-                    onClick={() => setPolaroidView((v) => ({ ...v, index: v.index + 1 }))}>›</button>
-                </div>
-              )}
-            </div>
-          )
-        })()}
+        {polaroidView && (
+          <PolaroidPhotoViewer
+            polaroidView={polaroidView}
+            notePhotos={notePhotos}
+            onNav={(nextIdx) => setPolaroidView((v) => ({ ...v, index: nextIdx }))}
+          />
+        )}
       </Modal>
 
       <Modal open={tmConfirm} onClose={() => setTmConfirm(false)} cardClassName="tm-modal">
