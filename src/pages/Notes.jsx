@@ -877,7 +877,7 @@ export default function Notes() {
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
                         : video ? ['📼 비디오', 'note-tag note-tag-video']
                           : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                            : polaroid ? ['📷 폴라로이드', 'note-tag note-tag-cassette']
+                            : polaroid ? ['📷 사진', 'note-tag note-tag-cassette']
                               : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
                                 : null
             return (

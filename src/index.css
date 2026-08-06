@@ -3770,12 +3770,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-gift-done { flex-shrink: 0; font-size: 12px; font-weight: 700; color: #8b8798; padding: 0 6px; }
 
 /* 폴라로이드: "동봉된 아이템" 과 같은 note-gift-row 한 줄 + 버튼(수령하기와 동일 스타일).
-   인화 전엔 "인화하기"(인화 → 뷰어가 바로 열림), 인화 후/보낸 사람은 "사진 보기". */
-.note-polaroid-develop { flex-shrink: 0; border: none; cursor: pointer; background: #d98a4e; color: #fff; font-weight: 700;
+   인화 전엔 "인화하기"(인화 → 뷰어가 바로 열림), 인화 후/보낸 사람은 "사진 보기".
+   박스/버튼 색은 "📷 사진" 배지(note-tag-cassette)와 동일한 초록색으로 맞춘다. */
+.note-polaroid .note-gift-row { background: rgba(74, 157, 106, .14); }
+.note-polaroid-develop { flex-shrink: 0; border: none; cursor: pointer; background: #4a9d6a; color: #fff; font-weight: 700;
   font-size: 12px; border-radius: 999px; padding: 7px 14px; }
 .note-polaroid-develop:active { transform: scale(.96); }
 .note-polaroid-develop:disabled { opacity: .55; }
-.note-polaroid-develop.is-view { background: rgba(217, 138, 78, .16); color: #d98a4e; }
+.note-polaroid-develop.is-view { background: rgba(74, 157, 106, .16); color: #4a9d6a; }
 
 /* 폴라로이드 사진 뷰어 모달: 기본 흰 카드 대신 필름 프레임이 배경 위에 바로 뜬다 */
 .modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 400px; overflow: visible; }
