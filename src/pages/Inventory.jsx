@@ -9,7 +9,7 @@ import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -17,6 +17,7 @@ import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 import { setStoreCatalog, bgOf, useStoreCatalog, catalogName, catalogDecoSlot } from '../lib/storeCatalog'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
+import { uploadPolaroidPhoto, resizeToJpeg } from '../lib/storage'
 
 const MAX_WISH = 300
 const NAME_TAG_MS = 24 * 3600 * 1000
@@ -56,6 +57,7 @@ export default function Inventory() {
   const [linkOpen, setLinkOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
   const [blurayOpen, setBlurayOpen] = useState(false)
+  const [polaroidOpen, setPolaroidOpen] = useState(false)
   const [ledboardOpen, setLedboardOpen] = useState(false)
   const [ledEditOpen, setLedEditOpen] = useState(false)
   const [ledBanner, setLedBanner] = useState(null) // 내가 게재한 활성 전광판
@@ -162,6 +164,7 @@ export default function Inventory() {
     else if (id === 'link') setLinkOpen(true)
     else if (id === 'video') setVideoOpen(true)
     else if (id === 'bluray') setBlurayOpen(true)
+    else if (id === 'polaroid-film') setPolaroidOpen(true)
     else if (id.startsWith('sticker-')) setStickerUse({ id, variant: id === 'sticker-grape' ? 'grape' : 'apple' })
     else if (id === 'name-tag') setNameTagOpen(true)
   }
@@ -257,6 +260,8 @@ export default function Inventory() {
       <MediaSendModal open={linkOpen} itemId="link" onClose={() => setLinkOpen(false)} onDone={reload} />
       <MediaSendModal open={videoOpen} itemId="video" onClose={() => setVideoOpen(false)} onDone={reload} />
       <MediaSendModal open={blurayOpen} itemId="bluray" onClose={() => setBlurayOpen(false)} onDone={reload} />
+      <PolaroidSendModal open={polaroidOpen} ownedCount={groups.find((g) => g.id === 'polaroid-film')?.count || 0}
+        onClose={() => setPolaroidOpen(false)} onDone={reload} />
       <LedboardModal open={ledboardOpen} onClose={() => setLedboardOpen(false)} onDone={reload} refreshCoin={refreshCoin} />
       <LedEditModal open={ledEditOpen} onClose={() => setLedEditOpen(false)} banner={ledBanner} onDone={reload} />
 
@@ -796,6 +801,99 @@ function MediaSendModal({ open, itemId, onClose, onDone }) {
   )
 }
 
+// 폴라로이드 필름 사용 모달(쪽지 쓰기 페이지 모달 디자인) — 받는 사람 + 사진(최대 5장) + 메시지 → 보내기
+function PolaroidSendModal({ open, ownedCount, onClose, onDone }) {
+  const { user } = useAuth()
+  const [message, setMessage] = useState('')
+  const [photos, setPhotos] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [recipient, setRecipient] = useState(null)
+  const [pickOpen, setPickOpen] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const fileRef = useRef(null)
+  const max = Math.min(5, ownedCount || 0)
+
+  useEffect(() => {
+    if (open) { setMessage(''); setPhotos([]); setRecipient(null); setError(''); setSending(false) }
+  }, [open])
+
+  async function onPick(e) {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f || photos.length >= max) return
+    setUploading(true); setError('')
+    try {
+      const { blob } = await resizeToJpeg(f, 1600)
+      const url = await uploadPolaroidPhoto(blob, user.id, photos.length)
+      setPhotos((p) => [...p, { url }])
+    } catch (e2) { setError(e2.message || '사진 업로드에 실패했어요.') }
+    finally { setUploading(false) }
+  }
+  function removePhoto(i) { setPhotos((p) => p.filter((_, idx) => idx !== i)) }
+
+  async function send() {
+    if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
+    if (photos.length === 0) { setError('첨부할 사진을 골라 주세요.'); return }
+    setSending(true); setError('')
+    try {
+      await usePolaroidFilm({ groupId: recipient.groupId, recipientId: recipient.userId, message: message.trim(), urls: photos.map((p) => p.url) })
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setSending(false) }
+  }
+
+  return (
+    <>
+      <Modal open={open && !pickOpen} onClose={onClose} cardClassName="nc-link-modal">
+        <div className="nc-link">
+          <div className="nc-link-head">
+            <span className="nc-link-ico" style={{ background: bgOf('polaroid-film') }}><StoreItemImage id="polaroid-film" emoji="📷" className="nc-img" /></span>
+            <div><div className="nc-link-name">폴라로이드 필름</div><div className="nc-link-sub">첨부할 사진을 골라 주세요 (최대 {max}장)</div></div>
+          </div>
+          {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
+
+          <button type="button" className="nc-to" onClick={() => setPickOpen(true)}>
+            <span className="nc-label">To.</span>
+            {recipient
+              ? <span className="nc-to-val"><Avatar src={recipient.avatar} name={recipient.name} size={26} />{recipient.name}</span>
+              : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
+            <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+          </button>
+
+          <div className="nc-photo-picker">
+            {photos.map((p, i) => (
+              <span key={p.url} className="nc-photo-thumb lg">
+                <img src={p.url} alt="" />
+                <button type="button" className="nc-photo-x" onClick={() => removePhoto(i)} aria-label="사진 제거">×</button>
+              </span>
+            ))}
+            {photos.length < max && (
+              <button type="button" className="nc-photo-add lg" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="사진 추가">
+                {uploading ? <span className="spinner spinner-sm" /> : '＋'}
+              </button>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPick} />
+          <div className="nc-photo-picker-hint">{photos.length}/{max}장 · 보유 필름 {ownedCount || 0}개</div>
+
+          <div className="nc-body-wrap">
+            <textarea className="nc-body" placeholder="함께 보낼 메시지(선택)" value={message} maxLength={150} rows={4}
+              onChange={(e) => setMessage(e.target.value.slice(0, 150))} />
+            <span className="nc-count">{message.length}/150</span>
+          </div>
+
+          <button type="button" className="nc-sheet-confirm" onClick={send} disabled={sending || photos.length === 0}>
+            {sending ? '보내는 중…' : '보내기'}
+          </button>
+        </div>
+      </Modal>
+      <RecipientPicker open={pickOpen} onClose={() => setPickOpen(false)} title="받는 사람"
+        onPick={(r) => { setRecipient(r); setPickOpen(false) }} />
+    </>
+  )
+}
+
 // 중간 안내 모달 대상 아이템: 사용 방법 + [선물하기 / 사용하기|확인]
 //  canUse: 사용 모달이 따로 있는 아이템(미디어 4종) 은 '사용하기', 아니면 '확인'
 const GUIDE = {
@@ -803,6 +901,7 @@ const GUIDE = {
   cassette:  { name: itemName('cassette', '카세트 테이프'), emoji: '📼', text: '좋아하는 음악 링크를 담아 쪽지와 함께 보내요.', canUse: true },
   video:     { name: '비디오 테이프',  emoji: '📹', text: '보여 주고 싶은 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
   bluray:    { name: '블루레이',       emoji: '💿', text: '고화질 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
+  'polaroid-film': { name: '폴라로이드 필름', emoji: '📷', text: '사진을 담아 쪽지와 함께 보내요. 장당 필름 1개, 쪽지 하나에 최대 5장까지 첨부할 수 있어요.', canUse: true },
   telescope: { name: '천체 망원경',    emoji: '🔭', text: '흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.', canUse: false },
   eraser:    { name: '지우개',         emoji: '🧽', text: '쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.', canUse: false },
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },

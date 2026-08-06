@@ -3769,15 +3769,32 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-gift-claim:disabled { opacity: .55; }
 .note-gift-done { flex-shrink: 0; font-size: 12px; font-weight: 700; color: #8b8798; padding: 0 6px; }
 
-/* 폴라로이드: "동봉된 아이템" 과 같은 note-gift-row 한 줄 + 인화하기 버튼(수령하기와 동일 스타일).
-   인화 후엔 그 아래 실제 사진 그리드가 나타난다. */
+/* 폴라로이드: "동봉된 아이템" 과 같은 note-gift-row 한 줄 + 버튼(수령하기와 동일 스타일).
+   인화 전엔 "인화하기"(인화 → 뷰어가 바로 열림), 인화 후/보낸 사람은 "사진 보기". */
 .note-polaroid-develop { flex-shrink: 0; border: none; cursor: pointer; background: #d98a4e; color: #fff; font-weight: 700;
   font-size: 12px; border-radius: 999px; padding: 7px 14px; }
 .note-polaroid-develop:active { transform: scale(.96); }
 .note-polaroid-develop:disabled { opacity: .55; }
-.note-polaroid-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
-.note-polaroid-thumb { display: block; border-radius: 10px; overflow: hidden; aspect-ratio: 1; background: #f3f2f7; }
-.note-polaroid-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.note-polaroid-develop.is-view { background: rgba(217, 138, 78, .16); color: #d98a4e; }
+
+/* 폴라로이드 사진 뷰어 모달: 기본 흰 카드 대신 필름 프레임이 배경 위에 바로 뜬다 */
+.modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 300px; overflow: visible; }
+.pv-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.pv-frame {
+  background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px; padding: 14px 14px 32px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: rotate(-2deg);
+}
+.pv-photo { width: min(72vw, 260px); height: min(72vw, 260px); border-radius: 3px; overflow: hidden; background: #191b1f; }
+.pv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pv-nav { display: flex; align-items: center; gap: 16px; }
+.pv-nav-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,.92); color: #191722;
+  font-size: 20px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.pv-nav-btn:active { transform: scale(.94); }
+.pv-nav-btn:disabled { opacity: .3; cursor: default; }
+.pv-nav-count { color: #fff; font-weight: 700; font-size: 13px; min-width: 40px; text-align: center; }
+.pv-empty { color: #fff; font-weight: 700; font-size: 13px; text-align: center; padding: 40px 0; }
 
 .note-tag-video { color: #5578d0; background: rgba(85, 120, 208, .14); }
 .modal-card.modal-video { background: linear-gradient(160deg, #fdeeee, #fdf5f4); }
@@ -4136,6 +4153,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   justify-content: center; cursor: pointer; flex-shrink: 0;
 }
 .nc-photo-add:disabled { opacity: .4; cursor: default; }
+/* 전용 사용 모달(선물상자/비디오/블루레이와 같은 nc-link-modal) 안의 큰 사진 피커 */
+.nc-photo-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.nc-photo-thumb.lg { width: 68px; height: 68px; border-radius: 12px; }
+.nc-photo-add.lg { width: 68px; height: 68px; border-radius: 12px; font-size: 22px; }
+.nc-photo-picker-hint { margin-top: 8px; font-size: 11px; color: #b0abbd; }
 
 /* From. */
 .nc-from { display: flex; align-items: center; gap: 11px; background: #f7f6fa; border-radius: 999px; padding: 10px 18px; }

@@ -112,6 +112,7 @@ export default function Notes() {
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
   const [notePhotos, setNotePhotos] = useState({})     // { noteId: [{id,url,sort_order}] } — 폴라로이드(인화 전엔 빈 배열)
+  const [polaroidView, setPolaroidView] = useState(null) // { noteId, index } — 폴라로이드 사진 뷰어 모달
   const [recvMore, setRecvMore] = useState(notesCache.recvMore) // 받은함에 더 과거 쪽지가 있는지
   const [sentMore, setSentMore] = useState(notesCache.sentMore) // 보낸함에 더 과거 쪽지가 있는지
   const [loadingMore, setLoadingMore] = useState(false)
@@ -406,7 +407,8 @@ export default function Notes() {
     finally { setBusy(false) }
   }
 
-  // 인화하기: 폴라로이드 쪽지 공개(사진은 그 뒤 fetchNotePhotos 로 다시 조회해야 실제로 보임)
+  // 인화하기: 폴라로이드 쪽지 공개(사진은 그 뒤 fetchNotePhotos 로 다시 조회해야 실제로 보임) →
+  // 성공하면 바로 뷰어를 연다(애니메이션은 나중에 시안 적용 예정, 지금은 즉시 열림).
   async function developPolaroid(n) {
     setBusy(true); setError('')
     try {
@@ -414,8 +416,14 @@ export default function Notes() {
       await load()
       await fetchNotePhotos(n.id)
       setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
+      setPolaroidView({ noteId: n.id, index: 0 })
     } catch (err) { setError(err.message) }
     finally { setBusy(false) }
+  }
+  // 이미 인화됐거나(수신자) 내가 보낸 쪽지(발신자)면 바로 뷰어를 연다.
+  function openPolaroidViewer(n) {
+    fetchNotePhotos(n.id)
+    setPolaroidView({ noteId: n.id, index: 0 })
   }
 
   // 깜냥 명의 보상 쪽지 삭제(아이템을 전부 수령한 뒤에만 가능)
@@ -835,21 +843,14 @@ export default function Notes() {
                       <span className="note-gift-thumb" style={{ background: bgOf('polaroid-film') }}>
                         <StoreItemImage id="polaroid-film" emoji="📷" className="note-gift-img" />
                       </span>
-                      <span className="note-gift-name">사진 {open.qty || pItems.length || 1}장이 첨부됨</span>
-                      {mine && (open.claimed
-                        ? <span className="note-gift-done">인화 완료</span>
-                        : <button type="button" className="note-polaroid-develop" onClick={() => developPolaroid(open)} disabled={busy}>인화하기</button>)}
+                      <span className="note-gift-name">사진 {open.qty || pItems.length || 1}장{mine && !open.claimed ? '이 첨부됨' : ''}</span>
+                      {mine && !open.claimed ? (
+                        <button type="button" className="note-polaroid-develop" onClick={() => developPolaroid(open)} disabled={busy}>인화하기</button>
+                      ) : (
+                        <button type="button" className="note-polaroid-develop is-view" onClick={() => openPolaroidViewer(open)}>사진 보기</button>
+                      )}
                     </li>
                   </ul>
-                  {open.claimed && pItems.length > 0 && (
-                    <div className="note-polaroid-grid">
-                      {pItems.map((p) => (
-                        <a key={p.id} href={p.url} target="_blank" rel="noreferrer noopener" className="note-polaroid-thumb">
-                          <img src={p.url} alt="" />
-                        </a>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
               {couple && mine ? (
@@ -884,6 +885,33 @@ export default function Notes() {
               ) : !wish && !couple && !friend && !gift && !system && mine && !open.anonymous && open.sender_active !== false ? (
                 <button type="button" className="btn btn-primary btn-block" onClick={() => replyTo(open)}>답장하기</button>
               ) : null}
+            </div>
+          )
+        })()}
+      </Modal>
+
+      {/* 폴라로이드 사진 뷰어: 필름 프레임 안에 사진, 여러 장이면 </> 로 넘김.
+          "인화" 애니메이션은 나중에 시안 적용 예정 — 지금은 즉시 열림. */}
+      <Modal open={!!polaroidView} onClose={() => setPolaroidView(null)} cardClassName="modal-polaroid-viewer">
+        {polaroidView && (() => {
+          const photos = notePhotos[polaroidView.noteId] || []
+          if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
+          const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
+          const photo = photos[idx]
+          return (
+            <div className="pv-wrap">
+              <div className="pv-frame">
+                <div className="pv-photo"><img src={photo.url} alt="" /></div>
+              </div>
+              {photos.length > 1 && (
+                <div className="pv-nav">
+                  <button type="button" className="pv-nav-btn" aria-label="이전 사진" disabled={idx === 0}
+                    onClick={() => setPolaroidView((v) => ({ ...v, index: v.index - 1 }))}>‹</button>
+                  <span className="pv-nav-count">{idx + 1} / {photos.length}</span>
+                  <button type="button" className="pv-nav-btn" aria-label="다음 사진" disabled={idx === photos.length - 1}
+                    onClick={() => setPolaroidView((v) => ({ ...v, index: v.index + 1 }))}>›</button>
+                </div>
+              )}
             </div>
           )
         })()}

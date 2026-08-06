@@ -74,6 +74,7 @@ export default function NoteCompose() {
   const [gifts, setGifts] = useState([])          // [{ id, qty }]
   const [photos, setPhotos] = useState([])        // [{ url }] — 폴라로이드 필름으로 첨부한 사진(최대 5장)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [polaroidModalOpen, setPolaroidModalOpen] = useState(false) // 전용 사용 모달(선물상자/비디오처럼)
   const polaroidInputRef = useRef(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -161,7 +162,7 @@ export default function NoteCompose() {
   function pickUse(id) {
     if (id === 'polaroid-film') {
       if (useDisabled(id)) return
-      setSheet(null); polaroidInputRef.current?.click()
+      setSheet(null); setPolaroidModalOpen(true)   // 선물 상자/비디오/블루레이처럼 전용 모달을 먼저
       return
     }
     const active = id === 'eraser' ? anonymous : useItem?.id === id
@@ -388,7 +389,7 @@ export default function NoteCompose() {
                 </span>
               ))}
               {!useDisabled('polaroid-film') && (
-                <button type="button" className="nc-photo-add" onClick={() => polaroidInputRef.current?.click()} disabled={uploadingPhoto} aria-label="사진 추가">＋</button>
+                <button type="button" className="nc-photo-add" onClick={() => setPolaroidModalOpen(true)} disabled={uploadingPhoto} aria-label="사진 추가">＋</button>
               )}
             </div>
           </div>
@@ -539,6 +540,32 @@ export default function NoteCompose() {
             <button type="button" className="nc-sheet-confirm" disabled={!linkUrl.trim()} onClick={confirmLink}>포장하기</button>
           </div>
         )}
+      </Modal>
+
+      {/* 폴라로이드 필름 사용 모달: 선물 상자/비디오/블루레이처럼 전용 모달에서 사진을 고른다 */}
+      <Modal open={polaroidModalOpen} onClose={() => setPolaroidModalOpen(false)} cardClassName="nc-link-modal">
+        <div className="nc-link">
+          <div className="nc-link-head">
+            <span className="nc-link-ico" style={{ background: metaOf('polaroid-film').bg }}><StoreItemImage id="polaroid-film" emoji={metaOf('polaroid-film').emoji} className="nc-img" /></span>
+            <div><div className="nc-link-name">폴라로이드 필름</div><div className="nc-link-sub">첨부할 사진을 골라 주세요 (최대 {MAX_PHOTOS}장)</div></div>
+          </div>
+          {error && <div className="alert alert-error nc-modal-alert">{error}</div>}
+          <div className="nc-photo-picker">
+            {photos.map((p, i) => (
+              <span key={p.url} className="nc-photo-thumb lg">
+                <img src={p.url} alt="" />
+                <button type="button" className="nc-photo-x" onClick={() => removePhoto(i)} aria-label="사진 제거">×</button>
+              </span>
+            ))}
+            {photos.length < MAX_PHOTOS && photos.length < (owned['polaroid-film'] || 0) && (
+              <button type="button" className="nc-photo-add lg" onClick={() => polaroidInputRef.current?.click()} disabled={uploadingPhoto} aria-label="사진 추가">
+                {uploadingPhoto ? <span className="spinner spinner-sm" /> : '＋'}
+              </button>
+            )}
+          </div>
+          <div className="nc-photo-picker-hint">{photos.length}/{MAX_PHOTOS}장 · 보유 필름 {owned['polaroid-film'] || 0}개</div>
+          <button type="button" className="nc-sheet-confirm" disabled={photos.length === 0} onClick={() => setPolaroidModalOpen(false)}>사용하기</button>
+        </div>
       </Modal>
 
       {/* 물풍선 폭탄 타이머 설정 모달 */}
