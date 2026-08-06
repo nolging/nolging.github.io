@@ -419,6 +419,7 @@ export default function NoteCompose() {
         <h3 className="nc-sheet-title">선물할 아이템</h3>
         <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
         {giftNotice && <div className="nc-gift-notice">{giftNotice}</div>}
+        <div className="nc-sheet-scroll">
         {giftSections.length === 0 ? (
           <div className="nc-sheet-empty">선물할 수 있는 아이템이 없어요.</div>
         ) : giftSections.map((sec) => (
@@ -457,6 +458,7 @@ export default function NoteCompose() {
             </div>
           </div>
         ))}
+        </div>
         <button type="button" className="nc-sheet-confirm" disabled={draftCount === 0} onClick={confirmGift}>
           {draftCount > 0 ? `확인 · ${draftCount}개` : '아이템을 선택해 주세요'}
         </button>
