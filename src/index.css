@@ -3781,13 +3781,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 400px; overflow: visible; }
 .pv-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .pv-frame {
-  background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px; padding: 14px 14px 42px;
+  --pv-w: min(72vw, 260px);
+  width: var(--pv-w); box-sizing: border-box;
+  padding: calc(var(--pv-w) * .055) calc(var(--pv-w) * .055) calc(var(--pv-w) * .23);
+  background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px;
   box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: rotate(-2deg); opacity: 1;
   transition: transform .5s cubic-bezier(.22,.85,.26,1), opacity .4s ease-out;
 }
 /* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며 자리잡음 */
 .pv-frame.is-camera { opacity: 0; transform: scale(.5) rotate(-2deg); pointer-events: none; }
-.pv-photo { width: min(72vw, 260px); height: min(72vw, 260px); border-radius: 3px; overflow: hidden; background: #191b1f; }
+/* 사진(검은 영역) 대 프레임(흰 여백) 비율은 인화 중인 필름(.pv-eject-card)과 동일하게 맞춤 */
+.pv-photo { width: 100%; aspect-ratio: 1 / 1; border-radius: 3px; overflow: hidden; background: #191b1f; }
 .pv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* 확대돼 자리잡았지만 아직 리빌이 시작 전(print 단계)엔 새까맣게 유지 */
 .pv-photo img.pv-photo-black { filter: blur(30px) brightness(0); }
@@ -3867,16 +3871,19 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pv-camera-wordmark span:first-child { font-size: 10px; font-weight: 800; color: #e7e7ea; }
 .pv-camera-wordmark span:last-child { font-size: 7px; font-weight: 600; color: #b9b9bf; }
 
-/* 인화되는 필름: 흰 프레임 + 검은 사진 영역(시안과 동일한 폴라로이드 필름 형태), 카메라 슬롯에서 천천히 배출 */
+/* 인화되는 필름: 흰 프레임 + 검은 사진 영역(시안과 동일한 폴라로이드 필름 형태), 카메라 슬롯에서 천천히 배출.
+   패딩은 %가 아니라 자기 자신의 너비(--pv-card-w) 기준 calc() 로 계산 — 그래야 인화 완료 후의 .pv-frame 과
+   정확히 같은 사진:여백 비율이 나온다(absolute 요소의 % 패딩은 부모 폭 기준으로 계산돼 버려서 비율이 틀어짐). */
 .pv-eject-card {
   position: absolute; top: 58%; left: 50%;
-  width: calc(var(--pv-cam-w) * .6333); aspect-ratio: 190 / 262; border-radius: 3px;
+  --pv-card-w: calc(var(--pv-cam-w) * .6333);
+  width: var(--pv-card-w); box-sizing: border-box; border-radius: 3px;
+  padding: calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .23);
   background: #fbfbf7; box-shadow: 0 10px 26px rgba(0,0,0,.28);
-  padding: 6.3% 6.3% 23.2%; box-sizing: border-box;
-  opacity: 0; transform: translate(-50%, -105%);
+  opacity: 0; transform: translate(-50%, -105%) rotate(-2deg);
   transition: transform 3s cubic-bezier(.16,.72,.22,1), opacity .6s ease-out;
 }
-.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0); }
+.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0) rotate(-2deg); }
 .pv-eject-photo { width: 100%; aspect-ratio: 1 / 1; background: #0c0b09; border-radius: 1px; }
 
 .pv-nav { display: flex; align-items: center; gap: 16px; }
