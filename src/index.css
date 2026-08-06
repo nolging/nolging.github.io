@@ -3783,7 +3783,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pv-frame {
   background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px; padding: 14px 14px 32px;
   box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: rotate(-2deg); opacity: 1;
-  transition: transform .65s cubic-bezier(.22,.85,.26,1), opacity .5s ease-out;
+  transition: transform .8s cubic-bezier(.22,.85,.26,1), opacity .6s ease-out;
 }
 /* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며 자리잡음 */
 .pv-frame.is-camera { opacity: 0; transform: scale(.22) rotate(-2deg); pointer-events: none; }
@@ -3813,7 +3813,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 2px #fff;
   background: repeating-conic-gradient(#cfc9bb 0deg 8deg, #b8b1a0 8deg 16deg);
 }
-.pv-camera-btn { width: 12px; height: 12px; border-radius: 3px; background: #2c2a26; animation: pv-shutter-blink .9s ease-in-out; }
+.pv-camera-btn { width: 12px; height: 12px; border-radius: 3px; background: #2c2a26; }
 .pv-camera-lens {
   position: relative; height: 120px; border-radius: 10px; background: #15161a;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -3826,11 +3826,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pv-camera-slot { height: 8px; margin-top: 10px; border-radius: 0 0 6px 6px; background: #c9c2b4; position: relative; }
 .pv-camera-slot-photo {
   position: absolute; left: 50%; top: 0; width: 70%; height: 4px; background: #0b0b0d; border-radius: 2px;
-  transform: translate(-50%, -4px); animation: pv-slot-eject .9s ease-in forwards;
+  transform: translate(-50%, -4px); animation: pv-slot-eject 2.2s ease-out forwards;
 }
 @keyframes pv-camera-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-@keyframes pv-shutter-blink { 0%, 100% { background: #2c2a26; } 45%, 55% { background: #e2483d; } }
-@keyframes pv-flash { 0%, 40% { opacity: 0; } 48% { opacity: .9; } 65%, 100% { opacity: 0; } }
+@keyframes pv-flash { 0%, 15% { opacity: 0; } 22% { opacity: .9; } 40%, 100% { opacity: 0; } }
 @keyframes pv-slot-eject { 0% { transform: translate(-50%, -4px); height: 4px; } 100% { transform: translate(-50%, 34px); height: 64px; } }
 .pv-nav { display: flex; align-items: center; gap: 16px; }
 .pv-nav-btn {

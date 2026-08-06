@@ -98,8 +98,8 @@ function formatNoteFull(iso) {
 
 // 폴라로이드 사진 뷰어: animate=true 일 때만 "카메라 → 인화(줌인) → 30초 리빌" 연출을 태우고,
 // animate=false(이미 인화된 사진을 다시 볼 때)면 처음부터 다 드러난 채로 즉시 보여준다.
-// 단계: camera(카메라+까만 필름 배출, 0.9초) → print(카메라 사라지며 프레임이 확대돼 자리잡음, 0.65초)
-// → revealing(자리잡은 사진이 30초에 걸쳐 서서히 드러남). 카메라 연출은 열람 세션당 한 번만
+// 단계: camera(카메라+까만 필름이 천천히 배출, 2.2초) → print(카메라 사라지며 프레임이 확대돼 자리잡음, 0.8초,
+// 합쳐서 인화 애니메이션 약 3초) → revealing(자리잡은 사진이 30초에 걸쳐 서서히 드러남). 카메라 연출은 열람 세션당 한 번만
 // (‹ › 로 사진을 넘겨도 다시 재생 안 함), 리빌은 photo.id 를 key 로 삼아 처음 보는 사진마다 새로 재생된다.
 function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
@@ -107,8 +107,8 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   useEffect(() => {
     if (!polaroidView.animate) { setStage('static'); return }
     setStage('camera')
-    const t1 = setTimeout(() => setStage('print'), 900)
-    const t2 = setTimeout(() => setStage('revealing'), 900 + 650)
+    const t1 = setTimeout(() => setStage('print'), 2200)
+    const t2 = setTimeout(() => setStage('revealing'), 2200 + 800)
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [polaroidView.animate, polaroidView.noteId])
