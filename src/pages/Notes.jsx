@@ -100,8 +100,12 @@ function formatNoteFull(iso) {
 // 연출을 태우고, animate=false(이미 인화된 사진을 다시 볼 때)면 처음부터 다 드러난 채로 즉시 보여준다.
 // 단계: camera(카메라에서 흰 프레임+까만 사진 영역의 필름이 3초에 걸쳐 천천히 배출) → print(카메라·필름이
 // 사라지며 실제 사진 프레임이 그 자리에 확대돼 나타남, 0.4초) → revealing(자리잡은 사진이 30초에 걸쳐
-// 서서히 드러남). 카메라 연출은 열람 세션당 한 번만(‹ › 로 사진을 넘겨도 다시 재생 안 함), 리빌은 photo.id
-// 를 key 로 삼아 처음 보는 사진마다 새로 재생된다.
+// 서서히 드러남). 카메라 연출은 열람 세션당 한 번만 재생.
+// 여러 장인 경우 리빌은 모든 사진에 동시에(같은 순간에) 걸리도록, 사진 img 를 전부 한 번에 마운트해두고
+// pv-reveal-anim 클래스도 다같이 붙인다 — 현재 보고 있는 사진만 opacity 로 보여줄 뿐, 안 보이는 사진도
+// 백그라운드에서 계속 드러나는 중이라 나중에 넘겨봐도 이미 그만큼 밝아져 있다. 사진마다 key 가 고정돼 있어
+// 다른 사진을 봤다가 돌아와도 DOM 이 다시 마운트되지 않으므로(=애니메이션이 리셋되지 않으므로) 이미
+// 드러났던 사진이 다시 까매지는 일도 없다.
 function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
   const [ejecting, setEjecting] = useState(false)
@@ -121,7 +125,6 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const photos = notePhotos[polaroidView.noteId] || []
   if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
   const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
-  const photo = photos[idx]
   const revealing = stage === 'revealing'
   const showCamera = stage === 'camera' || stage === 'print'
 
@@ -150,7 +153,9 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
       )}
       <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>
         <div className="pv-photo">
-          <img key={photo.id} src={photo.url} alt="" className={revealing ? 'pv-reveal-anim' : (stage === 'print' ? 'pv-photo-black' : '')} />
+          {photos.map((photo, i) => (
+            <img key={photo.id} src={photo.url} alt="" className={`pv-photo-img ${i === idx ? 'is-current' : ''} ${revealing ? 'pv-reveal-anim' : (stage === 'print' ? 'pv-photo-black' : '')}`} />
+          ))}
         </div>
       </div>
       {(stage === 'revealing' || stage === 'static') && photos.length > 1 && (

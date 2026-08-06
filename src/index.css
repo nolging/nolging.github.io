@@ -3791,12 +3791,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며 자리잡음 */
 .pv-frame.is-camera { opacity: 0; transform: scale(.5) rotate(-2deg); pointer-events: none; }
 /* 사진(검은 영역) 대 프레임(흰 여백) 비율은 인화 중인 필름(.pv-eject-card)과 동일하게 맞춤 */
-.pv-photo { width: 100%; aspect-ratio: 1 / 1; border-radius: 3px; overflow: hidden; background: #191b1f; }
-.pv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pv-photo { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 3px; overflow: hidden; background: #191b1f; }
+/* 여러 장이어도 전부 겹쳐서 마운트해두고 현재 사진만 보여준다 — 그래야 안 보이는 사진의 30초 리빌도
+   백그라운드에서 계속 진행되고(동시 진행), 사진을 오갈 때 DOM 이 재마운트되며 리빌이 리셋되지 않는다. */
+.pv-photo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; pointer-events: none; }
+.pv-photo-img.is-current { opacity: 1; }
 /* 확대돼 자리잡았지만 아직 리빌이 시작 전(print 단계)엔 새까맣게 유지 */
-.pv-photo img.pv-photo-black { filter: blur(30px) brightness(0); }
+.pv-photo-img.pv-photo-black { filter: blur(30px) brightness(0); }
 /* 인화 리빌: 새까맣고 뿌옇던 사진이 30초에 걸쳐 서서히 밝고 선명해진다 */
-.pv-photo img.pv-reveal-anim { animation: pv-reveal 30s cubic-bezier(.3,.06,.2,1) forwards; }
+.pv-photo-img.pv-reveal-anim { animation: pv-reveal 30s cubic-bezier(.3,.06,.2,1) forwards; }
 @keyframes pv-reveal {
   0%   { filter: blur(30px) brightness(0); }
   15%  { filter: blur(28px) brightness(.04); }
@@ -3875,15 +3878,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
    패딩은 %가 아니라 자기 자신의 너비(--pv-card-w) 기준 calc() 로 계산 — 그래야 인화 완료 후의 .pv-frame 과
    정확히 같은 사진:여백 비율이 나온다(absolute 요소의 % 패딩은 부모 폭 기준으로 계산돼 버려서 비율이 틀어짐). */
 .pv-eject-card {
-  position: absolute; top: 58%; left: 50%;
+  position: absolute; top: 100%; left: 50%;
   --pv-card-w: calc(var(--pv-cam-w) * .6333);
   width: var(--pv-card-w); box-sizing: border-box; border-radius: 3px;
   padding: calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .23);
   background: #fbfbf7; box-shadow: 0 10px 26px rgba(0,0,0,.28);
-  opacity: 0; transform: translate(-50%, -105%) rotate(-2deg);
+  opacity: 0; transform: translate(-50%, -105%);
   transition: transform 3s cubic-bezier(.16,.72,.22,1), opacity .6s ease-out;
 }
-.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0) rotate(-2deg); }
+.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0); }
 .pv-eject-photo { width: 100%; aspect-ratio: 1 / 1; background: #0c0b09; border-radius: 1px; }
 
 .pv-nav { display: flex; align-items: center; gap: 16px; }
