@@ -96,20 +96,25 @@ function formatNoteFull(iso) {
   } catch { return '' }
 }
 
-// 폴라로이드 사진 뷰어: animate=true 일 때만 "카메라 → 인화(줌인) → 30초 리빌" 연출을 태우고,
-// animate=false(이미 인화된 사진을 다시 볼 때)면 처음부터 다 드러난 채로 즉시 보여준다.
-// 단계: camera(카메라+까만 필름이 천천히 배출, 2.2초) → print(카메라 사라지며 프레임이 확대돼 자리잡음, 0.8초,
-// 합쳐서 인화 애니메이션 약 3초) → revealing(자리잡은 사진이 30초에 걸쳐 서서히 드러남). 카메라 연출은 열람 세션당 한 번만
-// (‹ › 로 사진을 넘겨도 다시 재생 안 함), 리빌은 photo.id 를 key 로 삼아 처음 보는 사진마다 새로 재생된다.
+// 폴라로이드 사진 뷰어: animate=true 일 때만 "카메라 → 인화(3초에 걸쳐 필름 배출) → 확대 → 30초 리빌"
+// 연출을 태우고, animate=false(이미 인화된 사진을 다시 볼 때)면 처음부터 다 드러난 채로 즉시 보여준다.
+// 단계: camera(카메라에서 흰 프레임+까만 사진 영역의 필름이 3초에 걸쳐 천천히 배출) → print(카메라·필름이
+// 사라지며 실제 사진 프레임이 그 자리에 확대돼 나타남, 0.4초) → revealing(자리잡은 사진이 30초에 걸쳐
+// 서서히 드러남). 카메라 연출은 열람 세션당 한 번만(‹ › 로 사진을 넘겨도 다시 재생 안 함), 리빌은 photo.id
+// 를 key 로 삼아 처음 보는 사진마다 새로 재생된다.
 function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
+  const [ejecting, setEjecting] = useState(false)
 
   useEffect(() => {
     if (!polaroidView.animate) { setStage('static'); return }
     setStage('camera')
-    const t1 = setTimeout(() => setStage('print'), 2200)
-    const t2 = setTimeout(() => setStage('revealing'), 2200 + 800)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    setEjecting(false)
+    let raf1, raf2
+    raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => setEjecting(true)) })
+    const t1 = setTimeout(() => setStage('print'), 3000)
+    const t2 = setTimeout(() => setStage('revealing'), 3000 + 400)
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [polaroidView.animate, polaroidView.noteId])
 
@@ -123,17 +128,24 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   return (
     <div className="pv-wrap">
       {showCamera && (
-        <div className={`pv-camera ${stage === 'print' ? 'is-out' : ''}`}>
-          <div className="pv-camera-top">
+        <div className={`pv-camera-scene ${stage === 'print' ? 'is-out' : ''}`}>
+          <div className={`pv-eject-card ${ejecting ? 'is-ejecting' : ''}`}>
+            <div className="pv-eject-photo" />
+          </div>
+          <div className="pv-camera">
+            <div className="pv-camera-slot" />
             <span className="pv-camera-brand">NOLGING</span>
-            <span className="pv-camera-dial" />
-            <span className="pv-camera-btn" />
+            <span className="pv-camera-indicator" />
+            <span className="pv-camera-dial" aria-hidden="true"><span /></span>
+            <div className="pv-camera-flashbox">
+              <span className="pv-camera-bars"><i /><i /><i /></span>
+              <span className="pv-camera-flash-icon" />
+            </div>
+            <div className="pv-camera-lens">
+              <span className="pv-camera-lens-glass"><span className="pv-camera-lens-pupil" /><span className="pv-camera-lens-glint" /></span>
+            </div>
+            <div className="pv-camera-wordmark"><span>nolging</span><span>polaroid</span></div>
           </div>
-          <div className="pv-camera-lens">
-            <span className="pv-camera-lens-ring" />
-            <span className="pv-camera-flash" />
-          </div>
-          <div className="pv-camera-slot"><span className="pv-camera-slot-photo" /></div>
         </div>
       )}
       <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>

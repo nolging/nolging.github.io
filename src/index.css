@@ -3778,15 +3778,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-polaroid-develop.is-view { background: rgba(217, 138, 78, .16); color: #d98a4e; }
 
 /* 폴라로이드 사진 뷰어 모달: 기본 흰 카드 대신 필름 프레임이 배경 위에 바로 뜬다 */
-.modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 300px; overflow: visible; }
+.modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 400px; overflow: visible; }
 .pv-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .pv-frame {
-  background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px; padding: 14px 14px 32px;
+  background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px; padding: 14px 14px 42px;
   box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: rotate(-2deg); opacity: 1;
-  transition: transform .8s cubic-bezier(.22,.85,.26,1), opacity .6s ease-out;
+  transition: transform .5s cubic-bezier(.22,.85,.26,1), opacity .4s ease-out;
 }
 /* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며 자리잡음 */
-.pv-frame.is-camera { opacity: 0; transform: scale(.22) rotate(-2deg); pointer-events: none; }
+.pv-frame.is-camera { opacity: 0; transform: scale(.5) rotate(-2deg); pointer-events: none; }
 .pv-photo { width: min(72vw, 260px); height: min(72vw, 260px); border-radius: 3px; overflow: hidden; background: #191b1f; }
 .pv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* 확대돼 자리잡았지만 아직 리빌이 시작 전(print 단계)엔 새까맣게 유지 */
@@ -3800,37 +3800,85 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   70%  { filter: blur(6px) brightness(.78); }
   100% { filter: blur(0) brightness(1); }
 }
-/* 카메라: NOLGING 폴라로이드 시안 반영 — 셔터/다이얼/렌즈, 클릭 불가(연출 전용). is-out 은 확대된 프레임에 자리를 내주며 사라짐 */
+
+/* ── 카메라 시안(NOLGING polaroid) 그대로 반영: 색/무늬/구성 요소 색상 값 동일 ───────────── */
+.pv-camera-scene {
+  --pv-cam-w: min(88vw, 360px);
+  position: relative; width: var(--pv-cam-w);
+  transition: opacity .4s ease-out, transform .4s cubic-bezier(.3,0,.2,1);
+}
+.pv-camera-scene.is-out { opacity: 0; transform: scale(.94) translateY(6px); pointer-events: none; }
 .pv-camera {
-  width: min(72vw, 260px); background: linear-gradient(160deg, #fff, #f3f1ec 55%, #ded9cf);
-  border-radius: 14px; padding: 14px 16px 18px; box-shadow: 0 16px 40px rgba(0,0,0,.32);
-  animation: pv-camera-in .3s ease-out; transition: opacity .5s ease-out, transform .5s cubic-bezier(.3,0,.2,1);
+  position: relative; width: 100%; aspect-ratio: 300 / 200; border-radius: 26px;
+  background: linear-gradient(#f3f3f5, #c6c6cb 52%, #e2e6e6);
+  box-shadow: 0 14px 30px rgba(25,23,34,.22), inset 0 1px 0 #fff;
 }
-.pv-camera.is-out { opacity: 0; transform: scale(.9) translateY(8px); pointer-events: none; }
-.pv-camera-top { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 10px; position: relative; }
-.pv-camera-brand { position: absolute; left: 0; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #4b463d; }
+.pv-camera-slot {
+  position: absolute; top: 27%; left: 2%; right: 2%; bottom: 7%; border-radius: 9px;
+  background-color: #18181b;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, rgba(0,0,0,0) 1.4px);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), inset 0 2px 6px rgba(0,0,0,.4);
+}
+.pv-camera-brand {
+  position: absolute; top: 9.5%; left: 5.3%; font-size: 12px; font-weight: 800; letter-spacing: .02em; color: #26262a;
+}
+.pv-camera-indicator {
+  position: absolute; top: 8%; left: 50%; width: 28px; height: 22px; border-radius: 4px; background: #3b3b40;
+  box-shadow: inset 0 0 0 2px #ababb0, inset 0 0 6px rgba(0,0,0,.7);
+}
 .pv-camera-dial {
-  width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 2px #fff;
-  background: repeating-conic-gradient(#cfc9bb 0deg 8deg, #b8b1a0 8deg 16deg);
+  position: absolute; top: 6%; left: 65.3%; width: 32px; height: 32px; border-radius: 50%; padding: 0; border: none; cursor: default;
+  background-image: repeating-conic-gradient(#e6e6ea 0deg 6deg, #b7b7bd 6deg 12deg);
+  box-shadow: 0 2px 5px rgba(0,0,0,.3), inset 0 0 0 2px #d3d3d8;
 }
-.pv-camera-btn { width: 12px; height: 12px; border-radius: 3px; background: #2c2a26; }
+.pv-camera-dial span {
+  position: absolute; inset: 8px; border-radius: 50%;
+  background-image: radial-gradient(circle at 40% 36%, #7a7a80, #3a3a3f);
+}
+.pv-camera-flashbox {
+  position: absolute; top: 7.5%; left: 80%; width: 44px; height: 28px; border-radius: 5px;
+  background: linear-gradient(#efeff1, #cfcfd4); box-shadow: inset 0 0 0 1.5px #b4b4ba;
+}
+.pv-camera-bars { position: absolute; top: 4px; left: 4px; width: 8px; height: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+.pv-camera-bars i { width: 8px; height: 3px; border-radius: 1px; background: #d84a3a; }
+.pv-camera-bars i:last-child { background: #3a3a3f; }
+.pv-camera-flash-icon {
+  position: absolute; top: 4px; left: 16px; width: 23px; height: 20px; border-radius: 3px;
+  background: linear-gradient(135deg, #fff, #dfe6ea); box-shadow: inset 0 0 0 1px #b4b4ba;
+}
 .pv-camera-lens {
-  position: relative; height: 120px; border-radius: 10px; background: #15161a;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  position: absolute; top: 37%; left: 50%; width: 104px; height: 104px; border-radius: 50%; transform: translateX(-50%);
+  background-image: radial-gradient(circle at 42% 38%, #3f3f47, #141418);
+  box-shadow: 0 0 0 6px #171719, 0 0 0 8px #cecece, 0 0 0 12px #9a9a9f, 0 0 0 13px #6f6f74, inset 0 0 20px rgba(0,0,0,.7);
 }
-.pv-camera-lens-ring {
-  width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #4a5568, #0e0f12 70%);
-  box-shadow: 0 0 0 4px #0a0a0c, 0 0 0 6px #35363c;
+.pv-camera-lens-glass {
+  position: absolute; inset: 20px; border-radius: 50%;
+  background-image: radial-gradient(circle at 40% 36%, #5a5a64, #0e0e12);
+  box-shadow: inset 0 0 0 3px #2a2a30, inset 0 0 14px rgba(0,0,0,.8);
 }
-.pv-camera-flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: pv-flash .9s ease-in-out; }
-.pv-camera-slot { height: 8px; margin-top: 10px; border-radius: 0 0 6px 6px; background: #c9c2b4; position: relative; }
-.pv-camera-slot-photo {
-  position: absolute; left: 50%; top: 0; width: 70%; height: 4px; background: #0b0b0d; border-radius: 2px;
-  transform: translate(-50%, -4px); animation: pv-slot-eject 2.2s ease-out forwards;
+.pv-camera-lens-pupil {
+  position: absolute; inset: 16px; border-radius: 50%;
+  background-image: radial-gradient(circle at 38% 34%, #3a3a44, #050507);
 }
-@keyframes pv-camera-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-@keyframes pv-flash { 0%, 15% { opacity: 0; } 22% { opacity: .9; } 40%, 100% { opacity: 0; } }
-@keyframes pv-slot-eject { 0% { transform: translate(-50%, -4px); height: 4px; } 100% { transform: translate(-50%, 34px); height: 64px; } }
+.pv-camera-lens-glint { position: absolute; top: 30px; left: 34px; width: 15px; height: 15px; border-radius: 50%; background: rgba(180,190,210,.4); }
+.pv-camera-wordmark {
+  position: absolute; top: 81%; left: 81%; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3;
+}
+.pv-camera-wordmark span:first-child { font-size: 10px; font-weight: 800; color: #e7e7ea; }
+.pv-camera-wordmark span:last-child { font-size: 7px; font-weight: 600; color: #b9b9bf; }
+
+/* 인화되는 필름: 흰 프레임 + 검은 사진 영역(시안과 동일한 폴라로이드 필름 형태), 카메라 슬롯에서 천천히 배출 */
+.pv-eject-card {
+  position: absolute; top: 58%; left: 50%;
+  width: calc(var(--pv-cam-w) * .6333); aspect-ratio: 190 / 262; border-radius: 3px;
+  background: #fbfbf7; box-shadow: 0 10px 26px rgba(0,0,0,.28);
+  padding: 6.3% 6.3% 23.2%; box-sizing: border-box;
+  opacity: 0; transform: translate(-50%, -105%);
+  transition: transform 3s cubic-bezier(.16,.72,.22,1), opacity .6s ease-out;
+}
+.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0); }
+.pv-eject-photo { width: 100%; aspect-ratio: 1 / 1; background: #0c0b09; border-radius: 1px; }
+
 .pv-nav { display: flex; align-items: center; gap: 16px; }
 .pv-nav-btn {
   width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,.92); color: #191722;
