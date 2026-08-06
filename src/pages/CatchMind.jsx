@@ -12,6 +12,12 @@ const ROUND_MIN = 2, ROUND_MAX = 20
 const PEN_WIDTHS = [{ w: 0.01, dot: 6 }, { w: 0.02, dot: 9 }, { w: 0.035, dot: 13 }]
 const PEN_COLORS = ['#191722', '#e5484d', '#f5860a', '#f2c94c', '#4a9d6a', '#3b82f6', '#7363e8', '#e055a0', '#8b5e3c', '#ffffff']
 const uuid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.round(Math.random() * 1e9)}`)
+// 평균 소요 시간(ms) → "MI분 SS초"
+function fmtAvg(ms) {
+  const totalSec = Math.round(ms / 1000)
+  const m = Math.floor(totalSec / 60), s = totalSec % 60
+  return `${String(m).padStart(2, '0')}분 ${String(s).padStart(2, '0')}초`
+}
 
 const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
 function chosung(word) {
@@ -47,7 +53,7 @@ export default function CatchMind() {
   const [peers, setPeers] = useState({})
   const peersRef = useRef(peers); peersRef.current = peers
 
-  const [g, setGraw] = useState({ phase: 'lobby', players: [], turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: null, bet: 5, rounds: TURNS })
+  const [g, setGraw] = useState({ phase: 'lobby', players: [], turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, times: {}, reveal: null, gameId: null, bet: 5, rounds: TURNS })
   const gRef = useRef(g)
   const setG = useCallback((up) => setGraw((p) => { const n = typeof up === 'function' ? up(p) : up; gRef.current = n; return n }), [])
   const [lob, setLob] = useState({ participants: [], ready: [], bet: 5, seats: [null, null], rounds: TURNS })
@@ -129,9 +135,15 @@ export default function CatchMind() {
   }, [uid, emit, pickWord])
   startTurnRef.current = startTurn
 
-  const endGame = useCallback((scores, players) => {
+  const endGame = useCallback((scores, times, players) => {
     const best = Math.max(0, ...players.map((p) => scores[p.uid] || 0))
-    const winners = best > 0 ? players.filter((p) => (scores[p.uid] || 0) === best) : []
+    let winners = best > 0 ? players.filter((p) => (scores[p.uid] || 0) === best) : []
+    // 정답 개수가 같으면 평균 소요 시간(총 시간/정답 개수)이 더 짧은 쪽이 우승
+    if (winners.length > 1) {
+      const avgOf = (p) => (times[p.uid] || 0) / best
+      const bestAvg = Math.min(...winners.map(avgOf))
+      winners = winners.filter((p) => avgOf(p) === bestAvg)
+    }
     setG((st) => ({ ...st, phase: 'ended', winners, winScore: best }))
     if (!winners.length) return
     const caller = [...winners].sort((a, b) => (a.uid < b.uid ? -1 : 1))[0]
@@ -151,7 +163,7 @@ export default function CatchMind() {
     } else if (type === 'game_start') {
       usedRef.current = new Set(); endedRef.current = -1; setAwarded(null)
       setGameChat([{ id: 'gs', sys: true, text: '게임 시작! 그림으로 제시어를 맞혀 보세요.' }])
-      setG((st) => ({ ...st, phase: 'play', players: pl.players, turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, reveal: null, gameId: pl.gameId, bet: pl.bet ?? 0, rounds: pl.rounds || TURNS }))
+      setG((st) => ({ ...st, phase: 'play', players: pl.players, turn: 0, drawer: null, endsAt: 0, hintLen: 0, cho: [], scores: {}, times: {}, reveal: null, gameId: pl.gameId, bet: pl.bet ?? 0, rounds: pl.rounds || TURNS }))
       setTimeout(() => startTurnRef.current(1, pl.players), 400)
     } else if (type === 'turn_start') {
       clearTimeout(timerRef.current); clearCanvas()
@@ -169,9 +181,13 @@ export default function CatchMind() {
       endedRef.current = pl.turn; clearTimeout(timerRef.current)
       usedRef.current.add(normWord(pl.word))
       const winnerName = pl.winner ? (gRef.current.players.find((p) => p.uid === pl.winner) || {}).name : null
-      setG((st) => { const scores = { ...st.scores }; if (pl.winner) scores[pl.winner] = (scores[pl.winner] || 0) + 1; return { ...st, scores, reveal: { word: pl.word, winner: pl.winner } } })
+      setG((st) => {
+        const scores = { ...st.scores }, times = { ...st.times }
+        if (pl.winner) { scores[pl.winner] = (scores[pl.winner] || 0) + 1; times[pl.winner] = (times[pl.winner] || 0) + (pl.elapsedMs || 0) }
+        return { ...st, scores, times, reveal: { word: pl.word, winner: pl.winner } }
+      })
       setGameChat((c) => [...c, { id: `e${pl.turn}`, sys: true, ok: !!winnerName, text: winnerName ? `🎉 ${winnerName} 님 정답! (제시어: ${pl.word})` : `⏰ 시간 초과 — 제시어: ${pl.word}` }])
-      setTimeout(() => { const players = gRef.current.players; if (pl.turn >= (gRef.current.rounds || TURNS)) endGame(gRef.current.scores, players); else startTurnRef.current(pl.turn + 1, players) }, REVEAL_MS)
+      setTimeout(() => { const players = gRef.current.players; if (pl.turn >= (gRef.current.rounds || TURNS)) endGame(gRef.current.scores, gRef.current.times, players); else startTurnRef.current(pl.turn + 1, players) }, REVEAL_MS)
     } else if (type === 'award') {
       setAwarded(pl)
     }
@@ -180,7 +196,11 @@ export default function CatchMind() {
 
   function endTurnLocal(winner) {
     if (gRef.current.drawer !== uid || endedRef.current === gRef.current.turn) return
-    const payload = { turn: gRef.current.turn, word: wordRef.current, winner }
+    // 정답까지 걸린 시간 = 이번 턴 시작(endsAt - TURN_SEC) 부터 지금까지. 그리는 사람
+    // 쪽에서 한 번만 계산해 turn_end 로 같이 보내야, 기기마다 시계가 달라도(자동시각
+    // 설정 차이 등) 모든 클라이언트가 같은 값을 갖는다.
+    const elapsedMs = winner ? Math.max(0, Date.now() - (gRef.current.endsAt - TURN_SEC * 1000)) : 0
+    const payload = { turn: gRef.current.turn, word: wordRef.current, winner, elapsedMs }
     emit('turn_end', payload); apply('turn_end', payload)
   }
   endTurnRef.current = endTurnLocal
@@ -449,8 +469,12 @@ export default function CatchMind() {
 
   // ===== 결과 (14s) =====
   if (g.phase === 'ended') {
-    const rank = g.players.map((p) => ({ ...p, s: g.scores[p.uid] || 0 })).sort((a, b) => b.s - a.s)
-    const rankNo = rank.map((p, i) => (i > 0 && rank[i - 1].s === p.s ? null : i + 1))
+    const times = g.times || {}
+    const avgOf = (p, s) => (s > 0 ? (times[p.uid] || 0) / s : Infinity)
+    const rank = g.players
+      .map((p) => { const s = g.scores[p.uid] || 0; return { ...p, s, avg: avgOf(p, s) } })
+      .sort((a, b) => b.s - a.s || a.avg - b.avg)
+    const rankNo = rank.map((p, i) => (i > 0 && rank[i - 1].s === p.s && rank[i - 1].avg === p.avg ? null : i + 1))
     for (let i = 0; i < rankNo.length; i++) if (rankNo[i] === null) rankNo[i] = rankNo[i - 1]
     const winners = g.winners || []
     const champ = winners[0]
@@ -465,14 +489,17 @@ export default function CatchMind() {
           {champ && <div className="cm-res-badge">정답 {g.winScore || 0}개{awarded?.share > 0 ? ` · 츄르 ${awarded.share}개 획득` : ''}</div>}
         </div>
         <div className="cm-res-list-wrap">
-          <div className="cm-res-lh"><b>전체 순위</b><span>정답 개수 순</span></div>
+          <div className="cm-res-lh"><b>전체 순위</b><span>정답 개수 · 동점 시 평균 시간 순</span></div>
           <div className="cm-res-list">
             {rank.map((p, i) => (
               <div key={p.uid} className={`cm-res-row ${rankNo[i] === 1 ? 'win' : ''} ${p.uid === uid ? 'me' : ''}`}>
                 <span className="cm-res-rank">{medal(rankNo[i])}</span>
                 <Av name={p.name} avatar={p.avatar} size={34} />
                 <span className="cm-res-nm">{p.name}{rankNo[i] === 1 && <span className="cm-res-win">우승 👑</span>}{p.uid === uid && <span className="om-badge-me">나</span>}</span>
-                <span className="cm-res-n"><b>{p.s}</b> 개</span>
+                <span className="cm-res-n">
+                  <b>{p.s}</b> 개
+                  {p.s > 0 && <span className="cm-res-avg">평균 {fmtAvg(p.avg)}</span>}
+                </span>
               </div>
             ))}
           </div>

@@ -5250,8 +5250,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .cm-res-rank { width: 26px; text-align: center; font-size: 17px; font-weight: 800; color: #b0abbd; }
 .cm-res-nm { flex: 1; font-size: 15px; font-weight: 800; color: #191722; display: flex; align-items: center; gap: 6px; }
 .cm-res-win { font-size: 10px; font-weight: 800; color: #b8860b; background: #f6e7b8; border-radius: 999px; padding: 2px 7px; }
-.cm-res-n { font-size: 14px; color: #8b8798; }
+.cm-res-n { font-size: 14px; color: #8b8798; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .cm-res-n b { font-size: 17px; font-weight: 800; color: #191722; }
+.cm-res-avg { font-size: 11px; color: #b0abbd; white-space: nowrap; }
 .cm-res-btns { display: flex; gap: 10px; padding: 14px 20px calc(env(safe-area-inset-bottom) + 18px); flex-shrink: 0; }
 .cm-res-btns .cm-btn { height: 54px; }
 
