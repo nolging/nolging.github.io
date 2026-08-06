@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     // 선물/커플 링/소원권 등 쪽지 유형은 받은 쪽지함으로. (수령 상태별 세부 분기는
     // 앱에서 처리되지만, 푸시는 최소한 알림센터와 같은 기본 목적지로 보낸다.)
     const NOTE_TYPES = new Set([
-      'gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note',
+      'gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note', 'polaroid',
     ])
     let url = '/'
     if (record.type === 'error_report' && record.report_id) {

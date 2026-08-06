@@ -37,6 +37,35 @@ export async function uploadPuzzleImage(blob, groupId, userId) {
   return data.publicUrl
 }
 
+// 폴라로이드 필름 사진 업로드 (avatars 버킷 재사용, 아바타와 같은 본인 폴더 패턴).
+// n 은 같은 쪽지 안에서의 순번(0~4) — 같은 밀리초에 여러 장을 올려도 경로가 겹치지 않게.
+export async function uploadPolaroidPhoto(blob, userId, n = 0) {
+  const path = `${userId}/polaroid-${Date.now()}-${n}.jpg`
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    contentType: 'image/jpeg', cacheControl: '3600', upsert: true,
+  })
+  if (error) throw new Error(`사진 업로드 실패: ${error.message}`)
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
+// 이미지 파일을 최대 변 길이 max 로 축소한 JPEG blob 으로 변환.
+export function resizeToJpeg(file, max) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let { width: w, height: h } = img
+      if (Math.max(w, h) > max) { const k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k) }
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h
+      cv.getContext('2d').drawImage(img, 0, 0, w, h)
+      cv.toBlob((blob) => { URL.revokeObjectURL(url); blob ? resolve({ blob, w, h }) : reject(new Error('이미지 변환 실패')) }, 'image/jpeg', 0.86)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없어요')) }
+    img.src = url
+  })
+}
+
 // avatar_url 이 우리 스토리지 URL 이면 해당 객체 경로를 추출 (아니면 null — 레거시 data URI 등)
 export function storagePathFromUrl(url) {
   if (typeof url !== 'string') return null

@@ -17,6 +17,7 @@ const IMG_BG = {
   'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
   'nyangpito': '#eaf4ec', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
+  'polaroid-film': '#fdf1e6',
   'sticker-grape': '#332c52', 'sticker-apple': '#332c52',
   'name-tag': '#332c52', 'time-machine': '#332c52',
   'secret-board': '#f4ece0', 'megaphone': '#fdeceb',

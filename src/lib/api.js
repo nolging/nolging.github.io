@@ -1117,6 +1117,21 @@ export async function useBluray({ groupId, recipientId, message, url, anonymous 
   return data
 }
 
+// 폴라로이드 필름: 사진(urls, 최대 5장)을 상대 쪽지함으로. 장당 필름 1개씩 소모.
+export async function usePolaroidFilm({ groupId, recipientId, message, urls, anonymous = false }) {
+  const params = { p_group_id: groupId, p_recipient_id: recipientId, p_message: message ?? '', p_urls: urls || [] }
+  if (anonymous) params.p_anonymous = true
+  const { data, error } = await supabase.rpc('use_polaroid_film', params)
+  if (error) {
+    if (error.code === 'PGRST202' || /use_polaroid_film/.test(error.message || '')) {
+      throw new Error('폴라로이드 필름 기능이 아직 DB에 설정되지 않았습니다. (use_polaroid_film 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  invalidateNotesCache()
+  return data
+}
+
 // 그룹 꾸미기 테마 적용: 프리미엄 그룹에 테마 아이템 1개 소모 + groups.deco_theme 설정.
 export async function applyGroupTheme(groupId, theme) {
   const { error } = await supabase.rpc('apply_group_theme', { p_group_id: groupId, p_theme: theme })
@@ -1534,11 +1549,12 @@ export async function giftOwnedItem(itemId, groupId, recipientId, qty = 1, { mes
   invalidateNotesCache()
 }
 
-// 쪽지 작성: 사용 아이템/선물/익명을 한 번에 처리하는 오케스트레이터.
+// 쪽지 작성: 사용 아이템/선물/사진/익명을 한 번에 처리하는 오케스트레이터.
 //  useItem: null | { id, url }  (id: couple-ring|friend-ring|cassette|video|bluray|link)
 //  gifts:   [{ id, qty }]       (내 보유 아이템)
+//  photos:  [{ url }]           (폴라로이드 필름으로 첨부한 사진, 최대 5장)
 //  anonymous: 지우개(익명). 커플/우정 링은 익명 불가.
-export async function sendComposedNote({ groupId, recipientId, body, anonymous = false, useItem = null, gifts = [] }) {
+export async function sendComposedNote({ groupId, recipientId, body, anonymous = false, useItem = null, gifts = [], photos = [] }) {
   const msg = (body || '').trim()
   if (useItem) {
     const { id, url, timer } = useItem
@@ -1550,6 +1566,9 @@ export async function sendComposedNote({ groupId, recipientId, body, anonymous =
     if (id === 'link') return useLink({ groupId, recipientId, message: msg, url, anonymous })
     if (id === 'waterbomb') return sendNote({ groupId, recipientId, body: msg, anonymous, timerSeconds: timer })
     throw new Error('사용할 수 없는 아이템이에요.')
+  }
+  if (photos && photos.length > 0) {
+    return usePolaroidFilm({ groupId, recipientId, message: msg, urls: photos.map((p) => p.url), anonymous })
   }
   if (gifts && gifts.length > 0) {
     // 여러 종류의 아이템을 쪽지 하나로 동봉해 전송
@@ -1617,6 +1636,31 @@ export async function getNoteState(noteId) {
     throw error
   }
   return data ?? null
+}
+
+// 폴라로이드 사진 목록 조회 → { [noteId]: [{id, url, sort_order}] }.
+// 인화(develop) 전에는 RLS 상 recipient 에게 아무 행도 안 보인다(sender 는 항상 보임).
+export async function listNotePhotos(noteIds) {
+  const ids = [...new Set((noteIds || []).filter(Boolean))]
+  if (ids.length === 0) return {}
+  const { data, error } = await supabase
+    .from('note_photos').select('id, note_id, url, sort_order').in('note_id', ids)
+    .order('sort_order', { ascending: true })
+  if (error) { if (error.code === '42P01') return {}; throw error }
+  const map = {}
+  for (const r of data ?? []) (map[r.note_id] = map[r.note_id] || []).push(r)
+  return map
+}
+// 인화하기: 받은 폴라로이드 쪽지를 열람 가능 상태로(사진 공개)
+export async function developPolaroidNote(noteId) {
+  const { error } = await supabase.rpc('develop_polaroid_note', { p_note_id: noteId })
+  if (error) {
+    if (error.code === 'PGRST202' || /develop_polaroid_note/.test(error.message || '')) {
+      throw new Error('인화 기능이 아직 DB에 설정되지 않았습니다. (develop_polaroid_note 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  invalidateNotesCache()
 }
 
 // 선물 수령(쪽지함). 내 인벤토리에 아이템 생성.

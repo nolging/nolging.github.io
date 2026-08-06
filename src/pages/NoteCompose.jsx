@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import RecipientPicker from '../components/RecipientPicker'
 import BottomSheet from '../components/BottomSheet'
@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { itemName, CAT, CAT_ORDER, catOf } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
+import { uploadPolaroidPhoto, resizeToJpeg } from '../lib/storage'
 import { NOTE_CHANNEL } from '../lib/composeWindow'
 
 const MAX = 150
@@ -25,7 +26,9 @@ const USE_META = {
   bluray: { name: '블루레이', emoji: '💿', urlHint: '유튜브 링크', sub: '공유하고 싶은 영상 링크를 입력해 주세요' },
   eraser: { name: '지우개', emoji: '🧽' },
   waterbomb: { name: '물풍선 폭탄', emoji: '💧' },
+  'polaroid-film': { name: '폴라로이드 필름', emoji: '📷' },
 }
+const MAX_PHOTOS = 5
 // 입력 링크 검증/정규화: 프로토콜 없으면 https:// 보정, 도메인 형태가 아니면 무효(null).
 function normalizeUrl(raw) {
   let s = (raw || '').trim()
@@ -35,7 +38,7 @@ function normalizeUrl(raw) {
 }
 const USE_SECTIONS = [
   { label: '스페셜', ids: RINGS },
-  { label: '기능 강화', ids: [...MEDIA, 'eraser', 'waterbomb'] },
+  { label: '기능 강화', ids: [...MEDIA, 'eraser', 'waterbomb', 'polaroid-film'] },
 ]
 const TIMER_MIN = 10, TIMER_MAX = 120
 
@@ -69,6 +72,9 @@ export default function NoteCompose() {
   const [anonymous, setAnonymous] = useState(false)
   const [useItem, setUseItem] = useState(null)   // { id, url? }
   const [gifts, setGifts] = useState([])          // [{ id, qty }]
+  const [photos, setPhotos] = useState([])        // [{ url }] — 폴라로이드 필름으로 첨부한 사진(최대 5장)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const polaroidInputRef = useRef(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
@@ -132,22 +138,32 @@ export default function NoteCompose() {
   }
 
   // ---- 아이템 사용 시트 --------------------------------------------------
+  // 폴라로이드 필름은 다른 사용 아이템과 달리 "한 번 고르면 끝"이 아니라 최대 5장까지
+  // 반복해서 고를 수 있다(사진 1장 = 필름 1개). useItem/gifts 와는 여전히 배타적.
   const useDisabled = useCallback((id) => {
     const amId = useItem?.id || null
     const specialOn = amId && RINGS.includes(amId)
+    if (id === 'polaroid-film') {
+      return !!amId || gifts.length > 0 || photos.length >= MAX_PHOTOS || photos.length >= (owned[id] || 0)
+    }
     if (id === 'eraser') return anonymous || specialOn
     if (id === 'friend-ring') {
-      if ((amId && amId !== id) || anonymous || gifts.length > 0) return true
+      if ((amId && amId !== id) || anonymous || gifts.length > 0 || photos.length > 0) return true
       // 수신자가 이미 정해진 경우: 나와 커플(커플 그룹)이거나 이미 우정 링이 적용된 그룹이면 우정 링 사용 불가
       const gid = recipient && !recipient.groupWide ? recipient.groupId : null
       if (gid && (coupleGroups.includes(gid) || friendGroups.includes(gid))) return true
       return false
     }
-    if (RINGS.includes(id)) return (amId && amId !== id) || anonymous || gifts.length > 0
-    return (amId && amId !== id) || gifts.length > 0   // 미디어
-  }, [useItem, anonymous, gifts, recipient, coupleGroups, friendGroups])
+    if (RINGS.includes(id)) return (amId && amId !== id) || anonymous || gifts.length > 0 || photos.length > 0
+    return (amId && amId !== id) || gifts.length > 0 || photos.length > 0   // 미디어
+  }, [useItem, anonymous, gifts, photos, owned, recipient, coupleGroups, friendGroups])
 
   function pickUse(id) {
+    if (id === 'polaroid-film') {
+      if (useDisabled(id)) return
+      setSheet(null); polaroidInputRef.current?.click()
+      return
+    }
     const active = id === 'eraser' ? anonymous : useItem?.id === id
     if (active || useDisabled(id)) return   // 이미 "사용 중"이면 무시(칩 X로 해제)
     if (id === 'eraser') { setAnonymous(true); setSheet(null); return }
@@ -157,6 +173,23 @@ export default function NoteCompose() {
     }
     if (id === 'waterbomb') { setTimerVal(30); setTimerOpen(true); setSheet(null); return } // 타이머 설정
     setLinkFor(id); setLinkUrl(''); setLinkErr(''); setSheet(null)   // 미디어 → URL 입력
+  }
+  // 폴라로이드 필름 사진 선택 → 리사이즈 후 업로드 → photos 에 추가(필름 소모는 전송 시 서버에서)
+  async function onPickPolaroidPhoto(e) {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f) return
+    if (photos.length >= MAX_PHOTOS || photos.length >= (owned['polaroid-film'] || 0)) return
+    setUploadingPhoto(true); setError('')
+    try {
+      const { blob } = await resizeToJpeg(f, 1600)
+      const url = await uploadPolaroidPhoto(blob, user.id, photos.length)
+      setPhotos((prev) => [...prev, { url }])
+    } catch (err) { setError(err.message || '사진 업로드에 실패했어요.') }
+    finally { setUploadingPhoto(false) }
+  }
+  function removePhoto(i) {
+    setPhotos((prev) => prev.filter((_, idx) => idx !== i))
   }
   function confirmTimer() {
     setUseItem({ id: 'waterbomb', timer: Math.max(TIMER_MIN, Math.min(TIMER_MAX, timerVal)) })
@@ -175,7 +208,7 @@ export default function NoteCompose() {
   }
 
   // ---- 아이템 선물 시트 --------------------------------------------------
-  const giftDisabled = !!useItem
+  const giftDisabled = !!useItem || photos.length > 0
   function openGiftSheet() {
     if (giftDisabled) return
     const d = {}; gifts.forEach((g) => { d[g.id] = g.qty }); setGiftDraft(d); setGiftNotice(''); setSheet('gift')
@@ -234,12 +267,12 @@ export default function NoteCompose() {
 
   async function handleSend() {
     if (!recipient) { setError('받는 사람을 선택해 주세요.'); return }
-    if (!useItem && gifts.length === 0 && !body.trim()) { setError('쪽지 내용을 입력해 주세요.'); return }
+    if (!useItem && gifts.length === 0 && photos.length === 0 && !body.trim()) { setError('쪽지 내용을 입력해 주세요.'); return }
     setSending(true); setError('')
     try {
       await sendComposedNote({
         groupId: recipient.groupId, recipientId: recipient.userId,
-        body: body.trim(), anonymous, useItem, gifts,
+        body: body.trim(), anonymous, useItem, gifts, photos,
       })
       if (isPopup) {
         // 여는 쪽(쪽지함)에 전송 완료를 알리고 팝업 창을 닫는다
@@ -251,10 +284,10 @@ export default function NoteCompose() {
     } catch (err) { setError(err.message); setSending(false) }
   }
 
-  // 전송 가능: 받는 사람 필수 + (본문/사용아이템/선물 중 하나 이상) + 미디어면 URL 완비
+  // 전송 가능: 받는 사람 필수 + (본문/사용아이템/선물/사진 중 하나 이상) + 미디어면 URL 완비
   const mediaNeedsUrl = useItem && MEDIA.includes(useItem.id) && !useItem.url
-  const hasContent = !!body.trim() || !!useItem || gifts.length > 0
-  const canSend = !!recipient && hasContent && !mediaNeedsUrl && !sending
+  const hasContent = !!body.trim() || !!useItem || gifts.length > 0 || photos.length > 0
+  const canSend = !!recipient && hasContent && !mediaNeedsUrl && !sending && !uploadingPhoto
 
   const isActive = (id) => (id === 'eraser' ? anonymous : useItem?.id === id)
 
@@ -340,6 +373,29 @@ export default function NoteCompose() {
         </div>
       ))}
 
+      {/* 폴라로이드 사진 첨부칩 */}
+      {(photos.length > 0 || uploadingPhoto) && (
+        <div className="nc-chip is-photo">
+          <span className="nc-chip-ico" style={{ background: metaOf('polaroid-film').bg }}><StoreItemImage id="polaroid-film" emoji={metaOf('polaroid-film').emoji} className="nc-img" /></span>
+          <div className="nc-chip-txt">
+            <div className="nc-chip-name">폴라로이드 필름{photos.length > 0 && <span className="nc-chip-qty">×{photos.length}</span>}</div>
+            <div className="nc-chip-hint">{uploadingPhoto ? '업로드 중…' : `📷 사진 ${photos.length}장 첨부됨 (최대 ${MAX_PHOTOS}장)`}</div>
+            <div className="nc-photo-strip">
+              {photos.map((p, i) => (
+                <span key={p.url} className="nc-photo-thumb">
+                  <img src={p.url} alt="" />
+                  <button type="button" className="nc-photo-x" onClick={() => removePhoto(i)} aria-label="사진 제거">×</button>
+                </span>
+              ))}
+              {!useDisabled('polaroid-film') && (
+                <button type="button" className="nc-photo-add" onClick={() => polaroidInputRef.current?.click()} disabled={uploadingPhoto} aria-label="사진 추가">＋</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      <input ref={polaroidInputRef} type="file" accept="image/*" hidden onChange={onPickPolaroidPhoto} />
+
       {/* From. */}
       {anonymous ? (
         <div className="nc-from is-anon">
@@ -395,14 +451,17 @@ export default function NoteCompose() {
             <div className="nc-sheet-sec-t">{sec.label}</div>
             <div className="nc-grid">
               {sec.ids.map((id) => {
-                const active = isActive(id)
-                const dis = useDisabled(id)
+                const isPolaroid = id === 'polaroid-film'
+                const active = isPolaroid ? photos.length > 0 : isActive(id)
+                const dis = useDisabled(id) || (isPolaroid && uploadingPhoto)
                 return (
                   <button key={id} type="button" className={`nc-icard ${active ? 'is-active' : ''}`} disabled={dis}
                     style={{ opacity: dis && !active ? 0.38 : 1 }} onClick={() => pickUse(id)}>
                     <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
                       <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
-                      {active ? <span className="nc-icard-using">사용 중</span> : <span className="nc-icard-badge">×{owned[id] || 0}</span>}
+                      {isPolaroid && active
+                        ? <span className="nc-icard-using">{photos.length}장 첨부</span>
+                        : active ? <span className="nc-icard-using">사용 중</span> : <span className="nc-icard-badge">×{owned[id] || 0}</span>}
                     </span>
                     <span className="nc-icard-name">{metaOf(id).name}</span>
                   </button>

@@ -12,7 +12,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { itemName, resolveItemText } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, deleteReportGiftNote } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, deleteReportGiftNote, listNotePhotos, developPolaroidNote } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -111,6 +111,7 @@ export default function Notes() {
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
+  const [notePhotos, setNotePhotos] = useState({})     // { noteId: [{id,url,sort_order}] } — 폴라로이드(인화 전엔 빈 배열)
   const [recvMore, setRecvMore] = useState(notesCache.recvMore) // 받은함에 더 과거 쪽지가 있는지
   const [sentMore, setSentMore] = useState(notesCache.sentMore) // 보낸함에 더 과거 쪽지가 있는지
   const [loadingMore, setLoadingMore] = useState(false)
@@ -141,6 +142,14 @@ export default function Notes() {
     try {
       const ni = await listNoteItems([noteId])
       setNoteItems((prev) => { const m = { ...prev, ...ni }; notesCache.noteItems = m; return m })
+    } catch { /* noop */ }
+  }, [])
+  // 폴라로이드 사진도 같은 방식: 쪽지 모달을 열 때만 조회. 인화(develop) 전엔 RLS 상
+  // 빈 배열이 오고, 인화 직후 다시 호출해 실제 사진으로 갱신한다.
+  const fetchNotePhotos = useCallback(async (noteId) => {
+    try {
+      const np = await listNotePhotos([noteId])
+      setNotePhotos((prev) => { const m = { ...prev, ...np }; notesCache.notePhotos = m; return m })
     } catch { /* noop */ }
   }, [])
 
@@ -397,6 +406,18 @@ export default function Notes() {
     finally { setBusy(false) }
   }
 
+  // 인화하기: 폴라로이드 쪽지 공개(사진은 그 뒤 fetchNotePhotos 로 다시 조회해야 실제로 보임)
+  async function developPolaroid(n) {
+    setBusy(true); setError('')
+    try {
+      await developPolaroidNote(n.id)
+      await load()
+      await fetchNotePhotos(n.id)
+      setOpen((o) => (o && o.id === n.id ? { ...o, claimed: true, is_read: true } : o))
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
+  }
+
   // 깜냥 명의 보상 쪽지 삭제(아이템을 전부 수령한 뒤에만 가능)
   async function delSysGift(n) {
     if (busy) return
@@ -499,6 +520,8 @@ export default function Notes() {
     setOpen(n)
     // 상세(동봉 아이템)는 목록이 아니라 여기서, 열린 쪽지 것만 조회
     if (n.kind === 'gift') fetchNoteItems(n.id)
+    // 폴라로이드: 보낸 사람은 언제나, 받는 사람은 인화(claimed)한 뒤에만 실제로 보임(RLS)
+    if (n.kind === 'polaroid' && (n.sender_id === user?.id || n.claimed)) fetchNotePhotos(n.id)
     // 받은 쪽지를 열면 읽음 처리(카드 점 제거 + 하단 탭 점 갱신)
     if (tab === 'received' && !n.is_read) {
       setReceived((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
@@ -590,12 +613,13 @@ export default function Notes() {
             const link = n.kind === 'link'
             const video = n.kind === 'video'
             const bluray = n.kind === 'bluray'
+            const polaroid = n.kind === 'polaroid'
             const system = n.kind === 'system'   // 오류 리포트 SYSTEM 쪽지
             const sysResolved = system && !!n.report_resolved // 처리 완료된 리포트 채팅
             const cardTime = sysResolved && n.report_resolved_at ? n.report_resolved_at : n.created_at
             const sysHasReward = system && !!n.report_has_reward_item // 아이템 보상이 한 번이라도 지급된 리포트
             const sysRewardPending = system && !!n.report_reward_pending // 아직 안 받은 아이템 보상 있음
-            const needClaim = (couple || friend || gift) && tab === 'received' && !n.claimed && !n.rejected
+            const needClaim = (couple || friend || gift || polaroid) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
             const waterBlue = popped || (tab === 'sent' && isWater(n)) // 옅은 파란색(보낸함 물풍선은 처음부터)
@@ -609,8 +633,9 @@ export default function Notes() {
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
                         : video ? ['📼 비디오', 'note-tag note-tag-video']
                           : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                            : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
-                              : null
+                            : polaroid ? ['📷 폴라로이드', 'note-tag note-tag-cassette']
+                              : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
+                                : null
             return (
               <li key={n.id}>
                 <button type="button" className={`note-card ${wish ? 'note-wish' : ''} ${couple ? 'note-couple' : ''} ${friend ? 'note-friend' : ''} ${gift && !sysGift ? 'note-gift' : ''} ${system ? 'note-syscard' : ''} ${sysResolved || sysGift ? 'note-syscard-resolved' : ''} ${n.anonymous ? 'note-anon' : ''} ${waterBlue ? 'note-water-pop' : ''} ${hasFlag ? 'has-flag' : ''}`} onClick={() => onCardClick(n)}>
@@ -690,10 +715,12 @@ export default function Notes() {
           const link = open.kind === 'link'
           const video = open.kind === 'video'
           const bluray = open.kind === 'bluray'
+          const polaroid = open.kind === 'polaroid'
           const system = open.kind === 'system'
           const mine = open.recipient_id === user?.id
           const gItems = gift ? giftItemsOf(open) : []
           const allGiftClaimed = gItems.length === 0 || gItems.every((it) => it.claimed)
+          const pItems = polaroid ? (notePhotos[open.id] || []) : []
           const tagInfo = wish ? ['🌟 소원', 'note-tag']
             : couple ? [open.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
               : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
@@ -702,8 +729,9 @@ export default function Notes() {
                     : link ? ['🎁 선물', 'note-tag note-tag-link']
                       : video ? ['📼 비디오', 'note-tag note-tag-video']
                         : bluray ? ['💿 블루레이', 'note-tag note-tag-video']
-                          : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
-                            : null
+                          : polaroid ? ['📷 폴라로이드', 'note-tag note-tag-cassette']
+                            : system ? ['🔧 SYSTEM', 'note-tag note-tag-system']
+                              : null
           return (
             <div className="note-view">
               <div className="note-view-head">
@@ -797,6 +825,31 @@ export default function Notes() {
                       <span className="note-gift-name">{open.reward_coin} 츄르 지급됐어요</span>
                     </li>
                   </ul>
+                </div>
+              )}
+              {polaroid && (
+                <div className="note-gifts note-polaroid">
+                  <div className="note-gifts-head"><span className="note-gifts-label">첨부된 사진</span></div>
+                  <ul className="note-gift-list">
+                    <li className="note-gift-row">
+                      <span className="note-gift-thumb" style={{ background: bgOf('polaroid-film') }}>
+                        <StoreItemImage id="polaroid-film" emoji="📷" className="note-gift-img" />
+                      </span>
+                      <span className="note-gift-name">사진 {open.qty || pItems.length || 1}장이 첨부됨</span>
+                      {mine && (open.claimed
+                        ? <span className="note-gift-done">인화 완료</span>
+                        : <button type="button" className="note-polaroid-develop" onClick={() => developPolaroid(open)} disabled={busy}>인화하기</button>)}
+                    </li>
+                  </ul>
+                  {open.claimed && pItems.length > 0 && (
+                    <div className="note-polaroid-grid">
+                      {pItems.map((p) => (
+                        <a key={p.id} href={p.url} target="_blank" rel="noreferrer noopener" className="note-polaroid-thumb">
+                          <img src={p.url} alt="" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {couple && mine ? (
