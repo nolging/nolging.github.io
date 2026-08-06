@@ -194,18 +194,40 @@ function extFromUrl(url) {
   } catch { return 'jpg' }
 }
 
-async function downloadPolaroidPhoto(url, filename) {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = blobUrl; a.download = filename
-    document.body.appendChild(a); a.click(); a.remove()
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 4000)
-  } catch {
-    window.open(url, '_blank', 'noopener')
+function downloadPolaroidPhoto(url, filename) {
+  fetch(url)
+    .then((res) => res.blob())
+    .then((blob) => {
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl; a.download = filename
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 4000)
+    })
+    .catch(() => window.open(url, '_blank', 'noopener'))
+}
+
+// 사진(들)을 저장한다. iOS Safari 등에서는 <a download> 가 파일마다 "공유 시트 → 이미지 저장"을
+// 반복해야 하는 문제가 있어서, Web Share API(navigator.share)로 여러 장을 한 번에 넘겨 시스템
+// 공유 시트를 한 번만 띄우고 그 안에서 "이미지 N개 저장"으로 한 번에 갤러리에 저장되게 한다.
+// Web Share 를 못 쓰는 환경(대부분의 데스크톱 브라우저)에서는 순차 다운로드로 폴백.
+async function shareOrDownloadPhotos(items) {
+  if (navigator.share) {
+    try {
+      const files = await Promise.all(items.map(async ({ url, filename }) => {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        return new File([blob], filename, { type: blob.type || 'image/jpeg' })
+      }))
+      if (!navigator.canShare || navigator.canShare({ files })) {
+        await navigator.share({ files })
+        return
+      }
+    } catch (err) {
+      if (err?.name === 'AbortError') return
+    }
   }
+  items.forEach(({ url, filename }, i) => setTimeout(() => downloadPolaroidPhoto(url, filename), i * 300))
 }
 
 const DownloadIcon = () => (
@@ -256,10 +278,10 @@ function PolaroidFullscreen({ photos, index, showControls, onNav, onToggleContro
   }
 
   function saveCurrent() {
-    downloadPolaroidPhoto(photo.url, `nolging-polaroid-${index + 1}.${extFromUrl(photo.url)}`)
+    shareOrDownloadPhotos([{ url: photo.url, filename: `nolging-polaroid-${index + 1}.${extFromUrl(photo.url)}` }])
   }
   function saveAll() {
-    photos.forEach((p, i) => setTimeout(() => downloadPolaroidPhoto(p.url, `nolging-polaroid-${i + 1}.${extFromUrl(p.url)}`), i * 300))
+    shareOrDownloadPhotos(photos.map((p, i) => ({ url: p.url, filename: `nolging-polaroid-${i + 1}.${extFromUrl(p.url)}` })))
   }
   function onSaveClick() {
     if (photos.length > 1) setSaveMenuOpen((v) => !v)
