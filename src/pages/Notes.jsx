@@ -107,6 +107,35 @@ function formatNoteFull(iso) {
 // 백그라운드에서 계속 드러나는 중이라 나중에 넘겨봐도 이미 그만큼 밝아져 있다. 사진마다 key 가 고정돼 있어
 // 다른 사진을 봤다가 돌아와도 DOM 이 다시 마운트되지 않으므로(=애니메이션이 리셋되지 않으므로) 이미
 // 드러났던 사진이 다시 까매지는 일도 없다.
+// 탭(움직임 없는 클릭)과 좌우/아래 스와이프를 구분해주는 제스처 훅. onPointerDown 에서 preventDefault
+// 를 호출하지 않으므로, 사진처럼 브라우저 자체의 길게 눌러 저장하는 기능이 필요한 요소에도 그대로
+// 붙여 쓸 수 있다(길게 눌러 콜아웃 메뉴가 뜨면 pointercancel 로 제스처 상태만 정리됨).
+function useSwipeGesture({ onTap, onSwipeLeft, onSwipeRight, onSwipeDown }) {
+  const gestureRef = useRef(null)
+  return {
+    onPointerDown: (e) => {
+      gestureRef.current = { x: e.clientX, y: e.clientY, moved: false }
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    },
+    onPointerMove: (e) => {
+      const g = gestureRef.current
+      if (!g) return
+      if (Math.abs(e.clientX - g.x) > 8 || Math.abs(e.clientY - g.y) > 8) g.moved = true
+    },
+    onPointerUp: (e) => {
+      const g = gestureRef.current
+      gestureRef.current = null
+      if (!g) return
+      if (!g.moved) { onTap?.(); return }
+      const dx = e.clientX - g.x, dy = e.clientY - g.y
+      const adx = Math.abs(dx), ady = Math.abs(dy)
+      if (ady > 60 && ady > adx) { if (dy > 0) onSwipeDown?.(); return }
+      if (adx > 50 && adx > ady) { if (dx < 0) onSwipeLeft?.(); else onSwipeRight?.() }
+    },
+    onPointerCancel: () => { gestureRef.current = null },
+  }
+}
+
 function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
   const [ejecting, setEjecting] = useState(false)
@@ -125,11 +154,18 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   }, [polaroidView.animate, polaroidView.noteId])
 
   const photos = notePhotos[polaroidView.noteId] || []
-  if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
   const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
   const revealing = stage === 'revealing'
   const showCamera = stage === 'camera' || stage === 'print'
   const canOpenFullscreen = stage === 'revealing' || stage === 'static'
+  // useSwipeGesture 는 훅이므로 아래 early return 보다 앞에서, 매 렌더 조건 없이 호출해야 한다.
+  const photoGesture = useSwipeGesture({
+    onTap: () => { if (canOpenFullscreen) setFullscreen({ index: idx, showControls: false }) },
+    onSwipeLeft: () => { if (canOpenFullscreen && idx < photos.length - 1) onNav(idx + 1) },
+    onSwipeRight: () => { if (canOpenFullscreen && idx > 0) onNav(idx - 1) },
+  })
+
+  if (!photos.length) return <div className="pv-empty">사진을 불러오는 중…</div>
 
   return (
     <div className="pv-wrap">
@@ -157,7 +193,7 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
       <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>
         <div
           className={`pv-photo ${canOpenFullscreen ? 'is-tappable' : ''}`}
-          onClick={() => { if (canOpenFullscreen) setFullscreen({ index: idx, showControls: false }) }}
+          {...photoGesture}
         >
           {photos.map((photo, i) => (
             <img key={photo.id} src={photo.url} alt="" className={`pv-photo-img ${i === idx ? 'is-current' : ''} ${revealing ? 'pv-reveal-anim' : (stage === 'print' ? 'pv-photo-black' : '')}`} />
@@ -245,7 +281,6 @@ const CloseIcon = () => (
 // 저장/닫기 버튼이 나타나고(다시 탭하면 숨김), 좌우 스와이프로 사진 전환, 아래로 스와이프하면 닫힘.
 function PolaroidFullscreen({ photos, index, showControls, onNav, onToggleControls, onClose }) {
   const [saveMenuOpen, setSaveMenuOpen] = useState(false)
-  const gestureRef = useRef(null)
   const photo = photos[index]
 
   useEffect(() => {
@@ -254,28 +289,12 @@ function PolaroidFullscreen({ photos, index, showControls, onNav, onToggleContro
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  function onPointerDown(e) {
-    gestureRef.current = { x: e.clientX, y: e.clientY, moved: false }
-  }
-  function onPointerMove(e) {
-    const g = gestureRef.current
-    if (!g) return
-    if (Math.abs(e.clientX - g.x) > 8 || Math.abs(e.clientY - g.y) > 8) g.moved = true
-  }
-  function onPointerUp(e) {
-    const g = gestureRef.current
-    gestureRef.current = null
-    if (!g) return
-    setSaveMenuOpen(false)
-    if (!g.moved) { onToggleControls(); return }
-    const dx = e.clientX - g.x, dy = e.clientY - g.y
-    const adx = Math.abs(dx), ady = Math.abs(dy)
-    if (ady > 60 && ady > adx) { if (dy > 0) onClose(); return }
-    if (adx > 50 && adx > ady) {
-      if (dx < 0 && index < photos.length - 1) onNav(index + 1)
-      else if (dx > 0 && index > 0) onNav(index - 1)
-    }
-  }
+  const gesture = useSwipeGesture({
+    onTap: () => { setSaveMenuOpen(false); onToggleControls() },
+    onSwipeLeft: () => { setSaveMenuOpen(false); if (index < photos.length - 1) onNav(index + 1) },
+    onSwipeRight: () => { setSaveMenuOpen(false); if (index > 0) onNav(index - 1) },
+    onSwipeDown: () => { setSaveMenuOpen(false); onClose() },
+  })
 
   function saveCurrent() {
     shareOrDownloadPhotos([{ url: photo.url, filename: `nolging-polaroid-${index + 1}.${extFromUrl(photo.url)}` }])
@@ -289,13 +308,7 @@ function PolaroidFullscreen({ photos, index, showControls, onNav, onToggleContro
   }
 
   return createPortal(
-    <div
-      className="pvfs-overlay"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={() => { gestureRef.current = null }}
-    >
+    <div className="pvfs-overlay" {...gesture}>
       <img src={photo.url} alt="" className="pvfs-img" draggable={false} />
       {showControls && (
         <div className="pvfs-controls" onPointerDown={(e) => e.stopPropagation()}>
