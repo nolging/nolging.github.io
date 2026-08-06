@@ -7,7 +7,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import { useAuth } from '../context/AuthContext'
 import { sendComposedNote, listInventory, listStoreItems, listCoupleGroups, listFriendGroups } from '../lib/api'
-import { itemName } from '../lib/storeMeta'
+import { itemName, CAT, CAT_ORDER, catOf } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
 import { NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -101,7 +101,7 @@ export default function NoteCompose() {
     listStoreItems().then((rows) => {
       if (!on) return
       const m = {}
-      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null, sort: r.sort_order ?? 999 }
+      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null, sort: r.sort_order ?? 999, category: r.category || '' }
       setStore(m)
     }).catch(() => {})
     // 링 사용 시 제외할 그룹 + 프리미엄 선물 대상 판별용(커플/우정 그룹)
@@ -191,11 +191,17 @@ export default function NoteCompose() {
 
   // 선물 목록: 보유 아이템(소원권 제외). 프리미엄도 일단 노출하되, 받는 사람이
   // 정해졌고 대상이 아니면 비활성. (받는 사람 미선택이면 허용 → 이후 그룹으로 필터)
-  const giftItemsList = useMemo(
-    () => Object.keys(owned).filter((id) => owned[id] > 0 && id !== 'wish')
-      .sort((a, b) => (store[a]?.sort ?? 999) - (store[b]?.sort ?? 999)),
-    [owned, store],
-  )
+  // 정렬·카테고리 구분은 인벤토리와 동일: 카테고리(CAT_ORDER) 섹션으로 묶고,
+  // 섹션 안에서는 일반 아이템 → 프리미엄 아이템 순, 그 안에서 sort_order 순.
+  const giftSections = useMemo(() => {
+    const ids = Object.keys(owned).filter((id) => owned[id] > 0 && id !== 'wish')
+    const prem = (id) => (store[id]?.premium ? 1 : 0)
+    const ord = (id) => (store[id]?.sort ?? 999)
+    const sorted = [...ids].sort((a, b) => prem(a) - prem(b) || ord(a) - ord(b))
+    return CAT_ORDER.map((key) => ({
+      key, label: CAT[key], ids: sorted.filter((id) => catOf(id, store[id]?.category) === key),
+    })).filter((sec) => sec.ids.length)
+  }, [owned, store])
   const giftReason = useCallback((id) => {
     const info = store[id]
     if (!info?.premium) return null
@@ -413,41 +419,44 @@ export default function NoteCompose() {
         <h3 className="nc-sheet-title">선물할 아이템</h3>
         <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
         {giftNotice && <div className="nc-gift-notice">{giftNotice}</div>}
-        {giftItemsList.length === 0 ? (
+        {giftSections.length === 0 ? (
           <div className="nc-sheet-empty">선물할 수 있는 아이템이 없어요.</div>
-        ) : (
-          <div className="nc-grid nc-grid-gift">
-            {giftItemsList.map((id) => {
-              const q = giftDraft[id] || 0
-              const max = owned[id] || 0
-              const reason = giftReason(id)
-              const disabled = !!reason
-              // 카드 탭: 미선택이면 1개 선택, 이미 선택돼 있으면 선택 해제(수량 버튼은 stopPropagation)
-              const onCard = disabled
-                ? () => setGiftNotice(reason)
-                : () => { setGiftNotice(''); setDraft(id, q > 0 ? 0 : 1) }
-              return (
-                <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${!disabled ? 'is-tap' : ''}`}
-                  onClick={onCard}>
-                  <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
-                    <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
-                    <span className="nc-icard-badge">×{max}</span>
-                  </span>
-                  <span className="nc-icard-name">{metaOf(id).name}</span>
-                  {disabled ? (
-                    <div className="nc-gcard-locked">프리미엄</div>
-                  ) : (
-                    <div className="nc-step" onClick={(e) => e.stopPropagation()}>
-                      <button type="button" className="nc-step-b" disabled={q <= 0} onClick={() => { setGiftNotice(''); setDraft(id, q - 1) }}>−</button>
-                      <span className="nc-step-v">{q}</span>
-                      <button type="button" className="nc-step-b" disabled={q >= max} onClick={() => { setGiftNotice(''); setDraft(id, q + 1) }}>+</button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+        ) : giftSections.map((sec) => (
+          <div key={sec.key} className="nc-sheet-sec">
+            <div className="nc-sheet-sec-t">{sec.label}</div>
+            <div className="nc-grid nc-grid-gift">
+              {sec.ids.map((id) => {
+                const q = giftDraft[id] || 0
+                const max = owned[id] || 0
+                const reason = giftReason(id)
+                const disabled = !!reason
+                // 카드 탭: 미선택이면 1개 선택, 이미 선택돼 있으면 선택 해제(수량 버튼은 stopPropagation)
+                const onCard = disabled
+                  ? () => setGiftNotice(reason)
+                  : () => { setGiftNotice(''); setDraft(id, q > 0 ? 0 : 1) }
+                return (
+                  <div key={id} className={`nc-gcard ${q > 0 ? 'is-picked' : ''} ${disabled ? 'is-off' : ''} ${!disabled ? 'is-tap' : ''}`}
+                    onClick={onCard}>
+                    <span className="nc-icard-img" style={{ background: metaOf(id).bg }}>
+                      <StoreItemImage id={id} emoji={metaOf(id).emoji} className="nc-img" />
+                      <span className="nc-icard-badge">×{max}</span>
+                    </span>
+                    <span className="nc-icard-name">{metaOf(id).name}</span>
+                    {disabled ? (
+                      <div className="nc-gcard-locked">프리미엄</div>
+                    ) : (
+                      <div className="nc-step" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="nc-step-b" disabled={q <= 0} onClick={() => { setGiftNotice(''); setDraft(id, q - 1) }}>−</button>
+                        <span className="nc-step-v">{q}</span>
+                        <button type="button" className="nc-step-b" disabled={q >= max} onClick={() => { setGiftNotice(''); setDraft(id, q + 1) }}>+</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        )}
+        ))}
         <button type="button" className="nc-sheet-confirm" disabled={draftCount === 0} onClick={confirmGift}>
           {draftCount > 0 ? `확인 · ${draftCount}개` : '아이템을 선택해 주세요'}
         </button>

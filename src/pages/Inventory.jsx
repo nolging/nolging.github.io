@@ -77,7 +77,7 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, premium: !!s.premium, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '' }
+    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, premium: !!s.premium, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '', category: s.category || '' }
     setMeta(m); setStoreCatalog(storeItems)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -121,8 +121,8 @@ export default function Inventory() {
 
   // 카테고리 섹션으로 묶기 (상점과 동일한 분류)
   const invSections = useMemo(() => CAT_ORDER.map((key) => ({
-    key, label: CAT[key], items: displayGroups.filter((g) => catOf(g.id) === key),
-  })).filter((s) => s.items.length), [displayGroups])
+    key, label: CAT[key], items: displayGroups.filter((g) => catOf(g.id, meta[g.id]?.category) === key),
+  })).filter((s) => s.items.length), [displayGroups, meta])
 
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])
   // 이미 커플 링을 보냈거나(수락 대기) 장착한 그룹(중복 방지)
