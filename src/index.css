@@ -4155,7 +4155,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-sheet-sec { margin-top: 14px; }
 .nc-sheet-sec-t { font-size: 13px; font-weight: 800; color: #191722; margin-bottom: 10px; }
 .nc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.nc-grid-gift { margin: 8px -16px 0; padding: 8px 16px 16px; max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+/* nc-grid-gift: 예전엔 이 grid 자체가 시트의 유일한 스크롤 영역이라 여기 max-height+
+   overflow 를 뒀는데, 지금은 카테고리 섹션별로 grid 가 여러 개 생기고 스크롤은 바깥
+   .nc-sheet-scroll 하나가 전담한다 — grid 마다 자체 스크롤을 두면 스크롤이 구간별로
+   끊겨 보인다(실제 발생했던 문제). .nc-grid 레이아웃만 그대로 쓰면 된다. */
 .nc-icard {
   background: #fff; border: none; border-radius: 16px; padding: 11px; box-sizing: border-box; text-align: center;
   box-shadow: 0 4px 14px rgba(25,23,34,.06); cursor: pointer;
