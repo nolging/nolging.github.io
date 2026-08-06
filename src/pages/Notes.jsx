@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { safeUrl } from '../lib/safeUrl'
@@ -109,6 +110,7 @@ function formatNoteFull(iso) {
 function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const [stage, setStage] = useState(() => (polaroidView.animate ? 'camera' : 'static'))
   const [ejecting, setEjecting] = useState(false)
+  const [fullscreen, setFullscreen] = useState(null) // { index, showControls } — 원본 비율 전체화면 뷰어
 
   useEffect(() => {
     if (!polaroidView.animate) { setStage('static'); return }
@@ -127,6 +129,7 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   const idx = Math.max(0, Math.min(polaroidView.index, photos.length - 1))
   const revealing = stage === 'revealing'
   const showCamera = stage === 'camera' || stage === 'print'
+  const canOpenFullscreen = stage === 'revealing' || stage === 'static'
 
   return (
     <div className="pv-wrap">
@@ -152,7 +155,10 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
         </div>
       )}
       <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>
-        <div className="pv-photo">
+        <div
+          className={`pv-photo ${canOpenFullscreen ? 'is-tappable' : ''}`}
+          onClick={() => { if (canOpenFullscreen) setFullscreen({ index: idx, showControls: false }) }}
+        >
           {photos.map((photo, i) => (
             <img key={photo.id} src={photo.url} alt="" className={`pv-photo-img ${i === idx ? 'is-current' : ''} ${revealing ? 'pv-reveal-anim' : (stage === 'print' ? 'pv-photo-black' : '')}`} />
           ))}
@@ -167,7 +173,124 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
             onClick={() => onNav(idx + 1)}>›</button>
         </div>
       )}
+      {fullscreen && (
+        <PolaroidFullscreen
+          photos={photos}
+          index={fullscreen.index}
+          showControls={fullscreen.showControls}
+          onNav={(i) => setFullscreen((v) => ({ ...v, index: i }))}
+          onToggleControls={() => setFullscreen((v) => ({ ...v, showControls: !v.showControls }))}
+          onClose={() => setFullscreen(null)}
+        />
+      )}
     </div>
+  )
+}
+
+function extFromUrl(url) {
+  try {
+    const m = /\.(\w+)(?:\?|$)/.exec(new URL(url).pathname)
+    return m ? m[1] : 'jpg'
+  } catch { return 'jpg' }
+}
+
+async function downloadPolaroidPhoto(url, filename) {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl; a.download = filename
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 4000)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
+}
+
+const DownloadIcon = () => (
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3v12" /><polyline points="7 10 12 15 17 10" /><path d="M4 19h16" />
+  </svg>
+)
+const CloseIcon = () => (
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M5 5l14 14M19 5L5 19" />
+  </svg>
+)
+
+// 인화된 사진을 원본 비율 그대로 전체화면으로 보여주는 뷰어(여백은 검게). 한 번 탭하면 우측 상단
+// 저장/닫기 버튼이 나타나고(다시 탭하면 숨김), 좌우 스와이프로 사진 전환, 아래로 스와이프하면 닫힘.
+function PolaroidFullscreen({ photos, index, showControls, onNav, onToggleControls, onClose }) {
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false)
+  const gestureRef = useRef(null)
+  const photo = photos[index]
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  function onPointerDown(e) {
+    gestureRef.current = { x: e.clientX, y: e.clientY, moved: false }
+  }
+  function onPointerMove(e) {
+    const g = gestureRef.current
+    if (!g) return
+    if (Math.abs(e.clientX - g.x) > 8 || Math.abs(e.clientY - g.y) > 8) g.moved = true
+  }
+  function onPointerUp(e) {
+    const g = gestureRef.current
+    gestureRef.current = null
+    if (!g) return
+    setSaveMenuOpen(false)
+    if (!g.moved) { onToggleControls(); return }
+    const dx = e.clientX - g.x, dy = e.clientY - g.y
+    const adx = Math.abs(dx), ady = Math.abs(dy)
+    if (ady > 60 && ady > adx) { if (dy > 0) onClose(); return }
+    if (adx > 50 && adx > ady) {
+      if (dx < 0 && index < photos.length - 1) onNav(index + 1)
+      else if (dx > 0 && index > 0) onNav(index - 1)
+    }
+  }
+
+  function saveCurrent() {
+    downloadPolaroidPhoto(photo.url, `nolging-polaroid-${index + 1}.${extFromUrl(photo.url)}`)
+  }
+  function saveAll() {
+    photos.forEach((p, i) => setTimeout(() => downloadPolaroidPhoto(p.url, `nolging-polaroid-${i + 1}.${extFromUrl(p.url)}`), i * 300))
+  }
+  function onSaveClick() {
+    if (photos.length > 1) setSaveMenuOpen((v) => !v)
+    else saveCurrent()
+  }
+
+  return createPortal(
+    <div
+      className="pvfs-overlay"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => { gestureRef.current = null }}
+    >
+      <img src={photo.url} alt="" className="pvfs-img" draggable={false} />
+      {showControls && (
+        <div className="pvfs-controls" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="pvfs-save-wrap">
+            <button type="button" className="pvfs-icon-btn" aria-label="저장" onClick={onSaveClick}><DownloadIcon /></button>
+            {saveMenuOpen && (
+              <div className="pvfs-save-menu">
+                <button type="button" onClick={() => { saveCurrent(); setSaveMenuOpen(false) }}>이 사진만 저장</button>
+                <button type="button" onClick={() => { saveAll(); setSaveMenuOpen(false) }}>전체 사진 저장</button>
+              </div>
+            )}
+          </div>
+          <button type="button" className="pvfs-icon-btn" aria-label="닫기" onClick={onClose}><CloseIcon /></button>
+        </div>
+      )}
+    </div>,
+    document.body,
   )
 }
 

@@ -3898,6 +3898,35 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .pv-nav-btn:disabled { opacity: .3; cursor: default; }
 .pv-nav-count { color: #fff; font-weight: 700; font-size: 13px; min-width: 40px; text-align: center; }
 .pv-empty { color: #fff; font-weight: 700; font-size: 13px; text-align: center; padding: 40px 0; }
+.pv-photo.is-tappable { cursor: pointer; }
+
+/* 원본 비율 전체화면 사진 뷰어: 여백은 검게(letterbox), 탭으로 컨트롤 토글, 좌우/아래 스와이프 */
+.pvfs-overlay {
+  position: fixed; inset: 0; z-index: 200; background: #000;
+  display: flex; align-items: center; justify-content: center; touch-action: none;
+}
+.pvfs-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.pvfs-controls {
+  position: absolute; top: max(16px, env(safe-area-inset-top)); right: 16px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.pvfs-icon-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(20,20,24,.55); backdrop-filter: blur(6px); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.pvfs-icon-btn:active { transform: scale(.94); }
+.pvfs-save-wrap { position: relative; }
+.pvfs-save-menu {
+  position: absolute; top: 46px; right: 0; min-width: 132px; padding: 6px;
+  background: rgba(28,28,32,.96); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pvfs-save-menu button {
+  border: none; background: none; color: #fff; font-size: 13px; font-weight: 600; text-align: left;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.pvfs-save-menu button:active { background: rgba(255,255,255,.12); }
 
 .note-tag-video { color: #5578d0; background: rgba(85, 120, 208, .14); }
 .modal-card.modal-video { background: linear-gradient(160deg, #fdeeee, #fdf5f4); }
