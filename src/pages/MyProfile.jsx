@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups } from '../lib/api'
 import { openCompose } from '../lib/composeWindow'
@@ -138,6 +138,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
 export default function MyProfile() {
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { refreshQuestBadge } = useOutletContext() || {}
   const [loading, setLoading] = useState(true)
   const [quests, setQuests] = useState(null)
   const [busy, setBusy] = useState('')
@@ -185,13 +186,13 @@ export default function MyProfile() {
   async function claimDaily(key) {
     if (busy) return
     setBusy(key); setError('')
-    try { await claimQuest(key); await load() }
+    try { await claimQuest(key); await load(); refreshQuestBadge?.() }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
   async function claimSlot(slot) {
     if (busy) return
     setBusy(`c${slot}`); setError('')
-    try { await claimSlotQuest(slot); await load() }
+    try { await claimSlotQuest(slot); await load(); refreshQuestBadge?.() }
     catch (err) { setError(err.message) } finally { setBusy('') }
   }
   async function rerollSlot(slot) {
