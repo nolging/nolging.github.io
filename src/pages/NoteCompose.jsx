@@ -300,7 +300,7 @@ export default function NoteCompose() {
   // 인앱 모달: 배경(백드롭) 클릭 시 닫기 (모바일 일반 페이지/팝업 창에서는 무시)
   function onBackdrop(e) {
     if (isPopup || e.target !== e.currentTarget) return
-    if (window.matchMedia?.('(min-width: 641px)')?.matches) navigate(-1)
+    if (window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches) navigate(-1)
   }
 
   return (

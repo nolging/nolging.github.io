@@ -94,13 +94,13 @@ export default function SchedulePage() {
   // 임베드 상세는 URL 에 안 담기므로, 재개 복구(자동 새로고침) 후 복원되게 sessionStorage 사용.
   const [detail, setDetail] = useState(() => {
     try {
-      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
       const raw = dt ? sessionStorage.getItem('sched-detail') : null
       return raw ? JSON.parse(raw) : null
     } catch { return null }
   })
   const [editView, setEditView] = useState(null) // { taskId, groupId } (약속/추억 편집)
-  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
 
   // 일정 페이지 방문 → 랜덤 퀘스트 '일정 확인하기'
   useEffect(() => { touchQuest('r_schedule') }, [])

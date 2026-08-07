@@ -1,7 +1,7 @@
 // 쪽지 쓰기 진입: PC(≥641px)에서는 브라우저 팝업 창으로, 그 외에는 인앱 페이지로 연다.
 // prefill: 인앱에서 location.state 로 넘기던 값과 동일한 객체(예: { reply: {...} }). 없으면 새 쪽지.
 export function openCompose(navigate, prefill) {
-  const desktop = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+  const desktop = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
   if (desktop && typeof window.open === 'function') {
     try {
       if (prefill) localStorage.setItem('nc-prefill', JSON.stringify(prefill))

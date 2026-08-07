@@ -167,14 +167,14 @@ export default function GroupDetail() {
   // 상태를 잃고 목록으로 튕긴다 → sessionStorage 에 저장해 새로고침 후 복원.
   const [detailTaskId, setDetailTaskId] = useState(() => {
     try {
-      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+      const dt = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
       return dt ? (sessionStorage.getItem(`gd-detail:${groupId}`) || null) : null
     } catch { return null }
   })
   const [detailReview, setDetailReview] = useState(false)
   const [settingsView, setSettingsView] = useState(null) // null | 'group' | 'me'
   const [editView, setEditView] = useState(null) // PC 가운데 편집 임베드: null | { kind:'wish'|'appointment', taskId }
-  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+  const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
   function openTask(t, { review = false } = {}) {
     if (isDesktop()) { setSettingsView(null); setEditView(null); setBoardView(null); setDetailReview(review); setDetailTaskId(t.id) }
     else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })

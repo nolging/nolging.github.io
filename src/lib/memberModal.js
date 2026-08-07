@@ -5,7 +5,7 @@ export const SETTINGS_EVENT = 'nolging:open-settings'
 
 export function openMember(navigate, groupId, userId) {
   if (!groupId || !userId) return
-  const desktop = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
+  const desktop = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
   if (desktop) window.dispatchEvent(new CustomEvent(MEMBER_EVENT, { detail: { groupId, userId } }))
   else navigate(`/groups/${groupId}/members/${userId}`)
 }

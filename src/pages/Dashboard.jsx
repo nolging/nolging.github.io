@@ -160,7 +160,7 @@ export default function Dashboard() {
             const friend = !premium && friendSet.has(g.id)
             // 아바타 영역 클릭: 모바일은 멤버 목록으로, PC 는 카드 일부로 취급해 그룹 상세로(링크 기본 동작)
             const goMembers = (e) => {
-              if (window.matchMedia?.('(min-width: 641px)')?.matches) return // PC: 링크가 그룹 상세로 이동
+              if (window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches) return // PC: 링크가 그룹 상세로 이동
               e.preventDefault(); e.stopPropagation(); navigate(`/groups/${g.id}/members`, { state: { from: 'home' } })
             }
             const memberRow = members.length > 0 && (

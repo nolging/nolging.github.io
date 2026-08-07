@@ -260,7 +260,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 /* 데스크톱: 모든 페이지에서 상단 내비게이션 상시 노출 + 페이지별 상단바 숨김
    (단, .topbar-keep 은 유지 — 예: 낙서장 '갤러리에 저장') */
-@media (min-width: 641px) {
+@media (min-width: 641px) and (orientation: landscape) {
   .app-shell > .desknav { display: flex; }
   .app-shell > .topbar:not(.topbar-keep) { display: none; }
 }
@@ -355,7 +355,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .gd-filter-fab { display: none; }
 /* 좌우 고정 섹션은 데스크톱에서만 노출 */
 .gd-aside { display: none; }
-@media (min-width: 641px) {
+@media (min-width: 641px) and (orientation: landscape) {
   .gd-page {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr) 300px;
@@ -685,7 +685,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 /* 내 그룹 인사 헤더 (시안) */
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* PC: 홈(내 그룹) 인사 헤더는 상단 내비게이션으로 대체 → 숨김 */
-@media (min-width: 641px) { .dash-head { display: none; } }
+@media (min-width: 641px) and (orientation: landscape) { .dash-head { display: none; } }
 .dash-greet-when { font-size: 13px; font-weight: 600; color: var(--primary); }
 .dash-greet-title { margin: 2px 0 0; font-size: 23px; font-weight: 800; letter-spacing: -.8px; color: var(--text); }
 .dash-bell { position: relative; display: inline-flex; color: #b0b0b8; flex-shrink: 0; }
@@ -4246,7 +4246,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .nc-close { display: none; }
 .nc-close:hover { background: #e9e9ee; color: var(--text); }
 /* PC 인앱 모달(팝업 차단 시 폴백) */
-@media (min-width: 641px) {
+@media (min-width: 641px) and (orientation: landscape) {
   .nc-page:not(.nc-popup) {
     position: fixed; inset: 0; z-index: 40;
     display: flex; align-items: center; justify-content: center; gap: 0;
