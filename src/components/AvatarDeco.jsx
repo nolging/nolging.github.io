@@ -31,24 +31,16 @@ function Sprout() {
   )
 }
 
-// 토마토(머리 유형): 몸통은 머리 위에 통통하게 얹히고, 꼭지(초록 꽃받침)만 프로필 사진
-// 윗부분에 살짝 겹치도록 아래로 짧게 늘어뜨린다.
+// 토마토(머리 유형): 빨간 몸통 없이 초록 꼭지(꽃받침)만 — 뾰족뾰족한 별 모양으로,
+// 프로필 사진 윗부분에 살짝 겹치도록 짧게 늘어뜨린다.
 function Tomato() {
-  const CX = 50, CY = -8, R = 17
   return (
-    <g>
-      <ellipse cx={CX} cy={CY} rx={R} ry={R * 0.94} fill="#e14b3c" />
-      <ellipse cx={CX - 6} cy={CY - 7} rx={5.5} ry={3.6} fill="#f28577" opacity="0.6" />
-      <path d={`M${CX - 8} ${CY - 13} Q${CX - 10.5} ${CY} ${CX - 7} ${CY + 13}`} stroke="#c23a2e" strokeWidth="1.1" fill="none" opacity="0.45" />
-      <path d={`M${CX + 8} ${CY - 13} Q${CX + 10.5} ${CY} ${CX + 7} ${CY + 13}`} stroke="#c23a2e" strokeWidth="1.1" fill="none" opacity="0.45" />
-      {/* 꼭지: 프로필 사진 위로 살짝 겹치는 부분 */}
-      <g transform={`translate(${CX} ${CY + R * 0.86})`}>
-        <path d="M0 -2 C1.2 -6 0.7 -10 0 -12" stroke="#4a9d54" strokeWidth="2.1" strokeLinecap="round" fill="none" />
-        {[0, 60, 120, 180, 240, 300].map((deg) => (
-          <path key={deg} d="M0 0 L-3.4 5.2 Q0 8.6 3.4 5.2 Z" fill="#4a9d54" transform={`rotate(${deg})`} />
-        ))}
-        <circle r="2.4" fill="#5aab63" />
-      </g>
+    <g transform="translate(50 3)">
+      <path d="M0 -3 C1.2 -7.5 0.7 -12 0 -14" stroke="#4a9d54" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+      {[0, 60, 120, 180, 240, 300].map((deg) => (
+        <path key={deg} d="M-2.6 1 L0 12 L2.6 1 Z" fill="#4a9d54" transform={`rotate(${deg})`} />
+      ))}
+      <circle r="3" fill="#5aab63" />
     </g>
   )
 }
@@ -400,7 +392,7 @@ const PREVIEW_VB = {
   'deco-halo': '-18 -18 136 136',
   'deco-angel-ring': '18 -22 64 42',
   'deco-bubble': '-14 -14 128 128',
-  'deco-tomato': '27 -30 46 50',
+  'deco-tomato': '35 -16 30 36',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
