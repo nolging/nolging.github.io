@@ -5805,17 +5805,21 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .graf-canvas { position: relative; display: block; cursor: crosshair; touch-action: none; }
 .graf-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.5); z-index: 1; }
 .graf-tools { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
-.graf-row { display: flex; align-items: center; gap: 10px; }
-/* 컬러 팔레트: 프리미엄 그룹 "낙서장"(DrawBoard, .draw-colors/.draw-sw) 과 동일한 디자인 */
-.graf-colors { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.graf-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+/* 컬러 팔레트: 프리미엄 그룹 "낙서장"(DrawBoard, .draw-colors/.draw-sw) 과 동일한 디자인.
+   펜 굵기와 한 줄에 나란히, 사이는 얇은 구분선. */
+.graf-colors { display: flex; align-items: center; gap: 10px; }
 .graf-sw { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; border: none; cursor: pointer; padding: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); transition: transform .1s ease; }
 .graf-sw.is-white { box-shadow: inset 0 0 0 1.5px #d7d4e0; }
 .graf-sw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #47444f; }
 .graf-sw:active { transform: scale(.9); }
-.graf-width { width: 30px; height: 30px; border-radius: 50%; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.graf-vsep { width: 1px; height: 22px; background: #e5e2ee; flex-shrink: 0; }
+.graf-widths { display: flex; align-items: center; gap: 6px; }
+.graf-width { width: 30px; height: 30px; border-radius: 50%; border: none; background: #f1f0f5; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 0 #191722; transition: box-shadow .1s ease; }
 .graf-width span { display: block; border-radius: 50%; background: #4b4759; }
-.graf-width.is-active { background: rgba(25,23,34,.1); }
+.graf-width.on { box-shadow: inset 0 0 0 2px #191722; }
 .graf-icon-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #f1f0f5; color: #4b4759; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .graf-icon-btn.is-active { background: #191722; color: #fff; }
 .graf-icon-btn:active { transform: scale(.94); }

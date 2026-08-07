@@ -131,21 +131,24 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} />
       </div>
       <div className="graf-tools">
-        {/* 컬러 팔레트: 프리미엄 그룹 "낙서장"(DrawBoard) 과 동일한 디자인(원형 스와치 + 흰/먹색 링) */}
-        <div className="graf-colors">
-          {COLORS.map((c) => (
-            <button key={c.id} type="button" aria-label={`색상 ${c.id}`}
-              className={`graf-sw ${!erasing && color === c.hex ? 'on' : ''} ${c.id === 'white' ? 'is-white' : ''}`}
-              style={{ background: c.hex }} onClick={() => { setColor(c.hex); setErasing(false) }} />
-          ))}
-        </div>
+        {/* 컬러 팔레트(낙서장 DrawBoard 와 동일한 원형 스와치 + 흰/먹색 링) + 펜 굵기를 한 줄에 */}
         <div className="graf-row">
-          {WIDTHS.map((w, i) => (
-            <button key={w} type="button" className={`graf-width ${!erasing && width === w ? 'is-active' : ''}`}
-              onClick={() => { setWidth(w); setErasing(false) }} aria-label={`굵기 ${i + 1}`}>
-              <span style={{ width: 5 + i * 4.5, height: 5 + i * 4.5 }} />
-            </button>
-          ))}
+          <div className="graf-colors">
+            {COLORS.map((c) => (
+              <button key={c.id} type="button" aria-label={`색상 ${c.id}`}
+                className={`graf-sw ${!erasing && color === c.hex ? 'on' : ''} ${c.id === 'white' ? 'is-white' : ''}`}
+                style={{ background: c.hex }} onClick={() => { setColor(c.hex); setErasing(false) }} />
+            ))}
+          </div>
+          <span className="graf-vsep" />
+          <div className="graf-widths">
+            {WIDTHS.map((w, i) => (
+              <button key={w} type="button" className={`graf-width ${!erasing && width === w ? 'on' : ''}`}
+                onClick={() => { setWidth(w); setErasing(false) }} aria-label={`굵기 ${i + 1}`}>
+                <span style={{ width: 5 + i * 4.5, height: 5 + i * 4.5 }} />
+              </button>
+            ))}
+          </div>
         </div>
         <div className="graf-row">
           <button type="button" className={`graf-icon-btn ${erasing ? 'is-active' : ''}`} onClick={() => setErasing((v) => !v)} aria-label="지우개">
