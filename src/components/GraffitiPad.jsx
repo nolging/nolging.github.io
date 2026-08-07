@@ -9,7 +9,7 @@ const COLORS = [
   { id: 'red', hex: '#e5484d' },
   { id: 'blue', hex: '#4f7fe0' },
 ]
-const WIDTHS = [4, 8, 14]
+const WIDTHS = [2, 4, 8, 14]
 const MAX_UNDO = 20
 
 const EraserIcon = () => (
@@ -34,7 +34,7 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
   const lastPtRef = useRef(null)
   const historyRef = useRef([]) // 획 시작 전 스냅샷 스택(ImageData) — 한 획 취소용
   const [color, setColor] = useState(COLORS[0].hex)
-  const [width, setWidth] = useState(WIDTHS[1])
+  const [width, setWidth] = useState(WIDTHS[2]) // 기본 굵기(이전 기본값 8 유지)
   const [erasing, setErasing] = useState(false)
   const [loading, setLoading] = useState(!!initialImageUrl)
   const [canUndo, setCanUndo] = useState(false)
@@ -64,6 +64,10 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialImageUrl, size])
 
+  // 드래그로 그리는 동안 캔버스 밖으로 포인터가 벗어나도(모달 배경 등) 브라우저 기본
+  // 텍스트/화면 선택 블록이 잡히지 않게 draw 중엔 body 전체에서 선택을 잠근다.
+  useEffect(() => () => document.body.classList.remove('graf-drawing'), [])
+
   function posFromEvent(e) {
     const rect = canvasRef.current.getBoundingClientRect()
     return { x: e.clientX - rect.left, y: e.clientY - rect.top }
@@ -79,6 +83,7 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
   }
   function onPointerDown(e) {
     e.preventDefault()
+    document.body.classList.add('graf-drawing')
     canvasRef.current.setPointerCapture?.(e.pointerId)
     pushHistory()
     drawingRef.current = true
@@ -106,6 +111,7 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
   function onPointerUp() {
     drawingRef.current = false
     lastPtRef.current = null
+    document.body.classList.remove('graf-drawing')
   }
   function undo() {
     const snap = historyRef.current.pop()
