@@ -131,13 +131,12 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} />
       </div>
       <div className="graf-tools">
-        {/* 낙서장 스타일 컬러 팔레트 — 색은 4개 그대로, 마커펜 뚜껑처럼 */}
-        <div className="graf-palette">
+        {/* 컬러 팔레트: 프리미엄 그룹 "낙서장"(DrawBoard) 과 동일한 디자인(원형 스와치 + 흰/먹색 링) */}
+        <div className="graf-colors">
           {COLORS.map((c) => (
-            <button key={c.id} type="button" className={`graf-swatch ${!erasing && color === c.hex ? 'is-active' : ''}`}
-              onClick={() => { setColor(c.hex); setErasing(false) }} aria-label={`${c.id} 색`}>
-              <span className={`graf-swatch-cap ${c.id === 'white' ? 'is-white' : ''}`} style={{ background: c.hex }} />
-            </button>
+            <button key={c.id} type="button" aria-label={`색상 ${c.id}`}
+              className={`graf-sw ${!erasing && color === c.hex ? 'on' : ''} ${c.id === 'white' ? 'is-white' : ''}`}
+              style={{ background: c.hex }} onClick={() => { setColor(c.hex); setErasing(false) }} />
           ))}
         </div>
         <div className="graf-row">
