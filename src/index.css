@@ -2306,7 +2306,7 @@ button.mlist-row:hover { background: #f6f5fa; }
   --text: #2a2140;
 }
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .fab-above-nav { bottom: 94px; }
 }
 
@@ -4454,7 +4454,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 
 /* ---- 반응형: 모바일 ---- */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   body { font-size: 14px; }
   .content { --pad-y: 16px; --pad-x: 20px; }
   .topbar {
