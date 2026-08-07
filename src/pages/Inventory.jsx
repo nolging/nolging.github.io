@@ -915,7 +915,7 @@ const GUIDE = {
   cassette:  { name: itemName('cassette', '카세트 테이프'), emoji: '📼', text: '좋아하는 음악 링크를 담아 쪽지와 함께 보내요.', canUse: true },
   video:     { name: '비디오 테이프',  emoji: '📹', text: '보여 주고 싶은 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
   bluray:    { name: '블루레이',       emoji: '💿', text: '고화질 영상 링크를 담아 쪽지와 함께 보내요.', canUse: true },
-  'polaroid-film': { name: '폴라로이드 필름', emoji: '📷', text: '사진을 담아 쪽지와 함께 보내요. 장당 필름 1개, 쪽지 하나에 최대 5장까지 첨부할 수 있어요.', canUse: true },
+  'polaroid-film': { name: '폴라로이드 필름', emoji: '📷', text: '쪽지에 사진을 첨부해요(장당 필름 1개 소모).\n상대방이 직접 인화할 수 있어요.', canUse: true },
   telescope: { name: '천체 망원경',    emoji: '🔭', text: '흐릿하게 보이는 추억 리뷰가 있을 때 사용해 보세요.', canUse: false },
   eraser:    { name: '지우개',         emoji: '🧽', text: '쪽지를 보낼 때 내 이름을 지우고 익명으로 보내 보세요.', canUse: false },
   waterbomb: { name: '물풍선 폭탄',    emoji: '💧', text: '쪽지에 타이머를 설정해서 함께 보내면 펑! 이후에는 읽을 수 없게 돼요.', canUse: false },
@@ -923,7 +923,7 @@ const GUIDE = {
   'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
   'name-tag':  { name: '명찰',     emoji: '🏷️', text: '연인의 이름을 내 마음대로 바꿔요.\n첫 변경 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
   'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터지기 전으로 한 번 되돌려요.\n젖어 버린 쪽지에 사용해 보세요.', canUse: false },
-  'purin-mic': { name: '푸린 마이크', emoji: '🎤', text: '짝꿍의 프로필 사진에 낙서를 해요.\n낙서한 시점부터 24시간 동안 보이고, 그동안은 언제든 다시 고칠 수 있어요.', canUse: true },
+  'purin-mic': { name: '푸린 마이크', emoji: '🎤', text: '푸린의 노래로 잠든 연인의 얼굴에 낙서해 봐요.\n첫 낙서 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
