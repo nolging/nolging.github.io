@@ -398,7 +398,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-filter-dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 2px #fff; }
   .gd-aside { display: block; min-height: 0; }
   .gd-aside-left { align-self: start; }
-  .gd-aside-right { align-self: stretch; overflow-y: auto; overscroll-behavior: contain; }
+  .gd-aside-right { align-self: start; overflow-y: auto; overscroll-behavior: contain; }
   /* 우측 멤버 목록도 좌측 정보 카드와 동일하게 흰 박스(커플 그룹은 이미 자체 카드가 있어 제외) */
   .gd-aside-right:not(.gd-aside-couple) { padding: 20px; background: var(--surface); border-radius: 18px; }
 

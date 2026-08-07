@@ -5,6 +5,7 @@ import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
   regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit, updateTask,
+  getGroupBoard,
 } from '../lib/api'
 import { isAnnivToday, parseYMD } from '../lib/anniv'
 import { formatBirthDot } from '../lib/birthday'
@@ -156,7 +157,8 @@ export default function GroupDetail() {
   const [regenBusy, setRegenBusy] = useState(false)
   const [catOff, setCatOff] = useState([]) // 해제(제외)된 위시 유형. 기본=전체 표시(빈 배열)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [coupleMenu, setCoupleMenu] = useState({}) // 커플 우측 패널: 멍냥꽁냥/미니게임 펼침 상태
+  const [coupleMenu, setCoupleMenu] = useState({}) // 커플/우정 우측 패널: 멍냥꽁냥(커뮤니티)/미니게임 펼침 상태
+  const [boardName, setBoardName] = useState(null) // 개설된 익명 게시판 이름(없으면 null)
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
   // 임베드 상세는 URL에 안 담기므로, 재개 복구(장시간 자리비움 후 자동 새로고침) 시
   // 상태를 잃고 목록으로 튕긴다 → sessionStorage 에 저장해 새로고침 후 복원.
@@ -372,6 +374,7 @@ export default function GroupDetail() {
       setPartsByTask(await listParticipantsByTasks(partIds))
       getGroupDecoMap(groupId).then(setDecoMap).catch(() => {})
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
+      getGroupBoard(groupId).then((bn) => setBoardName(bn || null)).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -723,6 +726,7 @@ export default function GroupDetail() {
                     <button type="button" onClick={() => goCouple('touch')}>우심뽀까</button>
                     <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
                     <button type="button" onClick={() => goCouple('praise')}>칭찬 스티커</button>
+                    {boardName && <button type="button" onClick={() => goCouple('board')}>비밀 게시판</button>}
                   </div>
                 )}
                 <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>
@@ -767,6 +771,35 @@ export default function GroupDetail() {
             <button type="button" className="gd-invite-btn" onClick={() => setInviteOpen(true)}>
               <InviteIcon /> 멤버 초대
             </button>
+
+            {/* 우정 그룹(적용된 우정 링): 커플 데이트 패널과 동일한 아코디언 메뉴 */}
+            {isFriend && (
+              <div className="gd-couple-menu">
+                <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('play')} aria-expanded={!!coupleMenu.play}>
+                  커뮤니티
+                  <svg className={`gd-couple-chev ${coupleMenu.play ? 'open' : ''}`} width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </button>
+                {coupleMenu.play && (
+                  <div className="gd-couple-sub">
+                    {boardName && <button type="button" onClick={() => goCouple('board')}>비밀 게시판</button>}
+                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
+                  </div>
+                )}
+                <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>
+                  미니 게임
+                  <svg className={`gd-couple-chev ${coupleMenu.game ? 'open' : ''}`} width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </button>
+                {coupleMenu.game && (
+                  <div className="gd-couple-sub">
+                    <button type="button" onClick={() => goCouple('catchmind')}>캐치 마인드</button>
+                    <button type="button" onClick={() => goCouple('davinci')}>다빈치 코드</button>
+                    <button type="button" onClick={() => goCouple('puzzle')}>퍼즐</button>
+                    <button type="button" onClick={() => goCouple('rps')}>가위바위보</button>
+                    <button type="button" onClick={() => goCouple('omok')}>오목</button>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </aside>
