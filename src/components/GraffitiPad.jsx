@@ -68,12 +68,29 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialImageUrl, size])
 
+  // React 는 성능을 위해 touchstart/touchmove 리스너를 passive 로 등록해서, JSX 의
+  // onPointerMove 안에서 preventDefault 를 불러도 실제 터치 기본 동작(스크롤/텍스트 선택 loupe)은
+  // 안 막히는 경우가 있다(특히 iPadOS Safari + Apple Pencil). 캔버스에 직접 passive:false 로
+  // touchstart/touchmove 를 걸어 우회한다 — 그리기 로직 자체는 여전히 포인터 이벤트가 맡는다.
+  useEffect(() => {
+    const cv = canvasRef.current
+    if (!cv) return
+    const stop = (e) => e.preventDefault()
+    cv.addEventListener('touchstart', stop, { passive: false })
+    cv.addEventListener('touchmove', stop, { passive: false })
+    return () => {
+      cv.removeEventListener('touchstart', stop)
+      cv.removeEventListener('touchmove', stop)
+    }
+  }, [])
+
   // 드래그로 그리는 동안 캔버스 밖으로 포인터가 벗어나도(모달 배경 등) 브라우저 기본
   // 텍스트/화면 선택 블록이 잡히지 않게 draw 중엔 body 전체에서 선택을 잠근다.
   useEffect(() => () => {
     document.body.classList.remove('graf-drawing')
     document.removeEventListener('selectstart', preventSelect)
     document.removeEventListener('dragstart', preventSelect)
+    document.removeEventListener('touchmove', preventSelect)
   }, [])
 
   function posFromEvent(e) {
@@ -94,6 +111,9 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
     document.body.classList.add('graf-drawing')
     document.addEventListener('selectstart', preventSelect)
     document.addEventListener('dragstart', preventSelect)
+    // 획을 긋다가 캔버스 밖(라벨/버튼)으로 손가락·펜슬이 살짝 나가도 그 위의 기본 터치
+    // 동작(텍스트 선택 loupe 등)이 안 뜨게, document 레벨에서도 passive:false 로 막는다.
+    document.addEventListener('touchmove', preventSelect, { passive: false })
     canvasRef.current.setPointerCapture?.(e.pointerId)
     pushHistory()
     drawingRef.current = true
@@ -125,6 +145,7 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
     document.body.classList.remove('graf-drawing')
     document.removeEventListener('selectstart', preventSelect)
     document.removeEventListener('dragstart', preventSelect)
+    document.removeEventListener('touchmove', preventSelect)
   }
   function undo() {
     const snap = historyRef.current.pop()

@@ -5806,7 +5806,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ---- 푸린 마이크: 짝꿍 프로필 낙서 모달 ---- */
 .purinmic-modal { display: flex; flex-direction: column; gap: 14px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.purinmic-left { font-size: 12px; font-weight: 700; color: #8b8798; text-align: center; }
+.purinmic-left { font-size: 12px; font-weight: 700; color: #8b8798; text-align: center;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .purinmic-modal .st-btn-buy { background: #191722; }
 .purinmic-modal .st-btn-block { margin-top: 0; }
 
@@ -5814,9 +5815,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .graf-pad { display: flex; flex-direction: column; align-items: center; gap: 14px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 /* 낙서 드래그 중 캔버스 밖으로 포인터가 나가도(모달 배경 등) 화면 전체 선택 블록 방지 */
 body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.graf-canvas-wrap { position: relative; border-radius: 50%; overflow: hidden; background: #e9e9ee; box-shadow: 0 4px 16px rgba(25,23,34,.16); touch-action: none; }
+.graf-canvas-wrap { position: relative; border-radius: 50%; overflow: hidden; background: #e9e9ee; box-shadow: 0 4px 16px rgba(25,23,34,.16);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .graf-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; -webkit-user-drag: none; }
-.graf-canvas { position: relative; display: block; cursor: crosshair; touch-action: none; }
+.graf-canvas { position: relative; display: block; cursor: crosshair;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .graf-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.5); z-index: 1; }
 .graf-tools { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
 .graf-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
