@@ -20,6 +20,7 @@ export const NOTIF_ICONS = {
   touch_call: '💋',
   ledboard: '📟',
   nametag: '🏷️',
+  purin_mic: '🎤',
   board_post: '🤫',
   board_comment: '💬',
   board_reply: '↩︎',
@@ -54,6 +55,7 @@ export function notifTarget(n) {
   if ((n.type === 'board_comment' || n.type === 'board_reply') && n.group_id && n.post_id)
     return `/groups/${n.group_id}/board/${n.post_id}/comments${n.board_comment_id ? `?c=${n.board_comment_id}` : ''}`   // 댓글/답글 → 댓글 상세 + 포커스
   if (n.type === 'nametag' && n.group_id) return `/groups/${n.group_id}/members`   // 명찰 → 데이트 페이지
+  if (n.type === 'purin_mic' && n.group_id) return `/groups/${n.group_id}/members` // 푸린 마이크 → 데이트 페이지
   if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
   if (n.type === 'megaphone' && n.group_id) return `/groups/${n.group_id}`         // 확성기 → 그룹 홈
   if (n.task_id && n.group_id) {

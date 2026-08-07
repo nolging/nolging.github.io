@@ -78,6 +78,8 @@ Deno.serve(async (req) => {
       if (record.board_comment_id) url += `?c=${record.board_comment_id}` // 해당 댓글/답글로 포커스
     } else if (record.type === 'nametag' && record.group_id) {
       url = `/groups/${record.group_id}/members` // 연인이 내 이름 변경 → 데이트 페이지
+    } else if (record.type === 'purin_mic' && record.group_id) {
+      url = `/groups/${record.group_id}/members` // 연인이 푸린 마이크로 낙서 → 데이트 페이지
     } else if (record.type === 'ledboard' && record.group_id) {
       url = `/groups/${record.group_id}` // 연인이 전광판 게재 → 그룹 홈
     } else if (record.task_id && record.group_id) {

@@ -5,7 +5,7 @@ import ImageCropModal from './ImageCropModal'
 
 // 원형·가운데 프로필 사진 + 클릭 시 변경/제거 메뉴 (설정/가입/생성 공용)
 // 선택 즉시 스토리지에 업로드하고 public URL 을 onChange 로 전달한다.
-export default function AvatarEditor({ value, onChange, name, userId, onError, emptyIcon = false }) {
+export default function AvatarEditor({ value, onChange, name, userId, onError, emptyIcon = false, disabled = false }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [cropFile, setCropFile] = useState(null) // 크롭 대기 중인 원본 파일
@@ -40,7 +40,7 @@ export default function AvatarEditor({ value, onChange, name, userId, onError, e
 
   return (
     <div className="avatar-editor">
-      <button type="button" className="avatar-btn" disabled={busy}
+      <button type="button" className={`avatar-btn ${disabled ? 'is-locked' : ''}`} disabled={busy || disabled}
         onClick={() => setMenuOpen((v) => !v)} aria-label="프로필 사진 변경">
         {emptyIcon && !value ? (
           <span className="avatar avatar-empty" style={{ width: 104, height: 104 }}>

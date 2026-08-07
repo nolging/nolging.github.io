@@ -2422,6 +2422,7 @@ button.mlist-row:hover { background: #f6f5fa; }
   position: relative; padding: 0; border: none; background: none; cursor: pointer;
   border-radius: 50%; line-height: 0;
 }
+.avatar-btn.is-locked { opacity: .5; cursor: default; }
 .avatar-cam {
   position: absolute; right: 0; bottom: 0;
   width: 32px; height: 32px; border-radius: 50%;

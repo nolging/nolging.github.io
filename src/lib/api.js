@@ -378,11 +378,10 @@ export async function updateMyGroupMember(groupId, userId, patch) {
 
 // 내 그룹내 설정 원본 조회 (공개토글 등 실제 저장값 — 카드 RPC엔 없음)
 export async function getMyGroupMember(groupId, userId) {
-  const { data, error } = await supabase
-    .from('group_members')
-    .select('display_nickname, avatar_url, show_contact, show_birthdate, show_ott, nick_locked_until')
-    .eq('group_id', groupId).eq('user_id', userId)
-    .maybeSingle()
+  const base = 'display_nickname, avatar_url, show_contact, show_birthdate, show_ott, nick_locked_until'
+  const q = (sel) => supabase.from('group_members').select(sel).eq('group_id', groupId).eq('user_id', userId).maybeSingle()
+  let { data, error } = await q(`${base}, graffiti_locked_until`)
+  if (error?.code === '42703') ({ data, error } = await q(base)) // graffiti_locked_until 미배포 폴백
   if (error) throw error
   return data
 }

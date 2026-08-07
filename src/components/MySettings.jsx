@@ -28,7 +28,9 @@ export default function MySettings({ group, me, onSaved, secondary }) {
 
   // 명찰 효과로 내 닉네임이 잠긴 경우 → 닉네임만 수정 불가
   const nickLocked = nametagActive(me?.nick_locked_until)
-  useCountdownTick(nickLocked)   // 남은 시간(23:59) 표기 갱신
+  // 푸린 마이크 효과로 내 프로필 사진에 낙서가 적용 중인 경우 → 사진만 수정 불가
+  const avatarLocked = nametagActive(me?.graffiti_locked_until)
+  useCountdownTick(nickLocked || avatarLocked)   // 남은 시간(23:59) 표기 갱신
 
   async function save() {
     if (!form.display_nickname.trim()) { setNickErr('닉네임을 입력해 주세요.'); return }
@@ -56,8 +58,12 @@ export default function MySettings({ group, me, onSaved, secondary }) {
 
         <div className="cg-avatar-wrap">
           <AvatarEditor value={form.avatar_url} name={form.display_nickname || me?.login_id}
-            userId={me?.user_id} onChange={(v) => set({ avatar_url: v })} onError={setError} emptyIcon />
+            userId={me?.user_id} onChange={(v) => set({ avatar_url: v })} onError={setError} emptyIcon
+            disabled={avatarLocked} />
           <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>
+          {avatarLocked && (
+            <span className="field-error">🎤 낙서 적용 중 · {hhmmLeft(me?.graffiti_locked_until)} 남음</span>
+          )}
         </div>
 
         {/* 닉네임 */}
