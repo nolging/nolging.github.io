@@ -12,6 +12,10 @@ const COLORS = [
 const WIDTHS = [2, 4, 8, 14]
 const MAX_UNDO = 20
 
+// 그리는 동안 브라우저 기본 텍스트 선택 시작을 원천 차단(포인터 preventDefault 만으로
+// 안 막히는 브라우저/인앱 브라우저 대응). 컴포넌트 밖에 둬서 add/removeEventListener 참조가 항상 같다.
+const preventSelect = (e) => e.preventDefault()
+
 const EraserIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M18.5 13.5 8 3 3 8l10.5 10.5" /><path d="M13.5 18.5H21" /><path d="M8 3l8 8" />
@@ -66,7 +70,11 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
 
   // 드래그로 그리는 동안 캔버스 밖으로 포인터가 벗어나도(모달 배경 등) 브라우저 기본
   // 텍스트/화면 선택 블록이 잡히지 않게 draw 중엔 body 전체에서 선택을 잠근다.
-  useEffect(() => () => document.body.classList.remove('graf-drawing'), [])
+  useEffect(() => () => {
+    document.body.classList.remove('graf-drawing')
+    document.removeEventListener('selectstart', preventSelect)
+    document.removeEventListener('dragstart', preventSelect)
+  }, [])
 
   function posFromEvent(e) {
     const rect = canvasRef.current.getBoundingClientRect()
@@ -84,6 +92,8 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
   function onPointerDown(e) {
     e.preventDefault()
     document.body.classList.add('graf-drawing')
+    document.addEventListener('selectstart', preventSelect)
+    document.addEventListener('dragstart', preventSelect)
     canvasRef.current.setPointerCapture?.(e.pointerId)
     pushHistory()
     drawingRef.current = true
@@ -104,6 +114,7 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
   }
   function onPointerMove(e) {
     if (!drawingRef.current) return
+    e.preventDefault()
     const pt = posFromEvent(e)
     drawSegment(lastPtRef.current, pt)
     lastPtRef.current = pt
@@ -112,6 +123,8 @@ const GraffitiPad = forwardRef(function GraffitiPad({ photoUrl, initialImageUrl,
     drawingRef.current = false
     lastPtRef.current = null
     document.body.classList.remove('graf-drawing')
+    document.removeEventListener('selectstart', preventSelect)
+    document.removeEventListener('dragstart', preventSelect)
   }
   function undo() {
     const snap = historyRef.current.pop()
