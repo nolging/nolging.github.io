@@ -29,6 +29,7 @@ import GroupConfigPage from './GroupConfigPage'
 import GroupSettingsPage from './GroupSettingsPage'
 import TaskForm from '../components/TaskForm'
 import ScheduleAppointment from './ScheduleAppointment'
+import SecretBoard, { BoardCompose, BoardSearch, BoardSettings, BoardPost, BoardComments } from './SecretBoard'
 import { openMember, SETTINGS_EVENT } from '../lib/memberModal'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
@@ -159,6 +160,8 @@ export default function GroupDetail() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [coupleMenu, setCoupleMenu] = useState({}) // 커플/우정 우측 패널: 멍냥꽁냥(커뮤니티)/미니게임 펼침 상태
   const [boardName, setBoardName] = useState(null) // 개설된 익명 게시판 이름(없으면 null)
+  // PC 비밀 게시판 임베드 현재 화면: null | { view:'list'|'search'|'settings' } | { view:'compose'|'post', postId?, seed? } | { view:'comments', postId, focusId? }
+  const [boardView, setBoardView] = useState(null)
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
   // 임베드 상세는 URL에 안 담기므로, 재개 복구(장시간 자리비움 후 자동 새로고침) 시
   // 상태를 잃고 목록으로 튕긴다 → sessionStorage 에 저장해 새로고침 후 복원.
@@ -173,17 +176,30 @@ export default function GroupDetail() {
   const [editView, setEditView] = useState(null) // PC 가운데 편집 임베드: null | { kind:'wish'|'appointment', taskId }
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px)')?.matches
   function openTask(t, { review = false } = {}) {
-    if (isDesktop()) { setSettingsView(null); setEditView(null); setDetailReview(review); setDetailTaskId(t.id) }
+    if (isDesktop()) { setSettingsView(null); setEditView(null); setBoardView(null); setDetailReview(review); setDetailTaskId(t.id) }
     else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })
   }
-  // 좌측 헤더(이모지/그룹명) 클릭 → 그룹 홈(위시 탭). 임베드 상세/편집/설정 닫고 위시 탭으로.
+  // 좌측 헤더(이모지/그룹명) 클릭 → 그룹 홈(위시 탭). 임베드 상세/편집/설정/게시판 닫고 위시 탭으로.
   function goGroupHome() {
-    setDetailTaskId(null); setDetailReview(false); setEditView(null); setSettingsView(null)
+    setDetailTaskId(null); setDetailReview(false); setEditView(null); setSettingsView(null); setBoardView(null)
     setFilter('open')
   }
   function openSettings(view) {
-    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(view) }
+    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setBoardView(null); setSettingsView(view) }
     else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
+  }
+  // 비밀 게시판: PC 는 가운데 임베드(화면 전환 없이 내부 상태로 목록/검색/글쓰기/상세/댓글 전환), 모바일은 기존처럼 라우트 이동
+  function openBoard() {
+    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(null); setBoardView({ view: 'list' }) }
+    else navigate(`/groups/${groupId}/board`, { state: { from: 'members' } })
+  }
+  // 게시판 임베드 내 "뒤로" — 하위 화면마다 되돌아갈 자리가 다름(댓글→글, 수정→그 글, 그 외→목록, 목록→닫기)
+  function boardBack() {
+    const v = boardView?.view
+    if (v === 'comments') setBoardView({ view: 'post', postId: boardView.postId })
+    else if (v === 'compose' && boardView.postId) setBoardView({ view: 'post', postId: boardView.postId })
+    else if (v === 'list') setBoardView(null)
+    else setBoardView({ view: 'list' })
   }
   // '수정' → 가운데를 편집 폼으로 전환. 상세에서 오면 detailTaskId, 카드 스와이프에서
   // 오면 해당 카드 id 를 대상으로. (완료/취소 시 detailTaskId 있으면 상세, 없으면 목록 복귀)
@@ -614,6 +630,42 @@ export default function GroupDetail() {
             ? <GroupConfigPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />
             : <GroupSettingsPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />}
         </div>
+      ) : boardView ? (
+        <div className={`gd-detail gd-detail--board${boardView.view === 'list' ? '' : ' gd-detail--scroll'}`}>
+          <button type="button" className="gd-detail-back" onClick={boardBack}>
+            <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            뒤로
+          </button>
+          {boardView.view === 'list' && (
+            <SecretBoard embedded groupId={groupId}
+              onOpenPost={(p) => setBoardView({ view: 'post', postId: p.id, seed: p })}
+              onOpenComments={(postId) => setBoardView({ view: 'comments', postId })}
+              onOpenSearch={() => setBoardView({ view: 'search' })}
+              onOpenCompose={() => setBoardView({ view: 'compose' })}
+              onOpenSettings={() => setBoardView({ view: 'settings' })} />
+          )}
+          {boardView.view === 'search' && (
+            <BoardSearch embedded groupId={groupId}
+              onOpenPost={(p) => setBoardView({ view: 'post', postId: p.id, seed: p })}
+              onOpenComments={(postId, focusId) => setBoardView({ view: 'comments', postId, focusId })} />
+          )}
+          {boardView.view === 'settings' && <BoardSettings embedded groupId={groupId} />}
+          {boardView.view === 'compose' && (
+            <BoardCompose key={`compose-${boardView.postId || 'new'}`} embedded groupId={groupId} postId={boardView.postId} seedPost={boardView.seed}
+              onDone={(id) => setBoardView({ view: 'post', postId: id })} />
+          )}
+          {boardView.view === 'post' && (
+            <BoardPost key={`post-${boardView.postId}`} embedded groupId={groupId} postId={boardView.postId} seedPost={boardView.seed}
+              onOpenComments={(postId) => setBoardView({ view: 'comments', postId })}
+              onEdit={(p) => setBoardView({ view: 'compose', postId: p.id, seed: p })}
+              onDeleted={() => setBoardView({ view: 'list' })}
+              onOpenPost={(p) => setBoardView({ view: 'post', postId: p.id, seed: p })} />
+          )}
+          {boardView.view === 'comments' && (
+            <BoardComments key={`comments-${boardView.postId}`} embedded groupId={groupId} postId={boardView.postId} focusId={boardView.focusId}
+              onOpenPost={(postId) => setBoardView({ view: 'post', postId })} />
+          )}
+        </div>
       ) : (
       <>
       <div className="gd-sticky-head">
@@ -723,10 +775,10 @@ export default function GroupDetail() {
                 </button>
                 {coupleMenu.play && (
                   <div className="gd-couple-sub">
+                    {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
                     <button type="button" onClick={() => goCouple('touch')}>우심뽀까</button>
                     <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
                     <button type="button" onClick={() => goCouple('praise')}>칭찬 스티커</button>
-                    {boardName && <button type="button" onClick={() => goCouple('board')}>비밀 게시판</button>}
                   </div>
                 )}
                 <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>
@@ -781,7 +833,7 @@ export default function GroupDetail() {
                 </button>
                 {coupleMenu.play && (
                   <div className="gd-couple-sub">
-                    {boardName && <button type="button" onClick={() => goCouple('board')}>비밀 게시판</button>}
+                    {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
                     <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
                   </div>
                 )}

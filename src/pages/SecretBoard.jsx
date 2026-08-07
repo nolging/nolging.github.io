@@ -69,12 +69,19 @@ function useBoardAccess(groupId) {
 }
 
 // ============ 목록 ============
-export default function SecretBoard() {
-  const { groupId } = useParams()
+export default function SecretBoard({ groupId: groupIdProp, embedded = false, onOpenPost, onOpenComments, onOpenSearch, onOpenCompose, onOpenSettings } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
   const navigate = useNavigate()
   const { profile, isAdmin } = useAuth()
   const { setHeaderGear, setRefreshHandler } = useOutletContext()
   const uid = profile?.id
+  // PC 임베드 시 이동은 화면 전환 없이 콜백으로(모바일/직접 URL 접근은 기존처럼 라우트 이동)
+  const goPost = (p) => (embedded && onOpenPost ? onOpenPost(p) : navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } }))
+  const goComments = (postId) => (embedded && onOpenComments ? onOpenComments(postId) : navigate(boardPath(groupId, `/${postId}/comments`)))
+  const goSearch = () => (embedded && onOpenSearch ? onOpenSearch() : navigate(boardPath(groupId, '/search')))
+  const goCompose = () => (embedded && onOpenCompose ? onOpenCompose() : navigate(boardPath(groupId, '/new')))
+  const goSettings = () => (embedded && onOpenSettings ? onOpenSettings() : navigate(boardPath(groupId, '/settings')))
 
   const [group, setGroup] = useState(null)
   const [prefixes, setPrefixes] = useState([])
@@ -100,18 +107,20 @@ export default function SecretBoard() {
   }, [groupId])
   useEffect(() => { load() }, [load])
 
-  // 당겨서 새로고침(하단 게시글 목록) — Layout 의 PTR 에 새로고침 핸들러 등록
+  // 당겨서 새로고침(하단 게시글 목록) — Layout 의 PTR 에 새로고침 핸들러 등록(임베드 시엔 GroupDetail 이 이미 쓰고 있어 건너뜀)
   useEffect(() => {
+    if (embedded) return
     setRefreshHandler(() => load)
     return () => setRefreshHandler(() => null)
-  }, [setRefreshHandler, load])
+  }, [embedded, setRefreshHandler, load])
 
-  // 관리 권한(방장/관리자)이면 상단바 우측 톱니바퀴 → 설정 페이지. 페이지를 벗어나면 등록 해제.
+  // 관리 권한(방장/관리자)이면 상단바 우측 톱니바퀴 → 설정 페이지(임베드 시엔 인페이지 버튼으로 대체). 페이지를 벗어나면 등록 해제.
   useEffect(() => {
+    if (embedded) return
     if (canManage) setHeaderGear(() => () => navigate(boardPath(groupId, '/settings')))
     else setHeaderGear(null)
     return () => setHeaderGear(null)
-  }, [canManage, setHeaderGear, navigate, groupId])
+  }, [embedded, canManage, setHeaderGear, navigate, groupId])
 
   if (access === 'loading') return <BoardLoading />
   if (access === 'no') return <NotReady />
@@ -142,6 +151,11 @@ export default function SecretBoard() {
             </>
           )}
         </div>
+        {/* 임베드(PC)일 땐 상단바가 없어 설정 톱니를 인페이지로 */}
+        {embedded && canManage && (
+          <button type="button" className="btn btn-ghost btn-sm icon-btn sb-embed-gear" aria-label="비밀 게시판 설정" title="비밀 게시판 설정"
+            onClick={goSettings}><GearIcon /></button>
+        )}
       </div>
 
       {/* 이 아래(회색 여백 + 목록)만 스크롤/당겨서 새로고침 */}
@@ -155,7 +169,7 @@ export default function SecretBoard() {
             {shown.map((p) => (
               <li key={p.id} className={`sb-row${p.is_mine ? ' mine' : ''}`}>
                 <button type="button" className="sb-row-main-btn"
-                  onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
+                  onClick={() => goPost(p)}>
                   <span className="sb-row-main">
                     <span className="sb-row-title">
                       {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
@@ -169,7 +183,7 @@ export default function SecretBoard() {
                 </button>
                 {p.comment_count > 0 && (
                   <button type="button" className="sb-row-cc" aria-label="댓글 보기"
-                    onClick={() => navigate(boardPath(groupId, `/${p.id}/comments`))}>
+                    onClick={() => goComments(p.id)}>
                     {p.comment_count}
                   </button>
                 )}
@@ -181,16 +195,18 @@ export default function SecretBoard() {
 
       {/* 하단 탭바(고정): 검색하기 · 글쓰기 */}
       <nav className="sb-tabbar">
-        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/search'))}>검색하기</button>
-        <button type="button" className="sb-tab" onClick={() => navigate(boardPath(groupId, '/new'))}>글쓰기</button>
+        <button type="button" className="sb-tab" onClick={goSearch}>검색하기</button>
+        <button type="button" className="sb-tab" onClick={goCompose}>글쓰기</button>
       </nav>
     </div>
   )
 }
 
 // ============ 글쓰기 / 수정 (페이지) — 상단바 ✕/등록, 말머리 드롭다운, 여백 없는 제목/본문 ============
-export function BoardCompose() {
-  const { groupId, postId } = useParams()   // postId 있으면 수정
+export function BoardCompose({ groupId: groupIdProp, postId: postIdProp, seedPost, embedded = false, onDone } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
+  const postId = postIdProp ?? params.postId   // 있으면 수정
   const navigate = useNavigate()
   const location = useLocation()
   const { setHeaderSubmit } = useOutletContext()
@@ -217,13 +233,13 @@ export function BoardCompose() {
     let on = true
     listBoardPrefixes(groupId).then((pf) => { if (on) setPrefixes(pf) }).catch(() => { })
     if (editing) {
-      const seed = location.state?.post
+      const seed = seedPost ?? location.state?.post
       const fill = (p) => { if (!p || !on) return; setPrefixId(p.prefix_id || ''); setTitle(p.title || ''); setBody(p.body || ''); setLoaded(true) }
       if (seed) fill(seed)
       else listBoardPosts(groupId).then((ps) => fill(ps.find((x) => x.id === postId))).catch(() => on && setLoaded(true))
     }
     return () => { on = false }
-  }, [groupId, postId, editing, location.state])
+  }, [groupId, postId, editing, seedPost, location.state])
 
   // 에디터에 초기 본문 주입(HTML 은 새니타이즈, 옛 평문은 줄바꿈 보존)
   useEffect(() => {
@@ -244,20 +260,21 @@ export function BoardCompose() {
     try {
       if (editing) {
         await updateBoardPost(postId, prefixId, title.trim(), bodyHtml)
-        navigate(boardPath(groupId, `/${postId}`), { replace: true })
+        if (embedded && onDone) onDone(postId); else navigate(boardPath(groupId, `/${postId}`), { replace: true })
       } else {
         const id = await createBoardPost(groupId, prefixId, title.trim(), bodyHtml)
-        navigate(boardPath(groupId, `/${id}`), { replace: true })
+        if (embedded && onDone) onDone(id); else navigate(boardPath(groupId, `/${id}`), { replace: true })
       }
     } catch (e) { setErr(e.message); setBusy(false) }
   }
-  // 상단바 "등록" 이 최신 submit 을 호출하도록 ref 로 연결(한 번만 등록)
+  // 상단바 "등록" 이 최신 submit 을 호출하도록 ref 로 연결(한 번만 등록). 임베드 시엔 인페이지 버튼이 직접 submit() 을 부름.
   const submitRef = useRef(submit)
   submitRef.current = submit
   useEffect(() => {
+    if (embedded) return
     setHeaderSubmit(() => () => submitRef.current())
     return () => setHeaderSubmit(null)
-  }, [setHeaderSubmit])
+  }, [embedded, setHeaderSubmit])
 
   if (access === 'loading') return <BoardLoading />
   if (access === 'no') return <NotReady />
@@ -287,6 +304,10 @@ export function BoardCompose() {
                 </>
               )}
             </div>
+            {/* 임베드(PC)일 땐 상단바가 없어 등록 버튼을 인페이지로 */}
+            {embedded && (
+              <button type="button" className="sb-post-btn" onClick={submit} disabled={busy}>{busy ? '등록 중…' : '등록'}</button>
+            )}
           </div>
           <input className="sb-title-input" placeholder="제목" value={title} maxLength={100}
             onChange={(e) => setTitle(e.target.value)}
@@ -306,7 +327,9 @@ export function BoardCompose() {
                 setEmpty(!editorRef.current.textContent.trim())
               }} />
           </div>
-          {bottomEl && !titleFocused && createPortal(<RichToolbar editorRef={editorRef} keyboardUp={bodyFocused} />, bottomEl)}
+          {!titleFocused && (embedded
+            ? <div className="gd-embed-composer"><RichToolbar editorRef={editorRef} keyboardUp /></div>
+            : bottomEl && createPortal(<RichToolbar editorRef={editorRef} keyboardUp={bodyFocused} />, bottomEl))}
         </>
       )}
     </div>
@@ -347,10 +370,15 @@ function CommentCountBadge({ count, onClick }) {
 }
 
 // ============ 검색 (페이지) — 검색어 + 게시글/댓글 탭 + 범위·정렬, 키워드 볼드 ============
-export function BoardSearch() {
-  const { groupId } = useParams()
+export function BoardSearch({ groupId: groupIdProp, embedded = false, onOpenPost, onOpenComments } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
   const navigate = useNavigate()
   const access = useBoardAccess(groupId)
+  const goPost = (p) => (embedded && onOpenPost ? onOpenPost(p) : navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } }))
+  const goComments = (postId, commentId) => (embedded && onOpenComments
+    ? onOpenComments(postId, commentId)
+    : navigate(boardPath(groupId, commentId ? `/${postId}/comments?c=${commentId}` : `/${postId}/comments`)))
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('posts')       // posts | comments
   const [scope, setScope] = useState('both')    // both | title | body (게시글)
@@ -441,7 +469,7 @@ export function BoardSearch() {
                 {postResults.map((p) => (
                   <li key={p.id}>
                     <button type="button" className="sb-srow"
-                      onClick={() => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })}>
+                      onClick={() => goPost(p)}>
                       <span className="sb-srow-main">
                         <span className="sb-srow-title">
                           {p.prefix_label && <span className="sb-prefix">[{p.prefix_label}]</span>}
@@ -452,7 +480,7 @@ export function BoardSearch() {
                       </span>
                       {p.comment_count > 0 && (
                         <CommentCountBadge count={p.comment_count}
-                          onClick={() => navigate(boardPath(groupId, `/${p.id}/comments`))} />
+                          onClick={() => goComments(p.id)} />
                       )}
                     </button>
                   </li>
@@ -467,7 +495,7 @@ export function BoardSearch() {
                 {commentResults.map((c) => (
                   <li key={c.id}>
                     <button type="button" className="sb-srow sb-crow"
-                      onClick={() => navigate(boardPath(groupId, `/${c.post_id}/comments?c=${c.id}`))}>
+                      onClick={() => goComments(c.post_id, c.id)}>
                       <span className="sb-crow-body">{boldText(c.body, q)}</span>
                       <span className="sb-crow-origin">
                         <span className="sb-origin-badge">원문</span>
@@ -492,6 +520,27 @@ const RefreshIcon = ({ spinning }) => (
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={spinning ? 'sb-spin' : ''}>
     <polyline points="23 4 23 10 17 10" />
     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+  </svg>
+)
+// 돋보기 / 체크서클 — 임베드(PC) 댓글 검색 UI(상단바 대신 인페이지)용
+const SearchIconMini = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+)
+const CheckCircleIconMini = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" /><polyline points="8.5 12 11 14.5 15.5 9.5" />
+  </svg>
+)
+// 톱니(설정) — 임베드(PC)에서 상단바 톱니를 대신하는 인페이지 버튼용
+const GearIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 )
 // 세로 점 3개(더보기)
@@ -857,17 +906,21 @@ function useComposerToggle(h) {
 // ============ 글 상세 + 댓글 (페이지) ============
 // 카페형: 제목/작성시간+댓글수, 본문, 댓글, 댓글쓰기, 이전·다음 글, 하단 바[댓글쓰기·댓글 N·새로고침].
 // 수정/삭제 ⋮ 는 상단바(권한자만). 하단 바 대신 댓글쓰기 누르면 입력창(키패드) 노출.
-export function BoardPost() {
-  const { groupId, postId } = useParams()
+export function BoardPost({ groupId: groupIdProp, postId: postIdProp, seedPost, embedded = false, onOpenComments, onEdit, onDeleted, onOpenPost } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
+  const postId = postIdProp ?? params.postId
   const navigate = useNavigate()
   const location = useLocation()
   const { setHeaderPostMenu, setRefreshHandler } = useOutletContext()
   const access = useBoardAccess(groupId)
+  const [menuOpen, setMenuOpen] = useState(false) // 임베드(PC) 인페이지 ⋮ 메뉴
 
   const h = useBoardComments(postId, null)
   const c = useComposerToggle(h)
-  const [posts, setPosts] = useState(location.state?.post ? [location.state.post] : [])
-  const [post, setPost] = useState(location.state?.post || null)
+  const seed = seedPost ?? location.state?.post
+  const [posts, setPosts] = useState(seed ? [seed] : [])
+  const [post, setPost] = useState(seed || null)
   const [gone, setGone] = useState(false)
   const [bottomEl, setBottomEl] = useState(null)
 
@@ -883,29 +936,42 @@ export function BoardPost() {
 
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
-  // 당겨서 새로고침 = 글 + 댓글 다시 불러오기
+  // 당겨서 새로고침 = 글 + 댓글 다시 불러오기(임베드 시엔 GroupDetail 이 이미 쓰고 있어 건너뜀)
   const refreshAll = useCallback(async () => { await Promise.all([loadPost(), h.loadComments()]) }, [loadPost, h.loadComments])
   useEffect(() => {
+    if (embedded) return
     setRefreshHandler(() => refreshAll)
     return () => setRefreshHandler(() => null)
-  }, [setRefreshHandler, refreshAll])
+  }, [embedded, setRefreshHandler, refreshAll])
 
-  // 삭제 핸들러(상단바 메뉴가 참조) — 최신 유지
+  const goEdit = useCallback(() => {
+    if (embedded && onEdit) onEdit(post)
+    else navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } })
+  }, [embedded, onEdit, post, groupId, navigate])
+  // 삭제 핸들러(상단바/인페이지 메뉴가 참조) — 최신 유지
   const removePost = useCallback(async () => {
     if (!confirm('이 글을 삭제할까요?')) return
-    try { await deleteBoardPost(postId); navigate(boardPath(groupId), { replace: true }) } catch { /* noop */ }
-  }, [postId, groupId, navigate])
+    try {
+      await deleteBoardPost(postId)
+      if (embedded && onDeleted) onDeleted(); else navigate(boardPath(groupId), { replace: true })
+    } catch { /* noop */ }
+  }, [postId, groupId, navigate, embedded, onDeleted])
+  const buildPostMenuItems = () => {
+    if (!post || !(post.is_mine || post.can_delete)) return []
+    const items = []
+    if (post.is_mine) items.push({ label: '수정', onClick: goEdit })
+    if (post.can_delete) items.push({ label: '삭제', danger: true, onClick: removePost })
+    return items
+  }
 
-  // 수정/삭제 ⋮ 를 상단바에 등록(권한자만)
+  // 수정/삭제 ⋮ 를 상단바에 등록(권한자만) — 임베드 시엔 인페이지 메뉴로 대체
   useEffect(() => {
-    if (post && (post.is_mine || post.can_delete)) {
-      const items = []
-      if (post.is_mine) items.push({ label: '수정', onClick: () => navigate(boardPath(groupId, `/${post.id}/edit`), { state: { post } }) })
-      if (post.can_delete) items.push({ label: '삭제', danger: true, onClick: removePost })
-      setHeaderPostMenu({ items })
-    } else setHeaderPostMenu(null)
+    if (embedded) return
+    const items = buildPostMenuItems()
+    setHeaderPostMenu(items.length ? { items } : null)
     return () => setHeaderPostMenu(null)
-  }, [post, groupId, navigate, removePost, setHeaderPostMenu])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, post, goEdit, removePost, setHeaderPostMenu])
 
   if (access === 'loading') return <BoardLoading />
   if (access === 'no') return <NotReady />
@@ -915,7 +981,9 @@ export function BoardPost() {
   const idx = posts.findIndex((p) => p.id === postId)
   const newer = idx > 0 ? posts[idx - 1] : null   // 목록은 최신순 → 앞쪽이 새 글
   const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null
-  const goPost = (p) => navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } })
+  const goPost = (p) => (embedded && onOpenPost ? onOpenPost(p) : navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } }))
+  const goComments = () => (embedded && onOpenComments ? onOpenComments(postId) : navigate(boardPath(groupId, `/${postId}/comments`)))
+  const postMenuItems = buildPostMenuItems()
 
   const navRow = (p, label) => (
     <button type="button" className="sb-navrow" onClick={() => goPost(p)}>
@@ -930,7 +998,7 @@ export function BoardPost() {
   const bottomBar = (
     <nav className="sb-detail-bar">
       <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
-      <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}/comments`))}>
+      <button type="button" className="sb-detail-btn" onClick={goComments}>
         <span>댓글 {h.commentCount}</span>
       </button>
       <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={h.doRefresh} disabled={h.refreshing}
@@ -946,6 +1014,25 @@ export function BoardPost() {
           {post.prefix_label && <span className="sb-post-prefix">[{post.prefix_label}]</span>}
           {post.title}
         </h2>
+        {/* 임베드(PC)일 땐 상단바가 없어 수정/삭제 ⋮ 메뉴를 인페이지로 */}
+        {embedded && postMenuItems.length > 0 && (
+          <div className="task-menu-wrap sb-embed-postmenu">
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}>
+              <DotsIcon />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                <div className="menu-pop" role="menu">
+                  {postMenuItems.map((it, i) => (
+                    <button key={i} type="button" className={it.danger ? 'menu-danger' : ''}
+                      onClick={() => { setMenuOpen(false); it.onClick?.() }}>{it.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="sb-post-meta">
@@ -961,7 +1048,7 @@ export function BoardPost() {
         <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
         <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} limit={10}
-          onSeeAll={() => navigate(boardPath(groupId, `/${postId}/comments`))} />
+          onSeeAll={goComments} />
       </div>
 
       <button type="button" className="sb-write-pill" onClick={c.openComposer}><PencilMini />댓글 쓰기</button>
@@ -973,29 +1060,37 @@ export function BoardPost() {
         </div>
       )}
 
-      {bottomEl && createPortal(c.composing ? composer : bottomBar, bottomEl)}
+      {embedded
+        ? <div className="gd-embed-composer">{c.composing ? composer : bottomBar}</div>
+        : bottomEl && createPortal(c.composing ? composer : bottomBar, bottomEl)}
     </div>
   )
 }
 
 // ============ 댓글 상세 (글 본문 없이 댓글만, 알림 포커스) ============
 // 하단 바[댓글 쓰기·원문 보기·첫 댓글로·새로고침] + 댓글 쓰기 시 입력창 토글.
-export function BoardComments() {
-  const { groupId, postId } = useParams()
+export function BoardComments({ groupId: groupIdProp, postId: postIdProp, focusId: focusIdProp, embedded = false, onOpenPost } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
+  const postId = postIdProp ?? params.postId
   const navigate = useNavigate()
   const [sp] = useSearchParams()
   const { setRefreshHandler, setHeaderCommentCount, commentSearch } = useOutletContext()
   const access = useBoardAccess(groupId)
+  const focusId = focusIdProp ?? sp.get('c')
 
-  const h = useBoardComments(postId, sp.get('c'))
+  const h = useBoardComments(postId, focusId)
   const c = useComposerToggle(h)
   const [bottomEl, setBottomEl] = useState(null)
   const [curMatch, setCurMatch] = useState(0)   // 현재 검색 결과(몇 번째)
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
-  const searching = !!commentSearch?.open
-  const mineOnly = !!commentSearch?.mineOnly
-  const term = (commentSearch?.term || '').trim()
+  // 임베드(PC)일 땐 상단바 검색 UI가 없어 자체 상태로 검색 토글/입력을 관리
+  const [embedSearch, setEmbedSearch] = useState({ open: false, query: '', term: '', mineOnly: false })
+  const searching = embedded ? embedSearch.open : !!commentSearch?.open
+  const mineOnly = embedded ? embedSearch.mineOnly : !!commentSearch?.mineOnly
+  const term = (embedded ? embedSearch.term : (commentSearch?.term || '')).trim()
+  const goPost = () => (embedded && onOpenPost ? onOpenPost(postId) : navigate(boardPath(groupId, `/${postId}`)))
 
   // 내댓글만 보기(검색 중). 그 외에는 전체.
   const rows = useMemo(() => (searching && mineOnly ? h.flat.filter(({ c }) => c.is_mine) : (searching ? h.flat : null)),
@@ -1008,17 +1103,19 @@ export function BoardComments() {
     return base.filter(({ c }) => !c.deleted && (c.body || '').toLowerCase().includes(kw)).map(({ c }) => c.id)
   }, [term, rows, h.flat])
 
-  // 상단바에 댓글 수 표기
+  // 상단바에 댓글 수 표기(임베드 시엔 인페이지에 직접 표시)
   useEffect(() => {
+    if (embedded) return
     setHeaderCommentCount(h.commentCount)
     return () => setHeaderCommentCount(null)
-  }, [setHeaderCommentCount, h.commentCount])
+  }, [embedded, setHeaderCommentCount, h.commentCount])
 
-  // 당겨서 새로고침 = 댓글 다시 불러오기
+  // 당겨서 새로고침 = 댓글 다시 불러오기(임베드 시엔 GroupDetail 이 이미 쓰고 있어 건너뜀)
   useEffect(() => {
+    if (embedded) return
     setRefreshHandler(() => h.loadComments)
     return () => setRefreshHandler(() => null)
-  }, [setRefreshHandler, h.loadComments])
+  }, [embedded, setRefreshHandler, h.loadComments])
 
   // 검색 결과가 바뀌면 첫 번째로, 현재 결과로 스크롤
   useEffect(() => { setCurMatch(0) }, [term, mineOnly])
@@ -1045,7 +1142,7 @@ export function BoardComments() {
   const bottomBar = (
     <nav className="sb-detail-bar">
       <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
-      <button type="button" className="sb-detail-btn" onClick={() => navigate(boardPath(groupId, `/${postId}`))}><span>원문 보기</span></button>
+      <button type="button" className="sb-detail-btn" onClick={goPost}><span>원문 보기</span></button>
       <button type="button" className="sb-detail-btn" onClick={scrollFirst}><span>첫 댓글로</span></button>
       <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={refreshToBottom} disabled={h.refreshing}
         aria-label="새로고침" title="새로고침"><RefreshIcon spinning={h.refreshing} /></button>
@@ -1073,19 +1170,48 @@ export function BoardComments() {
 
   return (
     <div className="page sb-post-page sb-comments-page">
+      {/* 임베드(PC)일 땐 상단바가 없어 댓글 수 표기 + 검색 토글을 인페이지로 */}
+      {embedded && (
+        <div className="sb-embed-cmthead">
+          <span className="sb-embed-cmtcount">댓글 {h.commentCount}</span>
+          <button type="button" className={`btn btn-ghost btn-sm icon-btn${searching ? ' is-active' : ''}`}
+            aria-label="댓글 검색" title="댓글 검색"
+            onClick={() => setEmbedSearch((s) => (s.open ? { open: false, query: '', term: '', mineOnly: false } : { ...s, open: true }))}>
+            <SearchIconMini />
+          </button>
+        </div>
+      )}
+      {embedded && searching && (
+        <div className="sb-embed-searchbar">
+          <button type="button" className={`sb-mine-toggle${mineOnly ? ' on' : ''}`}
+            onClick={() => setEmbedSearch((s) => ({ ...s, mineOnly: !s.mineOnly }))}><CheckCircleIconMini /><span>내댓글</span></button>
+          <div className="sb-topbar-searchwrap">
+            <input className="sb-topbar-search" autoFocus placeholder="댓글 내용 검색"
+              value={embedSearch.query} onChange={(e) => setEmbedSearch((s) => ({ ...s, query: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setEmbedSearch((s) => ({ ...s, term: s.query.trim() })) } }} />
+            {embedSearch.query && (
+              <button type="button" className="sb-topbar-clear" aria-label="지우기"
+                onClick={() => setEmbedSearch((s) => ({ ...s, query: '', term: '' }))}>✕</button>
+            )}
+          </div>
+        </div>
+      )}
       <div className="sb-cmt-section">
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
         <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit}
           rows={rows} highlight={searching ? term : ''} emptyText={mineOnly ? '내가 쓴 댓글이 없어요.' : '표시할 댓글이 없어요.'} />
       </div>
-      {bottomEl && bottom && createPortal(bottom, bottomEl)}
+      {embedded
+        ? bottom && <div className="gd-embed-composer">{bottom}</div>
+        : bottomEl && bottom && createPortal(bottom, bottomEl)}
     </div>
   )
 }
 
 // ============ 비밀 게시판 설정 (이름 변경 + 말머리 관리) — 방장/관리자 ============
-export function BoardSettings() {
-  const { groupId } = useParams()
+export function BoardSettings({ groupId: groupIdProp, embedded = false } = {}) {
+  const params = useParams()
+  const groupId = groupIdProp ?? params.groupId
   const navigate = useNavigate()
   const { profile, isAdmin } = useAuth()
   const uid = profile?.id

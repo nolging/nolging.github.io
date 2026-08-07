@@ -2060,6 +2060,29 @@ button.mention-chip:active { opacity: .6; }
 .sb-prefix-items li { display: flex; align-items: center; gap: 10px; }
 .sb-prefix-chip { flex: 1; color: #7363e8; font-weight: 800; font-size: 14px; }
 
+/* ---- 비밀 게시판 PC 임베드(GroupDetail 가운데) — 상단바가 없어 여러 규칙을 인페이지 기준으로 보정 ---- */
+/* 목록: gd-detail 의 flex 컬럼(뒤로가기 + 목록) 안에서 남는 높이를 채우고, 하단 탭바는 더 이상 화면
+   전체에 고정되지 않고 카드 하단에 자연스럽게 붙는다(TaskDetail 임베드와 동일 원리). */
+.gd-detail .sb-list-page { flex: 1 1 auto; min-height: 0; height: auto; max-width: none; }
+.gd-detail .sb-tabbar { position: static; padding-bottom: 0; border-radius: 0 0 12px 12px; }
+.gd-detail .sb-scroll { padding-bottom: 12px; }
+/* 본문/댓글/검색탭 등이 쓰는 좌우 풀블리드 네거티브 마진 제거(임베드 폭 기준으로 오히려 잘려나감) */
+.gd-detail .sb-post-body, .gd-detail .sb-cmt-section { margin-left: 0; margin-right: 0; }
+.gd-detail .sb-search-tabs { margin-left: 0; margin-right: 0; }
+.gd-detail .sb-srows { margin-left: 0; margin-right: 0; }
+.gd-detail .sb-comments-page { margin-top: 0; margin-bottom: 0; }
+/* 목록 톱니 / 글 상세 ⋮ / 댓글 검색 토글 — 상단바 대신 인페이지에 노출되는 버튼들 */
+.sb-embed-gear { color: var(--muted); }
+.sb-embed-postmenu { flex-shrink: 0; }
+.sb-embed-cmthead { display: flex; align-items: center; justify-content: space-between; padding: 2px 0 12px; font-size: 14px; font-weight: 700; color: var(--text); }
+.sb-embed-cmthead .icon-btn.is-active { color: var(--primary); background: var(--primary-soft); }
+.sb-embed-searchbar { display: flex; align-items: center; gap: 8px; padding: 0 0 12px; }
+.sb-embed-searchbar .sb-topbar-searchwrap { flex: 1; min-width: 0; position: relative; display: flex; }
+.sb-embed-searchbar .sb-topbar-search { flex: 1; min-width: 0; height: 38px; min-height: 38px; box-sizing: border-box;
+  border: 1px solid #d9d7e2; border-radius: 8px; padding: 0 34px 0 12px; font-size: 14px; background: #fff; color: #191722; }
+.sb-embed-searchbar .sb-topbar-search:focus { outline: none; border-color: #b9abf3; }
+.sb-embed-searchbar .sb-topbar-search::placeholder { color: #a3a1ab; }
+
 .member-list li { align-items: flex-start; }
 .member-info { flex: 1; min-width: 0; }
 .member-name { font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
