@@ -679,11 +679,12 @@ export default function Layout() {
       </header>
     )
   } else if (membersMatch) {
-    // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 상세/대시보드 등), 제목 "멤버"
-    // (커플 그룹은 페이지가 제목을 "데이트"로 등록). 직전 히스토리 없으면(콜드스타트) 그룹 상세로.
+    // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 홈 카드에서 왔으면 그룹 홈, 그 외엔 그룹 상세),
+    // 제목 "멤버"(커플 그룹은 페이지가 제목을 "데이트"로 등록). 직전 히스토리 없으면(콜드스타트) 그룹 상세로.
+    const membersBackTo = location.state?.from === 'home' ? '/' : `/groups/${membersMatch.params.groupId}`
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${membersMatch.params.groupId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(membersBackTo)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{headerTitle || '멤버'}</span>
       </header>
     )
