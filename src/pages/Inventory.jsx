@@ -9,7 +9,8 @@ import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import GraffitiPad from '../components/GraffitiPad'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -17,16 +18,19 @@ import { FRUIT, Sticker } from '../components/StickerFruit'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 import { setStoreCatalog, bgOf, useStoreCatalog, catalogName, catalogDecoSlot } from '../lib/storeCatalog'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
-import { uploadPolaroidPhoto, resizeToJpeg } from '../lib/storage'
+import { uploadPolaroidPhoto, resizeToJpeg, uploadGraffitiImage } from '../lib/storage'
 
 const MAX_WISH = 300
 const NAME_TAG_MS = 24 * 3600 * 1000
+const PURIN_MIC_MS = 24 * 3600 * 1000
 // 꾸미기 유형(슬롯): 관리자 설정(카탈로그=표시명) 우선, 없으면 하드코딩 폴백.
 // deco_slot 값이 곧 표시명. 레거시 영문 코드만 한글로 매핑.
 const slotOf = (id) => catalogDecoSlot(id) || decoSlot(id)
 const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경' }[slot] || slot)
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
+// 푸린 마이크 used 행이 아직 유효(24h 내)한지 — 명찰과 동일 패턴
+const purinMicLive = (r) => r.item_id === 'purin-mic' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + PURIN_MIC_MS > Date.now()
 
 // 인벤토리 모달 공용 헤더 — 좌측 정렬(이미지 + 아이템명 한 줄), 사용 아이템은 설명(1줄) 포함
 function ItemHead({ id, name, sub, emoji }) {
@@ -68,6 +72,7 @@ export default function Inventory() {
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
   const [nameTagOpen, setNameTagOpen] = useState(false) // 명찰(닉네임 변경) 모달
+  const [purinMicOpen, setPurinMicOpen] = useState(false) // 푸린 마이크(짝꿍 낙서) 모달
   const [boardOpen, setBoardOpen] = useState(false)     // 비밀 게시판 개설 모달
   const [boardItemName, setBoardItemName] = useState('') // 아이템 이름(관리자에서 변경 가능 → 하드코딩 금지)
   const [megaphoneOpen, setMegaphoneOpen] = useState(false) // 확성기 모달
@@ -100,6 +105,8 @@ export default function Inventory() {
     for (const r of items) {
       // 만료된 명찰(used) 행은 소모된 것 → 숨김
       if (r.item_id === 'name-tag' && r.status === 'used' && !nameTagLive(r)) continue
+      // 만료된 푸린 마이크(used) 행도 동일 — 낙서와 함께 자동으로 사라짐
+      if (r.item_id === 'purin-mic' && r.status === 'used' && !purinMicLive(r)) continue
       if (!map.has(r.item_id)) map.set(r.item_id, { id: r.item_id, name: itemName(r.item_id, meta[r.item_id]?.name || r.item_name), emoji: meta[r.item_id]?.emoji || '🎁', count: 0, rows: [] })
       const g = map.get(r.item_id)
       g.count++
@@ -137,6 +144,8 @@ export default function Inventory() {
     setNotice('')
     // 명찰 사용 중이면 안내 모달 없이 바로 닉네임 변경 모달
     if (g.id === 'name-tag' && g.rows.some(nameTagLive)) { setNameTagOpen(true); return }
+    // 푸린 마이크 사용 중이면 안내 모달 없이 바로 낙서 수정 모달
+    if (g.id === 'purin-mic' && g.rows.some(purinMicLive)) { setPurinMicOpen(true); return }
     if (GUIDE[g.id]) setGuideItem(g.id)   // 선물 상자/카세트/비디오/블루레이/지우개/물풍선/망원경 → 중간 안내 모달
     else if (g.id === 'wish') setWishOpen(true)
     else if (g.id === 'couple-ring') setCoupleOpen(true)
@@ -167,6 +176,7 @@ export default function Inventory() {
     else if (id === 'polaroid-film') setPolaroidOpen(true)
     else if (id.startsWith('sticker-')) setStickerUse({ id, variant: id === 'sticker-grape' ? 'grape' : 'apple' })
     else if (id === 'name-tag') setNameTagOpen(true)
+    else if (id === 'purin-mic') setPurinMicOpen(true)
   }
   // 인벤토리 아이템 선물 → 보유분 1개 소모 + 선물 쪽지 전송
   async function inventoryGiftSend(r, message) {
@@ -203,10 +213,13 @@ export default function Inventory() {
                 const decoApplied = isDeco && g.rows.some((r) => r.status === 'used')
                 const isNameTag = g.id === 'name-tag'
                 const nameTagActive = isNameTag && g.rows.some(nameTagLive)
+                const isPurinMic = g.id === 'purin-mic'
+                const purinMicActive = isPurinMic && g.rows.some(purinMicLive)
                 // 시안: 상태 뱃지(좌) + 개수(우) + 카드 전체 클릭
                 let badge = null, onClick = () => useItem(g), actionable = true
                 let countShown = g.count, showCount = g.count > 1
                 if (isNameTag) { badge = nameTagActive ? '사용 중' : null; countShown = activeCount; showCount = activeCount >= 1 }
+                else if (isPurinMic) { badge = purinMicActive ? '사용 중' : null; countShown = activeCount; showCount = activeCount >= 1 }
                 else if (isTheme) badge = themeApplied ? '적용 중' : null
                 else if (isDeco) badge = decoApplied ? '장착 중' : null
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
@@ -273,6 +286,7 @@ export default function Inventory() {
       <StickerUseModal item={stickerUse} coupleGroupId={coupleGroupIds[0]} onClose={() => setStickerUse(null)} onDone={reload} navigate={navigate} />
 
       <NameTagModal open={nameTagOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setNameTagOpen(false)} onDone={reload} />
+      <PurinMicModal open={purinMicOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setPurinMicOpen(false)} onDone={reload} />
       <SecretBoardApplyModal open={boardOpen} itemName={boardItemName} onClose={() => setBoardOpen(false)} onDone={reload} />
       <MegaphoneModal open={megaphoneOpen} myId={user?.id} onClose={() => setMegaphoneOpen(false)} onDone={reload} />
 
@@ -909,6 +923,7 @@ const GUIDE = {
   'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
   'name-tag':  { name: '명찰',     emoji: '🏷️', text: '연인의 이름을 내 마음대로 바꿔요.\n첫 변경 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
   'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터지기 전으로 한 번 되돌려요.\n젖어 버린 쪽지에 사용해 보세요.', canUse: false },
+  'purin-mic': { name: '푸린 마이크', emoji: '🎤', text: '짝꿍의 프로필 사진에 낙서를 해요.\n낙서한 시점부터 24시간 동안 보이고, 그동안은 언제든 다시 고칠 수 있어요.', canUse: true },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
@@ -1048,6 +1063,73 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
               placeholder="바꿀 이름을 입력하세요" />
             <button type="button" className="st-btn-buy st-btn-block" style={{ opacity: nick.trim() && !busy ? 1 : .5 }}
               disabled={!nick.trim() || busy} onClick={submit}>{busy ? '변경 중…' : '변경하기'}</button>
+          </>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 푸린 마이크: 짝꿍 프로필 사진에 24h 낙서 모달 ----
+function PurinMicModal({ open, coupleGroupId, myId, onClose, onDone }) {
+  const [partner, setPartner] = useState(null)
+  const [until, setUntil] = useState(null)
+  const [initialImage, setInitialImage] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const inFlight = useRef(false)   // 실제 요청 중인지(멈춘 busy 와 구분)
+  const padRef = useRef(null)
+
+  // 항상 마운트된 채 open 만 토글되므로, 다시 열 때 이전 상태가 남지 않게 초기화한다.
+  useEffect(() => {
+    if (!open) return
+    setError(''); setLoading(true); setBusy(false); inFlight.current = false
+    ;(async () => {
+      try {
+        if (!coupleGroupId) { setError('커플 그룹을 찾을 수 없어요.'); setLoading(false); return }
+        const [cards, st] = await Promise.all([
+          listMemberCards(coupleGroupId),
+          purinMicState(coupleGroupId).catch(() => null),
+        ])
+        const p = (cards || []).find((c) => !c.is_self && !c.is_left) || null
+        setPartner(p)
+        const active = st?.active || null
+        setUntil(active?.until || null)
+        setInitialImage(active?.image_url || null)
+      } catch (e) { setError(e.message) } finally { setLoading(false) }
+    })()
+  }, [open, coupleGroupId, myId])
+
+  const active = nametagActive(until)   // until 기반 범용 헬퍼(이름은 명찰이지만 로직은 공용)
+  useCountdownTick(open && active)      // 남은 시간(23:59) 표기 갱신
+
+  async function submit() {
+    if (inFlight.current) return
+    setBusy(true); setError(''); inFlight.current = true
+    try {
+      const blob = await padRef.current?.exportBlob()
+      if (!blob) throw new Error('낙서를 그려 주세요.')
+      const url = await uploadGraffitiImage(blob, myId, coupleGroupId)
+      await usePurinMic(coupleGroupId, url)
+      await onDone?.()
+      onClose()
+    } catch (e) { setError(e.message) }
+    finally { inFlight.current = false; setBusy(false) }   // 성공 시에도 반드시 해제
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="purinmic-modal">
+        <ItemHead id="purin-mic" name="푸린 마이크" emoji="🎤" sub="24시간 동안 짝꿍 프로필 사진에 낙서해요" />
+        {error && <div className="alert alert-error">{error}</div>}
+        {loading ? <div className="spinner" /> : (
+          <>
+            {active && <span className="purinmic-left">사용 중 · {hhmmLeft(until)} 남음</span>}
+            <GraffitiPad ref={padRef} photoUrl={partner?.avatar_url} initialImageUrl={initialImage} size={240} />
+            <button type="button" className="st-btn-buy st-btn-block" disabled={busy} onClick={submit}>
+              {busy ? (active ? '수정 중…' : '낙서 그리는 중…') : (active ? '수정하기' : '낙서하기')}
+            </button>
           </>
         )}
       </div>

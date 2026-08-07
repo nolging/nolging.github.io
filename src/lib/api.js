@@ -1176,13 +1176,25 @@ export async function unapplyAvatarDeco(itemId) {
 // 그룹 멤버들의 장착 데코 → { [userId]: [{ id, tf }] }. 미배포/실패 시 빈 객체.
 // 슬롯(유형)은 백엔드가 배타 처리하므로, 프론트는 장착된 아이템을 그대로 모두 렌더한다.
 // tf 는 그룹 프로필 사진에 맞춘 위치·크기·각도 조정값({s,x,y,r}) — 없으면 null.
+// 푸린 마이크 낙서도 같은 맵에 합쳐서 반환한다(id: '__graffiti', url) — 이렇게 하면 데코가
+// 보이는 모든 화면(deco={decosByGroup...}를 Avatar 에 넘기는 곳)에서 별도 배선 없이 낙서도
+// 같이 나온다. Avatar/MemberAvatar 가 이 특수 id 를 꺼내 사진 위 오버레이로 렌더한다.
 export async function getGroupDecoMap(groupId) {
   if (!groupId) return {}
-  const { data, error } = await supabase.rpc('list_group_avatar_decos', { p_group_id: groupId })
-  if (error) return {}
+  const [decoRes, graffitiRes] = await Promise.all([
+    supabase.rpc('list_group_avatar_decos', { p_group_id: groupId }),
+    supabase.rpc('list_group_graffiti', { p_group_id: groupId }),
+  ])
+  if (decoRes.error) return {}
   const map = {}
-  for (const r of data ?? []) {
+  for (const r of decoRes.data ?? []) {
     (map[r.user_id] = map[r.user_id] || []).push({ id: r.item_id, tf: r.tf || null })
+  }
+  // list_group_graffiti 는 아직 미배포 환경(PGRST202)일 수 있으므로 실패는 조용히 무시
+  if (!graffitiRes.error) {
+    for (const r of graffitiRes.data ?? []) {
+      (map[r.target_user_id] = map[r.target_user_id] || []).push({ id: '__graffiti', url: r.image_url })
+    }
   }
   return map
 }
@@ -1917,6 +1929,25 @@ export async function nametagState(groupId) {
   const { data, error } = await supabase.rpc('nametag_state', { p_group_id: groupId })
   if (error) { if (error.code === 'PGRST202') return null; throw error }
   return data // { active:{target_id,nickname,until}|null, mine:{until}|null }
+}
+
+// ---- 푸린 마이크(24h 짝꿍 프로필 낙서) ----
+// imageUrl: 낙서를 그려 업로드한 PNG(투명 배경) URL. 처음 사용 시 아이템 1개 소모 + 24시간 시작,
+// 이미 활성 중(내가 그 짝꿍에게 건 것)이면 추가 소모 없이 그림만 갱신(만료 시각은 그대로).
+export async function usePurinMic(groupId, imageUrl) {
+  const { data, error } = await supabase.rpc('use_purin_mic', { p_group_id: groupId, p_image_url: imageUrl })
+  if (error) {
+    if (error.code === 'PGRST202' || /use_purin_mic/.test(error.message || '')) {
+      throw new Error('푸린 마이크 기능이 아직 DB에 설정되지 않았습니다. (use_purin_mic 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data // { target_id, image_url, until }
+}
+export async function purinMicState(groupId) {
+  const { data, error } = await supabase.rpc('purin_mic_state', { p_group_id: groupId })
+  if (error) { if (error.code === 'PGRST202') return null; throw error }
+  return data // { active:{target_id,image_url,until}|null }
 }
 export async function useTimeMachine(noteId) {
   const { data, error } = await supabase.rpc('use_time_machine', { p_note_id: noteId })

@@ -5,7 +5,7 @@
 // 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
 // 새싹·홍조는 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -26,6 +26,28 @@ function Sprout() {
         <path className="avd-spark" d="M25 -13 l.9 2.6 l2.6 .9 l-2.6 .9 l-.9 2.6 l-.9 -2.6 l-2.6 -.9 l2.6 -.9 z" fill="#ffcb54" />
         <path className="avd-spark avd-spark-2" d="M75 -11 l.8 2.3 l2.3 .8 l-2.3 .8 l-.8 2.3 l-.8 -2.3 l-2.3 -.8 l2.3 -.8 z" fill="#ffcb54" />
         <path className="avd-spark avd-spark-3" d="M57 -18 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" fill="#ffcb54" />
+      </g>
+    </g>
+  )
+}
+
+// 토마토(머리 유형): 몸통은 머리 위에 통통하게 얹히고, 꼭지(초록 꽃받침)만 프로필 사진
+// 윗부분에 살짝 겹치도록 아래로 짧게 늘어뜨린다.
+function Tomato() {
+  const CX = 50, CY = -8, R = 17
+  return (
+    <g>
+      <ellipse cx={CX} cy={CY} rx={R} ry={R * 0.94} fill="#e14b3c" />
+      <ellipse cx={CX - 6} cy={CY - 7} rx={5.5} ry={3.6} fill="#f28577" opacity="0.6" />
+      <path d={`M${CX - 8} ${CY - 13} Q${CX - 10.5} ${CY} ${CX - 7} ${CY + 13}`} stroke="#c23a2e" strokeWidth="1.1" fill="none" opacity="0.45" />
+      <path d={`M${CX + 8} ${CY - 13} Q${CX + 10.5} ${CY} ${CX + 7} ${CY + 13}`} stroke="#c23a2e" strokeWidth="1.1" fill="none" opacity="0.45" />
+      {/* 꼭지: 프로필 사진 위로 살짝 겹치는 부분 */}
+      <g transform={`translate(${CX} ${CY + R * 0.86})`}>
+        <path d="M0 -2 C1.2 -6 0.7 -10 0 -12" stroke="#4a9d54" strokeWidth="2.1" strokeLinecap="round" fill="none" />
+        {[0, 60, 120, 180, 240, 300].map((deg) => (
+          <path key={deg} d="M0 0 L-3.4 5.2 Q0 8.6 3.4 5.2 Z" fill="#4a9d54" transform={`rotate(${deg})`} />
+        ))}
+        <circle r="2.4" fill="#5aab63" />
       </g>
     </g>
   )
@@ -378,6 +400,7 @@ const PREVIEW_VB = {
   'deco-halo': '-18 -18 136 136',
   'deco-angel-ring': '18 -22 64 42',
   'deco-bubble': '-14 -14 128 128',
+  'deco-tomato': '27 -30 46 50',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -411,6 +434,7 @@ export function DecoPreview({ id }) {
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
+      {id === 'deco-tomato' && <Tomato />}
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
@@ -434,7 +458,7 @@ const ART = {
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
   'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
-  'deco-bubble': Bubble,
+  'deco-bubble': Bubble, 'deco-tomato': Tomato,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.

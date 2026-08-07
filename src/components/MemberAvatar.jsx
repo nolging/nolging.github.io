@@ -23,9 +23,11 @@ function label(name) {
 
 import AvatarDeco, { decoItems } from './AvatarDeco'
 
+// deco 배열에 id:'__graffiti' 항목(푸린 마이크로 짝꿍이 그린 낙서)이 섞여 오면 사진/이니셜
+// 위에 투명 PNG 오버레이로 얹는다 — Avatar.jsx 와 동일한 규칙(getGroupDecoMap 참고).
 export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0.35, deco }) {
   const dim = { width: size, height: size, borderRadius: '50%', flexShrink: 0 }
-  const inner = src
+  const base = src
     ? <span className="mem-av" style={{ ...dim, background: `#e9e9ee center/cover no-repeat url(${src})` }} aria-hidden="true" />
     : (() => {
         const c = memberColor(seed || name)
@@ -37,12 +39,20 @@ export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0
         )
       })()
   const items = decoItems(deco)
-  if (!items.length) return inner
+  const graffiti = items.find((d) => d.id === '__graffiti')?.url
+  const decoOnly = graffiti ? items.filter((d) => d.id !== '__graffiti') : items
+  const inner = graffiti ? (
+    <span style={{ position: 'relative', display: 'inline-block', overflow: 'hidden', ...dim }}>
+      {base}
+      <img className="mem-av-graffiti" src={graffiti} alt="" />
+    </span>
+  ) : base
+  if (!decoOnly.length) return inner
   return (
     <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0, isolation: 'isolate' }}>
-      <AvatarDeco items={items} layer="back" />
+      <AvatarDeco items={decoOnly} layer="back" />
       {inner}
-      <AvatarDeco items={items} layer="front" />
+      <AvatarDeco items={decoOnly} layer="front" />
     </span>
   )
 }

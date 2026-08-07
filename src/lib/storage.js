@@ -49,6 +49,18 @@ export async function uploadPolaroidPhoto(blob, userId, n = 0) {
   return data.publicUrl
 }
 
+// 푸린 마이크 낙서 업로드 (avatars 버킷 재사용, 아바타와 같은 본인 폴더 패턴). 투명 배경을
+// 살려야 해서 PNG. 그룹당 매번 새 경로(타임스탬프)로 올려 CDN 캐시로 인한 이전 낙서 잔상 방지.
+export async function uploadGraffitiImage(blob, userId, groupId) {
+  const path = `${userId}/graffiti-${groupId}-${Date.now()}.png`
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    contentType: 'image/png', cacheControl: '3600', upsert: true,
+  })
+  if (error) throw new Error(`낙서 업로드 실패: ${error.message}`)
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
 // 이미지 파일을 최대 변 길이 max 로 축소한 JPEG blob 으로 변환.
 export function resizeToJpeg(file, max) {
   return new Promise((resolve, reject) => {
