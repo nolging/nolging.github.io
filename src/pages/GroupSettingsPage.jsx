@@ -27,6 +27,7 @@ export default function GroupSettingsPage({ groupId: groupIdProp, embedded = fal
     show_birthdate: !!member.show_birthdate,
     show_ott: !!member.show_ott,
     nick_locked_until: member.nick_locked_until || null,
+    graffiti_locked_until: member.graffiti_locked_until || null,
   }
   const backToGroup = () => { if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}`) }
 
