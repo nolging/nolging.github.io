@@ -60,10 +60,9 @@ export default function MySettings({ group, me, onSaved, secondary }) {
           <AvatarEditor value={form.avatar_url} name={form.display_nickname || me?.login_id}
             userId={me?.user_id} onChange={(v) => set({ avatar_url: v })} onError={setError} emptyIcon
             disabled={avatarLocked} />
-          <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>
-          {avatarLocked && (
-            <span className="field-error">🎤 낙서 적용 중 · {hhmmLeft(me?.graffiti_locked_until)} 남음</span>
-          )}
+          {avatarLocked
+            ? <span className="field-error">🎤 푸린 마이크 효과로 지금은 프로필 사진을 바꿀 수 없어요. ({hhmmLeft(me?.graffiti_locked_until)} 남음)</span>
+            : <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>}
         </div>
 
         {/* 닉네임 */}

@@ -2151,6 +2151,15 @@ button.mlist-row:hover { background: #f6f5fa; }
 .md-page { gap: 0; }
 .md-profile { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px 0 4px; }
 .md-profile .mem-av { box-shadow: 0 8px 22px rgba(25,23,34,.08); }
+.md-avatar-wrap { position: relative; line-height: 0; }
+/* 푸린 마이크 사용 중: 프로필 사진 위 연필 → 즉석 낙서 수정 */
+.md-graf-pencil {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 30px; height: 30px; border-radius: 50%; padding: 0; cursor: pointer;
+  background: #fff; color: #6b6777; border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(20,22,40,.18); display: inline-flex; align-items: center; justify-content: center;
+}
+.md-graf-pencil:active { background: #f3f2f7; }
 .md-name { font-size: 22px; font-weight: 800; letter-spacing: -.5px; color: #191722; display: flex; align-items: center; gap: 8px; }
 .md-me { font-size: 12px; font-weight: 700; color: #7363e8; background: #eeebfe; border-radius: 999px; padding: 3px 10px; }
 /* 명찰 사용 중: 닉네임 옆 연필 → 인라인 이름 변경 */

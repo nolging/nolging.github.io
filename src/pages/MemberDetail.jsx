@@ -1,12 +1,15 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag } from '../lib/api'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag, purinMicState, usePurinMic } from '../lib/api'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 import { formatBirthKo } from '../lib/birthday'
 import { openCompose } from '../lib/composeWindow'
 import { SETTINGS_EVENT } from '../lib/memberModal'
+import { uploadGraffitiImage } from '../lib/storage'
 import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
+import GraffitiPad from '../components/GraffitiPad'
+import Modal from '../components/Modal'
 
 function telHref(s) {
   const cleaned = String(s).replace(/[^\d+]/g, '')
@@ -67,20 +70,27 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
   const [nickEdit, setNickEdit] = useState(false)
   const [nickDraft, setNickDraft] = useState('')
   const [nickBusy, setNickBusy] = useState(false)
+  // 푸린 마이크: 내가 이 멤버의 얼굴에 낙서를 그린 상태면 여기서도 바로 고칠 수 있다
+  const [graffitiLock, setGraffitiLock] = useState(null)   // { until, imageUrl } | null
+  const [grafEdit, setGrafEdit] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, couple, friend, decos, ntState] = await Promise.all([
+      const [cards, g, couple, friend, decos, ntState, pmState] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
         nametagState(groupId).catch(() => null),
+        purinMicState(groupId).catch(() => null),
       ])
       const act = ntState?.active
       setNameLock(act && act.target_id === userId && nametagActive(act.until) ? { until: act.until } : null)
+      const gact = pmState?.active
+      setGraffitiLock(gact && gact.target_id === userId && nametagActive(gact.until)
+        ? { until: gact.until, imageUrl: gact.image_url } : null)
       setDecoMap(decos || {})
       const self = cards.find((m) => m.is_self)
       setMember(cards.find((m) => m.user_id === userId) || null)
@@ -91,7 +101,7 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, userId])
   useEffect(() => { load() }, [load])
-  useCountdownTick(!!nameLock)   // 남은 시간(23:59) 표기 갱신
+  useCountdownTick(!!nameLock || !!graffitiLock)   // 남은 시간(23:59) 표기 갱신
 
   async function poke() {
     if (poking) return
@@ -170,7 +180,17 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
       )}
       {/* 프로필 */}
       <div className="md-profile">
-        <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} deco={decoMap[member.user_id]} />
+        <div className="md-avatar-wrap">
+          <MemberAvatar src={member.avatar_url} name={member.display_nickname} seed={member.user_id} size={104} fontScale={0.33} deco={decoMap[member.user_id]} />
+          {/* 푸린 마이크로 이 멤버 얼굴에 낙서한 사람(나)일 때만 즉석 수정 */}
+          {graffitiLock && !member.is_self && (
+            <button type="button" className="md-graf-pencil" onClick={() => setGrafEdit(true)}
+              aria-label="낙서 수정" title={`낙서 적용 중 · ${hhmmLeft(graffitiLock.until)} 남음`}><PencilIcon /></button>
+          )}
+        </div>
+        {graffitiLock && !member.is_self && (
+          <div className="md-name-lock">🎤 낙서 적용 중 · {hhmmLeft(graffitiLock.until)} 남음</div>
+        )}
         {nickEdit ? (
           <div className="md-name-edit">
             <input className="cg-input md-name-input" value={nickDraft} maxLength={12} autoFocus
@@ -263,6 +283,45 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
       )}
 
       {toast && <div className="toast">{toast}</div>}
+      <GraffitiEditModal open={grafEdit} onClose={() => setGrafEdit(false)}
+        groupId={groupId} myId={meCard?.user_id} member={member} lock={graffitiLock} onDone={load} />
     </div>
+  )
+}
+
+// 상대 얼굴에 그린 낙서를 이 화면에서 바로 고치는 모달(명찰의 인라인 수정과 동일한 위치의 기능)
+function GraffitiEditModal({ open, onClose, groupId, myId, member, lock, onDone }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const inFlight = useRef(false)
+  const padRef = useRef(null)
+
+  useEffect(() => { if (open) { setError(''); setBusy(false); inFlight.current = false } }, [open])
+
+  async function submit() {
+    if (inFlight.current) return
+    setBusy(true); setError(''); inFlight.current = true
+    try {
+      const blob = await padRef.current?.exportBlob()
+      if (!blob) throw new Error('낙서를 그려 주세요.')
+      const url = await uploadGraffitiImage(blob, myId, groupId)
+      await usePurinMic(groupId, url)
+      await onDone?.()
+      onClose()
+    } catch (e) { setError(e.message) }
+    finally { inFlight.current = false; setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal" title="낙서 수정">
+      <div className="purinmic-modal">
+        {error && <div className="alert alert-error">{error}</div>}
+        {lock && <span className="purinmic-left">낙서 적용 중 · {hhmmLeft(lock.until)} 남음</span>}
+        <GraffitiPad ref={padRef} photoUrl={member?.avatar_url} initialImageUrl={lock?.imageUrl} size={240} />
+        <button type="button" className="st-btn-buy st-btn-block" disabled={busy} onClick={submit}>
+          {busy ? '수정 중…' : '수정하기'}
+        </button>
+      </div>
+    </Modal>
   )
 }
