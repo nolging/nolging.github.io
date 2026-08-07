@@ -1034,7 +1034,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select(sel)
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.eq.purin-mic,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
     .order('created_at', { ascending: false })
   let { data, error } = await q(`${cols}, deco_tf`)
   if (error?.code === '42703') ({ data, error } = await q(cols)) // deco_tf 미배포 폴백
