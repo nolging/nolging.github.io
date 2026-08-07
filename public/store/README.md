@@ -13,6 +13,7 @@
 | 지우개 | `eraser` | `eraser.svg` |
 | 카세트 테이프 | `cassette` | `cassette.svg` |
 | 폴라로이드 필름 | `polaroid-film` | `polaroid-film.svg` |
+| 푸린 마이크 | `purin-mic` | `purin-mic.svg` |
 
 ## 규격
 - **정사각형** SVG 권장 (카드 62px / 상세 모달 108px 박스 안에 여백 두고 표시)

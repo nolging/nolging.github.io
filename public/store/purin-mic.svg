@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="micHead" x1="46" y1="16" x2="82" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8FE86A"></stop><stop offset="0.5" stop-color="#5DC53A"></stop><stop offset="1" stop-color="#3C9E22"></stop>
+    </linearGradient>
+    <linearGradient id="micBody" x1="51" y1="56" x2="77" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3A3E44"></stop><stop offset="0.5" stop-color="#202327"></stop><stop offset="1" stop-color="#0E0F11"></stop>
+    </linearGradient>
+    <linearGradient id="micBand" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#C7CCD2"></stop><stop offset="1" stop-color="#8A9098"></stop>
+    </linearGradient>
+  </defs>
+  <g transform="rotate(28 64 64)">
+    <path d="M53 58 L75 58 L75 112 Q75 123 64 123 Q53 123 53 112 Z" fill="url(#micBody)"></path>
+    <rect x="56.5" y="70" width="4.5" height="46" rx="2.25" fill="#FFFFFF" fill-opacity="0.15"></rect>
+    <rect x="53" y="70" width="22" height="5" rx="2.5" fill="url(#micBand)"></rect>
+    <rect x="53" y="110" width="22" height="5" rx="2.5" fill="url(#micBand)"></rect>
+    <rect x="44" y="16" width="38" height="48" rx="9" fill="url(#micHead)"></rect>
+    <rect x="44" y="16" width="38" height="48" rx="9" fill="none" stroke="#2E7D1A" stroke-opacity="0.4" stroke-width="1"></rect>
+    <rect x="50" y="22" width="8" height="26" rx="4" fill="#FFFFFF" fill-opacity="0.35"></rect>
+  </g>
+</svg>
