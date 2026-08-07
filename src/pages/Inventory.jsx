@@ -923,7 +923,7 @@ const GUIDE = {
   'sticker-apple': { name: '칭찬 사과나무', emoji: '🍎', text: '사과나무 디자인의 스티커판이에요.\n사과 스무 개를 다 모으면 소원권이 생겨요.', canUse: true },
   'name-tag':  { name: '명찰',     emoji: '🏷️', text: '연인의 이름을 내 마음대로 바꿔요.\n첫 변경 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
   'time-machine': { name: '타임머신', emoji: '⏳', text: '물풍선 폭탄이 터지기 전으로 한 번 되돌려요.\n젖어 버린 쪽지에 사용해 보세요.', canUse: false },
-  'purin-mic': { name: '푸린 마이크', emoji: '🎤', text: '푸린의 노래로 잠든 연인의 얼굴에 낙서해 봐요.\n첫 낙서 시점부터 24시간 동안 권한이 지속돼요.', canUse: true },
+  'purin-mic': { name: '푸린 마이크', emoji: '🎤', text: '푸린의 노래로 잠든 연인의 얼굴에 낙서해 봐요.\n첫 낙서 시점부터 24 시간 동안 권한이 지속돼요.', canUse: true },
 }
 
 // 사용 방법 안내 + 선물/사용 선택 모달 (상점 상세처럼 버튼 2개)
@@ -1121,7 +1121,7 @@ function PurinMicModal({ open, coupleGroupId, myId, onClose, onDone }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="purinmic-modal">
-        <ItemHead id="purin-mic" name="푸린 마이크" emoji="🎤" sub="24시간 동안 짝꿍 프로필 사진에 낙서해요" />
+        <ItemHead id="purin-mic" name="푸린 마이크" emoji="🎤" sub="24 시간 동안 연인의 얼굴에 낙서해요" />
         {error && <div className="alert alert-error">{error}</div>}
         {loading ? <div className="spinner" /> : (
           <>
