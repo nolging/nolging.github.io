@@ -144,6 +144,8 @@ h3 { margin: 0; }
 .field-error { color: var(--danger); font-size: 13px; font-weight: 500; }
 /* .form 직속 에러문구는 입력창에 더 붙게 (라벨/필드 감싼 경우는 이미 붙어있음) */
 .form > .field-error { margin-top: -8px; }
+/* 명찰/푸린 마이크 효과로 수정이 잠긴 상태 안내 — 일반 에러 문구보다 작게 */
+.cg-lock-msg { font-size: 11.5px; line-height: 1.5; text-align: center; }
 /* 라벨 + 토글 한 줄 (체크박스 대체) */
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; color: var(--text); padding: 2px 0; }
 .field-row { display: flex; gap: 12px; flex-wrap: wrap; }

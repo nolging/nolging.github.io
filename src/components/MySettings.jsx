@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { updateMyGroupMember } from '../lib/api'
 import { deleteAvatarByUrl } from '../lib/storage'
 import AvatarEditor from './AvatarEditor'
-import GroupBadge from './GroupBadge'
 import CgToggle from './CgToggle'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 
@@ -51,17 +50,12 @@ export default function MySettings({ group, me, onSaved, secondary }) {
   return (
     <div className="page cg-page">
       <div className="cg-form">
-        <div className="cg-continuity">
-          {group.emoji && <GroupBadge emoji={group.emoji} bg={group.emoji_bg} name={group.name} size={32} radius={11} />}
-          <span><b>{group.name}</b>에서 사용할 내 정보예요</span>
-        </div>
-
         <div className="cg-avatar-wrap">
           <AvatarEditor value={form.avatar_url} name={form.display_nickname || me?.login_id}
             userId={me?.user_id} onChange={(v) => set({ avatar_url: v })} onError={setError} emptyIcon
             disabled={avatarLocked} />
           {avatarLocked
-            ? <span className="field-error">🎤 푸린 마이크 효과로 지금은 프로필 사진을 바꿀 수 없어요. ({hhmmLeft(me?.graffiti_locked_until)} 남음)</span>
+            ? <span className="field-error cg-lock-msg">🎤 푸린 마이크 효과로 지금은 프로필 사진을 바꿀 수 없어요.<br />({hhmmLeft(me?.graffiti_locked_until)} 남음)</span>
             : <div className="cg-avatar-cap">프로필 사진 <span>선택</span></div>}
         </div>
 
@@ -74,7 +68,7 @@ export default function MySettings({ group, me, onSaved, secondary }) {
               placeholder="이 그룹에서 불릴 이름" />
           </div>
           {nickLocked
-            ? <span className="field-error">🏷️ 명찰 효과로 지금은 닉네임을 바꿀 수 없어요. ({hhmmLeft(me?.nick_locked_until)} 남음)</span>
+            ? <span className="field-error cg-lock-msg">🏷️ 명찰 효과로 지금은 닉네임을 바꿀 수 없어요. ({hhmmLeft(me?.nick_locked_until)} 남음)</span>
             : nickErr && <span className="field-error">{nickErr}</span>}
         </div>
 
