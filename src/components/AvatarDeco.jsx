@@ -1,11 +1,11 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
-//    | deco-angel-ring(천사 링·앞)  → 하나만
+//    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·앞) | deco-bear(곰 귀·앞) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) | deco-gum(풍선껌) → 하나만
 // 귀(jaguar/wolf)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
 // 새싹·홍조는 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -38,6 +38,38 @@ function Tomato() {
     <g transform="translate(50 0)">
       <path fill="#53C257" d="M5.02 -8.02 C3.32 -7.01 1.62 -4.51 1.18 -2.45 L0.97 -1.5 L0.22 -2.24 C-0.16 -2.63 -0.97 -3.17 -1.53 -3.41 C-2.87 -3.97 -6.36 -3.91 -8.95 -3.29 C-11.27 -2.72 -11.92 -2.04 -10.17 -2.04 C-9.48 -2.04 -8.35 -1.65 -7.25 -1.08 L-5.46 -0.1 L-7.64 0.26 C-8.86 0.46 -10.26 0.79 -10.76 0.97 C-11.87 1.42 -17.16 4.81 -17.16 5.08 C-17.16 5.17 -14.93 5.26 -12.16 5.26 C-6.92 5.26 -5.28 5.47 -5.79 6.09 C-6.65 7.19 -7.7 12.58 -7.13 12.94 C-6.95 13.06 -6.33 12.4 -5.76 11.54 C-4.93 10.29 -4.12 9.58 -2.22 8.41 C-0.88 7.58 0.46 6.9 0.76 6.9 C1.5 6.9 5.7 11.15 6.74 12.94 C7.93 15.05 8.26 14.58 8.02 10.95 C7.93 9.28 7.76 7.46 7.67 6.87 L7.49 5.79 L10.2 5.44 C12.94 5.05 16.12 5.2 17.16 5.73 C18.24 6.33 17.67 4.87 16.36 3.71 C14.22 1.83 11.84 0.55 10.23 0.4 C9.39 0.35 8.74 0.17 8.74 0.05 C8.74 -0.43 11.18 -2.36 12.01 -2.54 C14.1 -2.93 12.34 -3.82 9.48 -3.82 C7.37 -3.82 5.05 -3.08 3.47 -1.86 C2.96 -1.47 2.46 -1.14 2.4 -1.14 C2.01 -1.14 4.12 -4.51 5.46 -6.03 C6.68 -7.4 6.89 -7.84 6.62 -8.17 C6.18 -8.71 6.09 -8.71 5.02 -8.02 Z" />
     </g>
+  )
+}
+
+// 토깽이(머리 유형): 위로 쫑긋 선 토끼 귀 한 쌍(가운데서 거의 맞닿음). 앞(front) 레이어.
+function BunnyEars() {
+  const ear = (
+    <>
+      <path fill="#F4CBD3" d="M23.42 -18.79 C15.19 -10.57 12.89 7.49 18 23.13 C20.81 31.76 18.9 31.16 37.66 29.65 L47.89 28.85 L47.89 20.72 C47.89 11.2 45.68 -4.45 43.37 -11.17 C42.47 -13.78 40.47 -17.29 38.86 -18.99 C36.55 -21.5 35.25 -22 31.34 -22 C27.33 -22 26.12 -21.5 23.42 -18.79 Z" />
+      <path fill="#FFE6EB" d="M28.53 -1.14 C24.22 3.68 22.91 12.4 24.92 23.93 L26.12 30.45 L33.65 29.75 C37.76 29.45 41.37 29.05 41.47 28.85 C41.67 28.65 41.37 22.83 40.97 15.71 C40.27 5.38 39.76 2.37 38.16 0.27 C35.65 -3.14 30.94 -3.85 28.53 -1.14 Z" />
+    </>
+  )
+  return (
+    <>
+      {ear}
+      <g transform="translate(100,0) scale(-1,1)">{ear}</g>
+    </>
+  )
+}
+
+// 곰돌이(머리 유형): 양옆에 붙은 둥근 곰 귀 한 쌍. 앞(front) 레이어.
+function BearEars() {
+  const ear = (
+    <>
+      <path fill="#654C36" d="M20.97 -16 C16.45 -15.27 12.02 -11.97 10 -7.81 C7.02 -1.72 7.9 5.21 12.42 11.38 C13.23 12.47 13.99 13.4 14.07 13.4 C14.19 13.4 14.84 12.71 15.57 11.87 C21.98 4.41 28.71 -1.08 36.74 -5.47 L39.6 -7.01 L37.87 -9.23 C33.95 -14.23 26.98 -17.01 20.97 -16 Z" />
+      <path fill="#87674B" d="M20.48 -9.02 C14.8 -6.4 12.22 0.98 15.04 6.58 C16.86 10.17 16.77 10.17 20.44 6.62 C24.36 2.83 28.95 -0.84 32.34 -2.89 C35.16 -4.63 35.16 -4.91 32.34 -7.33 C29.11 -10.07 24.24 -10.8 20.48 -9.02 Z" />
+    </>
+  )
+  return (
+    <>
+      {ear}
+      <g transform="translate(100,0) scale(-1,1)">{ear}</g>
+    </>
   )
 }
 
@@ -389,6 +421,8 @@ const PREVIEW_VB = {
   'deco-angel-ring': '18 -22 64 42',
   'deco-bubble': '-14 -14 128 128',
   'deco-tomato': '30 -11 40 27',
+  'deco-bunny': '8 -26 84 60',
+  'deco-bear': '2 -20 96 38',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -423,6 +457,8 @@ export function DecoPreview({ id }) {
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
       {id === 'deco-tomato' && <Tomato />}
+      {id === 'deco-bunny' && <BunnyEars />}
+      {id === 'deco-bear' && <BearEars />}
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
@@ -446,7 +482,7 @@ const ART = {
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
   'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
-  'deco-bubble': Bubble, 'deco-tomato': Tomato,
+  'deco-bubble': Bubble, 'deco-tomato': Tomato, 'deco-bunny': BunnyEars, 'deco-bear': BearEars,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
