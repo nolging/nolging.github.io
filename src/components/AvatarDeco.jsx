@@ -61,6 +61,7 @@ function BunnyEars() {
 }
 
 // 곰돌이(머리 유형): 양옆에 붙은 둥근 곰 귀 한 쌍. 토깽이와 마찬가지로 뒤(back) 레이어.
+// 고양이/늑대 귀와 같은 까딱임(avd-twitch) — 양쪽 다 안쪽(가운데)으로 동시에 기운다.
 function BearEars() {
   const ear = (
     <>
@@ -70,8 +71,8 @@ function BearEars() {
   )
   return (
     <>
-      {ear}
-      <g transform="translate(100,0) scale(-1,1)">{ear}</g>
+      <g className="avd-twitch-l">{ear}</g>
+      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
     </>
   )
 }
