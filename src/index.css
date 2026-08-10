@@ -1610,8 +1610,10 @@ button.mention-chip:active { opacity: .6; }
 .avd-spark-2 { animation-duration: 1.9s; animation-delay: .2s; }
 .avd-spark-3 { animation-duration: 1.5s; animation-delay: .45s; }
 @keyframes avd-sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-@keyframes avd-twitch { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-9deg); } 92% { transform: rotate(5deg); } 96% { transform: rotate(-2deg); } }
-@keyframes avd-twitch-inv { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(9deg); } 92% { transform: rotate(-5deg); } 96% { transform: rotate(2deg); } }
+/* 0(원래 위치)을 절대 넘어 바깥쪽으로 벌어지지 않게 — 안쪽으로만 기울었다가 0으로 되돌아온다.
+   (바깥으로 살짝이라도 벌어지면 그 순간 프로필 사진과 아이템 밑동 사이에 틈이 보임) */
+@keyframes avd-twitch { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-9deg); } 92% { transform: rotate(-3deg); } 96% { transform: rotate(-6deg); } }
+@keyframes avd-twitch-inv { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(9deg); } 92% { transform: rotate(3deg); } 96% { transform: rotate(6deg); } }
 @keyframes avd-blush { 0%, 100% { opacity: .42; } 50% { opacity: 1; } }
 @keyframes avd-spark { 0%, 100% { transform: scale(.5); opacity: .25; } 50% { transform: scale(1.1); opacity: 1; } }
 /* 풍선껌: 부풀었다 작아지기. 중심점은 풍선 가운데 → 사방으로 고르게 커진다.
