@@ -1617,7 +1617,11 @@ button.mention-chip:active { opacity: .6; }
    (ease-in-out 계열은 양 끝 기울기가 0 → 그 지점에서 잠깐 멈춘 것처럼 보인다) */
 .avd-gum { animation: avd-gum 3.4s cubic-bezier(.3, .15, .7, .85) infinite; transform-box: fill-box; transform-origin: 50% 50%; }
 @keyframes avd-gum { 0%, 100% { transform: scale(.55); } 50% { transform: scale(1.15); } }
-@media (prefers-reduced-motion: reduce) { .avd-sway, .avd-twitch-l, .avd-twitch-r, .avd-blush, .avd-spark, .avd-anger, .avd-gum { animation: none; } }
+/* 토깽이: 가끔 귀가 살짝 접혔다(높이 축소) 톡 펴지는 "쫑긋" 모션. 밑변(프로필 사진에 붙은
+   자리)은 고정, 윗부분만 오르내리게 transform-origin 을 밑변 가운데로 둔다. */
+.avd-perk { animation: avd-perk 4.4s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+@keyframes avd-perk { 0%, 78%, 100% { transform: scaleY(1); } 85% { transform: scaleY(.7); } 90% { transform: scaleY(1.08); } 95% { transform: scaleY(.97); } }
+@media (prefers-reduced-motion: reduce) { .avd-sway, .avd-twitch-l, .avd-twitch-r, .avd-blush, .avd-spark, .avd-anger, .avd-gum, .avd-perk { animation: none; } }
 /* ---- 프로필 꾸미기 조정(위치·크기·각도) ---- */
 .deco-adj { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px; }
 /* touch-action:none → 편집 중 페이지가 스크롤·확대되지 않게 */
