@@ -450,10 +450,8 @@ const Tf = ({ id, tf, children }) => {
   return t ? <g transform={t}>{children}</g> : children
 }
 
-const EAR_CIRCLE = { 'deco-jaguar': '#101010', 'deco-wolf': '#BBB9B7' }
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB[id] || '0 0 100 100'
-  const circle = EAR_CIRCLE[id]
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
@@ -472,7 +470,6 @@ export function DecoPreview({ id }) {
       {id === 'deco-halo' && <Halo />}
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
-      {circle && <circle cx="50" cy="50" r="50" fill={circle} />}
     </svg>
   )
 }
