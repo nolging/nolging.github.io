@@ -1,11 +1,12 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
-//    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·뒤) | deco-bear(곰 귀·뒤) → 하나만
+//    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·뒤) | deco-bear(곰 귀·뒤)
+//    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) | deco-gum(풍선껌) → 하나만
-// 귀(jaguar/wolf/bunny/bear)는 아바타 "뒤" 레이어(back)에 그려, 아랫부분이 둥근 아바타에 가려져 딱 맞게 보인다.
-// 새싹·홍조는 "앞" 레이어(front).
+// 귀(jaguar/wolf/bunny/bear)와 날개(angel-wing/devil-wing)는 아바타 "뒤" 레이어(back)에 그려,
+// 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조는 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -73,6 +74,39 @@ function BearEars() {
     <>
       <g className="avd-twitch-l">{ear}</g>
       <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
+    </>
+  )
+}
+
+// 천사 날개 / 악마 날개(머리 유형): 프로필 사진 양옆, 얼굴 중간 높이에서 뒤(back) 레이어로
+// 삐져나온다. 날개 안쪽(사진에 가려지는 쪽)이 몸통에 붙는 지점 — 오른쪽으로 살짝 치우친
+// 지점을 기준으로 파닥이는 회전(avd-wing-flap)을 준다.
+const ANGEL_WING_D = 'M-12.62 53.98 C-13.85 54.64 -14.43 57.22 -13.71 58.80 C-13.45 59.37 -13.54 59.66 -14.17 60.60 C-15.49 62.55 -14.57 64.18 -11.65 65.13 C-11.36 65.22 -11.16 65.56 -11.16 65.96 C-11.16 67.68 -9.01 68.85 -7.04 68.25 C-6.18 68.00 -6.06 68.02 -5.52 68.88 C-5.17 69.37 -4.43 70.03 -3.80 70.32 C-2.77 70.80 -2.62 70.83 -0.85 70.34 C1.04 69.86 2.51 68.91 3.57 67.48 C4.05 66.85 4.17 66.28 4.17 64.59 C4.17 62.72 4.08 62.35 3.31 61.26 C2.16 59.63 1.19 59.11 -2.31 58.25 C-3.94 57.85 -5.75 57.25 -6.38 56.96 C-7.95 56.13 -10.22 54.47 -10.42 53.98 C-10.62 53.44 -11.65 53.44 -12.62 53.98 Z'
+function AngelWing() {
+  const wing = (
+    <g className="avd-wing-flap">
+      <path d={ANGEL_WING_D} fill="#f7f8fc" stroke="#cdd0e4" strokeWidth="0.6" strokeLinejoin="round" />
+    </g>
+  )
+  return (
+    <>
+      {wing}
+      <g transform="translate(100,0) scale(-1,1)">{wing}</g>
+    </>
+  )
+}
+
+const DEVIL_WING_D = 'M-6.22 58.80 C-8.94 61.20 -11.89 64.47 -11.58 64.79 C-11.46 64.90 -10.83 64.84 -10.20 64.61 C-8.08 63.87 -6.65 64.18 -5.22 65.73 L-4.53 66.48 L-4.01 65.62 C-3.35 64.53 -2.35 64.30 -1.18 64.90 C-0.69 65.16 -0.23 65.33 -0.20 65.27 C-0.17 65.21 -0.03 64.81 0.14 64.33 C0.40 63.50 0.80 63.27 2.64 62.89 C3.38 62.75 3.44 62.64 3.35 61.66 L3.27 60.60 L1.40 60.43 C-1.20 60.17 -2.41 59.57 -3.35 58.19 C-3.78 57.54 -4.13 57.02 -4.16 57.02 C-4.18 57.02 -5.10 57.82 -6.22 58.80 Z'
+function DevilWing() {
+  const wing = (
+    <g className="avd-wing-flap">
+      <path d={DEVIL_WING_D} fill="#17171b" />
+    </g>
+  )
+  return (
+    <>
+      {wing}
+      <g transform="translate(100,0) scale(-1,1)">{wing}</g>
     </>
   )
 }
@@ -425,6 +459,8 @@ const PREVIEW_VB = {
   'deco-tomato': '30 -11 40 27',
   'deco-bunny': '36 -17 28 23',
   'deco-bear': '2 -4 96 29',
+  'deco-angel-wing': '-17 51 134 21',
+  'deco-devil-wing': '-17 51 134 21',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -459,6 +495,8 @@ export function DecoPreview({ id }) {
       {id === 'deco-tomato' && <Tomato />}
       {id === 'deco-bunny' && <BunnyEars />}
       {id === 'deco-bear' && <BearEars />}
+      {id === 'deco-angel-wing' && <AngelWing />}
+      {id === 'deco-devil-wing' && <DevilWing />}
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
@@ -482,14 +520,15 @@ const ART = {
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
   'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
   'deco-bubble': Bubble, 'deco-tomato': Tomato, 'deco-bunny': BunnyEars, 'deco-bear': BearEars,
+  'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
 export const BORDER_IDS = new Set(['deco-halo', 'deco-bubble'])
 export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.has(d.id))
 const FRONTMOST_IDS = new Set(['deco-bubble'])
-// 뒤(back) 레이어로 그릴 아이템(귀 + 후광) — 나머지는 앞(front). 아트 종류로 결정.
-const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear'])
+// 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광) — 나머지는 앞(front). 아트 종류로 결정.
+const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing'])
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
 export function decoItems(deco) {
