@@ -1,13 +1,15 @@
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
 //    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·뒤) | deco-bear(곰 귀·뒤)
-//    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) → 하나만
-//  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고) | deco-gum(풍선껌) → 하나만
+//    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) | deco-devil-horn(악마 뿔·앞)
+//    | deco-kitty-ribbon(고양이 리본·앞) → 하나만
+//  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고)
+//    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) → 하나만
 // 귀(jaguar/wolf/bunny/bear)와 날개(angel-wing/devil-wing)는 아바타 "뒤" 레이어(back)에 그려,
-// 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조는 "앞" 레이어(front).
+// 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조·뿔·리본·나비넥타이는 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing']
-export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 
@@ -109,6 +111,36 @@ function DevilWing() {
       <g transform="translate(100,0) scale(-1,1)">{wing}</g>
     </>
   )
+}
+
+// 악마 뿔(머리 유형): 앞(front) 레이어 — 사진 위 머리카락 경계에 살짝 겹치며 위로 솟는다.
+const DEVIL_HORN_D = 'M17.91 8.74 C17.91 11.69 18.02 13.47 18.19 13.47 C18.37 13.47 18.48 13.24 18.48 12.92 C18.48 12.64 18.74 12.32 19.05 12.23 C19.37 12.15 19.74 11.75 19.91 11.35 C20.06 10.95 20.29 10.63 20.40 10.66 C20.54 10.69 21.20 10.37 21.86 9.91 C22.55 9.48 23.30 9.20 23.52 9.28 C23.75 9.37 23.93 9.26 23.93 9.05 C23.93 8.62 18.71 4.01 18.22 4.01 C17.99 4.01 17.91 5.47 17.91 8.74 Z'
+function DevilHorn() {
+  return (
+    <>
+      <path d={DEVIL_HORN_D} fill="#17171b" />
+      <g transform="translate(100,0) scale(-1,1)"><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+    </>
+  )
+}
+
+// 고양이 리본(머리 유형): 앞(front) 레이어, 오른쪽 위 머리 위에 얹힌 리본. 검정 테두리
+// 실루엣(전체) 위에 빨간 채움만 따로 겹쳐 그려 이중톤을 표현(리본 매듭의 작은 원들 포함).
+const KITTY_RIBBON_OUTLINE_D = 'M67.58 -2.94 C66.38 -2.51 65.72 -1.93 64.72 -0.33 C61.85 4.11 61.08 7.26 62.34 9.18 C63.49 10.96 67.04 12.36 70.39 12.36 C72.20 12.36 72.57 12.45 73.31 13.08 C73.80 13.48 74.60 13.94 75.12 14.14 C75.84 14.37 76.24 14.80 76.70 15.80 C78.27 19.10 82.25 21.93 84.60 21.42 C85.95 21.13 88.07 19.35 89.02 17.78 C91.45 13.62 91.65 13.19 91.60 11.68 C91.51 9.96 91.02 9.10 89.45 8.01 C87.44 6.63 86.09 6.29 82.80 6.26 C80.36 6.26 79.65 6.15 79.02 5.74 C78.59 5.46 78.01 5.17 77.76 5.14 C77.50 5.09 77.07 4.51 76.78 3.77 C75.09 -0.73 70.56 -4.03 67.58 -2.94 Z'
+const KITTY_RIBBON_RED_D = 'M65.76 -2.28 C65.18 -1.80 64.09 -0.25 63.26 1.15 C61.94 3.48 61.80 3.91 61.77 5.60 C61.72 7.43 61.74 7.46 62.86 8.43 C63.49 8.98 64.21 9.41 64.47 9.44 C64.72 9.44 65.01 9.52 65.13 9.64 C65.21 9.75 65.47 9.87 65.67 9.89 C65.87 9.95 66.36 10.04 66.76 10.12 C67.96 10.38 70.00 10.52 70.37 10.38 C70.80 10.21 70.88 8.58 70.48 8.58 C70.34 8.58 69.74 8.15 69.19 7.60 C67.93 6.43 67.82 5.17 68.88 4.13 C69.71 3.30 70.86 3.22 72.29 3.88 C72.89 4.19 73.55 4.28 74.04 4.16 C74.70 3.99 74.78 3.88 74.61 3.19 C74.12 1.21 71.80 -1.48 69.60 -2.60 C67.99 -3.43 66.93 -3.34 65.76 -2.28 Z M69.48 4.82 C68.88 5.48 69.11 6.74 69.88 7.14 C70.71 7.57 70.83 7.52 71.57 6.23 C72.23 5.08 72.23 5.02 71.72 4.65 C71.00 4.11 70.05 4.19 69.48 4.82 Z M73.41 5.48 C73.06 5.65 72.52 6.31 72.15 6.97 C71.31 8.55 71.57 10.04 72.89 11.36 C73.66 12.13 74.07 12.30 75.04 12.30 C76.67 12.30 78.02 11.44 78.59 10.01 C79.17 8.55 78.94 7.34 77.76 6.11 C76.93 5.25 76.67 5.14 75.44 5.17 C74.67 5.17 73.75 5.31 73.41 5.48 Z M79.94 6.51 C79.37 6.91 79.80 8.43 80.63 8.81 C81.37 9.15 82.20 10.24 82.32 11.07 C82.43 11.76 81.77 13.05 81.20 13.28 C80.40 13.56 79.05 13.48 78.25 13.05 C77.30 12.56 76.19 12.90 76.19 13.68 C76.19 14.88 79.34 18.26 81.11 19.03 C82.66 19.66 83.32 19.58 84.84 18.55 C85.87 17.83 86.53 17.00 87.76 14.88 C90.23 10.64 90.03 9.15 86.79 7.34 C85.47 6.57 84.90 6.43 82.80 6.37 C81.46 6.31 80.17 6.37 79.94 6.51 Z M79.22 10.78 C78.62 11.81 78.54 12.16 78.82 12.36 C79.39 12.73 80.83 12.50 81.14 11.99 C81.54 11.36 81.17 10.09 80.51 9.72 C80.03 9.49 79.85 9.64 79.22 10.78 Z'
+function KittyRibbon() {
+  return (
+    <g>
+      <path d={KITTY_RIBBON_OUTLINE_D} fill="#17171b" />
+      <path d={KITTY_RIBBON_RED_D} fill="#ff1832" />
+    </g>
+  )
+}
+
+// 나비넥타이(얼굴 유형): 앞(front) 레이어, 사진 아래쪽(턱·목 부근)에 걸린다.
+const BOW_TIE_D = 'M39.27 97.77 C38.99 99.29 39.07 101.32 39.53 103.50 C40.28 107.08 40.45 107.17 44.69 105.88 C47.01 105.16 47.41 104.93 48.79 103.56 L50.28 101.98 L51.80 103.56 C53.14 104.93 53.54 105.16 55.86 105.88 C60.11 107.17 60.28 107.08 61.02 103.50 C61.48 101.32 61.57 99.29 61.28 97.77 L61.08 96.85 L58.04 96.97 C55.18 97.05 54.86 97.14 52.66 98.23 L50.28 99.37 L47.93 98.23 C45.69 97.14 45.38 97.05 42.51 96.97 L39.48 96.85 L39.27 97.77 Z'
+function BowTie() {
+  return <path d={BOW_TIE_D} fill="#17171b" />
 }
 
 function CatEars() {
@@ -461,6 +493,9 @@ const PREVIEW_VB = {
   'deco-bear': '2 -4 96 29',
   'deco-angel-wing': '-17 51 134 21',
   'deco-devil-wing': '-17 51 134 21',
+  'deco-devil-horn': '16 2 68 13',
+  'deco-kitty-ribbon': '60 -5 33 28',
+  'deco-bow-tie': '37 95 26 13',
 }
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
@@ -497,6 +532,9 @@ export function DecoPreview({ id }) {
       {id === 'deco-bear' && <BearEars />}
       {id === 'deco-angel-wing' && <AngelWing />}
       {id === 'deco-devil-wing' && <DevilWing />}
+      {id === 'deco-devil-horn' && <DevilHorn />}
+      {id === 'deco-kitty-ribbon' && <KittyRibbon />}
+      {id === 'deco-bow-tie' && <BowTie />}
       {id === 'deco-jaguar' && <CatEars />}
       {id === 'deco-wolf' && <WolfEars />}
       {id === 'deco-blush' && <Blush />}
@@ -521,6 +559,7 @@ const ART = {
   'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
   'deco-bubble': Bubble, 'deco-tomato': Tomato, 'deco-bunny': BunnyEars, 'deco-bear': BearEars,
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
+  'deco-devil-horn': DevilHorn, 'deco-kitty-ribbon': KittyRibbon, 'deco-bow-tie': BowTie,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
