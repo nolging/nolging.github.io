@@ -22,7 +22,7 @@ function OttBadge({ p }) {
 // 위시 작품 정보 카드 (시안). category 에 따라 항목이 달라짐. onClear 있으면 우상단 X.
 export default function MediaCard({ category, info, onClear }) {
   if (!info) return null
-  const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : '🎬'
+  const posterEmoji = category === '독서' ? '📚' : category === '게임' ? '🎮' : category === '공연' ? '🎭' : '🎬'
 
   // 라벨-값 행
   const rows = []
@@ -46,6 +46,10 @@ export default function MediaCard({ category, info, onClear }) {
     if (plats.length) rows.push(['플랫폼', plats.join(', ')])
     if (info.genres?.length) rows.push(['장르', info.genres.join(', ')])
     rows.push(['출시일', info.release_date || '-'])
+  } else if (category === '공연') {
+    if (info.platform) rows.push(['플랫폼', info.platform])
+    if (info.start_date || info.end_date) rows.push(['공연일', [info.start_date, info.end_date].filter(Boolean).join('~')])
+    if (info.venue) rows.push(['장소', info.venue])
   }
 
   return (

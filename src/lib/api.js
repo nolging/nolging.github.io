@@ -442,8 +442,8 @@ export async function createTaskScheduled({ groupId, title, description, categor
   return Array.isArray(data) ? data[0] : data
 }
 
-// 위시 유형별 정보 조회 Edge Function (OTT/영화→movie-lookup·TMDB, 독서→book-lookup·알라딘, 게임→game-lookup·RAWG)
-const LOOKUP_FN = { OTT: 'movie-lookup', '영화': 'movie-lookup', '독서': 'book-lookup', '게임': 'game-lookup' }
+// 위시 유형별 정보 조회 Edge Function (OTT/영화→movie-lookup·TMDB, 독서→book-lookup·알라딘, 게임→game-lookup·RAWG, 공연→kopis-lookup·KOPIS)
+const LOOKUP_FN = { OTT: 'movie-lookup', '영화': 'movie-lookup', '독서': 'book-lookup', '게임': 'game-lookup', '공연': 'kopis-lookup' }
 
 export async function searchMedia(query, category) {
   const fn = LOOKUP_FN[category]

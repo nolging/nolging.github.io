@@ -69,8 +69,9 @@ export function ottNameKo(name) {
   return OTT_NAME_KO[n] ?? n
 }
 
-// 정보 자동 조회를 지원하는 위시 유형
-export const MEDIA_LOOKUP_CATS = ['OTT', '영화', '독서', '게임']
+// 정보 자동 조회를 지원하는 위시 유형. "공연"은 기본 유형엔 없고, 그룹이 직접
+// 이 이름으로 커스텀 유형을 추가하면 자동으로 검색 기능이 연동된다.
+export const MEDIA_LOOKUP_CATS = ['OTT', '영화', '독서', '게임', '공연']
 
 // 회원이 구독 여부를 관리하는 OTT 목록 (프로필 · 멤버 카드 배지)
 export const SUBSCRIBABLE_OTTS = [
@@ -116,6 +117,9 @@ export function mediaCardLine(category, mi) {
   } else if (category === '게임') {
     const plats = gamePlatformLabels(mi.platforms)
     if (plats.length) parts.push(plats.join(' '))
+  } else if (category === '공연') {
+    if (mi.start_date || mi.end_date) parts.push([mi.start_date, mi.end_date].filter(Boolean).join('~'))
+    if (mi.venue) parts.push(mi.venue)
   } else return ''
   return parts.join(' | ')
 }
@@ -167,15 +171,16 @@ export function categoryEmoji(cat) {
 export function categoryStyle(cat) {
   return catChipStyle(catMeta(DEFAULT_WISH_CATEGORIES, cat))
 }
-// 유형별 "작품" 명칭: OTT/영화=작품, 독서=도서, 게임=게임
+// 유형별 "작품" 명칭: OTT/영화=작품, 독서=도서, 게임=게임, 공연=공연
 export function workNoun(cat) {
-  return cat === '독서' ? '도서' : cat === '게임' ? '게임' : '작품'
+  return cat === '독서' ? '도서' : cat === '게임' ? '게임' : cat === '공연' ? '공연' : '작품'
 }
 // 유형별 검색 안내(자동 채워지는 항목)
 export function workSearchHint(cat) {
   if (cat === '영화') return '포스터·개봉일·장르·러닝타임이 자동으로 채워져요'
   if (cat === '독서') return '표지·저자·장르·페이지 수가 자동으로 채워져요'
   if (cat === '게임') return '커버·플랫폼·장르·출시일이 자동으로 채워져요'
+  if (cat === '공연') return '포스터·공연일·장소·예매 플랫폼이 자동으로 채워져요'
   return '포스터·제공처·장르·러닝타임이 자동으로 채워져요' // OTT
 }
 

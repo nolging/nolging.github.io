@@ -6,6 +6,7 @@ import { workNoun, catMeta, catChipStyle, catChipEmoji } from '../lib/constants'
 function resultSub(it, category) {
   if (category === '독서') return it.author || ''
   if (category === '게임') return it.year || ''
+  if (category === '공연') return [it.venue, [it.start_date, it.end_date].filter(Boolean).join('~')].filter(Boolean).join(' · ')
   return [it.year, it.media === 'tv' ? '시리즈' : '영화'].filter(Boolean).join(' · ')
 }
 
@@ -15,6 +16,7 @@ const SEARCH_WARN = {
   영화: '현재 상영 중인 영화만 검색돼요',
   게임: '영문으로 검색해야 정확해요',
   독서: '한글 제목으로 검색해 주세요',
+  공연: '최근 1년~앞으로 1년 사이 공연만 검색돼요',
 }
 
 // 작품/도서/게임 검색 바텀시트 (시안 11c). 선택 후 상세를 가져와 onPick(info).
