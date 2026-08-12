@@ -1187,7 +1187,7 @@ export async function getGroupDecoMap(groupId) {
   if (decoRes.error) return {}
   const map = {}
   for (const r of decoRes.data ?? []) {
-    (map[r.user_id] = map[r.user_id] || []).push({ id: r.item_id, tf: r.tf || null })
+    (map[r.user_id] = map[r.user_id] || []).push({ id: r.item_id, tf: r.tf || null, usedAt: r.used_at || null })
   }
   // list_group_graffiti 는 아직 미배포 환경(PGRST202)일 수 있으므로 실패는 조용히 무시
   if (!graffitiRes.error) {

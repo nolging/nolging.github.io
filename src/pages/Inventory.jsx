@@ -27,6 +27,9 @@ const PURIN_MIC_MS = 24 * 3600 * 1000
 // deco_slot 값이 곧 표시명. 레거시 영문 코드만 한글로 매핑.
 const slotOf = (id) => catalogDecoSlot(id) || decoSlot(id)
 const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경' }[slot] || slot)
+// 얼굴 슬롯은 한 번에 2개까지 동시 장착 가능(나머지는 1개, 백엔드 apply_avatar_deco 와 동일 규칙).
+// deco_slot 값은 관리자가 자유 문자열로 설정하므로 영문/한글 표기 둘 다 인식한다.
+const slotCapacity = (slot) => (slot === 'face' || slot === '얼굴' ? 2 : 1)
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 // 푸린 마이크 used 행이 아직 유효(24h 내)한지 — 명찰과 동일 패턴
@@ -339,18 +342,23 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
   const tfChanged = !changed && JSON.stringify(clampTf(tf, item?.id)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0, item?.id))
 
-  // 선택한 그룹에 이미 '같은 유형(슬롯)'의 다른 데코가 장착돼 있으면, 적용 시 그게 해제된다 → 경고용
+  // 선택한 그룹에 이미 같은 유형(슬롯)이 정원만큼 장착돼 있으면, 적용 시 가장 오래 장착한
+  // 게 해제된다 → 경고용. 정원 이내면(예: 얼굴 슬롯 1개만 장착 중) 그냥 같이 장착되므로 경고 없음.
   const [existing, setExisting] = useState(null) // { id, name } | null
   useEffect(() => {
     setExisting(null)
     if (!open || !item || !target) return
     const slot = catalogDecoSlot(item.id) || decoSlot(item.id) // 관리자 설정 슬롯 우선, 폴백 하드코딩
+    const cap = slotCapacity(slot)
     let on = true
     getGroupDecoMap(target.id).then((dm) => {
       if (!on) return
-      const worn = dm?.[myId] || [] // [{ id, tf }]
-      const conflict = worn.find((d) => d.id !== item.id && (catalogDecoSlot(d.id) || decoSlot(d.id)) === slot)
-      if (conflict) setExisting({ id: conflict.id, name: catalogName(conflict.id) || '기존 아이템' })
+      const worn = (dm?.[myId] || []) // [{ id, tf, usedAt }]
+        .filter((d) => d.id !== item.id && (catalogDecoSlot(d.id) || decoSlot(d.id)) === slot)
+      if (worn.length < cap) return
+      // 정원 초과분 중 가장 오래 장착한 것부터 해제된다(백엔드와 동일 규칙)
+      const oldest = [...worn].sort((a, b) => new Date(a.usedAt || 0) - new Date(b.usedAt || 0))[0]
+      setExisting({ id: oldest.id, name: catalogName(oldest.id) || '기존 아이템' })
     }).catch(() => { })
     return () => { on = false }
   }, [open, item, target, myId])
@@ -393,7 +401,11 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
         <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨"
-          sub={item ? (slotOf(item.id) === 'face' ? '프로필 사진 얼굴에 장착해요' : slotOf(item.id) === 'head' ? '프로필 사진 머리 위에 장착해요' : '프로필 사진에 장착해요') : ''} />
+          sub={item ? (
+            slotOf(item.id) === 'face' || slotOf(item.id) === '얼굴' ? '프로필 사진 얼굴에 장착해요 (최대 2개)'
+              : slotOf(item.id) === 'head' || slotOf(item.id) === '머리' ? '프로필 사진 머리 위에 장착해요'
+                : '프로필 사진에 장착해요'
+          ) : ''} />
         {error && <div className="alert alert-error">{error}</div>}
 
         {applied && (
