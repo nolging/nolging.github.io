@@ -10,9 +10,11 @@ import alienShadesPng from '../assets/deco/alien-shades.png'
 //    | deco-kitty-ribbon(고양이 리본·앞) | deco-party-hat(고깔모자·앞) | deco-cherry-cream(체리 콕·앞) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고)
 //    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) | deco-chupa-chups(막대사탕·앞) → 하나만
+//  - 안경(글라스류와 별도 슬롯. DB store_items.deco_slot='안경'): deco-circle-glasses(동그리 안경·앞)
+//    → face 슬롯 아이템(선글라스 등)과 동시 장착 가능
 // 귀(jaguar/wolf/bunny/bear)와 날개(angel-wing/devil-wing)는 아바타 "뒤" 레이어(back)에 그려,
 // 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조·뿔·리본·고깔모자·체리 콕·
-// 나비넥타이·막대사탕은 "앞" 레이어(front).
+// 나비넥타이·막대사탕·동그리 안경은 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie', 'deco-chupa-chups']
@@ -341,6 +343,19 @@ function HeartShades() {
   )
 }
 
+// 동그리 안경(안경 유형): 동그란 알 두 개 + 가운데 브릿지. 알 안쪽은 채우지 않아(테만) 사진이
+// 그대로 비친다 — 다른 선글라스류와 달리 얼굴(face) 슬롯이 아니라 별도의 "안경" 슬롯.
+function CircleGlasses() {
+  const LC = 30, RC = 70, CY = 46.5, R = 15
+  return (
+    <g fill="none" stroke="#17171b" strokeWidth="1.3">
+      <circle cx={LC} cy={CY} r={R} />
+      <circle cx={RC} cy={CY} r={R} />
+      <path d={`M${LC + R} ${CY + 0.5} Q50 ${CY - 1.5} ${RC - R} ${CY + 0.5}`} strokeLinecap="round" />
+    </g>
+  )
+}
+
 // 후광(테두리 유형): 솔리드 링 없이 금빛 그라데이션만 — 안쪽이 진하고 바깥으로 옅어지며 번짐.
 // 아바타 뒤(back)에 그려 다른 꾸미기보다 항상 뒤에 보인다. 펄스로 은은하게 퍼짐.
 // 그 위에 작은 반짝이 입자들이 각각 다른 타이밍으로 깜빡인다.
@@ -508,6 +523,7 @@ const PREVIEW_VB = {
   'deco-party-hat': '38 -20 24 29',
   'deco-chupa-chups': '54 81 25 14',
   'deco-cherry-cream': '39 -18 21 27',
+  'deco-circle-glasses': '13 29 74 34',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
@@ -566,6 +582,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-bandage' && <Bandage />}
       {id === 'deco-gum' && <BubbleGum />}
       {id === 'deco-heart-shades' && <HeartShades />}
+      {id === 'deco-circle-glasses' && <CircleGlasses />}
       {id === 'deco-halo' && <Halo />}
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
@@ -578,7 +595,7 @@ const ART = {
   'deco-sprout': Sprout, 'deco-jaguar': CatEars, 'deco-wolf': WolfEars,
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
   'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
-  'deco-heart-shades': HeartShades, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
+  'deco-heart-shades': HeartShades, 'deco-circle-glasses': CircleGlasses, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
   'deco-bubble': Bubble, 'deco-tomato': Tomato, 'deco-bunny': BunnyEars, 'deco-bear': BearEars,
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
   'deco-devil-horn': DevilHorn, 'deco-kitty-ribbon': KittyRibbon, 'deco-bow-tie': BowTie,
