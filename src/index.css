@@ -1643,7 +1643,11 @@ button.mention-chip:active { opacity: .6; }
 .deco-adj-surf:active { cursor: grabbing; }
 .deco-adj-face { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #f1eff8; color: #c3bede;
   display: flex; align-items: center; justify-content: center; font-weight: 800; }
-.deco-adj-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* pointer-events:none — 길게 눌러도 <img> 가 아니라 부모(.deco-adj-surf)가 이벤트를 받게 해
+   iOS/Android 의 "사진 저장·공유·복사" 롱프레스 메뉴 자체가 뜨지 않게 한다(-webkit-touch-callout 은
+   보조 안전장치). 드래그 제스처는 이미 .deco-adj-surf 의 pointer 핸들러가 처리하므로 영향 없음. */
+.deco-adj-face img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
+  -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; }
 .deco-adj-hint { margin: 0; font-size: 12px; line-height: 1.55; color: #8b8798; text-align: center; }
 /* 컨트롤 바: 크기·각도·초기화가 항상 한 줄. 남는 폭은 숫자 양옆이 흡수하고,
    글자는 절대 줄어들지 않게 해서(flex-shrink:0) 값이 잘리지 않는다. */

@@ -115,7 +115,7 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       <div ref={surfRef} className="deco-adj-surf" style={{ width: size, height: size }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <span className="deco-adj-face" style={src ? undefined : { background: c.bg, color: c.fg, fontSize: size * 0.34 }}>
-          {src ? <img src={src} alt="" /> : initial}
+          {src ? <img src={src} alt="" draggable={false} onContextMenu={(e) => e.preventDefault()} /> : initial}
         </span>
         <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" />
         <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" />
