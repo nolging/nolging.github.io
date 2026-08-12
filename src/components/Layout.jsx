@@ -189,6 +189,7 @@ export default function Layout() {
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
   const memberDetailMatch = useMatch('/groups/:groupId/members/:userId')
+  const closetMatch = useMatch('/groups/:groupId/closet')
   const drawMatch = useMatch('/groups/:groupId/draw')
   const touchMatch = useMatch('/groups/:groupId/touch')
   const puzzleMatch = useMatch('/groups/:groupId/puzzle')
@@ -461,7 +462,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || boardMatch || boardNewMatch || boardSearchMatch || boardEditMatch || boardCommentsMatch || boardPostMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || closetMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || boardMatch || boardNewMatch || boardSearchMatch || boardEditMatch || boardCommentsMatch || boardPostMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     // body 배경 = 콘텐츠 캔버스(--bg)와 동일하게. iOS 홈화면 앱에서 콘텐츠가 하단까지
     // 못 미쳐 body 가 비쳐도 흰색(#fff)이 아니라 콘텐츠와 같은 색으로 보이게 하는 안전장치
@@ -677,6 +678,18 @@ export default function Layout() {
             <Link to={`/groups/${gid}/settings`} className="btn btn-ghost btn-sm icon-btn" aria-label="내 정보 수정" title="내 정보 수정"><GearIcon /></Link>
           </div>
         )}
+      </header>
+    )
+  } else if (closetMatch) {
+    // 옷장: 좌측 뒤로(직전 페이지), 우측에 먹색 알약 "완료"(별도 저장 로직 없음 — 아이템별
+    // 적용은 그 자리에서 바로 저장되므로 완료는 그냥 뒤로 나가는 버튼).
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">옷장</span>
+        <div className="topbar-right">
+          <button type="button" onClick={() => navigate(-1)} className="sb-post-btn">완료</button>
+        </div>
       </header>
     )
   } else if (membersMatch) {

@@ -20,6 +20,7 @@ import TarotCafe from './pages/TarotCafe'
 import SecretBoard, { BoardCompose, BoardPost, BoardComments, BoardSearch, BoardSettings } from './pages/SecretBoard'
 import PraiseStickers from './pages/PraiseStickers'
 import MemberDetail from './pages/MemberDetail'
+import Closet from './pages/Closet'
 import CreateTask from './pages/CreateTask'
 import TaskEdit from './pages/TaskEdit'
 import TaskDetail from './pages/TaskDetail'
@@ -97,6 +98,7 @@ export default function App() {
         <Route path="/groups/:groupId/board/:postId/edit" element={<BoardCompose />} />
         <Route path="/groups/:groupId/praise" element={<PraiseStickers />} />
         <Route path="/groups/:groupId/members/:userId" element={<MemberDetail />} />
+        <Route path="/groups/:groupId/closet" element={<Closet />} />
         <Route path="/groups/:groupId/tasks/new" element={<CreateTask />} />
         <Route path="/groups/:groupId/tasks/:taskId/edit" element={<TaskEdit />} />
         <Route path="/groups/:groupId/tasks/:taskId/schedule" element={<ScheduleAppointment />} />

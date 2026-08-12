@@ -2226,6 +2226,10 @@ button.mlist-row:hover { background: #f6f5fa; }
 .md-btn:disabled { opacity: .6; cursor: default; }
 .md-info { margin-top: 20px; }
 .md-info-label { font-size: 13px; font-weight: 800; color: #8b8798; letter-spacing: -.2px; margin-bottom: 10px; }
+.md-info-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.md-info-head .md-info-label { margin-bottom: 0; }
+.md-outfit-edit { border: none; background: none; padding: 2px 2px; font-size: 12.5px; font-weight: 700; color: var(--primary); cursor: pointer; }
+.md-outfit-edit:active { opacity: .7; }
 .md-card { background: #fff; border-radius: 22px; box-shadow: 0 4px 16px rgba(25,23,34,.05); padding: 2px 16px; }
 .md-row { display: flex; align-items: center; gap: 13px; padding: 16px 0; border-bottom: 1px solid #f1eff5; }
 .md-row:last-child { border-bottom: none; }
@@ -2241,8 +2245,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .md-call { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #f3f3f5; flex-shrink: 0; }
 .md-call:hover { background: #eeebfe; }
 .md-empty-hint { margin-top: 16px; background: #f6f5fa; border-radius: 16px; padding: 14px 16px; font-size: 12.5px; color: #6f6a80; line-height: 1.5; }
-/* 오늘의 착장: 4개 이상이면 그리드 대신 가로 스와이프(멍냥꽁냥/미니 게임 존과 동일 패턴) */
-.md-outfit-scroll { margin: 0 calc(-1 * var(--pad-x)); padding: 0 var(--pad-x); display: flex; gap: 10px;
+/* 오늘의 착장: 4개 이상이면 그리드 대신 가로 스와이프(멍냥꽁냥/미니 게임 존과 동일 패턴).
+   위아래 패딩을 둬야 카드 그림자가 overflow-x 스크롤 영역에 잘리지 않는다. */
+.md-outfit-scroll { margin: 4px calc(-1 * var(--pad-x)) -12px; padding: 12px var(--pad-x) 20px; display: flex; gap: 10px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .md-outfit-scroll::-webkit-scrollbar { display: none; }
 .md-outfit-scroll .inv-card2 { flex: 0 0 108px; width: 108px; }
@@ -3286,6 +3291,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   box-shadow: 0 4px 16px rgba(25,23,34,.05); display: flex; flex-direction: column; transition: transform .12s; }
 .inv-card2:active { transform: scale(.97); }
 .inv-card2.is-static, .inv-card2.is-static:active { cursor: default; transform: none; }
+/* 옷장: 이 그룹에서 장착 중인 카드(먹색 테두리) / 다른 그룹에서 장착 중이라 고를 수 없는 카드 */
+.inv-card2.is-worn { border: 2px solid #2b2933; }
+.inv-card2.is-disabled { opacity: .55; }
+.closet-preview { display: flex; justify-content: center; padding: 4px 0 6px; }
 .inv-thumb { position: relative; height: 82px; border-radius: 14px; overflow: hidden;
   display: flex; align-items: center; justify-content: center; }
 .inv-thumb-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 31px; line-height: 1; }

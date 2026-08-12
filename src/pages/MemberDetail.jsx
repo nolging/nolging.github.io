@@ -288,10 +288,19 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
         )}
       </div>
 
-      {/* 오늘의 착장: 이 그룹에서 장착 중인 꾸미기. 4개 미만이면 그리드, 4개 이상이면 가로 스와이프 */}
-      {outfitItems.length > 0 && (
+      {/* 오늘의 착장: 이 그룹에서 장착 중인 꾸미기. 4개 미만이면 그리드, 4개 이상이면 가로 스와이프.
+          본인 프로필이면(+ 프리미엄 그룹) 장착한 게 없어도 "갈아입기"로 옷장에 갈 수 있게 보인다. */}
+      {(outfitItems.length > 0 || (member.is_self && premium)) && (
         <div className="md-info">
-          <div className="md-info-label">오늘의 착장</div>
+          <div className="md-info-head">
+            <div className="md-info-label">오늘의 착장</div>
+            {member.is_self && premium && (
+              <button type="button" className="md-outfit-edit" onClick={() => navigate(`/groups/${groupId}/closet`)}>갈아입기</button>
+            )}
+          </div>
+          {outfitItems.length === 0 ? (
+            <div className="md-empty-hint">아직 장착한 꾸미기가 없어요.</div>
+          ) : (
           <div className={outfitItems.length >= 4 ? 'md-outfit-scroll' : 'inv-grid'}>
             {outfitItems.map((d) => (
               <div key={d.id} className="inv-card2 is-static">
@@ -303,6 +312,7 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
