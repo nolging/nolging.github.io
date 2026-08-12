@@ -10,6 +10,9 @@ import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, 
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
+// "신상" 배지: 유저에게 공개된 시점(public_since) 기준 일주일 이내
+const NEW_BADGE_MS = 7 * 24 * 60 * 60 * 1000
+const isNewItem = (item) => !!item.publicSince && Date.now() - new Date(item.publicSince).getTime() < NEW_BADGE_MS
 // 꾸미기 유형: deco_slot 값이 곧 표시명. 레거시 영문 코드(head/face/glasses)만 한글로 매핑.
 const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경' }
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
@@ -215,6 +218,7 @@ export default function Store() {
                   <button key={item.id} type="button" className={`st-card ${item.premium ? 'st-card-prem' : ''}`} onClick={() => open(item)}>
                     <span className="st-card-thumb" style={{ background: item.imageBg || imgBgOf(item.id, item.premium) }}>
                       <StoreItemImage id={item.id} emoji={item.emoji} svg={item.imageSvg} className="st-card-img" />
+                      {isNewItem(item) && <span className="st-new-badge">신상</span>}
                       {(item.decoSlot || decoSlot(item.id)) && <span className="deco-slot-badge">{slotLabel(item.decoSlot || decoSlot(item.id))}</span>}
                     </span>
                     <span className="st-card-name">{itemName(item.id, item.name)}</span>

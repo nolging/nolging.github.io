@@ -974,7 +974,7 @@ const isMissingColumn = (err) => !!err && (
 export async function listStoreItems() {
   const { data, error } = await supabase
     .from('store_items')
-    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, category, deco_slot, sort_order')
+    .select('id, name, price, emoji, description, gift_only, premium, tier, admin_only, image_svg, image_bg, category, deco_slot, sort_order, public_since')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) {
@@ -1011,6 +1011,7 @@ export async function listStoreItems() {
     desc: r.description, giftOnly: r.gift_only, premium: !!r.premium, tier: r.tier || null,
     adminOnly: !!r.admin_only, imageSvg: r.image_svg || '', imageBg: r.image_bg || '',
     category: r.category || '', decoSlot: r.deco_slot || '', sortOrder: r.sort_order ?? 0,
+    publicSince: r.public_since || null,
   }))
 }
 

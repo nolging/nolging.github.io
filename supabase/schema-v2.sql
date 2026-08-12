@@ -1491,6 +1491,23 @@ alter table public.store_items add column if not exists tier text;   -- 'couple'
 -- 전광판 = 커플 전용 프리미엄
 update public.store_items set premium = true, tier = 'couple' where id = 'ledboard';
 
+-- "신상" 배지용: admin_only 로 숨겨 테스트하다 공개 전환한 시점(최초 1회만 기록).
+-- 자세한 내용은 supabase/store-item-public-since.sql 참고.
+alter table public.store_items add column if not exists public_since timestamptz;
+create or replace function public.store_items_set_public_since()
+returns trigger language plpgsql as $$
+begin
+  if not coalesce(new.admin_only, false) and new.public_since is null then
+    new.public_since := now();
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists trg_store_items_public_since on public.store_items;
+create trigger trg_store_items_public_since
+  before insert or update on public.store_items
+  for each row execute function public.store_items_set_public_since();
+
 -- 냥피또(스크래치 복권): 5츄르에 구매 → 긁으면 랜덤 츄르 당첨(꽝 포함). 일반 상점.
 insert into public.store_items (id, name, price, emoji, description, gift_only, sort_order) values
   ('nyangpito', '냥피또', 5, '🐱', E'동전으로 긁으면 츄르가 쏟아질지도?\n*긁어서 즉시 당첨 확인', false, 10)
