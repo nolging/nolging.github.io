@@ -9,7 +9,7 @@ import { memberColor } from './MemberAvatar'
 // 마우스/키보드만 쓰는 환경을 위해 아래에 크기·각도 버튼도 둔다.
 // 좌표는 아바타 SVG viewBox(0~100) 단위로 저장하므로 아바타 크기와 무관하게 같은 결과가 나온다.
 
-export const TF_LIMIT = { s: [0.4, 2.5], x: [-40, 40], y: [-40, 40] }
+export const TF_LIMIT = { s: [0.4, 2.5], x: [-60, 60], y: [-60, 60] }
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v))
 // 각도는 -180~180 으로 감아 준다(한 바퀴 돌려도 값이 커지지 않게)
 const wrap = (r) => { let v = ((r + 180) % 360 + 360) % 360 - 180; return v === -180 ? 180 : v }
