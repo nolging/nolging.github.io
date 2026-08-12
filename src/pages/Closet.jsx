@@ -105,7 +105,8 @@ export default function Closet() {
     return map
   }, [rows])
 
-  // 다른 그룹에 장착 중이라 이 그룹에서는 고를 수 없는 아이템(로컬 상태와 무관 — 실제 서버 기준)
+  // 다른 그룹에 장착 중인 아이템(로컬 상태와 무관 — 실제 서버 기준). 여분 사본(active 행)이
+  // 있으면 이 그룹에도 적용할 수 있으니 카드는 그대로 활성 — 없으면 비활성화한다.
   const wornElsewhere = useMemo(() => {
     const s = new Set()
     for (const [id, rs] of owned) {
@@ -113,6 +114,13 @@ export default function Closet() {
     }
     return s
   }, [owned, groupId])
+  const hasSpare = useMemo(() => {
+    const s = new Set()
+    for (const [id, rs] of owned) {
+      if (rs.some((r) => r.status === 'active')) s.add(id)
+    }
+    return s
+  }, [owned])
 
   const sections = useMemo(() => {
     const bySlot = new Map()
@@ -167,15 +175,18 @@ export default function Closet() {
               {sec.ids.map((id) => {
                 const isHere = worn.has(id)
                 // 다른 그룹에 적용된 사본이 있어도, 이 그룹에 이미 장착 중이면(다른 사본 얘기이므로)
-                // 카드는 그대로 조작 가능해야 한다 — "다른 그룹에서 장착 중" 비활성화는 그 반대 경우만.
+                // 카드는 그대로 조작 가능해야 한다 — "다른 그룹에서 장착 중" 처리는 그 반대 경우만.
                 const isElsewhere = !isHere && wornElsewhere.has(id)
+                // 다른 그룹에 장착 중이라도 여분 사본(active 행)이 있으면 이 그룹에도 바로 적용할
+                // 수 있으니 카드는 활성 상태로 두고 회색 배지만 단다 — 없으면 비활성화.
+                const blocked = isElsewhere && !hasSpare.has(id)
                 return (
                   <button key={id} type="button"
-                    className={`inv-card2 ${isHere ? 'is-worn' : ''} ${isElsewhere ? 'is-static is-disabled' : ''}`}
-                    disabled={isElsewhere} onClick={isElsewhere ? undefined : () => setEditItem(id)}>
+                    className={`inv-card2 ${isHere ? 'is-worn' : ''} ${blocked ? 'is-static is-disabled' : ''}`}
+                    disabled={blocked} onClick={blocked ? undefined : () => setEditItem(id)}>
                     <span className="inv-thumb" style={{ background: bgOf(id, true) }}>
                       <StoreItemImage id={id} emoji="✨" className="inv-thumb-img" />
-                      {(isHere || isElsewhere) && <span className="inv-badge-state">장착 중</span>}
+                      {(isHere || isElsewhere) && <span className={`inv-badge-state ${isElsewhere ? 'is-muted' : ''}`}>장착 중</span>}
                     </span>
                     <span className="inv-name">{catalogName(id) || id}</span>
                   </button>

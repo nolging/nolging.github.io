@@ -3304,6 +3304,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   border-radius: 999px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; }
 .inv-badge-state { position: absolute; top: 6px; left: 6px; z-index: 3; background: #7363e8; color: #fff;
   border-radius: 999px; padding: 2px 7px; font-size: 9px; font-weight: 700; }
+/* 옷장: 다른 그룹에 장착 중임을 나타내는 배지는 보라색 대신 회색(그 그룹 걸 뜻하는 게 아니므로) */
+.inv-badge-state.is-muted { background: #8b8798; }
 .inv-name { margin-top: 9px; font-size: 12px; font-weight: 700; color: #191722;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
