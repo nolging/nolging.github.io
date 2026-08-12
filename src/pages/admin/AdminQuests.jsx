@@ -26,8 +26,7 @@ export default function AdminQuests() {
       {error && <div className="alert alert-error">{error}</div>}
       {daily.length > 0 && (
         <div className="card">
-          <h3 className="card-title" style={{ margin: '0 0 4px' }}>데일리 퀘스트 <span className="muted">({daily.length})</span></h3>
-          <p className="muted sm" style={{ margin: '0 0 10px' }}>매일 반복되는 고정 퀘스트예요. 이모지·배경색·명칭·보상만 수정할 수 있어요.</p>
+          <h3 className="card-title" style={{ margin: '0 0 10px' }}>데일리 퀘스트 <span className="muted">({daily.length})</span></h3>
           <ul className="admin-rows">
             {daily.map((q) => (
               <li key={q.key}>

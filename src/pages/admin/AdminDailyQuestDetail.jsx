@@ -51,8 +51,6 @@ export default function AdminDailyQuestDetail() {
       {error && <div className="alert alert-error">{error}</div>}
       {q && (
         <div className="card">
-          <h3 className="card-title">데일리 퀘스트 수정</h3>
-          <p className="muted sm" style={{ margin: '0 0 10px' }}>매일 반복되는 고정 퀘스트라 이모지·배경색·명칭·보상만 바꿀 수 있어요.</p>
           <form onSubmit={save} className="form" key={key}>
             <div className="field field-narrow"><label htmlFor="dq-emoji">이모지</label>
               <input id="dq-emoji" defaultValue={emoji} onChange={(e) => setEmoji(e.target.value)}

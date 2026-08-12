@@ -1760,10 +1760,10 @@ export async function rerollSlotQuest(slot) {
 // ---- 관리자: 랜덤 퀘스트 정의(quest_defs) CRUD (RLS 상 쓰기는 관리자만) ----
 export async function adminListQuestDefs() {
   const { data, error } = await supabase.from('quest_defs')
-    .select('id, title, body, emoji, reward, grade, active, sort_order').order('sort_order', { ascending: true })
+    .select('id, title, body, emoji, emoji_bg, reward, grade, active, sort_order').order('sort_order', { ascending: true })
   if (error) {
     if (error.code === '42P01') return []
-    // emoji 컬럼 미배포(42703) 시 → emoji 없이 재조회
+    // emoji/emoji_bg 컬럼 미배포(42703) 시 → 해당 컬럼 없이 재조회
     if (isMissingColumn(error)) {
       const { data: d1, error: e1 } = await supabase.from('quest_defs')
         .select('id, title, body, reward, grade, active, sort_order').order('sort_order', { ascending: true })
@@ -1776,14 +1776,13 @@ export async function adminListQuestDefs() {
 }
 export async function adminUpsertQuestDef(def) {
   const row = {
-    id: def.id, title: def.title, body: def.body ?? '', emoji: def.emoji ?? '',
-    reward: Number(def.reward) || 0, grade: def.grade || 'all',
-    active: !!def.active, sort_order: Number(def.sort_order) || 0,
+    id: def.id, title: def.title, body: def.body ?? '', emoji: def.emoji ?? '', emoji_bg: def.emoji_bg ?? '',
+    reward: Number(def.reward) || 0, grade: def.grade || 'all', active: !!def.active,
   }
   let { error } = await supabase.from('quest_defs').upsert(row)
-  // emoji 컬럼 미배포 시 → emoji 제외하고 재시도
+  // emoji/emoji_bg 컬럼 미배포 시 → 해당 컬럼 제외하고 재시도
   if (error && error.code === '42703') {
-    const { emoji, ...rest } = row // eslint-disable-line no-unused-vars
+    const { emoji, emoji_bg, ...rest } = row // eslint-disable-line no-unused-vars
     ;({ error } = await supabase.from('quest_defs').upsert(rest))
   }
   if (error) throw error

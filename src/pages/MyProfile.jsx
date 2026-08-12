@@ -117,7 +117,7 @@ function SlotCard({ s, now, busy, onClaim, onChallenge, onReroll }) {
       </div>
       <div className="quest-slot-foot">
         <div className="quest-slot-meta">
-          <span className="quest-ic sm" style={{ background: ic.bg }}>{emoji}</span>
+          <span className="quest-ic sm" style={{ background: s.emoji_bg || ic.bg }}>{emoji}</span>
           <span className="quest-reward"><Paw size={15} />{s.reward ?? 0}</span>
         </div>
         {cooling ? (

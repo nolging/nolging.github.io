@@ -13,7 +13,7 @@ export const QUEST_GRADES = [
   { key: 'vip', label: 'VIP(우정)' },
 ]
 export const QUEST_GRADE_LABEL = Object.fromEntries(QUEST_GRADES.map((g) => [g.key, g.label]))
-export const EMPTY_QUEST = { id: '', title: '', body: '', emoji: '', reward: '', grade: 'all', sort_order: '', active: true }
+export const EMPTY_QUEST = { id: '', title: '', body: '', emoji: '', emoji_bg: '', reward: '', grade: 'all', active: true }
 
 // 상점 아이템 노출 위치 ↔ premium/tier 매핑
 export const ITEM_KINDS = [
