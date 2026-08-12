@@ -608,10 +608,12 @@ export default function Layout() {
       </header>
     )
   } else if (boardMatch) {
-    // 비밀 게시판: 좌측 뒤로, 제목, (관리 권한 시) 우측 톱니바퀴 → 설정 페이지
+    // 비밀 게시판: 좌측 뒤로(그룹 상세로 — navigate(-1) 은 글/댓글 상세를 거쳐 들어왔을 때
+    // 실제 히스토리 스택 상 엉뚱한 단계로 돌아가 버려서, 다른 게시판 하위 페이지들처럼
+    // 고정 목적지로 고정한다), 제목, (관리 권한 시) 우측 톱니바퀴 → 설정 페이지
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${boardMatch.params.groupId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {headerGear && (
           <button type="button" onClick={() => headerGear()} className="btn btn-ghost btn-sm icon-btn push-right"
