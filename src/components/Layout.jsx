@@ -681,14 +681,14 @@ export default function Layout() {
       </header>
     )
   } else if (closetMatch) {
-    // 옷장: 좌측 뒤로(직전 페이지), 우측에 먹색 알약 "완료"(별도 저장 로직 없음 — 아이템별
-    // 적용은 그 자리에서 바로 저장되므로 완료는 그냥 뒤로 나가는 버튼).
+    // 옷장: 좌측 뒤로 — 페이지가 준 핸들러(변경 사항 있으면 확인창) 사용, 우측 먹색 알약
+    // "완료"는 페이지가 준 제출 핸들러(그 시점에 실제 서버 반영) 사용.
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (backHandler ? backHandler() : navigate(-1))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">옷장</span>
         <div className="topbar-right">
-          <button type="button" onClick={() => navigate(-1)} className="sb-post-btn">완료</button>
+          <button type="button" onClick={() => headerSubmit?.()} className="sb-post-btn">완료</button>
         </div>
       </header>
     )

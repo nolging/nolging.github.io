@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { listInventory, listStoreItems, listMemberCards, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf } from '../lib/api'
 import { setStoreCatalog, catalogDecoSlot, catalogName, bgOf } from '../lib/storeCatalog'
@@ -16,17 +16,25 @@ const slotOf = (id) => catalogDecoSlot(id) || (BORDER_IDS.has(id) ? '테두리' 
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
 // 얼굴 슬롯은 2개까지, 나머지는 1개까지 — apply_avatar_deco 와 동일 규칙(deco-face-slot-capacity.sql)
 const slotCap = (slot) => (slot === 'face' || slot === '얼굴' ? 2 : 1)
+const tfEq = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null)
 
-// 옷장: 이 그룹에서 내 프로필 꾸미기를 갈아입는 페이지. 보유한 꾸미기를 슬롯별로 보여 주고,
-// 클릭하면 위치 조정 모달(그룹 선택 없이 바로 이 그룹 대상)이 뜬다.
+// 옷장: 이 그룹에서 내 프로필 꾸미기를 갈아입는 페이지. 화면에서 고르는 동안은 로컬 상태만
+// 바뀌고(미리보기 즉시 반영), 실제 서버 반영은 상단바 "완료"를 눌렀을 때 한 번에 이뤄진다.
+// "<" 로 나가면(완료를 안 눌렀으면) 아무것도 저장되지 않는다 — 바뀐 게 있으면 확인창을 띄운다.
 export default function Closet() {
   const { groupId } = useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const { setBackHandler, setHeaderSubmit } = useOutletContext()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rows, setRows] = useState([])   // 보유한 deco-* user_items 행(전체 그룹 포함)
   const [me, setMe] = useState(null)
-  const [editItem, setEditItem] = useState(null) // { } 편집 대상 아이템 id | null
+  const [editItem, setEditItem] = useState(null) // 편집 대상 아이템 id | null
+  const [worn, setWorn] = useState(new Map())       // 로컬(미저장) 착장 상태: item_id → tf
+  const initialWornRef = useRef(new Map())          // 진입 시점 착장 상태(비교·저장용 기준)
+  const wornRef = useRef(worn)
+  wornRef.current = worn
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -37,9 +45,55 @@ export default function Closet() {
       setStoreCatalog(storeItems)
       setRows(inv.filter((r) => r.item_id.startsWith('deco-')))
       setMe(cards.find((c) => c.is_self) || null)
+      const w = new Map()
+      for (const r of inv) {
+        if (r.item_id.startsWith('deco-') && r.status === 'used' && r.group_id === groupId) w.set(r.item_id, r.deco_tf || null)
+      }
+      setWorn(w); initialWornRef.current = new Map(w)
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }, [groupId, user?.id])
   useEffect(() => { load() }, [load])
+
+  const hasChanges = useMemo(() => {
+    const a = initialWornRef.current, b = worn
+    if (a.size !== b.size) return true
+    for (const [id, tf] of a) { if (!b.has(id) || !tfEq(b.get(id), tf)) return true }
+    return false
+  }, [worn])
+
+  // 서버에 실제 반영: 진입 시점 대비 늘어난/줄어든/조정값이 바뀐 아이템만 반영
+  const save = useCallback(async () => {
+    const initial = initialWornRef.current, current = wornRef.current
+    const toUnequip = [...initial.keys()].filter((id) => !current.has(id))
+    const toEquip = [...current.keys()].filter((id) => !initial.has(id))
+    const toRetune = [...current.keys()].filter((id) => initial.has(id) && !tfEq(current.get(id), initial.get(id)))
+    try {
+      for (const id of toUnequip) await unapplyAvatarDeco(id)
+      for (const id of toEquip) {
+        await applyAvatarDeco(id, groupId)
+        const tf = current.get(id)
+        if (tf && !isTf0(tf)) await setAvatarDecoTf(id, groupId, tf)
+      }
+      for (const id of toRetune) {
+        const tf = current.get(id)
+        await setAvatarDecoTf(id, groupId, isTf0(tf) ? null : tf)
+      }
+      navigate(-1)
+    } catch (e) { setError(e.message) }
+  }, [groupId, navigate])
+
+  useEffect(() => {
+    setHeaderSubmit(() => () => save())
+    return () => setHeaderSubmit(null)
+  }, [setHeaderSubmit, save])
+
+  useEffect(() => {
+    setBackHandler(() => () => {
+      if (hasChanges && !window.confirm('갈아입지 않고 원래 상태로 나갈까요?')) return
+      navigate(-1)
+    })
+    return () => setBackHandler(() => null)
+  }, [setBackHandler, hasChanges, navigate])
 
   // item_id → 그 아이템의 보유 행들(여러 그룹에 걸쳐 있을 수 있음)
   const owned = useMemo(() => {
@@ -51,17 +105,7 @@ export default function Closet() {
     return map
   }, [rows])
 
-  // item_id → tf(이 그룹에 장착 중인 것만)
-  const wornHere = useMemo(() => {
-    const m = new Map()
-    for (const [id, rs] of owned) {
-      const row = rs.find((r) => r.status === 'used' && r.group_id === groupId)
-      if (row) m.set(id, row.deco_tf || null)
-    }
-    return m
-  }, [owned, groupId])
-
-  // 다른 그룹에 장착 중이라 이 그룹에서는 고를 수 없는 아이템
+  // 다른 그룹에 장착 중이라 이 그룹에서는 고를 수 없는 아이템(로컬 상태와 무관 — 실제 서버 기준)
   const wornElsewhere = useMemo(() => {
     const s = new Set()
     for (const [id, rs] of owned) {
@@ -82,7 +126,18 @@ export default function Closet() {
       .map(([slot, ids]) => ({ slot, ids }))
   }, [owned])
 
-  const previewDeco = useMemo(() => [...wornHere.entries()].map(([id, tf]) => ({ id, tf })), [wornHere])
+  const previewDeco = useMemo(() => [...worn.entries()].map(([id, tf]) => ({ id, tf })), [worn])
+
+  // 모달에서 "적용하기" → 로컬 상태만 갱신(서버 반영은 완료를 눌렀을 때)
+  function stage(itemId, tf, toRemove) {
+    setWorn((prev) => {
+      const next = new Map(prev)
+      if (toRemove) next.delete(toRemove)
+      next.set(itemId, isTf0(tf) ? null : tf)
+      return next
+    })
+    setEditItem(null)
+  }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
 
@@ -105,7 +160,7 @@ export default function Closet() {
             </div>
             <div className="inv-grid">
               {sec.ids.map((id) => {
-                const isHere = wornHere.has(id)
+                const isHere = worn.has(id)
                 const isElsewhere = wornElsewhere.has(id)
                 return (
                   <button key={id} type="button"
@@ -125,53 +180,40 @@ export default function Closet() {
       )}
 
       <ClosetItemModal open={!!editItem} onClose={() => setEditItem(null)}
-        groupId={groupId} itemId={editItem} wornHere={wornHere} me={me} myId={user?.id} onDone={load} />
+        itemId={editItem} worn={worn} me={me} myId={user?.id} onStage={stage} />
     </div>
   )
 }
 
 // 아이템 하나를 이 그룹에 장착(위치·크기·각도 조정 포함) — 인벤토리의 DecoModal 과 같은 동작이지만
-// 그룹은 이미 정해져 있으므로 그룹 선택 필드는 없다.
-function ClosetItemModal({ open, onClose, groupId, itemId, wornHere, me, myId, onDone }) {
+// 그룹은 이미 정해져 있어 그룹 선택 필드가 없고, 실제 서버 반영 없이 로컬 상태만 바꾼다(onStage).
+function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage }) {
   const [tf, setTf] = useState(DECO_TF0)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
   const [replaceId, setReplaceId] = useState('')
 
-  const alreadyHere = itemId && wornHere.has(itemId)
+  const alreadyHere = itemId && worn.has(itemId)
   const slot = itemId ? slotOf(itemId) : null
   const cap = slotCap(slot)
-  // 같은 슬롯에서 이 그룹에 이미 장착 중인 다른 아이템(자기 자신 제외) — 정원 계산용
+  // 같은 슬롯에서 이 그룹에 이미(로컬 기준) 장착 중인 다른 아이템(자기 자신 제외) — 정원 계산용
   const others = useMemo(() => {
     if (!itemId) return []
-    return [...wornHere.keys()].filter((id) => id !== itemId && slotOf(id) === slot)
-  }, [itemId, wornHere, slot])
-  const overCap = others.length >= cap
+    return [...worn.keys()].filter((id) => id !== itemId && slotOf(id) === slot)
+  }, [itemId, worn, slot])
+  const overCap = !alreadyHere && others.length >= cap
   // 정원이 1개뿐인 슬롯(머리/안경/테두리)은 고를 필요 없이 바로 교체, 얼굴(2개)만 선택창 필요
   const needPick = overCap && cap > 1
 
   useEffect(() => {
     if (!open) return
-    setError(''); setBusy(false)
-    setTf(itemId && wornHere.get(itemId) ? clampTf(wornHere.get(itemId), itemId) : { ...DECO_TF0 })
+    setTf(itemId && worn.get(itemId) ? clampTf(worn.get(itemId), itemId) : { ...DECO_TF0 })
     setReplaceId(others[0] || '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, itemId])
 
-  async function apply() {
+  function apply() {
     if (!itemId) return
-    setBusy(true); setError('')
-    try {
-      if (!alreadyHere && overCap) {
-        const toRemove = cap > 1 ? replaceId : others[0]
-        if (toRemove) await unapplyAvatarDeco(toRemove)
-      }
-      if (!alreadyHere) await applyAvatarDeco(itemId, groupId)
-      const v = clampTf(tf, itemId)
-      const prevTf = wornHere.get(itemId) || DECO_TF0
-      if (!isTf0(v) || (alreadyHere && !isTf0(prevTf))) await setAvatarDecoTf(itemId, groupId, isTf0(v) ? null : v)
-      await onDone(); onClose()
-    } catch (e) { setError(e.message) } finally { setBusy(false) }
+    const toRemove = overCap ? (cap > 1 ? replaceId : others[0]) : null
+    onStage(itemId, clampTf(tf, itemId), toRemove)
   }
 
   return (
@@ -185,7 +227,6 @@ function ClosetItemModal({ open, onClose, groupId, itemId, wornHere, me, myId, o
             <div><div className="nc-link-name">{catalogName(itemId) || itemId}</div></div>
           </div>
         )}
-        {error && <div className="alert alert-error">{error}</div>}
         {needPick && (
           <label className="field">
             <span>해제할 아이템</span>
@@ -198,9 +239,7 @@ function ClosetItemModal({ open, onClose, groupId, itemId, wornHere, me, myId, o
           <DecoAdjuster itemId={itemId} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
             seed={myId} tf={tf} onChange={setTf} />
         )}
-        <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={apply}>
-          {busy ? '적용 중…' : '적용하기'}
-        </button>
+        <button type="button" className="btn btn-primary btn-block" onClick={apply}>적용하기</button>
       </div>
     </Modal>
   )
