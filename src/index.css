@@ -1648,11 +1648,13 @@ button.mention-chip:active { opacity: .6; }
    보조 안전장치). 드래그 제스처는 이미 .deco-adj-surf 의 pointer 핸들러가 처리하므로 영향 없음. */
 .deco-adj-face img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
   -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; }
-.deco-adj-hint { margin: 0; font-size: 12px; line-height: 1.55; color: #8b8798; text-align: center; }
-/* 좌우 분리 토글 + 왼쪽/오른쪽 배지(라디오 개념 — toggle-group 재사용) */
-.deco-adj-split-row { display: flex; align-items: center; gap: 8px; }
-.deco-adj-split-label { font-size: 13px; font-weight: 700; color: var(--text); }
-.deco-adj-side-group { margin-top: -2px; }
+/* 좌우 분리 토글 + 왼쪽/오른쪽 배지(라디오 개념, 알약 모양) — 같은 줄, 모달 폭 기준 좌측 정렬 */
+.deco-adj-split-row { display: flex; align-items: center; gap: 8px; width: 100%; align-self: flex-start; flex-wrap: wrap; }
+.deco-adj-split-label { font-size: 13px; font-weight: 700; color: var(--text); flex-shrink: 0; }
+.deco-adj-side-badges { display: flex; gap: 6px; margin-left: 2px; }
+.deco-adj-side-badge { font-family: inherit; border: 1.5px solid #ece9f4; background: #fff; color: #8b8798;
+  border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.deco-adj-side-badge.on { background: #7363e8; border-color: #7363e8; color: #fff; }
 /* 컨트롤 바: 크기·각도·초기화가 항상 한 줄. 남는 폭은 숫자 양옆이 흡수하고,
    글자는 절대 줄어들지 않게 해서(flex-shrink:0) 값이 잘리지 않는다. */
 .deco-adj-ctrl { display: flex; align-items: center; justify-content: center; gap: 4px; background: #f4f3f7;

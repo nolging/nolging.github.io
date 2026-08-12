@@ -56,6 +56,8 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   const ptrs = useRef(new Map())      // pointerId → { x, y }
   const base = useRef(null)           // 두 손가락 제스처 시작 시점 스냅샷
   const last = useRef(null)           // 직전 중심점(이동량 계산용)
+  const tapStart = useRef(null)       // 한 손가락으로 눌렀을 때 시작 좌표(탭인지 드래그인지 구분용)
+  const tapMoved = useRef(false)      // 시작 후 임계값 이상 움직인 적 있으면 탭 아님(왕복해도 오탐 방지)
   const tfRef = useRef(tf)
   tfRef.current = tf || DECO_TF0
 
@@ -108,10 +110,17 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
     base.current = ptrs.current.size === 2
       ? { ...pairState(), s: t.s ?? 1, r: t.r ?? 0 }
       : null
+    // 손가락 하나로 눌렀을 때만 탭 후보(두 손가락이면 핀치/회전이라 탭이 아님)
+    tapStart.current = ptrs.current.size === 1 ? { x: e.clientX, y: e.clientY } : null
+    tapMoved.current = false
   }
 
   function move(e) {
     if (!ptrs.current.has(e.pointerId)) return
+    if (tapStart.current) {
+      const d = Math.hypot(e.clientX - tapStart.current.x, e.clientY - tapStart.current.y)
+      if (d >= 6) tapMoved.current = true
+    }
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     const pts = [...ptrs.current.values()]
     const c = centroid(pts)
@@ -134,6 +143,15 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   }
 
   function up(e) {
+    // 탭 판정: 손가락 하나로 시작해서(핀치 아님) 한 번도 임계값 이상 움직이지 않고 뗐으면 탭
+    // — 분리 모드일 때 뗀 자리가 화면 왼쪽 절반이면 왼쪽, 오른쪽 절반이면 오른쪽을 선택한다
+    // (좌우 미러 기준이 항상 정확히 x=50 이라 위치만으로 판단해도 어긋나지 않는다).
+    if (split && ptrs.current.size === 1 && tapStart.current && !tapMoved.current) {
+      const rect = surfRef.current.getBoundingClientRect()
+      const localX = ((e.clientX - rect.left) / rect.width) * 100
+      setSide(localX < 50 ? 'l' : 'r')
+    }
+    tapStart.current = null
     ptrs.current.delete(e.pointerId)
     const pts = [...ptrs.current.values()]
     // 2 → 1 로 줄면 남은 손가락 기준으로 다시 잡아 위치가 튀지 않게
@@ -166,20 +184,16 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <div className="deco-adj-split-row">
           <span className="deco-adj-split-label">좌우 분리</span>
           <CgToggle on={split} onClick={() => setSplit((v) => !v)} />
+          {split && (
+            <div className="deco-adj-side-badges" role="radiogroup" aria-label="조정할 쪽">
+              <button type="button" role="radio" aria-checked={side === 'l'}
+                className={`deco-adj-side-badge${side === 'l' ? ' on' : ''}`} onClick={() => setSide('l')}>왼쪽</button>
+              <button type="button" role="radio" aria-checked={side === 'r'}
+                className={`deco-adj-side-badge${side === 'r' ? ' on' : ''}`} onClick={() => setSide('r')}>오른쪽</button>
+            </div>
+          )}
         </div>
       )}
-      {splittable && split && (
-        <div className="toggle-group deco-adj-side-group" role="radiogroup" aria-label="조정할 쪽">
-          <button type="button" role="radio" aria-checked={side === 'l'}
-            className={`toggle${side === 'l' ? ' active' : ''}`} onClick={() => setSide('l')}>왼쪽</button>
-          <button type="button" role="radio" aria-checked={side === 'r'}
-            className={`toggle${side === 'r' ? ' active' : ''}`} onClick={() => setSide('r')}>오른쪽</button>
-        </div>
-      )}
-
-      <p className="deco-adj-hint">
-        {split ? `${side === 'r' ? '오른쪽' : '왼쪽'}만 손가락으로 위치, 크기, 각도 조정 가능해요.` : '손가락으로도 위치, 크기, 각도 조정 가능해요.'}
-      </p>
 
       <div className="deco-adj-ctrl">
         <button type="button" onClick={() => apply({ s: curTarget.s - 0.1 })} aria-label="작게">－</button>
