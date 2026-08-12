@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import AvatarDeco, { DECO_TF0, decoAnchor } from './AvatarDeco'
+import { useEffect, useRef, useState } from 'react'
+import AvatarDeco, { DECO_TF0, decoAnchor, splitAnchor, SPLIT_IDS } from './AvatarDeco'
 import { memberColor } from './MemberAvatar'
+import CgToggle from './CgToggle'
 
 // 프로필 꾸미기 아이템을 그룹 프로필 사진에 맞춰 조정하는 편집기.
 //   · 한 손가락 끌기      → 위치
@@ -19,16 +20,30 @@ export const TF_LIMIT = { s: [0.4, 2.5] }
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v))
 // 각도는 -180~180 으로 감아 준다(한 바퀴 돌려도 값이 커지지 않게)
 const wrap = (r) => { let v = ((r + 180) % 360 + 360) % 360 - 180; return v === -180 ? 180 : v }
-export function clampTf(tf, itemId) {
-  const [ax, ay] = decoAnchor(itemId)
+const isIdentity = (t) => !t || (t.s === 1 && t.x === 0 && t.y === 0 && t.r === 0)
+function clampAt(tf, [ax, ay]) {
+  const t = tf || DECO_TF0
   return {
-    s: +clamp(Number(tf.s) || 1, TF_LIMIT.s).toFixed(3),
-    x: +clamp(Number(tf.x) || 0, [ABS_POS[0] - ax, ABS_POS[1] - ax]).toFixed(2),
-    y: +clamp(Number(tf.y) || 0, [ABS_POS[0] - ay, ABS_POS[1] - ay]).toFixed(2),
-    r: +wrap(Number(tf.r) || 0).toFixed(1),
+    s: +clamp(Number(t.s) || 1, TF_LIMIT.s).toFixed(3),
+    x: +clamp(Number(t.x) || 0, [ABS_POS[0] - ax, ABS_POS[1] - ax]).toFixed(2),
+    y: +clamp(Number(t.y) || 0, [ABS_POS[0] - ay, ABS_POS[1] - ay]).toFixed(2),
+    r: +wrap(Number(t.r) || 0).toFixed(1),
   }
 }
-export const isTf0 = (tf) => !tf || (tf.s === 1 && tf.x === 0 && tf.y === 0 && tf.r === 0)
+// 좌우 분리 가능한 아이템은 좌/우 서브 조정값도 각자의 기준점으로 클램프해 함께 반환한다
+// (동일 위치·항등값이면 생략 — 기존 { s,x,y,r } 만 있던 저장 형태와 호환).
+export function clampTf(tf, itemId) {
+  const t = tf || DECO_TF0
+  const out = clampAt(t, decoAnchor(itemId))
+  if (SPLIT_IDS.has(itemId)) {
+    const l = clampAt(t.left, splitAnchor(itemId, 'l'))
+    const r = clampAt(t.right, splitAnchor(itemId, 'r'))
+    if (!isIdentity(l)) out.left = l
+    if (!isIdentity(r)) out.right = r
+  }
+  return out
+}
+export const isTf0 = (tf) => isIdentity(tf) && isIdentity(tf?.left) && isIdentity(tf?.right)
 
 const centroid = (pts) => {
   let x = 0, y = 0
@@ -44,8 +59,25 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   const tfRef = useRef(tf)
   tfRef.current = tf || DECO_TF0
 
+  const splittable = SPLIT_IDS.has(itemId)
+  const [split, setSplit] = useState(false)   // 좌우 분리 모드
+  const [side, setSide] = useState('l')       // 분리 모드에서 조정 중인 쪽('l' | 'r')
+
   const cur = tf || DECO_TF0
-  const apply = (patch) => onChange(clampTf({ ...tfRef.current, ...patch }, itemId))
+  const sideKey = side === 'r' ? 'right' : 'left'
+  // 지금 손가락/버튼 조작이 실제로 향할 대상: 분리 모드면 선택된 쪽, 아니면 전체(같이 이동)
+  const targetTf = () => {
+    const base2 = tfRef.current || DECO_TF0
+    return split ? (base2[sideKey] || DECO_TF0) : base2
+  }
+  const curTarget = split ? (cur[sideKey] || DECO_TF0) : cur
+  function apply(patch) {
+    const base2 = tfRef.current || DECO_TF0
+    const next = split
+      ? { ...base2, [sideKey]: { ...(base2[sideKey] || DECO_TF0), ...patch } }
+      : { ...base2, ...patch }
+    onChange(clampTf(next, itemId))
+  }
 
   // Safari 의 페이지 확대 제스처가 편집을 가로채지 않게 막는다
   useEffect(() => {
@@ -72,8 +104,9 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 합성 이벤트 */ }
     last.current = centroid([...ptrs.current.values()])
+    const t = targetTf()
     base.current = ptrs.current.size === 2
-      ? { ...pairState(), s: tfRef.current.s ?? 1, r: tfRef.current.r ?? 0 }
+      ? { ...pairState(), s: t.s ?? 1, r: t.r ?? 0 }
       : null
   }
 
@@ -84,10 +117,11 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
     const c = centroid(pts)
     const u = unit()
     const patch = {}
+    const t = targetTf()
     // 이동: 손가락 수와 무관하게 중심점이 움직인 만큼 (모드가 바뀌어도 튀지 않는다)
     if (last.current) {
-      patch.x = (tfRef.current.x ?? 0) + (c.x - last.current.x) * u
-      patch.y = (tfRef.current.y ?? 0) + (c.y - last.current.y) * u
+      patch.x = (t.x ?? 0) + (c.x - last.current.x) * u
+      patch.y = (t.y ?? 0) + (c.y - last.current.y) * u
     }
     // 크기·각도: 두 손가락 시작 시점 기준(누적 오차 없음)
     if (pts.length === 2 && base.current && base.current.dist > 0) {
@@ -110,6 +144,13 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   const initial = (name || '?').trim()[0]?.toUpperCase() || '?'
   const c = memberColor(seed || name)
 
+  // 초기화: 분리 모드면 지금 고른 쪽만, 아니면 전체(좌우 조정값 포함)를 완전히 기본값으로.
+  function reset() {
+    if (split) onChange(clampTf({ ...(tf || DECO_TF0), [sideKey]: { ...DECO_TF0 } }, itemId))
+    else onChange({ ...DECO_TF0 })
+  }
+  const resetDisabled = split ? isTf0(curTarget) : isTf0(cur)
+
   return (
     <div className="deco-adj">
       <div ref={surfRef} className="deco-adj-surf" style={{ width: size, height: size }}
@@ -121,19 +162,35 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" />
       </div>
 
-      <p className="deco-adj-hint">손가락으로도 위치, 크기, 각도 조정 가능해요.</p>
+      {splittable && (
+        <div className="deco-adj-split-row">
+          <span className="deco-adj-split-label">좌우 분리</span>
+          <CgToggle on={split} onClick={() => setSplit((v) => !v)} />
+        </div>
+      )}
+      {splittable && split && (
+        <div className="toggle-group deco-adj-side-group" role="radiogroup" aria-label="조정할 쪽">
+          <button type="button" role="radio" aria-checked={side === 'l'}
+            className={`toggle${side === 'l' ? ' active' : ''}`} onClick={() => setSide('l')}>왼쪽</button>
+          <button type="button" role="radio" aria-checked={side === 'r'}
+            className={`toggle${side === 'r' ? ' active' : ''}`} onClick={() => setSide('r')}>오른쪽</button>
+        </div>
+      )}
+
+      <p className="deco-adj-hint">
+        {split ? `${side === 'r' ? '오른쪽' : '왼쪽'}만 손가락으로 위치, 크기, 각도 조정 가능해요.` : '손가락으로도 위치, 크기, 각도 조정 가능해요.'}
+      </p>
 
       <div className="deco-adj-ctrl">
-        <button type="button" onClick={() => apply({ s: cur.s - 0.1 })} aria-label="작게">－</button>
-        <span className="deco-adj-val">{Math.round(cur.s * 100)}%</span>
-        <button type="button" onClick={() => apply({ s: cur.s + 0.1 })} aria-label="크게">＋</button>
+        <button type="button" onClick={() => apply({ s: curTarget.s - 0.1 })} aria-label="작게">－</button>
+        <span className="deco-adj-val">{Math.round(curTarget.s * 100)}%</span>
+        <button type="button" onClick={() => apply({ s: curTarget.s + 0.1 })} aria-label="크게">＋</button>
         <i className="deco-adj-sep" />
-        <button type="button" onClick={() => apply({ r: cur.r - 10 })} aria-label="왼쪽으로 회전">↺</button>
-        <span className="deco-adj-val">{Math.round(cur.r)}°</span>
-        <button type="button" onClick={() => apply({ r: cur.r + 10 })} aria-label="오른쪽으로 회전">↻</button>
+        <button type="button" onClick={() => apply({ r: curTarget.r - 10 })} aria-label="왼쪽으로 회전">↺</button>
+        <span className="deco-adj-val">{Math.round(curTarget.r)}°</span>
+        <button type="button" onClick={() => apply({ r: curTarget.r + 10 })} aria-label="오른쪽으로 회전">↻</button>
         <i className="deco-adj-sep" />
-        <button type="button" className="deco-adj-reset" onClick={() => onChange({ ...DECO_TF0 })}
-          disabled={isTf0(cur)}>초기화</button>
+        <button type="button" className="deco-adj-reset" onClick={reset} disabled={resetDisabled}>초기화</button>
       </div>
     </div>
   )

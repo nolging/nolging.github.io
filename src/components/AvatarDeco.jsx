@@ -56,34 +56,36 @@ function Tomato() {
 // 귀와 같은 뒤(back) 레이어 — 아랫부분이 프로필 사진에 가려져 사진과 귀 사이에 틈이 없다.
 // 가끔 귀 끝이 살짝 접혔다 펴지는 "쫑긋" 모션(avd-perk) — 아랫부분(프로필 사진에 붙은 자리)은
 // 고정되고 윗부분만 오르내리도록 fill-box 기준점을 밑변 가운데(bottom center)로 둔다.
-function BunnyEars() {
+function BunnyEars({ tf }) {
   const ear = (
     <g className="avd-perk">
       <path fill="#F4CBD3" d="M42.01 -12.41 C39.66 -10.06 39 -4.9 40.46 -0.43 C41.26 2.03 40.72 1.86 46.07 1.43 L49 1.2 L49 -1.12 C49 -3.84 48.37 -8.31 47.71 -10.23 C47.45 -10.97 46.88 -11.98 46.42 -12.46 C45.76 -13.18 45.39 -13.32 44.27 -13.32 C43.12 -13.32 42.78 -13.18 42.01 -12.41 Z" />
       <path fill="#FFE6EB" d="M43.47 -7.36 C42.23 -5.99 41.86 -3.5 42.44 -0.2 L42.78 1.66 L44.93 1.46 C46.1 1.38 47.13 1.26 47.16 1.2 C47.22 1.15 47.13 -0.52 47.02 -2.55 C46.82 -5.5 46.68 -6.36 46.22 -6.96 C45.5 -7.94 44.15 -8.14 43.47 -7.36 Z" />
     </g>
   )
+  const t = tf || DECO_TF0
   return (
     <>
-      {ear}
-      <g transform="translate(100,0) scale(-1,1)">{ear}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].l, t.left)}>{ear}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].r, t.right)}><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
     </>
   )
 }
 
 // 곰돌이(머리 유형): 양옆에 붙은 둥근 곰 귀 한 쌍. 토깽이와 마찬가지로 뒤(back) 레이어.
 // 고양이/늑대 귀와 같은 까딱임(avd-twitch) — 양쪽 다 안쪽(가운데)으로 동시에 기운다.
-function BearEars() {
+function BearEars({ tf }) {
   const ear = (
     <>
       <path fill="#654C36" d="M15.39 -0.4 C12.18 0.11 9.03 2.46 7.59 5.42 C5.47 9.74 6.1 14.67 9.31 19.05 C9.89 19.83 10.43 20.49 10.49 20.49 C10.57 20.49 11.03 20 11.55 19.4 C16.1 14.1 20.89 10.2 26.59 7.08 L28.62 5.99 L27.39 4.41 C24.61 0.86 19.66 -1.12 15.39 -0.4 Z" />
       <path fill="#87674B" d="M15.04 4.56 C11 6.42 9.17 11.66 11.17 15.64 C12.46 18.19 12.41 18.19 15.01 15.67 C17.79 12.98 21.06 10.37 23.47 8.91 C25.47 7.68 25.47 7.48 23.47 5.76 C21.17 3.81 17.71 3.3 15.04 4.56 Z" />
     </>
   )
+  const t = tf || DECO_TF0
   return (
     <>
-      <g className="avd-twitch-l">{ear}</g>
-      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
@@ -102,7 +104,7 @@ const ANGEL_WING_LINES_D = 'M-12.12 53.95 C-13.67 54.61 -14.36 57.07 -13.50 58.6
 // 중앙 쪽으로 WING_PREVIEW_DX 만큼 끌어당겨 좁은 크롭 박스 안에서 크게 보이게 한다.
 // (경로 데이터 자체는 안 건드리므로 decoAnchor·DecoAdjuster 조정 기준점엔 영향 없음)
 const WING_PREVIEW_DX = 40
-function AngelWing({ preview }) {
+function AngelWing({ preview, tf }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={ANGEL_WING_D} fill="#ffffff" stroke="#e9ebf3" strokeWidth="0.5" strokeLinejoin="round" />
@@ -110,37 +112,50 @@ function AngelWing({ preview }) {
     </g>
   )
   const dx = preview ? WING_PREVIEW_DX : 0
+  const t = tf || DECO_TF0
   return (
     <>
-      <g transform={`translate(${dx},0)`}>{wing}</g>
-      <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].l, t.left)}>
+        <g transform={`translate(${dx},0)`}>{wing}</g>
+      </g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].r, t.right)}>
+        <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
+      </g>
     </>
   )
 }
 
 const DEVIL_WING_D = 'M-6.22 58.80 C-8.94 61.20 -11.89 64.47 -11.58 64.79 C-11.46 64.90 -10.83 64.84 -10.20 64.61 C-8.08 63.87 -6.65 64.18 -5.22 65.73 L-4.53 66.48 L-4.01 65.62 C-3.35 64.53 -2.35 64.30 -1.18 64.90 C-0.69 65.16 -0.23 65.33 -0.20 65.27 C-0.17 65.21 -0.03 64.81 0.14 64.33 C0.40 63.50 0.80 63.27 2.64 62.89 C3.38 62.75 3.44 62.64 3.35 61.66 L3.27 60.60 L1.40 60.43 C-1.20 60.17 -2.41 59.57 -3.35 58.19 C-3.78 57.54 -4.13 57.02 -4.16 57.02 C-4.18 57.02 -5.10 57.82 -6.22 58.80 Z'
-function DevilWing({ preview }) {
+function DevilWing({ preview, tf }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={DEVIL_WING_D} fill="#17171b" />
     </g>
   )
   const dx = preview ? WING_PREVIEW_DX : 0
+  const t = tf || DECO_TF0
   return (
     <>
-      <g transform={`translate(${dx},0)`}>{wing}</g>
-      <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].l, t.left)}>
+        <g transform={`translate(${dx},0)`}>{wing}</g>
+      </g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].r, t.right)}>
+        <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
+      </g>
     </>
   )
 }
 
 // 악마 뿔(머리 유형): 앞(front) 레이어 — 사진 위 머리카락 경계에 살짝 겹치며 위로 솟는다.
 const DEVIL_HORN_D = 'M17.91 8.74 C17.91 11.69 18.02 13.47 18.19 13.47 C18.37 13.47 18.48 13.24 18.48 12.92 C18.48 12.64 18.74 12.32 19.05 12.23 C19.37 12.15 19.74 11.75 19.91 11.35 C20.06 10.95 20.29 10.63 20.40 10.66 C20.54 10.69 21.20 10.37 21.86 9.91 C22.55 9.48 23.30 9.20 23.52 9.28 C23.75 9.37 23.93 9.26 23.93 9.05 C23.93 8.62 18.71 4.01 18.22 4.01 C17.99 4.01 17.91 5.47 17.91 8.74 Z'
-function DevilHorn() {
+function DevilHorn({ tf }) {
+  const t = tf || DECO_TF0
   return (
     <>
-      <path d={DEVIL_HORN_D} fill="#17171b" />
-      <g transform="translate(100,0) scale(-1,1)"><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].l, t.left)}><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].r, t.right)}>
+        <g transform="translate(100,0) scale(-1,1)"><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+      </g>
     </>
   )
 }
@@ -178,32 +193,34 @@ function CherryCream() {
   return <image href={cherryCreamPng} x="39.5" y="-17.5" width="19" height="24.5" preserveAspectRatio="xMidYMid meet" />
 }
 
-function CatEars() {
+function CatEars({ tf }) {
   const ear = (
     <>
       <path fill="#101010" d="M17.68 -5.79 C16.91 -4.58 15.85 -1.78 15.21 0.72 C14.5 3.64 12.64 14.18 12.41 16.7 L12.23 18.51 L14.21 16.48 C18.28 12.23 24.64 7.74 29.31 5.73 C30.37 5.3 31.23 4.84 31.23 4.73 C31.23 4.64 30.26 3.47 29.08 2.18 C25.85 -1.4 21.98 -4.79 19.86 -5.85 C18.34 -6.59 18.22 -6.59 17.68 -5.79 Z" />
       <path fill="#F4CBD3" d="M18.54 -1.66 C17.91 -0.63 16.56 5.47 16.05 9.6 C15.87 10.95 15.62 12.75 15.5 13.64 L15.3 15.21 L18.28 12.72 C19.91 11.38 22.52 9.48 24.04 8.57 L26.85 6.88 L25.7 5.16 C24.44 3.3 19.48 -1.86 18.97 -1.86 C18.8 -1.86 18.6 -1.78 18.54 -1.66 Z" />
     </>
   )
+  const t = tf || DECO_TF0
   return (
     <>
-      <g className="avd-twitch-l">{ear}</g>
-      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
 
-function WolfEars() {
+function WolfEars({ tf }) {
   const ear = (
     <>
       <path fill="#BBB9B7" d="M17.28 -7.56 C15.44 -6.62 11.81 6.5 10.72 16.19 C10.17 21.23 10.14 21.09 11.38 19.6 C16.68 13.32 23.3 8.31 30.32 5.3 C32.81 4.24 33.18 4.01 32.95 3.58 C32.41 2.55 27.13 -2.72 25.13 -4.24 C22.87 -5.96 20.03 -7.51 18.74 -7.74 C18.28 -7.79 17.62 -7.74 17.28 -7.56 Z" />
       <path fill="#F9E3E5" d="M17.85 -4.79 C17.65 -4.67 17.31 -4.1 17.05 -3.52 C16.22 -1.52 14.07 7.48 13.35 12.03 C12.95 14.56 12.55 17.02 12.46 17.54 C12.32 18.4 12.38 18.37 14.24 16.42 C16.91 13.67 21.17 10.26 24.47 8.31 L27.22 6.65 L26.36 5.1 C23.07 -0.74 18.97 -5.47 17.85 -4.79 Z" />
     </>
   )
+  const t = tf || DECO_TF0
   return (
     <>
-      <g className="avd-twitch-l">{ear}</g>
-      <g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
@@ -225,7 +242,7 @@ function Anger() {
   )
 }
 
-function Blush() {
+function Blush({ tf }) {
   // 양 볼: 넓은 홍조 + 시안처럼 가는 빗금(///)
   const cheek = (cx, rot) => (
     <g transform={`rotate(${rot} ${cx} 64)`}>
@@ -237,6 +254,7 @@ function Blush() {
       </g>
     </g>
   )
+  const t = tf || DECO_TF0
   return (
     <g className="avd-blush">
       <defs>
@@ -246,8 +264,8 @@ function Blush() {
           <stop offset="100%" stopColor="#f58aaf" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {cheek(19, -8)}
-      {cheek(81, 8)}
+      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].l, t.left)}>{cheek(19, -8)}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].r, t.right)}>{cheek(81, 8)}</g>
     </g>
   )
 }
@@ -544,17 +562,39 @@ export function decoAnchor(id) {
 // 그룹 프로필 사진에 맞춘 조정값 → SVG transform.
 // 기준점에서 회전·확대한 뒤 이동. (translate 를 먼저 쓰면 회전에 끌려 위치가 틀어진다)
 export const DECO_TF0 = { s: 1, x: 0, y: 0, r: 0 }
-export function decoTransform(id, tf) {
+// 임의의 기준점을 받는 버전(좌우 분리 조정에서 좌/우 각각 다른 기준점을 써야 해서 분리).
+export function tfAt([ax, ay], tf) {
   if (!tf) return undefined
   const s = Number(tf.s) || 1, x = Number(tf.x) || 0, y = Number(tf.y) || 0, r = Number(tf.r) || 0
   if (s === 1 && x === 0 && y === 0 && r === 0) return undefined
-  const [ax, ay] = decoAnchor(id)
   return `translate(${x} ${y}) translate(${ax} ${ay}) rotate(${r}) scale(${s}) translate(${-ax} ${-ay})`
+}
+export function decoTransform(id, tf) {
+  return tfAt(decoAnchor(id), tf)
 }
 // 조정값이 있을 때만 그룹으로 감싼다(없으면 DOM 을 늘리지 않음)
 const Tf = ({ id, tf, children }) => {
   const t = decoTransform(id, tf)
   return t ? <g transform={t}>{children}</g> : children
+}
+
+// 좌우로 나뉜 아이템(동물 귀·뿔·날개·홍조)의 좌/우 각각의 기준점. 값은 각 반쪽 도안(원본
+// path, 미러 전) 좌표의 시각적 중심 — decoAnchor 와 마찬가지로 이 점을 중심으로 돌리고
+// 키워야 "제자리에서" 조정되는 느낌이 난다. 우측 기준점은 좌측 기준점을 x=50 기준으로
+// 미러한 값(100 - 좌측x)과 정확히 같다(실제 렌더도 translate(100,0) scale(-1,1) 로 미러).
+const SPLIT_ANCHOR = {
+  'deco-jaguar':     { l: [21.73, 6.06], r: [78.27, 6.06] },
+  'deco-wolf':       { l: [21.68, 6.37], r: [78.32, 6.37] },
+  'deco-bunny':      { l: [44.34, -5.82], r: [55.66, -5.82] },
+  'deco-bear':       { l: [17.49, 9.97], r: [82.51, 9.97] },
+  'deco-devil-horn': { l: [20.92, 8.74], r: [79.08, 8.74] },
+  'deco-blush':      { l: [19, 64], r: [81, 64] },
+  'deco-angel-wing': { l: [-5.19, 62.13], r: [105.19, 62.13] },
+  'deco-devil-wing': { l: [-4.11, 61.75], r: [104.11, 61.75] },
+}
+export const SPLIT_IDS = new Set(Object.keys(SPLIT_ANCHOR))
+export function splitAnchor(id, side) {
+  return SPLIT_ANCHOR[id]?.[side] || decoAnchor(id)
 }
 
 export function DecoPreview({ id }) {
@@ -634,7 +674,7 @@ export default function AvatarDeco({ items, layer = 'front' }) {
   return (
     <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art /></Tf> })}
+      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} /></Tf> })}
     </svg>
   )
 }
