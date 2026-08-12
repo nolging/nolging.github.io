@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, useNavigate, useLocation, useSearchParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, getGroupBoard, renameBoard, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
+  getGroup, getGroupBoard, boardCanWrite, renameBoard, listBoardPrefixes, addBoardPrefix, updateBoardPrefix, deleteBoardPrefix,
   listBoardPosts, createBoardPost, updateBoardPost, deleteBoardPost,
   listBoardComments, addBoardComment, updateBoardComment, deleteBoardComment,
 } from '../lib/api'
@@ -52,20 +52,31 @@ const NotReady = () => (
     <div className="sb-soon"><span>🔒</span><p>비밀 게시판은 아직 준비 중이에요</p></div>
   </div>
 )
+// 조회는 되지만(관리자가 비멤버 그룹을 열람) 쓰기 권한은 없는 경우
+const NoWriteAccess = () => (
+  <div className="page sb-page">
+    <div className="sb-soon"><span>🔒</span><p>속하지 않은 그룹의 게시판에는 글을 쓸 수 없어요.</p></div>
+  </div>
+)
 const BoardLoading = () => <div className="page sb-page"><div className="spinner" /></div>
 
-// 게시판 접근 권한: 개설된 그룹의 멤버(또는 앱 관리자 미리보기). 'loading' | 'ok' | 'no'
+// 게시판 접근 권한: 개설된 그룹의 멤버(또는 앱 관리자 미리보기 — 조회·삭제만, 쓰기는 canWrite 로 별도 판단).
+// state: 'loading' | 'ok' | 'no'
 function useBoardAccess(groupId) {
   const { isAdmin } = useAuth()
   const [state, setState] = useState('loading')
+  const [canWrite, setCanWrite] = useState(false)
   useEffect(() => {
     let on = true
     getGroupBoard(groupId)
       .then((name) => { if (on) setState((name || isAdmin) ? 'ok' : 'no') })
       .catch(() => { if (on) setState(isAdmin ? 'ok' : 'no') })
+    boardCanWrite(groupId)
+      .then((w) => { if (on) setCanWrite(!!w) })
+      .catch(() => { if (on) setCanWrite(false) })
     return () => { on = false }
   }, [groupId, isAdmin])
-  return state
+  return { state, canWrite }
 }
 
 // ============ 목록 ============
@@ -91,7 +102,7 @@ export default function SecretBoard({ groupId: groupIdProp, embedded = false, on
   const [filterPrefix, setFilterPrefix] = useState('') // '' = 전체
   const [filterOpen, setFilterOpen] = useState(false)
 
-  const access = useBoardAccess(groupId)
+  const { state: access, canWrite } = useBoardAccess(groupId)
   const canManage = isAdmin || (group && group.owner_id === uid)
 
   const load = useCallback(async () => {
@@ -193,10 +204,10 @@ export default function SecretBoard({ groupId: groupIdProp, embedded = false, on
         )}
       </div>
 
-      {/* 하단 탭바(고정): 검색하기 · 글쓰기 */}
+      {/* 하단 탭바(고정): 검색하기 · 글쓰기(쓰기 권한 있을 때만) */}
       <nav className="sb-tabbar">
         <button type="button" className="sb-tab" onClick={goSearch}>검색하기</button>
-        <button type="button" className="sb-tab" onClick={goCompose}>글쓰기</button>
+        {canWrite && <button type="button" className="sb-tab" onClick={goCompose}>글쓰기</button>}
       </nav>
     </div>
   )
@@ -210,7 +221,7 @@ export function BoardCompose({ groupId: groupIdProp, postId: postIdProp, seedPos
   const navigate = useNavigate()
   const location = useLocation()
   const { setHeaderSubmit } = useOutletContext()
-  const access = useBoardAccess(groupId)
+  const { state: access, canWrite } = useBoardAccess(groupId)
   const editing = !!postId
 
   const [prefixes, setPrefixes] = useState([])
@@ -278,6 +289,7 @@ export function BoardCompose({ groupId: groupIdProp, postId: postIdProp, seedPos
 
   if (access === 'loading') return <BoardLoading />
   if (access === 'no') return <NotReady />
+  if (!canWrite) return <NoWriteAccess />
 
   const prefixLabel = prefixId ? (prefixes.find((p) => p.id === prefixId)?.label || '말머리') : '말머리 없음'
 
@@ -374,7 +386,7 @@ export function BoardSearch({ groupId: groupIdProp, embedded = false, onOpenPost
   const params = useParams()
   const groupId = groupIdProp ?? params.groupId
   const navigate = useNavigate()
-  const access = useBoardAccess(groupId)
+  const { state: access } = useBoardAccess(groupId)
   const goPost = (p) => (embedded && onOpenPost ? onOpenPost(p) : navigate(boardPath(groupId, `/${p.id}`), { state: { post: p } }))
   const goComments = (postId, commentId) => (embedded && onOpenComments
     ? onOpenComments(postId, commentId)
@@ -845,7 +857,7 @@ function CommentList({ h, onReply, onEdit, limit, onSeeAll, rows, highlight, emp
                   <>
                     <div className="menu-backdrop" onClick={() => setMenuId(null)} />
                     <div className={`menu-pop${menuDir === 'down' ? ' menu-pop-down' : ''}`} role="menu">
-                      <button type="button" onClick={() => onReply(c)}>답글 달기</button>
+                      {onReply && <button type="button" onClick={() => onReply(c)}>답글 달기</button>}
                       {c.is_mine && <button type="button" onClick={() => onEdit(c)}>수정</button>}
                       {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
                     </div>
@@ -919,7 +931,7 @@ export function BoardPost({ groupId: groupIdProp, postId: postIdProp, seedPost, 
   const navigate = useNavigate()
   const location = useLocation()
   const { setHeaderPostMenu, setRefreshHandler } = useOutletContext()
-  const access = useBoardAccess(groupId)
+  const { state: access, canWrite } = useBoardAccess(groupId)
   const [menuOpen, setMenuOpen] = useState(false) // 임베드(PC) 인페이지 ⋮ 메뉴
 
   const h = useBoardComments(postId, null)
@@ -1003,7 +1015,7 @@ export function BoardPost({ groupId: groupIdProp, postId: postIdProp, seedPost, 
 
   const bottomBar = (
     <nav className="sb-detail-bar">
-      <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
+      {canWrite && <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>}
       <button type="button" className="sb-detail-btn" onClick={goComments}>
         <span>댓글 {h.commentCount}</span>
       </button>
@@ -1053,11 +1065,11 @@ export function BoardPost({ groupId: groupIdProp, postId: postIdProp, seedPost, 
       <div className="sb-cmt-section">
         <div className="sb-cmt-head"><span>댓글 <span className="muted">{h.commentCount}</span></span></div>
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit} limit={10}
+        <CommentList h={h} onReply={canWrite ? c.handleReply : null} onEdit={c.handleEdit} limit={10}
           onSeeAll={goComments} />
       </div>
 
-      <button type="button" className="sb-write-pill" onClick={c.openComposer}><PencilMini />댓글 쓰기</button>
+      {canWrite && <button type="button" className="sb-write-pill" onClick={c.openComposer}><PencilMini />댓글 쓰기</button>}
 
       {(newer || older) && (
         <div className="sb-navposts">
@@ -1082,7 +1094,7 @@ export function BoardComments({ groupId: groupIdProp, postId: postIdProp, focusI
   const navigate = useNavigate()
   const [sp] = useSearchParams()
   const { setRefreshHandler, setHeaderCommentCount, commentSearch } = useOutletContext()
-  const access = useBoardAccess(groupId)
+  const { state: access, canWrite } = useBoardAccess(groupId)
   const focusId = focusIdProp ?? sp.get('c')
 
   const h = useBoardComments(postId, focusId)
@@ -1147,7 +1159,7 @@ export function BoardComments({ groupId: groupIdProp, postId: postIdProp, focusI
 
   const bottomBar = (
     <nav className="sb-detail-bar">
-      <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>
+      {canWrite && <button type="button" className="sb-detail-btn" onClick={c.openComposer}><span>댓글 쓰기</span></button>}
       <button type="button" className="sb-detail-btn" onClick={goPost}><span>원문 보기</span></button>
       <button type="button" className="sb-detail-btn" onClick={scrollFirst}><span>첫 댓글로</span></button>
       <button type="button" className="sb-detail-btn sb-detail-refresh" onClick={refreshToBottom} disabled={h.refreshing}
@@ -1204,7 +1216,7 @@ export function BoardComments({ groupId: groupIdProp, postId: postIdProp, focusI
       )}
       <div className="sb-cmt-section">
         {h.err && <div className="alert alert-error sb-cmt-err">{h.err}</div>}
-        <CommentList h={h} onReply={c.handleReply} onEdit={c.handleEdit}
+        <CommentList h={h} onReply={canWrite ? c.handleReply : null} onEdit={c.handleEdit}
           rows={rows} highlight={searching ? term : ''} emptyText={mineOnly ? '내가 쓴 댓글이 없어요.' : '표시할 댓글이 없어요.'} />
       </div>
       {embedded
@@ -1221,7 +1233,7 @@ export function BoardSettings({ groupId: groupIdProp, embedded = false } = {}) {
   const navigate = useNavigate()
   const { profile, isAdmin } = useAuth()
   const uid = profile?.id
-  const access = useBoardAccess(groupId)
+  const { state: access } = useBoardAccess(groupId)
 
   const [group, setGroup] = useState(null)
   const [name, setName] = useState('')        // 저장된 현재 이름

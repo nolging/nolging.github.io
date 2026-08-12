@@ -1263,6 +1263,12 @@ export async function getGroupBoard(groupId) {
   if (error) return null   // 미배포/권한없음 → 미개설로 간주
   return data || null
 }
+// 이 그룹 게시판에 글/댓글을 쓸 수 있는지(=실제 멤버십). 관리자가 비멤버 그룹을 조회만 할 때 false.
+export async function boardCanWrite(groupId) {
+  const { data, error } = await supabase.rpc('board_can_write', { p_group: groupId })
+  if (error) return true   // 미배포 환경: 기존처럼 항상 쓰기 허용(하위 호환)
+  return !!data
+}
 // 게시판을 개설할 수 있는 내 그룹(프리미엄 + 미개설)
 export async function boardEligibleGroups() {
   const { data, error } = await supabase.rpc('board_eligible_groups')
