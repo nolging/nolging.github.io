@@ -88,7 +88,12 @@ export default function Inventory() {
       listStoreItems(), listInventory(user.id), getMyLedBanner().catch(() => null), listFriendGroups().catch(() => []),
     ])
     const m = {}
-    for (const s of storeItems) m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, premium: !!s.premium, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '', category: s.category || '' }
+    // storeIndex: listStoreItems() 가 이미 sort_order 로 정렬해 주므로, 그 배열 위치를 그대로
+    // 정렬 기준으로 쓰면 상점과 100% 같은 순서가 된다(sort_order 값 자체가 같을 때도 상점이
+    // 실제로 보여준 순서와 어긋나지 않음 — 아래 displayGroups 참고).
+    storeItems.forEach((s, i) => {
+      m[s.id] = { emoji: s.emoji, name: s.name, sortOrder: s.sortOrder ?? 0, storeIndex: i, premium: !!s.premium, desc: s.desc || '', imageBg: s.imageBg || '', imageSvg: s.imageSvg || '', category: s.category || '' }
+    })
     setMeta(m); setStoreCatalog(storeItems)
     setItems(inv)
     setLedBanner(banner && banner.is_owner ? banner : null)
@@ -125,10 +130,12 @@ export default function Inventory() {
     if (ledBanner && !groups.some((g) => g.id === 'ledboard')) {
       list = [...groups, { id: 'ledboard', name: meta.ledboard?.name || '전광판', emoji: meta.ledboard?.emoji || '📟', count: 0, rows: [] }]
     }
-    // 상점과 동일한 정렬(sort_order). 단 인벤토리는 일반/프리미엄이 한 카테고리로 합쳐지므로
-    // (두 상점의 sort_order 시퀀스가 독립적) 프리미엄 아이템은 항상 일반 아이템 뒤로.
+    // 상점과 동일한 정렬. 단 인벤토리는 일반/프리미엄이 한 카테고리로 합쳐지므로(두 상점의
+    // sort_order 시퀀스가 독립적) 프리미엄 아이템은 항상 일반 아이템 뒤로 두고, 그 안에서는
+    // sort_order 값이 아니라 상점이 실제로 보여준 배열 순서(storeIndex)로 정렬한다 —
+    // sort_order 가 같은 값끼리 묶여 있을 때도 상점과 다른 순서로 갈리지 않는다.
     const prem = (id) => (meta[id]?.premium ? 1 : 0)
-    const ord = (id) => (meta[id]?.sortOrder ?? 999)
+    const ord = (id) => (meta[id]?.storeIndex ?? meta[id]?.sortOrder ?? 999)
     return [...list].sort((a, b) => prem(a.id) - prem(b.id) || ord(a.id) - ord(b.id))
   }, [groups, ledBanner, meta])
 
