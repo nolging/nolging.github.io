@@ -94,32 +94,39 @@ function BearEars() {
 // 있는 깃털 결 라인과 똑같은 회색(#e9ebf3)·얇은 굵기로 통일해 이질감이 없게 한다.
 const ANGEL_WING_D = 'M-12.62 53.98 C-13.85 54.64 -14.43 57.22 -13.71 58.80 C-13.45 59.37 -13.54 59.66 -14.17 60.60 C-15.49 62.55 -14.57 64.18 -11.65 65.13 C-11.36 65.22 -11.16 65.56 -11.16 65.96 C-11.16 67.68 -9.01 68.85 -7.04 68.25 C-6.18 68.00 -6.06 68.02 -5.52 68.88 C-5.17 69.37 -4.43 70.03 -3.80 70.32 C-2.77 70.80 -2.62 70.83 -0.85 70.34 C1.04 69.86 2.51 68.91 3.57 67.48 C4.05 66.85 4.17 66.28 4.17 64.59 C4.17 62.72 4.08 62.35 3.31 61.26 C2.16 59.63 1.19 59.11 -2.31 58.25 C-3.94 57.85 -5.75 57.25 -6.38 56.96 C-7.95 56.13 -10.22 54.47 -10.42 53.98 C-10.62 53.44 -11.65 53.44 -12.62 53.98 Z'
 const ANGEL_WING_LINES_D = 'M-12.12 53.95 C-13.67 54.61 -14.36 57.07 -13.50 58.67 C-13.15 59.30 -13.18 59.48 -13.78 60.36 C-14.15 60.94 -14.47 61.74 -14.47 62.20 C-14.47 63.23 -13.12 64.63 -11.92 64.86 C-11.29 65.01 -11.03 65.21 -11.03 65.61 C-11.03 67.44 -9.11 68.70 -7.16 68.16 C-6.16 67.90 -6.07 67.93 -4.87 69.19 L-3.61 70.51 L-1.78 70.36 C0.34 70.19 1.43 69.68 2.84 68.22 C4.73 66.21 4.90 63.52 3.27 61.25 C2.18 59.76 1.12 59.13 -1.26 58.53 C-6.07 57.30 -7.74 56.53 -10.03 54.35 C-11.06 53.40 -10.89 53.43 -12.12 53.95 M-9.34 55.81 C-7.05 57.47 -5.64 58.13 -2.72 58.79 C0.54 59.56 1.69 60.22 2.61 61.74 C4.15 64.38 4.04 66.15 2.23 67.90 C1.03 69.08 -0.80 69.85 -2.35 69.85 C-3.84 69.85 -5.30 68.30 -5.30 66.75 C-5.30 65.81 -5.13 65.47 -4.38 64.83 C-3.61 64.18 -3.27 64.09 -2.23 64.20 C-1.32 64.29 -1.00 64.23 -1.00 63.95 C-1.00 63.72 -1.32 63.49 -1.69 63.37 C-3.32 62.97 -5.82 64.63 -5.93 66.24 C-6.02 67.16 -6.76 67.56 -8.25 67.56 C-9.34 67.56 -9.68 67.36 -10.14 66.50 C-10.69 65.44 -10.52 65.01 -9.46 64.81 C-8.48 64.63 -7.94 64.23 -8.25 63.95 C-8.31 63.86 -8.97 63.95 -9.71 64.15 C-11.29 64.55 -12.29 64.32 -13.21 63.40 C-14.07 62.54 -14.07 61.80 -13.24 60.79 C-12.69 60.19 -12.46 60.08 -12.01 60.31 C-11.72 60.48 -10.97 60.68 -10.37 60.77 C-9.57 60.88 -9.31 60.82 -9.31 60.51 C-9.31 60.25 -9.63 60.11 -10.26 60.11 C-12.06 60.11 -13.52 58.30 -13.18 56.47 C-13.01 55.49 -12.15 54.38 -11.60 54.38 C-11.43 54.38 -10.43 55.01 -9.34 55.81 Z'
-function AngelWing() {
+// preview: 상점/인벤토리 미리보기 썸네일 전용 플래그. 실제 아바타에 그려질 때(preview
+// 미지정)는 원래 간격(양 날개 pivot이 0/100)을 그대로 쓰고, 미리보기에서만 두 날개를
+// 중앙 쪽으로 WING_PREVIEW_DX 만큼 끌어당겨 좁은 크롭 박스 안에서 크게 보이게 한다.
+// (경로 데이터 자체는 안 건드리므로 decoAnchor·DecoAdjuster 조정 기준점엔 영향 없음)
+const WING_PREVIEW_DX = 40
+function AngelWing({ preview }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={ANGEL_WING_D} fill="#ffffff" stroke="#e9ebf3" strokeWidth="0.5" strokeLinejoin="round" />
       <path d={ANGEL_WING_LINES_D} fill="#e9ebf3" />
     </g>
   )
+  const dx = preview ? WING_PREVIEW_DX : 0
   return (
     <>
-      {wing}
-      <g transform="translate(100,0) scale(-1,1)">{wing}</g>
+      <g transform={`translate(${dx},0)`}>{wing}</g>
+      <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
     </>
   )
 }
 
 const DEVIL_WING_D = 'M-6.22 58.80 C-8.94 61.20 -11.89 64.47 -11.58 64.79 C-11.46 64.90 -10.83 64.84 -10.20 64.61 C-8.08 63.87 -6.65 64.18 -5.22 65.73 L-4.53 66.48 L-4.01 65.62 C-3.35 64.53 -2.35 64.30 -1.18 64.90 C-0.69 65.16 -0.23 65.33 -0.20 65.27 C-0.17 65.21 -0.03 64.81 0.14 64.33 C0.40 63.50 0.80 63.27 2.64 62.89 C3.38 62.75 3.44 62.64 3.35 61.66 L3.27 60.60 L1.40 60.43 C-1.20 60.17 -2.41 59.57 -3.35 58.19 C-3.78 57.54 -4.13 57.02 -4.16 57.02 C-4.18 57.02 -5.10 57.82 -6.22 58.80 Z'
-function DevilWing() {
+function DevilWing({ preview }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={DEVIL_WING_D} fill="#17171b" />
     </g>
   )
+  const dx = preview ? WING_PREVIEW_DX : 0
   return (
     <>
-      {wing}
-      <g transform="translate(100,0) scale(-1,1)">{wing}</g>
+      <g transform={`translate(${dx},0)`}>{wing}</g>
+      <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
     </>
   )
 }
@@ -525,6 +532,13 @@ const PREVIEW_VB = {
   'deco-chupa-chups': '54 81 25 14',
   'deco-cherry-cream': '39 -18 21 27',
 }
+// 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
+// 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
+// 아이템은 여기에 별도로 정의해 DecoPreview 에서만 사용한다.
+const PREVIEW_VB_OVERRIDE = {
+  'deco-angel-wing': '21 50 57 24',
+  'deco-devil-wing': '25 54 50 16',
+}
 // 아이템별 기준점(회전·확대의 중심) = 미리보기 뷰박스의 중앙 = 그 장식의 시각적 중심.
 // 이 점을 기준으로 돌리고 키워야 "제자리에서" 조정되는 것처럼 느껴진다.
 export function decoAnchor(id) {
@@ -551,15 +565,15 @@ const Tf = ({ id, tf, children }) => {
 }
 
 export function DecoPreview({ id }) {
-  const vb = PREVIEW_VB[id] || '0 0 100 100'
+  const vb = PREVIEW_VB_OVERRIDE[id] || PREVIEW_VB[id] || '0 0 100 100'
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
       {id === 'deco-tomato' && <Tomato />}
       {id === 'deco-bunny' && <BunnyEars />}
       {id === 'deco-bear' && <BearEars />}
-      {id === 'deco-angel-wing' && <AngelWing />}
-      {id === 'deco-devil-wing' && <DevilWing />}
+      {id === 'deco-angel-wing' && <AngelWing preview />}
+      {id === 'deco-devil-wing' && <DevilWing preview />}
       {id === 'deco-devil-horn' && <DevilHorn />}
       {id === 'deco-kitty-ribbon' && <KittyRibbon />}
       {id === 'deco-bow-tie' && <BowTie />}
