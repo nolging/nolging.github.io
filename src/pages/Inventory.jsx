@@ -443,9 +443,9 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
           {busy ? '적용 중…' : (applied && changed) ? '이 그룹으로 변경' : applied ? '조정 저장' : '적용하기'}
         </button>
         {applied && (
-          <button type="button" className="btn btn-danger btn-block" onClick={unapply} disabled={busy}>
-            장착 해제
-          </button>
+          <div className="cg-footer-center">
+            <button type="button" className="cg-danger-link" onClick={unapply} disabled={busy}>장착 해제</button>
+          </div>
         )}
       </div>
 

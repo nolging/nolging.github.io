@@ -2155,6 +2155,7 @@ a.mp-tel:active { opacity: .55; }
 .cg-footer-center { margin-top: 14px; text-align: center; }
 .cg-danger-link { background: none; border: none; cursor: pointer; font-size: 12.5px; font-weight: 600; color: #c9455f; padding: 4px 8px; }
 .cg-danger-link:hover { text-decoration: underline; }
+.cg-danger-link:disabled { opacity: .5; cursor: default; text-decoration: none; }
 .cg-btn-outline { width: 100%; box-sizing: border-box; height: 52px; border: 1.5px solid var(--border); border-radius: 999px; background: #fff; color: #191722; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .cg-btn-outline:hover { background: #f6f5fa; }
 .cg-mt-10 { margin-top: 10px; }

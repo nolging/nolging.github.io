@@ -138,6 +138,11 @@ export default function Closet() {
     })
     setEditItem(null)
   }
+  // 모달에서 "장착 해제" → 로컬 상태에서만 제거
+  function unstage(itemId) {
+    setWorn((prev) => { const next = new Map(prev); next.delete(itemId); return next })
+    setEditItem(null)
+  }
 
   if (loading) return <div className="page"><div className="spinner" /></div>
 
@@ -180,14 +185,14 @@ export default function Closet() {
       )}
 
       <ClosetItemModal open={!!editItem} onClose={() => setEditItem(null)}
-        itemId={editItem} worn={worn} me={me} myId={user?.id} onStage={stage} />
+        itemId={editItem} worn={worn} me={me} myId={user?.id} onStage={stage} onUnstage={unstage} />
     </div>
   )
 }
 
 // 아이템 하나를 이 그룹에 장착(위치·크기·각도 조정 포함) — 인벤토리의 DecoModal 과 같은 동작이지만
 // 그룹은 이미 정해져 있어 그룹 선택 필드가 없고, 실제 서버 반영 없이 로컬 상태만 바꾼다(onStage).
-function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage }) {
+function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUnstage }) {
   const [tf, setTf] = useState(DECO_TF0)
   const [replaceId, setReplaceId] = useState('')
 
@@ -240,6 +245,11 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage }) {
             seed={myId} tf={tf} onChange={setTf} />
         )}
         <button type="button" className="btn btn-primary btn-block" onClick={apply}>적용하기</button>
+        {alreadyHere && (
+          <div className="cg-footer-center">
+            <button type="button" className="cg-danger-link" onClick={() => onUnstage(itemId)}>장착 해제</button>
+          </div>
+        )}
       </div>
     </Modal>
   )
