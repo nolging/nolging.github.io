@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag, purinMicState, usePurinMic } from '../lib/api'
+import { listMemberCards, isCoupleGroup, isFriendGroup, pokeMember, getGroup, leaveGroup, getGroupDecoMap, nametagState, useNameTag, purinMicState, usePurinMic, listStoreItems } from '../lib/api'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
 import { formatBirthKo } from '../lib/birthday'
 import { openCompose } from '../lib/composeWindow'
@@ -10,6 +10,15 @@ import MemberAvatar from '../components/MemberAvatar'
 import OttBadges from '../components/OttBadges'
 import GraffitiPad from '../components/GraffitiPad'
 import Modal from '../components/Modal'
+import StoreItemImage from '../components/StoreItemImage'
+import { decoSlot, BORDER_IDS } from '../components/AvatarDeco'
+import { setStoreCatalog, catalogDecoSlot, catalogName, bgOf } from '../lib/storeCatalog'
+
+// 오늘의 착장: 슬롯 표시명/정렬 순서(머리→얼굴→안경→테두리), 관리자 설정 슬롯 우선·폴백은 하드코딩.
+const OUTFIT_SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경', border: '테두리' }
+const OUTFIT_SLOT_RANK = { '머리': 0, head: 0, '얼굴': 1, face: 1, '안경': 2, glasses: 2, '테두리': 3, border: 3 }
+const outfitSlotOf = (id) => catalogDecoSlot(id) || (BORDER_IDS.has(id) ? '테두리' : decoSlot(id))
+const outfitSlotLabel = (slot) => OUTFIT_SLOT_LABEL[slot] || slot
 
 function telHref(s) {
   const cleaned = String(s).replace(/[^\d+]/g, '')
@@ -77,7 +86,7 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, couple, friend, decos, ntState, pmState] = await Promise.all([
+      const [cards, g, couple, friend, decos, ntState, pmState, storeItems] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
@@ -85,7 +94,9 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
         getGroupDecoMap(groupId).catch(() => ({})),
         nametagState(groupId).catch(() => null),
         purinMicState(groupId).catch(() => null),
+        listStoreItems().catch(() => null), // "오늘의 착장" 슬롯 표시명/이름에 필요(관리자 설정 우선)
       ])
+      if (storeItems) setStoreCatalog(storeItems)
       const act = ntState?.active
       setNameLock(act && act.target_id === userId && nametagActive(act.until) ? { until: act.until } : null)
       const gact = pmState?.active
@@ -164,6 +175,11 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
   const hasBirth = !!member.birthdate
   const hasOtt = ott.length > 0
   const nothingShared = !hasContact && !hasBirth && !hasOtt
+  // 오늘의 착장: 이 그룹에서 현재 장착 중인 꾸미기(낙서 제외), 머리→얼굴→안경→테두리 순
+  const outfitItems = (decoMap[member.user_id] || [])
+    .filter((d) => d.id !== '__graffiti')
+    .slice()
+    .sort((a, b) => (OUTFIT_SLOT_RANK[outfitSlotOf(a.id)] ?? 99) - (OUTFIT_SLOT_RANK[outfitSlotOf(b.id)] ?? 99))
   const tel = hasContact ? telHref(member.contact) : ''
 
   return (
@@ -271,6 +287,24 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
           <div className="md-empty-hint">아직 공개한 정보가 없어요. 멤버가 공개한 정보만 볼 수 있어요.</div>
         )}
       </div>
+
+      {/* 오늘의 착장: 이 그룹에서 장착 중인 꾸미기. 4개 미만이면 그리드, 4개 이상이면 가로 스와이프 */}
+      {outfitItems.length > 0 && (
+        <div className="md-info">
+          <div className="md-info-label">오늘의 착장</div>
+          <div className={outfitItems.length >= 4 ? 'md-outfit-scroll' : 'inv-grid'}>
+            {outfitItems.map((d) => (
+              <div key={d.id} className="inv-card2 is-static">
+                <span className="inv-thumb" style={{ background: bgOf(d.id, true) }}>
+                  <StoreItemImage id={d.id} emoji="✨" className="inv-thumb-img" />
+                  <span className="deco-slot-badge">{outfitSlotLabel(outfitSlotOf(d.id))}</span>
+                </span>
+                <span className="inv-name">{catalogName(d.id) || '꾸미기 아이템'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 내보내기 (소유자 전용, 본인 제외) */}
       {iAmOwner && !member.is_self && (

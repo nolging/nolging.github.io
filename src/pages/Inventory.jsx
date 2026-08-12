@@ -342,11 +342,13 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
   const tfChanged = !changed && JSON.stringify(clampTf(tf, item?.id)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0, item?.id))
 
-  // 선택한 그룹에 이미 같은 유형(슬롯)이 정원만큼 장착돼 있으면, 적용 시 가장 오래 장착한
-  // 게 해제된다 → 경고용. 정원 이내면(예: 얼굴 슬롯 1개만 장착 중) 그냥 같이 장착되므로 경고 없음.
-  const [existing, setExisting] = useState(null) // { id, name } | null
+  // 선택한 그룹에 이미 같은 유형(슬롯)이 정원만큼 장착돼 있으면, 적용 전 어떤 걸 해제할지
+  // 사용자가 고르게 한다(pickReplace). 정원 이내면(예: 얼굴 슬롯 1개만 장착 중) 그냥 같이
+  // 장착되므로 후보가 비어 있다.
+  const [replaceOptions, setReplaceOptions] = useState([]) // [{ id, name }] — 정원 초과 시 후보들
+  const [pickReplace, setPickReplace] = useState(null) // { selected } | null — 선택 대기 중인 확인창
   useEffect(() => {
-    setExisting(null)
+    setReplaceOptions([])
     if (!open || !item || !target) return
     const slot = catalogDecoSlot(item.id) || decoSlot(item.id) // 관리자 설정 슬롯 우선, 폴백 하드코딩
     const cap = slotCapacity(slot)
@@ -356,9 +358,9 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
       const worn = (dm?.[myId] || []) // [{ id, tf, usedAt }]
         .filter((d) => d.id !== item.id && (catalogDecoSlot(d.id) || decoSlot(d.id)) === slot)
       if (worn.length < cap) return
-      // 정원 초과분 중 가장 오래 장착한 것부터 해제된다(백엔드와 동일 규칙)
-      const oldest = [...worn].sort((a, b) => new Date(a.usedAt || 0) - new Date(b.usedAt || 0))[0]
-      setExisting({ id: oldest.id, name: catalogName(oldest.id) || '기존 아이템' })
+      // 오래 장착한 순으로 정렬(기본 선택값 = 가장 오래된 것, 백엔드 기본 규칙과 동일)
+      const sorted = [...worn].sort((a, b) => new Date(a.usedAt || 0) - new Date(b.usedAt || 0))
+      setReplaceOptions(sorted.map((d) => ({ id: d.id, name: catalogName(d.id) || '기존 아이템' })))
     }).catch(() => { })
     return () => { on = false }
   }, [open, item, target, myId])
@@ -372,21 +374,28 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     [groups, groupId, myId],
   )
 
-  async function apply() {
+  // willApply=true 인데 정원이 이미 찬 슬롯이면, 실제 적용 전에 무엇을 해제할지 사용자가
+  // 고르게 한다(pickReplace 확인창) → 고르면 doApply(선택한 id) 로 이어진다.
+  function apply() {
     if (!target) { setError('그룹을 선택해 주세요.'); return }
     const willApply = changed || !applied
-    // 같은 슬롯의 기존 데코가 해제되는 경우 확인
-    if (willApply && existing && !window.confirm(`기존에 장착 중이던 [${existing.name}] 아이템은 해제됩니다.`)) return
+    if (willApply && replaceOptions.length) { setPickReplace({ selected: replaceOptions[0].id }); return }
+    doApply()
+  }
+  async function doApply(unequipFirst) {
     setBusy(true); setError('')
     try {
+      if (unequipFirst) await unapplyAvatarDeco(unequipFirst)
+      const willApply = changed || !applied
       if (willApply) await applyAvatarDeco(item.id, target.id)
       // 조정값 저장은 "그 그룹에 장착 중" 이어야 가능해 적용 뒤에 호출한다.
       // 기본값이고 저장된 값도 없으면 호출을 건너뛴다(조정 기능 미배포 DB 호환).
       const v = clampTf(tf, item.id)
       if (!isTf0(v) || !isTf0(item?.tf)) await setAvatarDecoTf(item.id, target.id, isTf0(v) ? null : v)
+      setPickReplace(null)
       await onDone(); onClose()
     } catch (e) {
-      setError(e.message)
+      setError(e.message); setPickReplace(null)
       await onDone().catch(() => { })   // 장착은 됐을 수 있으니 목록은 갱신
     } finally { setBusy(false) }
   }
@@ -439,6 +448,25 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
           </button>
         )}
       </div>
+
+      <Modal open={!!pickReplace} onClose={() => setPickReplace(null)} title="얼굴 장식 교체">
+        <div className="confirm-modal">
+          <p className="confirm-text">얼굴 장식은 두 개까지만 장착할 수 있어요.<br />어떤 아이템을 해제할까요?</p>
+          {pickReplace && (
+            <label className="field">
+              <span>해제할 아이템</span>
+              <select value={pickReplace.selected} onChange={(e) => setPickReplace({ selected: e.target.value })}>
+                {replaceOptions.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </label>
+          )}
+          <div className="confirm-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setPickReplace(null)} disabled={busy}>취소</button>
+            <button type="button" className="btn btn-primary" disabled={busy}
+              onClick={() => doApply(pickReplace?.selected)}>{busy ? '적용 중…' : '확인'}</button>
+          </div>
+        </div>
+      </Modal>
     </Modal>
   )
 }
