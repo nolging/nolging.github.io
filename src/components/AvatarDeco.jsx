@@ -56,7 +56,7 @@ function Tomato() {
 // 귀와 같은 뒤(back) 레이어 — 아랫부분이 프로필 사진에 가려져 사진과 귀 사이에 틈이 없다.
 // 가끔 귀 끝이 살짝 접혔다 펴지는 "쫑긋" 모션(avd-perk) — 아랫부분(프로필 사진에 붙은 자리)은
 // 고정되고 윗부분만 오르내리도록 fill-box 기준점을 밑변 가운데(bottom center)로 둔다.
-function BunnyEars({ tf }) {
+function BunnyEars({ tf, pickable }) {
   const ear = (
     <g className="avd-perk">
       <path fill="#F4CBD3" d="M42.01 -12.41 C39.66 -10.06 39 -4.9 40.46 -0.43 C41.26 2.03 40.72 1.86 46.07 1.43 L49 1.2 L49 -1.12 C49 -3.84 48.37 -8.31 47.71 -10.23 C47.45 -10.97 46.88 -11.98 46.42 -12.46 C45.76 -13.18 45.39 -13.32 44.27 -13.32 C43.12 -13.32 42.78 -13.18 42.01 -12.41 Z" />
@@ -66,15 +66,15 @@ function BunnyEars({ tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].l, t.left)}>{ear}</g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].r, t.right)}><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].l, t.left)} {...sideProps(pickable, 'l')}>{ear}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bunny'].r, t.right)} {...sideProps(pickable, 'r')}><g transform="translate(100,0) scale(-1,1)">{ear}</g></g>
     </>
   )
 }
 
 // 곰돌이(머리 유형): 양옆에 붙은 둥근 곰 귀 한 쌍. 토깽이와 마찬가지로 뒤(back) 레이어.
 // 고양이/늑대 귀와 같은 까딱임(avd-twitch) — 양쪽 다 안쪽(가운데)으로 동시에 기운다.
-function BearEars({ tf }) {
+function BearEars({ tf, pickable }) {
   const ear = (
     <>
       <path fill="#654C36" d="M15.39 -0.4 C12.18 0.11 9.03 2.46 7.59 5.42 C5.47 9.74 6.1 14.67 9.31 19.05 C9.89 19.83 10.43 20.49 10.49 20.49 C10.57 20.49 11.03 20 11.55 19.4 C16.1 14.1 20.89 10.2 26.59 7.08 L28.62 5.99 L27.39 4.41 C24.61 0.86 19.66 -1.12 15.39 -0.4 Z" />
@@ -84,8 +84,8 @@ function BearEars({ tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].l, t.left)} {...sideProps(pickable, 'l')}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-bear'].r, t.right)} {...sideProps(pickable, 'r')}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
@@ -104,7 +104,7 @@ const ANGEL_WING_LINES_D = 'M-12.12 53.95 C-13.67 54.61 -14.36 57.07 -13.50 58.6
 // 중앙 쪽으로 WING_PREVIEW_DX 만큼 끌어당겨 좁은 크롭 박스 안에서 크게 보이게 한다.
 // (경로 데이터 자체는 안 건드리므로 decoAnchor·DecoAdjuster 조정 기준점엔 영향 없음)
 const WING_PREVIEW_DX = 40
-function AngelWing({ preview, tf }) {
+function AngelWing({ preview, tf, pickable }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={ANGEL_WING_D} fill="#ffffff" stroke="#e9ebf3" strokeWidth="0.5" strokeLinejoin="round" />
@@ -115,10 +115,10 @@ function AngelWing({ preview, tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].l, t.left)}>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].l, t.left)} {...sideProps(pickable, 'l')}>
         <g transform={`translate(${dx},0)`}>{wing}</g>
       </g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].r, t.right)}>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-angel-wing'].r, t.right)} {...sideProps(pickable, 'r')}>
         <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
       </g>
     </>
@@ -126,7 +126,7 @@ function AngelWing({ preview, tf }) {
 }
 
 const DEVIL_WING_D = 'M-6.22 58.80 C-8.94 61.20 -11.89 64.47 -11.58 64.79 C-11.46 64.90 -10.83 64.84 -10.20 64.61 C-8.08 63.87 -6.65 64.18 -5.22 65.73 L-4.53 66.48 L-4.01 65.62 C-3.35 64.53 -2.35 64.30 -1.18 64.90 C-0.69 65.16 -0.23 65.33 -0.20 65.27 C-0.17 65.21 -0.03 64.81 0.14 64.33 C0.40 63.50 0.80 63.27 2.64 62.89 C3.38 62.75 3.44 62.64 3.35 61.66 L3.27 60.60 L1.40 60.43 C-1.20 60.17 -2.41 59.57 -3.35 58.19 C-3.78 57.54 -4.13 57.02 -4.16 57.02 C-4.18 57.02 -5.10 57.82 -6.22 58.80 Z'
-function DevilWing({ preview, tf }) {
+function DevilWing({ preview, tf, pickable }) {
   const wing = (
     <g className="avd-wing-flap">
       <path d={DEVIL_WING_D} fill="#17171b" />
@@ -136,10 +136,10 @@ function DevilWing({ preview, tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].l, t.left)}>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].l, t.left)} {...sideProps(pickable, 'l')}>
         <g transform={`translate(${dx},0)`}>{wing}</g>
       </g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].r, t.right)}>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-wing'].r, t.right)} {...sideProps(pickable, 'r')}>
         <g transform={`translate(${100 - dx},0) scale(-1,1)`}>{wing}</g>
       </g>
     </>
@@ -148,12 +148,12 @@ function DevilWing({ preview, tf }) {
 
 // 악마 뿔(머리 유형): 앞(front) 레이어 — 사진 위 머리카락 경계에 살짝 겹치며 위로 솟는다.
 const DEVIL_HORN_D = 'M17.91 8.74 C17.91 11.69 18.02 13.47 18.19 13.47 C18.37 13.47 18.48 13.24 18.48 12.92 C18.48 12.64 18.74 12.32 19.05 12.23 C19.37 12.15 19.74 11.75 19.91 11.35 C20.06 10.95 20.29 10.63 20.40 10.66 C20.54 10.69 21.20 10.37 21.86 9.91 C22.55 9.48 23.30 9.20 23.52 9.28 C23.75 9.37 23.93 9.26 23.93 9.05 C23.93 8.62 18.71 4.01 18.22 4.01 C17.99 4.01 17.91 5.47 17.91 8.74 Z'
-function DevilHorn({ tf }) {
+function DevilHorn({ tf, pickable }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].l, t.left)}><path d={DEVIL_HORN_D} fill="#17171b" /></g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].r, t.right)}>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].l, t.left)} {...sideProps(pickable, 'l')}><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].r, t.right)} {...sideProps(pickable, 'r')}>
         <g transform="translate(100,0) scale(-1,1)"><path d={DEVIL_HORN_D} fill="#17171b" /></g>
       </g>
     </>
@@ -193,7 +193,7 @@ function CherryCream() {
   return <image href={cherryCreamPng} x="39.5" y="-17.5" width="19" height="24.5" preserveAspectRatio="xMidYMid meet" />
 }
 
-function CatEars({ tf }) {
+function CatEars({ tf, pickable }) {
   const ear = (
     <>
       <path fill="#101010" d="M17.68 -5.79 C16.91 -4.58 15.85 -1.78 15.21 0.72 C14.5 3.64 12.64 14.18 12.41 16.7 L12.23 18.51 L14.21 16.48 C18.28 12.23 24.64 7.74 29.31 5.73 C30.37 5.3 31.23 4.84 31.23 4.73 C31.23 4.64 30.26 3.47 29.08 2.18 C25.85 -1.4 21.98 -4.79 19.86 -5.85 C18.34 -6.59 18.22 -6.59 17.68 -5.79 Z" />
@@ -203,13 +203,13 @@ function CatEars({ tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].l, t.left)} {...sideProps(pickable, 'l')}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-jaguar'].r, t.right)} {...sideProps(pickable, 'r')}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
 
-function WolfEars({ tf }) {
+function WolfEars({ tf, pickable }) {
   const ear = (
     <>
       <path fill="#BBB9B7" d="M17.28 -7.56 C15.44 -6.62 11.81 6.5 10.72 16.19 C10.17 21.23 10.14 21.09 11.38 19.6 C16.68 13.32 23.3 8.31 30.32 5.3 C32.81 4.24 33.18 4.01 32.95 3.58 C32.41 2.55 27.13 -2.72 25.13 -4.24 C22.87 -5.96 20.03 -7.51 18.74 -7.74 C18.28 -7.79 17.62 -7.74 17.28 -7.56 Z" />
@@ -219,8 +219,8 @@ function WolfEars({ tf }) {
   const t = tf || DECO_TF0
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].l, t.left)}><g className="avd-twitch-l">{ear}</g></g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].r, t.right)}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].l, t.left)} {...sideProps(pickable, 'l')}><g className="avd-twitch-l">{ear}</g></g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-wolf'].r, t.right)} {...sideProps(pickable, 'r')}><g className="avd-twitch-r"><g transform="translate(100,0) scale(-1,1)">{ear}</g></g></g>
     </>
   )
 }
@@ -242,7 +242,7 @@ function Anger() {
   )
 }
 
-function Blush({ tf }) {
+function Blush({ tf, pickable }) {
   // 양 볼: 넓은 홍조 + 시안처럼 가는 빗금(///)
   const cheek = (cx, rot) => (
     <g transform={`rotate(${rot} ${cx} 64)`}>
@@ -264,8 +264,8 @@ function Blush({ tf }) {
           <stop offset="100%" stopColor="#f58aaf" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].l, t.left)}>{cheek(19, -8)}</g>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].r, t.right)}>{cheek(81, 8)}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].l, t.left)} {...sideProps(pickable, 'l')}>{cheek(19, -8)}</g>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-blush'].r, t.right)} {...sideProps(pickable, 'r')}>{cheek(81, 8)}</g>
     </g>
   )
 }
@@ -596,6 +596,10 @@ export const SPLIT_IDS = new Set(Object.keys(SPLIT_ANCHOR))
 export function splitAnchor(id, side) {
   return SPLIT_ANCHOR[id]?.[side] || decoAnchor(id)
 }
+// pickable(=DecoAdjuster 가 좌우 분리 모드일 때만 true)일 때만 좌/우 그룹에 data-deco-side 를
+// 달고 클릭 가능하게(pointer-events) 만든다 — 다른 곳(대시보드 등 아바타가 그냥 표시만 되는
+// 화면)에서는 계속 클릭 불가(.avatar-deco 의 pointer-events:none 이 그대로 상속됨).
+const sideProps = (pickable, side) => (pickable ? { 'data-deco-side': side, style: { pointerEvents: 'auto' } } : undefined)
 
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB_OVERRIDE[id] || PREVIEW_VB[id] || '0 0 100 100'
@@ -662,7 +666,9 @@ export function decoItems(deco) {
 }
 
 // items: [{ id, tf }] — 장착된 데코 목록(여러 유형 동시 렌더). layer: 'back' | 'front'
-export default function AvatarDeco({ items, layer = 'front' }) {
+// pickable: DecoAdjuster 가 좌우 분리 모드일 때만 true 로 넘긴다 — 그때만 좌/우 그려진
+// 영역을 직접 클릭해서 조정 대상 쪽을 고를 수 있다(다른 화면의 일반 아바타 표시는 그대로 클릭 불가).
+export default function AvatarDeco({ items, layer = 'front', pickable = false }) {
   // 그리는 순서(뒤→앞) = 테두리(후광) → 일반 꾸미기 → FRONTMOST(비눗방울, 항상 맨 위)
   // FRONTMOST_IDS 를 먼저 확인해야 한다 — 비눗방울은 BORDER_IDS 에도 들어 있어서
   // (흰 테두리 대체용) 순서를 반대로 하면 항상 뒤로 가라앉아 버린다.
@@ -674,7 +680,7 @@ export default function AvatarDeco({ items, layer = 'front' }) {
   return (
     <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} /></Tf> })}
+      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} /></Tf> })}
     </svg>
   )
 }

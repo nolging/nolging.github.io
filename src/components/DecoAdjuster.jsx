@@ -166,13 +166,18 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   }
 
   function up(e) {
-    // 탭 판정: 손가락 하나로 시작해서(핀치 아님) 한 번도 임계값 이상 움직이지 않고 뗐으면 탭
-    // — 분리 모드일 때 뗀 자리가 화면 왼쪽 절반이면 왼쪽, 오른쪽 절반이면 오른쪽을 선택한다
-    // (좌우 미러 기준이 항상 정확히 x=50 이라 위치만으로 판단해도 어긋나지 않는다).
+    // 탭 판정: 손가락 하나로 시작해서(핀치 아님) 한 번도 임계값 이상 움직이지 않고 뗐으면 탭.
+    // 화면 좌/우 절반이 아니라 실제로 그려진(사진에 가려지지 않은) 왼쪽/오른쪽 요소를 정확히
+    // 맞혔을 때만 그 쪽을 선택한다 — AvatarDeco 가 pickable 일 때만 좌/우 그룹에 달아 주는
+    // data-deco-side 를 elementFromPoint 로 찾는다. 아무 요소도 안 맞았으면(빈 공간·사진 등)
+    // 아무 일도 일어나지 않는다.
     if (split && ptrs.current.size === 1 && tapStart.current && !tapMoved.current) {
-      const rect = surfRef.current.getBoundingClientRect()
-      const localX = ((e.clientX - rect.left) / rect.width) * 100
-      setSide(localX < 50 ? 'l' : 'r')
+      const el = document.elementFromPoint(e.clientX, e.clientY)
+      const hit = el?.closest?.('[data-deco-side]')
+      if (hit && surfRef.current?.contains(hit)) {
+        const s = hit.getAttribute('data-deco-side')
+        if (s === 'l' || s === 'r') setSide(s)
+      }
     }
     tapStart.current = null
     ptrs.current.delete(e.pointerId)
@@ -199,8 +204,8 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <span className="deco-adj-face" style={src ? undefined : { background: c.bg, color: c.fg, fontSize: size * 0.34 }}>
           {src ? <img src={src} alt="" draggable={false} onContextMenu={(e) => e.preventDefault()} /> : initial}
         </span>
-        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" />
-        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" pickable={split} />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" pickable={split} />
       </div>
 
       {splittable && (
