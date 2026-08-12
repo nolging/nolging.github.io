@@ -803,11 +803,20 @@ function useBoardComments(postId, focusId) {
 // rows 주면 그 목록을 그대로 노출(검색 '내댓글' 필터 등). highlight 주면 본문에서 검색어 강조.
 function CommentList({ h, onReply, onEdit, limit, onSeeAll, rows, highlight, emptyText }) {
   const { flat, loading, menuId, setMenuId, flashId, removeComment } = h
+  // ⋮ 메뉴는 기본 위쪽으로 펼쳐지는데, 화면 맨 위(상단바 바로 아래) 댓글은 위쪽에 공간이
+  // 없어 상단바에 가려진다 — 버튼 위치를 재서 공간이 부족하면 아래쪽으로 펼친다.
+  const [menuDir, setMenuDir] = useState('up')
   if (loading) return <div className="spinner sm" />
   if (flat.length === 0) return <p className="comment-empty">아직 댓글이 없어요. 첫 댓글을 남겨 보세요.</p>
   const truncated = !rows && limit && flat.length > limit
   const visible = rows ? rows : (truncated ? flat.slice(-limit) : flat)
   if (rows && visible.length === 0) return <p className="comment-empty">{emptyText || '표시할 댓글이 없어요.'}</p>
+  function toggleMenu(e, id) {
+    if (menuId === id) { setMenuId(null); return }
+    const rect = e.currentTarget.getBoundingClientRect()
+    setMenuDir(rect.top < 160 ? 'down' : 'up')
+    setMenuId(id)
+  }
   return (
     <>
       {truncated && (
@@ -823,29 +832,26 @@ function CommentList({ h, onReply, onEdit, limit, onSeeAll, rows, highlight, emp
             </li>
           )
         }
-        const hasMenu = depth === 0 || c.is_mine || c.can_delete
         return (
           <li key={c.id} data-cid={c.id} className={`sb-cmt-row${depth ? ' reply' : ''}${c.is_mine ? ' mine' : ''}${flashId === c.id ? ' hl' : ''}`}>
             {depth === 1 && <ReplyCorner />}
             <div className="sb-cmt-meta">
               <span className="sb-cmt-time">{boardTime(c.created_at)}</span>
-              {hasMenu && (
-                <div className="comment-menu-wrap">
-                  <button className="comment-menu-btn" aria-label="더보기" onClick={() => setMenuId(menuId === c.id ? null : c.id)}>
-                    <DotsIcon />
-                  </button>
-                  {menuId === c.id && (
-                    <>
-                      <div className="menu-backdrop" onClick={() => setMenuId(null)} />
-                      <div className="menu-pop" role="menu">
-                        {depth === 0 && <button type="button" onClick={() => onReply(c)}>답글 달기</button>}
-                        {c.is_mine && <button type="button" onClick={() => onEdit(c)}>수정</button>}
-                        {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="comment-menu-wrap">
+                <button className="comment-menu-btn" aria-label="더보기" onClick={(e) => toggleMenu(e, c.id)}>
+                  <DotsIcon />
+                </button>
+                {menuId === c.id && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setMenuId(null)} />
+                    <div className={`menu-pop${menuDir === 'down' ? ' menu-pop-down' : ''}`} role="menu">
+                      <button type="button" onClick={() => onReply(c)}>답글 달기</button>
+                      {c.is_mine && <button type="button" onClick={() => onEdit(c)}>수정</button>}
+                      {c.can_delete && <button type="button" className="menu-danger" onClick={() => removeComment(c.id)}>삭제</button>}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <p className="sb-cmt-text">{highlight ? highlightText(c.body, highlight) : c.body}</p>
           </li>
