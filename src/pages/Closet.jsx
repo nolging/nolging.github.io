@@ -229,7 +229,14 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
             <span className="nc-link-ico" style={{ background: bgOf(itemId, true) }}>
               <StoreItemImage id={itemId} emoji="✨" className="nc-img" />
             </span>
-            <div><div className="nc-link-name">{catalogName(itemId) || itemId}</div></div>
+            <div>
+              <div className="nc-link-name">{catalogName(itemId) || itemId}</div>
+              <div className="nc-link-sub">
+                {slot === 'face' || slot === '얼굴' ? '프로필 사진 얼굴에 장착해요 (최대 2개)'
+                  : slot === 'head' || slot === '머리' ? '프로필 사진 머리 위에 장착해요'
+                    : '프로필 사진에 장착해요'}
+              </div>
+            </div>
           </div>
         )}
         {needPick && (

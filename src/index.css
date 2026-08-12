@@ -3309,6 +3309,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ---- 커플 링 나눠 끼기 모달 ---- */
 .couple-modal { display: flex; flex-direction: column; gap: 14px; }
+/* 장착 해제(cg-footer-center)는 바로 위 알약 버튼과 더 붙어 보이게 — cg-footer-center 자체의
+   margin-top(14px)이 이 flex gap(14px)과 겹쳐 너무 벌어지므로 상쇄한다. */
+.couple-modal .cg-footer-center { margin-top: -8px; }
 .couple-hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
 .couple-to { display: flex; align-items: center; gap: 10px; }
 .couple-to-label { font-weight: 800; font-size: 14px; color: var(--primary); flex-shrink: 0; }
