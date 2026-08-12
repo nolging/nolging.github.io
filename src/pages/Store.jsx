@@ -13,6 +13,8 @@ const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 // "신상" 배지: 유저에게 공개된 시점(public_since) 기준 일주일 이내
 const NEW_BADGE_MS = 7 * 24 * 60 * 60 * 1000
 const isNewItem = (item) => !!item.publicSince && Date.now() - new Date(item.publicSince).getTime() < NEW_BADGE_MS
+// 프로필 꾸미기 섹션 필터 알약(전체 + 유형별). 유형명은 deco_slot 에 저장된 값 그대로 사용.
+const DECO_SLOT_FILTERS = ['전체', '머리', '얼굴', '안경', '테두리']
 // 꾸미기 유형: deco_slot 값이 곧 표시명. 레거시 영문 코드(head/face/glasses)만 한글로 매핑.
 const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경' }
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
@@ -40,6 +42,7 @@ export default function Store() {
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
   const [premiumGroupIds, setPremiumGroupIds] = useState([]) // 커플/우정 링 적용 그룹(우정 링 선물 시 제외)
+  const [decoSlotFilter, setDecoSlotFilter] = useState('전체') // 프로필 꾸미기 섹션 유형 필터
   // 새로 진입하면 일반 상점. 단, 퀘스트 등으로 premium 지정 시 프리미엄 탭, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
   const [premiumView, setPremiumView] = useState(() => {
     try {
@@ -166,9 +169,17 @@ export default function Store() {
   const shownItems = items.filter(qualifies)
 
   const sections = CAT_ORDER.map((key) => {
-    const secItems = shownItems.filter((it) => catOf(it.id, it.category) === key)
-    return { key, label: CAT[key], items: secItems, comingSoon: inPremium && key === 'avatar' && secItems.length === 0 }
-  }).filter((s) => s.items.length || s.comingSoon)
+    const isAvatar = key === 'avatar'
+    const secItemsAll = shownItems.filter((it) => catOf(it.id, it.category) === key)
+    const secItems = isAvatar && decoSlotFilter !== '전체'
+      ? secItemsAll.filter((it) => slotLabel(it.decoSlot || decoSlot(it.id)) === decoSlotFilter)
+      : secItemsAll
+    return {
+      key, label: CAT[key], items: secItems,
+      comingSoon: inPremium && isAvatar && secItemsAll.length === 0,
+      showSlotFilter: isAvatar && secItemsAll.length > 0,
+    }
+  }).filter((s) => s.items.length || s.comingSoon || s.showSlotFilter)
 
   return (
     <div className={`page store-page ${inPremium ? 'is-premium' : ''}`}
@@ -210,8 +221,22 @@ export default function Store() {
       ) : (
         sections.map((sec) => (
           <section key={sec.key} className="st-section">
-            <div className="st-section-title">{sec.label}</div>
+            <div className="st-section-title-row">
+              <div className="st-section-title">{sec.label}</div>
+              {sec.showSlotFilter && (
+                <div className="st-slot-filter" role="tablist">
+                  {DECO_SLOT_FILTERS.map((s) => (
+                    <button key={s} type="button" role="tab" aria-selected={decoSlotFilter === s}
+                      className={`st-slot-chip ${decoSlotFilter === s ? 'on' : ''}`}
+                      onClick={() => setDecoSlotFilter(s)}>{s}</button>
+                  ))}
+                </div>
+              )}
+            </div>
             {sec.comingSoon && <div className="st-coming">아이템 준비 중이에요 ✦</div>}
+            {sec.showSlotFilter && sec.items.length === 0 && (
+              <div className="st-coming">해당 유형의 아이템이 없어요.</div>
+            )}
             {sec.items.length > 0 && (
               <div className="st-grid">
                 {sec.items.map((item) => (
@@ -219,6 +244,7 @@ export default function Store() {
                     <span className="st-card-thumb" style={{ background: item.imageBg || imgBgOf(item.id, item.premium) }}>
                       <StoreItemImage id={item.id} emoji={item.emoji} svg={item.imageSvg} className="st-card-img" />
                       {isNewItem(item) && <span className="st-new-badge">신상</span>}
+                      {item.adminOnly && <span className="st-admin-badge">비매품</span>}
                       {(item.decoSlot || decoSlot(item.id)) && <span className="deco-slot-badge">{slotLabel(item.decoSlot || decoSlot(item.id))}</span>}
                     </span>
                     <span className="st-card-name">{itemName(item.id, item.name)}</span>
