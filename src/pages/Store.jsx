@@ -81,7 +81,12 @@ export default function Store() {
     try {
       const rows = await listInventory(user.id)
       const m = {}
-      for (const r of rows) { if (r.status === 'active') m[r.item_id] = (m[r.item_id] || 0) + 1 }
+      // 프로필 꾸미기(deco-*)는 장착 중(used)인 사본도 보유 개수에 포함한다.
+      for (const r of rows) {
+        if (r.status === 'active' || (r.status === 'used' && r.item_id.startsWith('deco-'))) {
+          m[r.item_id] = (m[r.item_id] || 0) + 1
+        }
+      }
       setInvCounts(m)
     } catch { /* noop */ }
   }, [user?.id])
@@ -253,7 +258,7 @@ export default function Store() {
                 <span className="st-detail-thumb" style={{ background: selected.imageBg || imgBgOf(selected.id, selected.premium) }}>
                   <StoreItemImage id={selected.id} emoji={selected.emoji} svg={selected.imageSvg} className="st-detail-img" />
                 </span>
-                {selected.id !== 'couple-ring' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)}개</span>}
+                {selected.id !== 'couple-ring' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)} 개</span>}
                 <div className="st-detail-name">{itemName(selected.id, selected.name)}</div>
                 <div className="st-detail-desc">{selected.desc}</div>
               </div>
