@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import AvatarDeco, { DECO_TF0 } from './AvatarDeco'
+import AvatarDeco, { DECO_TF0, decoAnchor } from './AvatarDeco'
 import { memberColor } from './MemberAvatar'
 
 // 프로필 꾸미기 아이템을 그룹 프로필 사진에 맞춰 조정하는 편집기.
@@ -9,15 +9,22 @@ import { memberColor } from './MemberAvatar'
 // 마우스/키보드만 쓰는 환경을 위해 아래에 크기·각도 버튼도 둔다.
 // 좌표는 아바타 SVG viewBox(0~100) 단위로 저장하므로 아바타 크기와 무관하게 같은 결과가 나온다.
 
-export const TF_LIMIT = { s: [0.4, 2.5], x: [-60, 60], y: [-60, 60] }
+// 좌우/상하는 "오프셋"이 아니라 "최종 위치"(기준점+오프셋)가 이 절대 범위 안에
+// 들어오도록 클램프한다 — 고양이 리본처럼 기준점이 중앙(50,50)에서 오른쪽으로
+// 치우친 아이템도, 좌/우 어느 쪽으로든 사진 밖까지 비슷한 정도로 보낼 수 있다.
+// (기준점이 고정 오프셋만큼만 움직이는 방식이면 이미 가장자리에 가까운 쪽은
+// 조금만 움직여도 사진을 벗어나고, 반대쪽은 아무리 움직여도 사진 안에 갇힌다.)
+const ABS_POS = [-30, 130]
+export const TF_LIMIT = { s: [0.4, 2.5] }
 const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v))
 // 각도는 -180~180 으로 감아 준다(한 바퀴 돌려도 값이 커지지 않게)
 const wrap = (r) => { let v = ((r + 180) % 360 + 360) % 360 - 180; return v === -180 ? 180 : v }
-export function clampTf(tf) {
+export function clampTf(tf, itemId) {
+  const [ax, ay] = decoAnchor(itemId)
   return {
     s: +clamp(Number(tf.s) || 1, TF_LIMIT.s).toFixed(3),
-    x: +clamp(Number(tf.x) || 0, TF_LIMIT.x).toFixed(2),
-    y: +clamp(Number(tf.y) || 0, TF_LIMIT.y).toFixed(2),
+    x: +clamp(Number(tf.x) || 0, [ABS_POS[0] - ax, ABS_POS[1] - ax]).toFixed(2),
+    y: +clamp(Number(tf.y) || 0, [ABS_POS[0] - ay, ABS_POS[1] - ay]).toFixed(2),
     r: +wrap(Number(tf.r) || 0).toFixed(1),
   }
 }
@@ -38,7 +45,7 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   tfRef.current = tf || DECO_TF0
 
   const cur = tf || DECO_TF0
-  const apply = (patch) => onChange(clampTf({ ...tfRef.current, ...patch }))
+  const apply = (patch) => onChange(clampTf({ ...tfRef.current, ...patch }, itemId))
 
   // Safari 의 페이지 확대 제스처가 편집을 가로채지 않게 막는다
   useEffect(() => {
@@ -115,14 +122,6 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       </div>
 
       <p className="deco-adj-hint">손가락으로도 위치, 크기, 각도 조정 가능해요.</p>
-
-      <div className="deco-adj-ctrl">
-        <button type="button" onClick={() => apply({ x: cur.x - 5 })} aria-label="왼쪽으로 이동">←</button>
-        <button type="button" onClick={() => apply({ x: cur.x + 5 })} aria-label="오른쪽으로 이동">→</button>
-        <i className="deco-adj-sep" />
-        <button type="button" onClick={() => apply({ y: cur.y - 5 })} aria-label="위로 이동">↑</button>
-        <button type="button" onClick={() => apply({ y: cur.y + 5 })} aria-label="아래로 이동">↓</button>
-      </div>
 
       <div className="deco-adj-ctrl">
         <button type="button" onClick={() => apply({ s: cur.s - 0.1 })} aria-label="작게">－</button>

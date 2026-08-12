@@ -323,7 +323,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   useEffect(() => {
     if (!open) return
     setGroupId(item?.appliedGroupId || ''); setError(''); setBusy(false)
-    setTf(item?.tf ? clampTf(item.tf) : { ...DECO_TF0 })
+    setTf(item?.tf ? clampTf(item.tf, item.id) : { ...DECO_TF0 })
     Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
       .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
       .catch((e) => setError(e.message))
@@ -337,7 +337,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   const target = eligible.find((g) => g.id === groupId)
   const changed = groupId && groupId !== item?.appliedGroupId
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
-  const tfChanged = !changed && JSON.stringify(clampTf(tf)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0))
+  const tfChanged = !changed && JSON.stringify(clampTf(tf, item?.id)) !== JSON.stringify(clampTf(item?.tf || DECO_TF0, item?.id))
 
   // 선택한 그룹에 이미 '같은 유형(슬롯)'의 다른 데코가 장착돼 있으면, 적용 시 그게 해제된다 → 경고용
   const [existing, setExisting] = useState(null) // { id, name } | null
@@ -374,7 +374,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
       if (willApply) await applyAvatarDeco(item.id, target.id)
       // 조정값 저장은 "그 그룹에 장착 중" 이어야 가능해 적용 뒤에 호출한다.
       // 기본값이고 저장된 값도 없으면 호출을 건너뛴다(조정 기능 미배포 DB 호환).
-      const v = clampTf(tf)
+      const v = clampTf(tf, item.id)
       if (!isTf0(v) || !isTf0(item?.tf)) await setAvatarDecoTf(item.id, target.id, isTf0(v) ? null : v)
       await onDone(); onClose()
     } catch (e) {
