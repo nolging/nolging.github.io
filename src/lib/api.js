@@ -1792,6 +1792,23 @@ export async function adminDeleteQuestDef(id) {
   const { error } = await supabase.from('quest_defs').delete().eq('id', id)
   if (error) throw error
 }
+
+// ---- 관리자: 데일리 퀘스트 정의(quest_daily_defs) — key 는 고정(attend/visit/note),
+// 이모지·배경색·명칭·보상만 수정. RLS 상 쓰기는 관리자만 ----
+export async function adminListDailyQuestDefs() {
+  const { data, error } = await supabase.from('quest_daily_defs')
+    .select('key, title, emoji, emoji_bg, reward, sort_order, active').order('sort_order', { ascending: true })
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return data ?? []
+}
+export async function adminUpsertDailyQuestDef(def) {
+  const row = {
+    key: def.key, title: def.title, emoji: def.emoji ?? '',
+    emoji_bg: def.emoji_bg ?? '', reward: Number(def.reward) || 0,
+  }
+  const { error } = await supabase.from('quest_daily_defs').update(row).eq('key', def.key)
+  if (error) throw error
+}
 // 그룹 방문 기록(데일리 '그룹 방문' 퀘스트). 실패는 조용히 무시.
 export async function touchGroupVisit() {
   try { await supabase.rpc('touch_group_visit') } catch { /* noop */ }

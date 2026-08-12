@@ -81,7 +81,7 @@ function DailyRow({ q, last, busy, onClaim, onChallenge }) {
   const ic = questIcon(q.key)
   return (
     <div className={`quest-row ${last ? 'is-last' : ''}`}>
-      <span className="quest-ic" style={{ background: ic.bg }}>{ic.emoji}</span>
+      <span className="quest-ic" style={{ background: q.emoji_bg || ic.bg }}>{q.emoji || ic.emoji}</span>
       <div className="quest-info">
         <span className="quest-label">{q.label}</span>
         <span className="quest-reward"><Paw />{q.reward}</span>

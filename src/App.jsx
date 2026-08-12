@@ -45,6 +45,7 @@ import AdminStore from './pages/admin/AdminStore'
 import AdminStoreItem from './pages/admin/AdminStoreItem'
 import AdminQuests from './pages/admin/AdminQuests'
 import AdminQuestDetail from './pages/admin/AdminQuestDetail'
+import AdminDailyQuestDetail from './pages/admin/AdminDailyQuestDetail'
 import AdminNotifs from './pages/admin/AdminNotifs'
 import AdminNotifDetail from './pages/admin/AdminNotifDetail'
 import AdminReports from './pages/admin/AdminReports'
@@ -124,6 +125,7 @@ export default function App() {
         <Route path="/admin/store/:id" element={<ProtectedRoute adminOnly><AdminStoreItem /></ProtectedRoute>} />
         <Route path="/admin/quests" element={<ProtectedRoute adminOnly><AdminQuests /></ProtectedRoute>} />
         <Route path="/admin/quests/new" element={<ProtectedRoute adminOnly><AdminQuestDetail /></ProtectedRoute>} />
+        <Route path="/admin/quests/daily/:key" element={<ProtectedRoute adminOnly><AdminDailyQuestDetail /></ProtectedRoute>} />
         <Route path="/admin/quests/:id" element={<ProtectedRoute adminOnly><AdminQuestDetail /></ProtectedRoute>} />
         <Route path="/admin/notifs" element={<ProtectedRoute adminOnly><AdminNotifs /></ProtectedRoute>} />
         <Route path="/admin/notifs/:key" element={<ProtectedRoute adminOnly><AdminNotifDetail /></ProtectedRoute>} />
