@@ -117,6 +117,14 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       <p className="deco-adj-hint">손가락으로도 위치, 크기, 각도 조정 가능해요.</p>
 
       <div className="deco-adj-ctrl">
+        <button type="button" onClick={() => apply({ x: cur.x - 5 })} aria-label="왼쪽으로 이동">←</button>
+        <button type="button" onClick={() => apply({ x: cur.x + 5 })} aria-label="오른쪽으로 이동">→</button>
+        <i className="deco-adj-sep" />
+        <button type="button" onClick={() => apply({ y: cur.y - 5 })} aria-label="위로 이동">↑</button>
+        <button type="button" onClick={() => apply({ y: cur.y + 5 })} aria-label="아래로 이동">↓</button>
+      </div>
+
+      <div className="deco-adj-ctrl">
         <button type="button" onClick={() => apply({ s: cur.s - 0.1 })} aria-label="작게">－</button>
         <span className="deco-adj-val">{Math.round(cur.s * 100)}%</span>
         <button type="button" onClick={() => apply({ s: cur.s + 0.1 })} aria-label="크게">＋</button>
