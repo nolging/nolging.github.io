@@ -1,6 +1,7 @@
 import kittyRibbonPng from '../assets/deco/kitty-ribbon.png'
 import partyHatPng from '../assets/deco/party-hat.png'
 import cherryCreamPng from '../assets/deco/cherry-cream.png'
+import alienShadesPng from '../assets/deco/alien-shades.png'
 
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
@@ -309,35 +310,11 @@ function PixelShades() {
   return <g shapeRendering="crispEdges">{cells}</g>
 }
 
-// 럭비공(끝 살짝 둥근) 렌즈 path: 통통한 몸통 + 살짝 둥근 좌우 끝
-const football = (cx, cy, a, b, ty) => {
-  const rx = a * 0.5
-  return `M${cx - a} ${cy} C${cx - a} ${cy - ty} ${cx - rx} ${cy - b} ${cx} ${cy - b}`
-    + ` C${cx + rx} ${cy - b} ${cx + a} ${cy - ty} ${cx + a} ${cy}`
-    + ` C${cx + a} ${cy + ty} ${cx + rx} ${cy + b} ${cx} ${cy + b}`
-    + ` C${cx - rx} ${cy + b} ${cx - a} ${cy + ty} ${cx - a} ${cy} Z`
-}
-
+// 왹져(외계인) 선글라스: 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입 — 좌표계(0~100)는
+// 기존 벡터 버전이 차지하던 자리(PREVIEW_VB 의 '17 27 66 38')를 그대로 재현해 다른 꾸미기와
+// 배치가 어긋나지 않는다.
 function AlienShades() {
-  // 왹져(외계인) 선글라스: 통통한 럭비공 초록 테 + 검은 렌즈.
-  // 왼쪽 알은 오른쪽으로(치켜), 오른쪽 알은 왼쪽으로 45° 기울임. 브릿지는 직선으로 양 알에 닿음. 다리/귀 없음.
-  const A = 21, B = 11, TY = 5, LC = 34, RC = 66
-  return (
-    <g>
-      {/* 브릿지: 렌즈 뒤에 넓게 깔아 렌즈가 양끝을 덮게 → 틈 없이 이어짐 */}
-      <rect x="30" y="43" width="40" height="6" fill="#35c14a" />
-      <g transform={`rotate(53 ${LC} 46)`}>
-        <path d={football(LC, 46, A, B, TY)} fill="#35c14a" />
-        <path d={football(LC, 46, A - 2.6, B - 2.2, TY)} fill="#141414" />
-      </g>
-      <g transform={`rotate(-53 ${RC} 46)`}>
-        <path d={football(RC, 46, A, B, TY)} fill="#35c14a" />
-        <path d={football(RC, 46, A - 2.6, B - 2.2, TY)} fill="#141414" />
-      </g>
-      <circle cx={LC + 1} cy="39" r="1.7" fill="#fff" opacity="0.85" />
-      <circle cx={RC - 1} cy="39" r="1.7" fill="#fff" opacity="0.85" />
-    </g>
-  )
+  return <image href={alienShadesPng} x="17" y="27.9" width="66" height="36.1" preserveAspectRatio="xMidYMid meet" />
 }
 
 // 하트 렌즈 path (중심 cx,cy · 반폭 a). 통통한 봉우리 + 짧고 둥근 아래 꼭짓점.
