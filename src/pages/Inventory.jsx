@@ -552,6 +552,7 @@ function DecoMultiModal({ open, onClose, myId, item, onPick }) {
             const me = (g?.group_members || []).find((m) => m.user_id === myId)
             return (
               <button key={r.groupId} type="button" className="deco-group-row" onClick={() => onPick(r.groupId, true, r.tf)}>
+                <span className="deco-group-row-badge">장착 중</span>
                 <span className="deco-group-row-name">{g?.name || '알 수 없는 그룹'}</span>
                 <span className="deco-group-row-right">
                   <Avatar src={me?.avatar_url || null} name={me?.display_nickname || '나'} size={26} deco={decoMaps[r.groupId]} />
