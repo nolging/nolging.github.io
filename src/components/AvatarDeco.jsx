@@ -312,11 +312,11 @@ function PixelShades() {
   return <g shapeRendering="crispEdges">{cells}</g>
 }
 
-// 왹져(외계인) 선글라스: 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입 — 좌표계(0~100)는
-// 기존 벡터 버전이 차지하던 자리(PREVIEW_VB 의 '17 27 66 38')를 그대로 재현해 다른 꾸미기와
-// 배치가 어긋나지 않는다.
+// 왹져(외계인) 선글라스: 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입. 좌표계(0~100)는
+// 관리자가 준 적용 샘플(눈 위치, 크기)을 그대로 재현 — PREVIEW_VB 도 이 자리에 맞춰 함께 옮겼다
+// (미리보기 크롭·decoAnchor 회전/확대 기준점 모두 이 새 위치 기준).
 function AlienShades() {
-  return <image href={alienShadesPng} x="17" y="27.9" width="66" height="36.1" preserveAspectRatio="xMidYMid meet" />
+  return <image href={alienShadesPng} x="20.8" y="23.6" width="58.2" height="31.9" preserveAspectRatio="xMidYMid meet" />
 }
 
 // 하트 렌즈 path (중심 cx,cy · 반폭 a). 통통한 봉우리 + 짧고 둥근 아래 꼭짓점.
@@ -505,7 +505,7 @@ const PREVIEW_VB = {
   'deco-blush': '2 51 96 28',
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
-  'deco-alien-shades': '17 27 66 38',
+  'deco-alien-shades': '19 22 62 36',
   'deco-bandage': '64 51 36 24',
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
