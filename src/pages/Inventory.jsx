@@ -361,7 +361,6 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     () => groups.filter((g) => premiumIds.has(g.id) && (g.group_members || []).some((m) => m.user_id === myId)),
     [groups, premiumIds, myId],
   )
-  const appliedGroup = groups.find((g) => g.id === item?.appliedGroupId)
   const target = eligible.find((g) => g.id === groupId)
   const changed = groupId && groupId !== item?.appliedGroupId
   // 그룹을 옮기면 조정값은 그 그룹 기준으로 새로 잡는다(사진이 다르므로)
@@ -442,20 +441,12 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
           ) : ''} />
         {error && <div className="alert alert-error">{error}</div>}
 
-        {applied && (
-          <div className="couple-to">
-            <span className="couple-to-label">적용 중</span>
-            <span className="couple-to-value">{appliedGroup?.name || '알 수 없는 그룹'}</span>
-          </div>
-        )}
-
-        <label className="field">
-          <span>{applied ? '적용할 그룹 변경' : '적용할 그룹'}</span>
+        <div className="field">
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{eligible.length ? '그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
             {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}{g.id === item?.appliedGroupId ? ' (현재)' : ''}</option>)}
           </select>
-        </label>
+        </div>
 
         {/* item 은 모달이 닫히는 순간 null 이 되므로 반드시 함께 확인한다 */}
         {item && target && (
