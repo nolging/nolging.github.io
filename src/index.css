@@ -3316,6 +3316,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .couple-to { display: flex; align-items: center; gap: 10px; }
 .couple-to-label { font-weight: 800; font-size: 14px; color: var(--primary); flex-shrink: 0; }
 .couple-to-value { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--text); }
+/* 이미 적용된 그룹 행(다중 보유 선택 모달) — select 와 같은 폭/테두리로 나란히 보이게 */
+.deco-group-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  box-sizing: border-box; min-height: 46px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px;
+  background: #fff; cursor: pointer; text-align: left; font: inherit; font-size: 14px; }
+.deco-group-row:active { background: #f6f5fa; }
+.deco-group-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--text); }
+.deco-group-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .couple-msg { position: relative; }
 .couple-msg-count { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--muted); }
 

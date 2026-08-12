@@ -74,7 +74,6 @@ export default function Inventory() {
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [decoMultiItem, setDecoMultiItem] = useState(null) // 2개 이상 보유 + 이미 1곳 이상 적용 중 → 그룹 선택 모달 { id, name, desc, appliedRows }
-  const [decoInstance, setDecoInstance] = useState(null)   // 위 모달에서 그룹을 고른 뒤의 개별 조정 모달 { item, groupId, applied, tf }
   const [stickerUse, setStickerUse] = useState(null) // 스티커판 색 선택 모달 { id, variant }
   const [nameTagOpen, setNameTagOpen] = useState(false) // 명찰(닉네임 변경) 모달
   const [purinMicOpen, setPurinMicOpen] = useState(false) // 푸린 마이크(짝꿍 낙서) 모달
@@ -319,10 +318,11 @@ export default function Inventory() {
 
       <DecoMultiModal open={!!decoMultiItem} onClose={() => setDecoMultiItem(null)} myId={user?.id}
         item={decoMultiItem}
-        onPick={(groupId, applied, tf) => { setDecoInstance({ item: decoMultiItem, groupId, applied, tf }); setDecoMultiItem(null) }} />
-      <DecoInstanceModal open={!!decoInstance} onClose={() => setDecoInstance(null)} myId={user?.id}
-        item={decoInstance?.item} groupId={decoInstance?.groupId} applied={decoInstance?.applied} tf={decoInstance?.tf}
-        onDone={reload} />
+        onPick={(groupId, applied, tf) => {
+          const { id, name, desc } = decoMultiItem
+          setDecoItem(applied ? { id, name, desc, appliedGroupId: groupId, tf } : { id, name, desc, appliedGroupId: null, presetGroupId: groupId, tf: null })
+          setDecoMultiItem(null)
+        }} />
     </div>
   )
 }
@@ -342,7 +342,8 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
   // 특히 busy 를 되돌리지 않으면 다음에 열었을 때 버튼이 "적용 중…" 으로 멈춘다.
   useEffect(() => {
     if (!open) return
-    setGroupId(item?.appliedGroupId || ''); setError(''); setBusy(false)
+    // presetGroupId: 다중 보유 선택 모달에서 "추가 적용할 그룹"을 이미 골라 넘어온 경우 미리 채워 준다
+    setGroupId(item?.appliedGroupId || item?.presetGroupId || ''); setError(''); setBusy(false)
     setTf(item?.tf ? clampTf(item.tf, item.id) : { ...DECO_TF0 })
     Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
       .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
@@ -489,26 +490,50 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
 }
 
 // ---- 아바타 꾸미기: 2개 이상 보유 + 이미 1곳 이상 적용 중일 때 어떤 그룹을 다룰지 고르는 모달.
-// 이미 적용된 그룹은 '>' 행으로(눌러서 그 그룹 조정/해제), 여분 사본이 있으면 그 아래
-// 드롭다운으로 추가 그룹을 골라 새로 적용한다(이미 적용된 그룹은 목록에서 제외).
+// 이미 적용된 그룹은 '>' 행으로(눌러서 그 그룹 조정/해제 — 기존 DecoModal 그대로 이어짐),
+// 여분 사본이 있으면 그 아래 드롭다운으로 추가 그룹을 골라 새로 적용한다(이미 적용된 그룹은
+// 목록에서 제외). 추가로 고를 그룹이 하나도 없고 적용된 곳도 1곳뿐이면, 이 모달 없이 바로
+// 기존 DecoModal(그 1곳 조정용)을 띄운다 — onPick 이 그 케이스를 그대로 처리한다.
 function DecoMultiModal({ open, onClose, myId, item, onPick }) {
   const [groups, setGroups] = useState([])
   const [premiumIds, setPremiumIds] = useState(new Set())
+  const [groupsLoaded, setGroupsLoaded] = useState(false)
+  const [decoMaps, setDecoMaps] = useState({}) // groupId → 그 그룹에서 내가 장착 중인 데코 배열(아바타 미리보기용)
   const [pickedGroupId, setPickedGroupId] = useState('')
 
-  useEffect(() => {
-    if (!open) return
-    setPickedGroupId('')
-    Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
-      .then(([gs, c, f]) => { setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])])) })
-  }, [open, myId])
-
   const appliedRows = item?.appliedRows || []
+
+  useEffect(() => {
+    if (!open || !item) return
+    setPickedGroupId(''); setGroupsLoaded(false); setDecoMaps({})
+    Promise.all([listMyGroups(), listCoupleGroups(myId).catch(() => []), listFriendGroups().catch(() => [])])
+      .then(async ([gs, c, f]) => {
+        setGroups(gs); setPremiumIds(new Set([...(c || []), ...(f || [])]))
+        const maps = await Promise.all(appliedRows.map((r) => getGroupDecoMap(r.groupId).catch(() => ({}))))
+        const m = {}
+        appliedRows.forEach((r, i) => { m[r.groupId] = maps[i]?.[myId] || [] })
+        setDecoMaps(m)
+        setGroupsLoaded(true)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, item, myId])
+
   const eligible = useMemo(
     () => groups.filter((g) => premiumIds.has(g.id) && (g.group_members || []).some((m) => m.user_id === myId)
       && !appliedRows.some((r) => r.groupId === g.id)),
     [groups, premiumIds, myId, appliedRows],
   )
+
+  // 로딩 끝난 뒤 "적용된 곳 1곳 + 추가로 고를 그룹 없음"이면 이 모달을 건너뛰고 바로 그 그룹 조정 모달로
+  useEffect(() => {
+    if (!open || !groupsLoaded) return
+    if (appliedRows.length === 1 && eligible.length === 0) onPick(appliedRows[0].groupId, true, appliedRows[0].tf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, groupsLoaded, eligible.length])
+
+  // 로딩 전에는 모달을 그대로 보여준다(빈 화면 대신 로딩 중 티가 나게) — 스킵 여부가 정해지고
+  // 나서야(위 effect 가 onPick 을 부르는 바로 그 순간) 사라지게 한다.
+  if (groupsLoaded && appliedRows.length === 1 && eligible.length === 0) return null
 
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
@@ -522,77 +547,27 @@ function DecoMultiModal({ open, onClose, myId, item, onPick }) {
 
         <div className="field">
           <span>적용할 그룹</span>
-          {appliedRows.map((r) => (
-            <button key={r.groupId} type="button" className="mi-pill-row" onClick={() => onPick(r.groupId, true, r.tf)}>
-              <span>{groups.find((g) => g.id === r.groupId)?.name || '알 수 없는 그룹'}</span>
-              <svg width="18" viewBox="0 0 24 24" fill="none" stroke="#c3c0cf" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
-            </button>
-          ))}
+          {appliedRows.map((r) => {
+            const g = groups.find((x) => x.id === r.groupId)
+            const me = (g?.group_members || []).find((m) => m.user_id === myId)
+            return (
+              <button key={r.groupId} type="button" className="deco-group-row" onClick={() => onPick(r.groupId, true, r.tf)}>
+                <span className="deco-group-row-name">{g?.name || '알 수 없는 그룹'}</span>
+                <span className="deco-group-row-right">
+                  <Avatar src={me?.avatar_url || null} name={me?.display_nickname || '나'} size={26} deco={decoMaps[r.groupId]} />
+                  <svg width="18" viewBox="0 0 24 24" fill="none" stroke="#c3c0cf" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                </span>
+              </button>
+            )
+          })}
         </div>
 
-        <label className="field">
-          <span>추가 적용할 그룹 선택</span>
+        <div className="field">
           <select value={pickedGroupId} onChange={(e) => { const v = e.target.value; setPickedGroupId(v); if (v) onPick(v, false, null) }}>
-            <option value="">{eligible.length ? '그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
+            <option value="">{eligible.length ? '추가 적용할 그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
             {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
-        </label>
-      </div>
-    </Modal>
-  )
-}
-
-// ---- 아바타 꾸미기: 위 선택 모달에서 그룹을 고른 뒤의 개별 조정 — 그룹이 이미 정해져 있어
-// 그룹 선택 필드는 없다(옷장의 ClosetItemModal 과 같은 구조, 다만 여기는 즉시 서버에 반영).
-function DecoInstanceModal({ open, onClose, myId, item, groupId, applied, tf: initialTf, onDone }) {
-  const [groups, setGroups] = useState([])
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const [tf, setTf] = useState(DECO_TF0)
-
-  useEffect(() => {
-    if (!open) return
-    setError(''); setBusy(false)
-    setTf(applied && initialTf ? clampTf(initialTf, item.id) : { ...DECO_TF0 })
-    listMyGroups().then(setGroups).catch(() => setGroups([]))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, item, groupId])
-
-  const groupName = groups.find((g) => g.id === groupId)?.name || ''
-  const me = (groups.find((g) => g.id === groupId)?.group_members || []).find((m) => m.user_id === myId)
-
-  async function apply() {
-    setBusy(true); setError('')
-    try {
-      if (!applied) await applyAvatarDeco(item.id, groupId)
-      const v = clampTf(tf, item.id)
-      if (!isTf0(v) || (applied && !isTf0(initialTf))) await setAvatarDecoTf(item.id, groupId, isTf0(v) ? null : v)
-      await onDone(); onClose()
-    } catch (e) { setError(e.message) } finally { setBusy(false) }
-  }
-  async function unapply() {
-    setBusy(true); setError('')
-    try { await unapplyAvatarDeco(item.id, groupId); await onDone(); onClose() }
-    catch (e) { setError(e.message) } finally { setBusy(false) }
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
-      <div className="couple-modal">
-        <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨" sub={groupName ? `${groupName}에 적용` : ''} />
-        {error && <div className="alert alert-error">{error}</div>}
-        {item && (
-          <DecoAdjuster itemId={item.id} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
-            seed={myId} tf={tf} onChange={setTf} />
-        )}
-        <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={apply}>
-          {busy ? '적용 중…' : applied ? '조정 저장' : '적용하기'}
-        </button>
-        {applied && (
-          <div className="cg-footer-center">
-            <button type="button" className="cg-danger-link" onClick={unapply} disabled={busy}>장착 해제</button>
-          </div>
-        )}
+        </div>
       </div>
     </Modal>
   )
