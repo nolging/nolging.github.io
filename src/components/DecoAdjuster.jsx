@@ -224,16 +224,16 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       )}
 
       <div className="deco-adj-ctrl">
-        <button type="button" onPointerDown={() => startHold(() => step(-0.01, 0))}
+        <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(-0.01, 0)) }}
           onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="작게">－</button>
         <span className="deco-adj-val">{Math.round(curTarget.s * 100)}%</span>
-        <button type="button" onPointerDown={() => startHold(() => step(0.01, 0))}
+        <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0.01, 0)) }}
           onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="크게">＋</button>
         <i className="deco-adj-sep" />
-        <button type="button" onPointerDown={() => startHold(() => step(0, -1))}
+        <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0, -1)) }}
           onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="왼쪽으로 회전">↺</button>
         <span className="deco-adj-val">{Math.round(curTarget.r)}°</span>
-        <button type="button" onPointerDown={() => startHold(() => step(0, 1))}
+        <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0, 1)) }}
           onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="오른쪽으로 회전">↻</button>
         <i className="deco-adj-sep" />
         <button type="button" className="deco-adj-reset" onClick={reset} disabled={resetDisabled}>초기화</button>
