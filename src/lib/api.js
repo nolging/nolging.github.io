@@ -1163,8 +1163,8 @@ export async function applyAvatarDeco(itemId, groupId) {
     throw error
   }
 }
-export async function unapplyAvatarDeco(itemId) {
-  const { error } = await supabase.rpc('unapply_avatar_deco', { p_item_id: itemId })
+export async function unapplyAvatarDeco(itemId, groupId) {
+  const { error } = await supabase.rpc('unapply_avatar_deco', { p_item_id: itemId, p_group_id: groupId ?? null })
   if (error) {
     if (error.code === 'PGRST202' || /unapply_avatar_deco/.test(error.message || '')) {
       throw new Error('아바타 꾸미기 기능이 아직 DB에 설정되지 않았습니다. (unapply_avatar_deco 함수를 먼저 적용해 주세요)')

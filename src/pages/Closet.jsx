@@ -68,7 +68,7 @@ export default function Closet() {
     const toEquip = [...current.keys()].filter((id) => !initial.has(id))
     const toRetune = [...current.keys()].filter((id) => initial.has(id) && !tfEq(current.get(id), initial.get(id)))
     try {
-      for (const id of toUnequip) await unapplyAvatarDeco(id)
+      for (const id of toUnequip) await unapplyAvatarDeco(id, groupId)
       for (const id of toEquip) {
         await applyAvatarDeco(id, groupId)
         const tf = current.get(id)
@@ -166,7 +166,9 @@ export default function Closet() {
             <div className="inv-grid">
               {sec.ids.map((id) => {
                 const isHere = worn.has(id)
-                const isElsewhere = wornElsewhere.has(id)
+                // 다른 그룹에 적용된 사본이 있어도, 이 그룹에 이미 장착 중이면(다른 사본 얘기이므로)
+                // 카드는 그대로 조작 가능해야 한다 — "다른 그룹에서 장착 중" 비활성화는 그 반대 경우만.
+                const isElsewhere = !isHere && wornElsewhere.has(id)
                 return (
                   <button key={id} type="button"
                     className={`inv-card2 ${isHere ? 'is-worn' : ''} ${isElsewhere ? 'is-static is-disabled' : ''}`}
