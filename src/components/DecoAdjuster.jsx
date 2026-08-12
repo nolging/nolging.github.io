@@ -80,6 +80,29 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       : { ...base2, ...patch }
     onChange(clampTf(next, itemId))
   }
+  // 크기·각도 버튼 한 걸음(1%·1°) — 매번 targetTf() 로 최신 값을 다시 읽어야 꾹 눌러 반복
+  // 호출될 때도 누적이 아니라 항상 지금 값 기준으로 정확히 한 걸음씩 움직인다.
+  function step(ds, dr) {
+    const t = targetTf()
+    const patch = {}
+    if (ds) patch.s = (Number(t.s) || 1) + ds
+    if (dr) patch.r = (Number(t.r) || 0) + dr
+    apply(patch)
+  }
+  // 버튼을 꾹 누르고 있으면 값이 계속 늘어나게(짧게 누르면 한 걸음만 — pointerup 이 지연
+  // 타이머보다 먼저 오면 반복이 시작되기 전에 멈춘다).
+  const holdTimer = useRef(null)
+  const holdInterval = useRef(null)
+  function stopHold() {
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null }
+    if (holdInterval.current) { clearInterval(holdInterval.current); holdInterval.current = null }
+  }
+  function startHold(fn) {
+    stopHold()
+    fn()
+    holdTimer.current = setTimeout(() => { holdInterval.current = setInterval(fn, 80) }, 420)
+  }
+  useEffect(() => stopHold, [])
 
   // Safari 의 페이지 확대 제스처가 편집을 가로채지 않게 막는다
   useEffect(() => {
@@ -196,13 +219,17 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
       )}
 
       <div className="deco-adj-ctrl">
-        <button type="button" onClick={() => apply({ s: curTarget.s - 0.1 })} aria-label="작게">－</button>
+        <button type="button" onPointerDown={() => startHold(() => step(-0.01, 0))}
+          onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="작게">－</button>
         <span className="deco-adj-val">{Math.round(curTarget.s * 100)}%</span>
-        <button type="button" onClick={() => apply({ s: curTarget.s + 0.1 })} aria-label="크게">＋</button>
+        <button type="button" onPointerDown={() => startHold(() => step(0.01, 0))}
+          onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="크게">＋</button>
         <i className="deco-adj-sep" />
-        <button type="button" onClick={() => apply({ r: curTarget.r - 10 })} aria-label="왼쪽으로 회전">↺</button>
+        <button type="button" onPointerDown={() => startHold(() => step(0, -1))}
+          onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="왼쪽으로 회전">↺</button>
         <span className="deco-adj-val">{Math.round(curTarget.r)}°</span>
-        <button type="button" onClick={() => apply({ r: curTarget.r + 10 })} aria-label="오른쪽으로 회전">↻</button>
+        <button type="button" onPointerDown={() => startHold(() => step(0, 1))}
+          onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="오른쪽으로 회전">↻</button>
         <i className="deco-adj-sep" />
         <button type="button" className="deco-adj-reset" onClick={reset} disabled={resetDisabled}>초기화</button>
       </div>
