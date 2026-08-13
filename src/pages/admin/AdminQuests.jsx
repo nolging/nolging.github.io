@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminListQuestDefs, adminListDailyQuestDefs, adminReorderQuestDefs } from '../../lib/api'
 import { QUEST_GRADE_SHORT } from './adminMeta'
+import CgToggle from '../../components/CgToggle'
 
 // 목록 카드: PC 가로형 / 모바일 세로형은 CSS 로 반응형 전환. 데일리는 설명·배지 없음(랜덤만 표시).
 // draggable(랜덤 전용)이면 이모지 아이콘이 정렬 드래그 핸들 역할을 한다.
@@ -65,6 +66,7 @@ export default function AdminQuests() {
   const dragRef = useRef(null)           // 드래그 중인 id
   const suppressClick = useRef(false)
   const [dragId, setDragId] = useState(null)
+  const [sortMode, setSortMode] = useState(false) // 켜져 있을 때만 이모지 핸들 드래그 정렬 동작
 
   const flushSave = useCallback(async () => {
     const ups = [...pendingRef.current.entries()].map(([id, sortOrder]) => ({ id, sortOrder }))
@@ -142,7 +144,7 @@ export default function AdminQuests() {
   }
 
   return (
-    <div className="page admin-page aq-page">
+    <div className="page admin-page aq-page admin-quests-page">
       {error && <div className="alert alert-error">{error}</div>}
       <div className="aq-head">
         <h2 className="aq-title">퀘스트 관리</h2>
@@ -164,12 +166,10 @@ export default function AdminQuests() {
         <div className="aq-section-head">
           <span className="aq-section-title">랜덤 퀘스트</span>
           <span className="aq-count">{quests.length}</span>
-          <Link to="/admin/quests/new" className="aq-add-btn" aria-label="퀘스트 추가">
-            <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span className="aq-add-label">퀘스트 추가</span>
-          </Link>
+          <span className="aq-sort-toggle">
+            <span className="aq-sort-toggle-label">정렬 수정</span>
+            <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+          </span>
         </div>
         {loading ? <div className="spinner" /> : quests.length === 0 ? (
           <p className="muted sm">등록된 퀘스트가 없습니다.</p>
@@ -178,13 +178,19 @@ export default function AdminQuests() {
             {quests.map((q) => (
               <QuestCard key={q.id} emoji={q.emoji} emojiBg={q.emoji_bg} title={q.title} desc={q.body} reward={q.reward}
                 target={QUEST_GRADE_SHORT[q.grade] || q.grade} active={q.active} showBadges
-                draggable dataId={q.id} dragging={dragId === q.id} dragActive={!!dragId}
+                draggable={sortMode} dataId={q.id} dragging={dragId === q.id} dragActive={!!dragId}
                 onIconPointerDown={(e) => onIconPointerDown(e, q.id)}
                 onClick={() => onCardClick(q.id)} />
             ))}
           </div>
         )}
       </section>
+
+      <Link to="/admin/quests/new" className="aq-fab" aria-label="퀘스트 추가">
+        <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </Link>
     </div>
   )
 }

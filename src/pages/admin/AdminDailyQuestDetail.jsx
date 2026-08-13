@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListDailyQuestDefs, adminUpsertDailyQuestDef } from '../../lib/api'
 
-// 이모지 배경색 프리셋(시안 8종)
-const BG_PRESETS = ['#f0eee9', '#eeebfe', '#eafaf0', '#fdf2f3', '#fff7e0', '#e6f4fd', '#fde8d8', '#e4e2f9']
+// 이모지 배경색 프리셋(마이 페이지 데일리 퀘스트 카드에 쓰이는 파스텔 톤)
+const BG_PRESETS = ['#eef1fb', '#e8f4ec', '#fde8ee', '#fdeee6', '#fff0d6', '#eaf3fb', '#eeebfe']
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
 // 데일리 퀘스트 수정(/admin/quests/daily/:key) — key 는 고정, 이모지·배경색·명칭·보상만 편집
@@ -51,7 +51,6 @@ export default function AdminDailyQuestDetail() {
       {error && <div className="alert alert-error">{error}</div>}
       {q && (
         <div className="aq-form-wrap">
-          <h2 className="aq-form-title">데일리 퀘스트 수정</h2>
           <form onSubmit={save} className="aq-form" key={key}>
             <div className="aq-frow">
               <label className="aq-flabel" htmlFor="dq-title">제목 <span className="aq-required">*</span></label>
@@ -79,14 +78,6 @@ export default function AdminDailyQuestDetail() {
                 <span className="aq-unit">츄르</span>
               </div>
             </div>
-            <div className="admin-notif-preview">
-              <span className="admin-notif-preview-ico" style={bg ? { background: bg } : undefined} aria-hidden="true">{emoji || '✦'}</span>
-              <div>
-                <div className="admin-notif-preview-t">{title || '퀘스트 명칭'}</div>
-                <div className="admin-notif-preview-b">보상 {reward || 0} 츄르</div>
-              </div>
-            </div>
-            <p className="aq-note">데일리 퀘스트는 매일 자정에 초기화되며, 세 개로 고정되어 있어 추가·삭제할 수 없어요. 항상 전체 회원에게 노출돼요.</p>
             <div className="aq-actions">
               <div className="aq-actions-right">
                 <button type="button" className="aq-btn-cancel" onClick={() => nav('/admin/quests')}>취소</button>
