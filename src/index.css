@@ -5744,6 +5744,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   text-decoration: none;
 }
 .aq-add-btn:hover { background: #5f4fd6; text-decoration: none; color: #fff; }
+@media (max-width: 699px) {
+  .aq-add-btn { width: 34px; height: 34px; padding: 0; border-radius: 50%; justify-content: center; flex-shrink: 0; }
+  .aq-add-label { display: none; }
+}
 .aq-cards { display: flex; flex-direction: column; gap: 8px; }
 .aq-card {
   width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px;
@@ -5784,6 +5788,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   .aq-badge-status { width: 96px; box-sizing: border-box; text-align: center; }
   .aq-card-reward { width: 100px; }
   .aq-card-chevron { display: block; color: #c7c3d4; font-size: 16px; flex-shrink: 0; line-height: 1; }
+}
+/* 모바일: 제목+배지 두 줄 높이를 왼쪽 이모지 아이콘(40px) 높이에 맞춤 */
+@media (max-width: 699px) {
+  .aq-card-body { gap: 3px; }
+  .aq-card-badges-mobile .aq-badge-target, .aq-card-badges-mobile .aq-badge-status { font-size: 10px; padding: 2px 7px; line-height: 1.3; }
 }
 
 /* 퀘스트 추가/수정 폼 */
