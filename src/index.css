@@ -5892,8 +5892,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   padding: 10px var(--pad-x);
 }
 .admin-store-tabbar .seg-tabs { margin-bottom: 0; }
-.admin-cat { display: flex; flex-direction: column; gap: 8px; }
-.admin-cat + .admin-cat { margin-top: 0; }
+/* 탭↔첫 카테고리 라벨 간격 축소(.page 기본 gap 18px 을 상쇄) */
+.admin-store-tabbar + .admin-cat { margin-top: -10px; }
+.admin-cat { display: flex; flex-direction: column; gap: 4px; }
+/* aq-section-head 자체 margin-bottom(퀘스트 관리용)은 상쇄하고 admin-cat 의 gap 으로만 간격 제어 */
+.admin-cat .aq-section-head { margin-bottom: 0; }
+/* 카테고리 사이 간격은 오히려 기본값보다 살짝 더 벌림 */
+.admin-cat + .admin-cat { margin-top: 8px; }
+/* 카테고리 라벨 옆 개수 배지: 라벨 텍스트 높이보다 작게 */
+.admin-cat .aq-count { font-size: 10px; padding: 2px 7px; }
 /* 길게 눌러 드래그 정렬 — 롱프레스 시 행 텍스트가 블록 선택되지 않도록 */
 .admin-rows, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 /* 상세 정보 나열 */
