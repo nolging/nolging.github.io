@@ -4,8 +4,8 @@ import { adminListQuestDefs, adminUpsertQuestDef, adminDeleteQuestDef } from '..
 import { QUEST_GRADES, EMPTY_QUEST } from './adminMeta'
 import CgToggle from '../../components/CgToggle'
 
-// 이모지 배경색 프리셋(시안 8종)
-const BG_PRESETS = ['#f0eee9', '#eeebfe', '#eafaf0', '#fdf2f3', '#fff7e0', '#e6f4fd', '#fde8d8', '#e4e2f9']
+// 이모지 배경색 프리셋(마이 페이지 퀘스트 카드에 쓰이는 파스텔 톤)
+const BG_PRESETS = ['#eef1fb', '#e8f4ec', '#fde8ee', '#fdeee6', '#fff0d6', '#eaf3fb', '#eeebfe']
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
 // 퀘스트 추가(/admin/quests/new) + 상세·수정(/admin/quests/:id)
@@ -53,7 +53,6 @@ export default function AdminQuestDetail() {
     <div className="page admin-page">
       {error && <div className="alert alert-error">{error}</div>}
       <div className="aq-form-wrap">
-        <h2 className="aq-form-title">{editing ? '랜덤 퀘스트 수정' : '랜덤 퀘스트 추가'}</h2>
         {/* label 은 htmlFor 로만 연결하고 텍스트 입력은 defaultValue (관리자 폼 공통 규칙) */}
         <form onSubmit={save} className="aq-form" key={id || 'new'}>
           <div className="aq-frow">
