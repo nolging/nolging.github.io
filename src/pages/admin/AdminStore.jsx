@@ -170,6 +170,7 @@ export default function AdminStore() {
               const tierLabel = tab === 'premium' ? ITEM_KIND_SHORT[kindKey] : null
               const statusLabel = it.adminOnly ? '비매품' : (it.isActive ? '판매' : '숨김')
               const statusOn = !it.adminOnly && it.isActive
+              const dimmed = !it.isActive || it.adminOnly
               const badges = (
                 <span className="aq-card-badges">
                   {tierLabel && <span className="aq-badge-target">{tierLabel}</span>}
@@ -180,7 +181,7 @@ export default function AdminStore() {
                 <button
                   key={it.id}
                   type="button"
-                  className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${it.isActive ? '' : ' inactive'}`}
+                  className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${dimmed ? ' inactive' : ''}`}
                   data-row-id={it.id}
                   data-sec={sec.key}
                   style={dragId ? { touchAction: 'none' } : undefined}
