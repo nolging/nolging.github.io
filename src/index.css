@@ -5884,6 +5884,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
 /* 상점 관리: 콘텐츠 상단 패딩 제거 → sticky 탭이 상단바 바로 아래(top:0)에 흔들림 없이 고정 */
 .content:has(> .admin-store-page) { padding-top: 0; }
+/* 우측 하단 고정 + 버튼(.aq-fab)에 마지막 카드가 가리지 않도록 여유 스크롤 공간 확보 */
+.admin-store-page { padding-bottom: 88px; }
 .admin-store-tabbar {
   position: sticky; top: 0; z-index: 6; background: var(--bg);
   margin: 0 calc(-1 * var(--pad-x));
