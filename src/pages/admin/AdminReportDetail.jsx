@@ -18,6 +18,11 @@ const SendIcon = () => (
     <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
   </svg>
 )
+const LockIcon = () => (
+  <svg width="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+)
 const pad = (n) => String(n).padStart(2, '0')
 const hhmm = (iso) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}` }
 const dayKey = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` }
@@ -232,15 +237,15 @@ export default function AdminReportDetail() {
         <div ref={endRef} />
       </div>
 
-      {report.resolved ? (
-        <div className="rc-closed">해결 완료된 리포트예요. 다시 문의하려면 먼저 미해결로 되돌려 주세요.</div>
-      ) : (
-        <form className="rc-input" onSubmit={send}>
-          <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="메시지를 입력하세요" maxLength={1000} enterKeyHint="send"
-            onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
-          <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !msg.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
-        </form>
-      )}
+      <form className="rc-input" onSubmit={send}>
+        <input value={msg} onChange={(e) => setMsg(e.target.value)} disabled={report.resolved}
+          placeholder={report.resolved ? '해결 완료된 리포트에는 문의할 수 없어요' : '메시지를 입력하세요'}
+          maxLength={1000} enterKeyHint="send"
+          onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
+        {report.resolved
+          ? <span className="rc-send rc-send-locked" aria-hidden="true"><LockIcon /></span>
+          : <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !msg.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>}
+      </form>
 
       {/* 해결 처리 + 보상 지급(선택). 아이템 지급 시트(z-index 낮음)가 가려지지 않게 시트가
           열려 있는 동안엔 잠시 숨긴다(gifts/coin 등 상태는 유지되므로 다시 열려도 안 사라짐). */}

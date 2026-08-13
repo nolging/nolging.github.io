@@ -3658,9 +3658,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .rc-time { font-size: 10px; color: var(--muted); flex-shrink: 0; padding-bottom: 2px; white-space: nowrap; }
 .rc-input { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 7px 7px 7px 15px; margin-top: 8px; flex-shrink: 0; }
 .rc-input input { flex: 1; min-width: 0; border: none; background: transparent; outline: none; font: inherit; font-size: 14px; min-height: 0 !important; height: auto; padding: 0; }
+.rc-input input:disabled { color: var(--muted); cursor: default; }
 .rc-send { width: 32px; height: 32px; flex-shrink: 0; border: none; border-radius: 50%; background: #6250e0; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .rc-send:active { transform: scale(.92); }
 .rc-send:disabled { opacity: .45; cursor: default; }
+.rc-send-locked { background: #c3c0cc; cursor: default; }
 .rc-closed { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); padding: 13px; background: var(--surface-sunken, #f4f3f7); border-radius: 12px; margin-top: 8px; flex-shrink: 0; }
 
 /* 관리자 오류 상세 = 채팅 화면 (모달 채팅과 동일한 말풍선/입력창 재사용) */
