@@ -164,11 +164,11 @@ export default function AdminQuests() {
         <div className="aq-section-head">
           <span className="aq-section-title">랜덤 퀘스트</span>
           <span className="aq-count">{quests.length}</span>
-          <Link to="/admin/quests/new" className="aq-add-btn">
+          <Link to="/admin/quests/new" className="aq-add-btn" aria-label="퀘스트 추가">
             <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            퀘스트 추가
+            <span className="aq-add-label">퀘스트 추가</span>
           </Link>
         </div>
         {loading ? <div className="spinner" /> : quests.length === 0 ? (
