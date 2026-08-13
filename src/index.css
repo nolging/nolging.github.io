@@ -5765,7 +5765,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-draggable.is-dragging .aq-card-icon { cursor: grabbing; }
 .aq-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .aq-card-title-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.aq-card-title-row .aq-card-name { flex: 1; min-width: 0; }
+.aq-card-title-row .aq-card-name { flex: 0 1 auto; min-width: 0; }
 /* 꾸미기 아이템 유형 배지: 목록 카드/인벤토리와 동일한 어두운 톤, 이름 옆에 작게 */
 .aq-card-title-row .aq-badge-target {
   flex-shrink: 0; background: rgba(25, 23, 34, .7); color: #fff;
