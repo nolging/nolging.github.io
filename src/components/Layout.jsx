@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
@@ -236,6 +236,21 @@ export default function Layout() {
           : p.startsWith('/admin/notifs') ? '알림 메시지 수정'
             : p.startsWith('/admin/reports') ? '오류 리포트'
             : '관리자'
+  // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
+  const adminTabsRef = useRef(null)
+  const [adminIndicator, setAdminIndicator] = useState({ left: 0, width: 0 })
+  useLayoutEffect(() => {
+    if (!adminSection) return
+    const nav = adminTabsRef.current
+    if (!nav) return
+    const update = () => {
+      const active = nav.querySelector('a.active')
+      if (active) setAdminIndicator({ left: active.offsetLeft, width: active.offsetWidth })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [adminSection, location.pathname])
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'
 
@@ -917,12 +932,14 @@ export default function Layout() {
     // 관리자 섹션(탭 화면): 하단 탭바로 이동 가능하므로 뒤로 버튼 없이 탭만
     topbar = (
       <header className="topbar admin-topbar">
-        <nav className="admin-tabs">
+        <nav className="admin-tabs" ref={adminTabsRef}>
           <NavLink to="/admin/members">회원 관리</NavLink>
           <NavLink to="/admin/store">상점 관리</NavLink>
           <NavLink to="/admin/quests">퀘스트 관리</NavLink>
           <NavLink to="/admin/notifs">알림 관리</NavLink>
           <NavLink to="/admin/reports">오류 관리</NavLink>
+          <span className="admin-tabs-indicator" aria-hidden="true"
+            style={{ transform: `translateX(${adminIndicator.left}px)`, width: adminIndicator.width }} />
         </nav>
       </header>
     )
