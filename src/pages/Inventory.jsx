@@ -227,17 +227,19 @@ export default function Inventory() {
         invSections.map((sec) => (
           <section key={sec.key} className="inv-section">
             <div className="inv-section-head">
-              <span className="inv-section-title">{sec.label}</span>
-              <span className="inv-section-count">{sec.items.length}종</span>
-            </div>
-            {sec.slotFilters && (
-              <div className="st-slot-filter">
-                {sec.slotFilters.map((s) => (
-                  <button key={s} type="button" className={`st-slot-chip ${decoSlotFilter === s ? 'on' : ''}`}
-                    onClick={() => setDecoSlotFilter(s)}>{s}</button>
-                ))}
+              <div className="inv-section-headtext">
+                <span className="inv-section-title">{sec.label}</span>
+                <span className="inv-section-count">{sec.items.length}종</span>
               </div>
-            )}
+              {sec.slotFilters && (
+                <div className="st-slot-filter">
+                  {sec.slotFilters.map((s) => (
+                    <button key={s} type="button" className={`st-slot-chip ${decoSlotFilter === s ? 'on' : ''}`}
+                      onClick={() => setDecoSlotFilter(s)}>{s}</button>
+                  ))}
+                </div>
+              )}
+            </div>
             {sec.slotFilters && sec.items.length === 0 ? (
               <p className="inv-slot-empty">해당 유형의 아이템이 없어요.</p>
             ) : (
