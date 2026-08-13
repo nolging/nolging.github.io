@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem } from '../../lib/api'
 import { ITEM_KINDS, CATEGORY_OPTIONS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
 import { cleanSvg, imgBgOf } from '../../lib/storeMeta'
@@ -9,11 +9,15 @@ import StoreItemImage from '../../components/StoreItemImage'
 const BG_PRESETS = ['#f3f2f7', '#fde8ee', '#e6eefd', '#fff0d6', '#eaf4ec', '#fbf1d3', '#eeebfe', '#e3f1fb', '#fdeee6', '#f4ece0', '#fdeceb', '#332c52', 'transparent']
 
 // 상점 아이템 추가(/admin/store/new) + 상세·수정(/admin/store/:id)
+// 추가 시 목록의 + 버튼이 넘겨준 탭(state.kind)으로 노출 위치 기본값을 맞춘다.
 export default function AdminStoreItem() {
   const { id } = useParams()
   const editing = !!id
   const nav = useNavigate()
-  const [form, setForm] = useState(EMPTY_ITEM)
+  const location = useLocation()
+  const [form, setForm] = useState(() => (
+    editing || location.state?.kind !== 'prem' ? EMPTY_ITEM : { ...EMPTY_ITEM, kind: 'prem' }
+  ))
   const [loading, setLoading] = useState(editing)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

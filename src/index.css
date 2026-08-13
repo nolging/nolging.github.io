@@ -5748,6 +5748,18 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   .aq-add-btn { width: 34px; height: 34px; padding: 0; border-radius: 50%; justify-content: center; flex-shrink: 0; }
   .aq-add-label { display: none; }
 }
+/* 상점 관리: 화면 우측 하단 고정 추가 버튼(카테고리별 + 버튼 대신 하나로 통합) */
+.aq-fab {
+  position: fixed; right: 20px; bottom: 24px; z-index: 25;
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #7363e8; color: #fff; box-shadow: 0 6px 18px rgba(115, 99, 232, .4);
+  text-decoration: none; cursor: pointer;
+}
+.aq-fab:hover { background: #5f4fd6; text-decoration: none; color: #fff; }
+@media (max-width: 640px), (orientation: portrait) {
+  .aq-fab { bottom: 96px; }
+}
 .aq-cards { display: flex; flex-direction: column; gap: 8px; }
 .aq-card {
   width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px;
@@ -5880,7 +5892,6 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-store-tabbar .seg-tabs { margin-bottom: 0; }
 .admin-cat { display: flex; flex-direction: column; gap: 8px; }
 .admin-cat + .admin-cat { margin-top: 0; }
-.admin-cat-title { font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 0 2px; }
 /* 길게 눌러 드래그 정렬 — 롱프레스 시 행 텍스트가 블록 선택되지 않도록 */
 .admin-rows, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 /* 상세 정보 나열 */
