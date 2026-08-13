@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminListStoreItems, adminReorderStoreItems } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
-import { CAT, CAT_ORDER, catOf } from '../../lib/storeMeta'
+import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../../lib/storeMeta'
+import StoreItemImage from '../../components/StoreItemImage'
 
 // 상세로 들어갔다가 뒤로 나올 때(컴포넌트 재마운트) 직전 탭을 유지하기 위한 모듈 변수
 let lastStoreTab = 'general'
 
-// 상점 관리 — 일반/프리미엄 탭. 카테고리별 섹션 + ▲▼ / 길게 눌러 드래그로 정렬.
+// 상점 관리 — 일반/프리미엄 탭. 카테고리별 섹션 + 미리보기 이미지를 잡고 드래그로 정렬.
 export default function AdminStore() {
   const nav = useNavigate()
   const [items, setItems] = useState([])
@@ -57,20 +58,7 @@ export default function AdminStore() {
     saveTimer.current = setTimeout(flushSave, 600)
   }, [flushSave])
 
-  // 섹션 내 한 칸 이동(▲▼) — 로컬 즉시 반영, 저장은 디바운스로 묶어서 한 번만
-  function move(sectionKey, sectionItems, it, dir) {
-    const idx = sectionItems.findIndex((x) => x.id === it.id)
-    const j = idx + dir
-    if (j < 0 || j >= sectionItems.length) return
-    const reordered = [...sectionItems]
-    ;[reordered[idx], reordered[j]] = [reordered[j], reordered[idx]]
-    const ids = reordered.map((x) => x.id)
-    relayoutSection(sectionKey, ids)
-    scheduleSave(ids)
-  }
-
-  // ── 길게 눌러 드래그 정렬 ──────────────────────────────
-  const pressRef = useRef(null)  // { id, sectionKey, startY, timer }
+  // ── 미리보기 이미지를 잡고 드래그 정렬 ──────────────────────────────
   const dragRef = useRef(null)   // { id, sectionKey }
   const suppressClick = useRef(false)
   const [dragId, setDragId] = useState(null)
@@ -82,39 +70,17 @@ export default function AdminStore() {
       .map((x) => x.id)
   ), [tab])
 
-  const clearPress = () => { if (pressRef.current) { clearTimeout(pressRef.current.timer); pressRef.current = null } }
-
-  // 드래그 활성화 — 포인터를 캡처해 이후 move/up 이벤트를 계속 받고(핑거가 행을 벗어나도),
+  // 포인터를 캡처해 이후 move/up 이벤트를 계속 받고(핑거가 카드를 벗어나도),
   // 모바일에서 스크롤로 가로채가지 않게 한다.
-  function activateDrag(el, pointerId, sectionKey, it) {
-    clearPress()
+  function onCardPointerDown(e, sectionKey, it) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (!e.target?.closest?.('.aq-card-icon')) return
+    e.preventDefault()
     dragRef.current = { id: it.id, sectionKey }
-    try { el?.setPointerCapture?.(pointerId) } catch { /* noop */ }
+    try { e.currentTarget?.setPointerCapture?.(e.pointerId) } catch { /* noop */ }
     setDragId(it.id)
     if (navigator.vibrate) { try { navigator.vibrate(12) } catch { /* noop */ } }
   }
-
-  function onRowPointerDown(e, sectionKey, it) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return
-    clearPress()
-    const el = e.currentTarget
-    const pointerId = e.pointerId
-    // 손잡이(⠿)를 잡으면 바로 드래그, 행 본문은 길게 눌러(350ms) 드래그
-    if (e.target?.closest?.('.admin-row-grip')) {
-      e.preventDefault()
-      activateDrag(el, pointerId, sectionKey, it)
-      return
-    }
-    const startY = e.clientY
-    const timer = setTimeout(() => activateDrag(el, pointerId, sectionKey, it), 350)
-    pressRef.current = { id: it.id, sectionKey, startY, timer }
-  }
-  // 드래그 활성화 전 스크롤로 판단되면 롱프레스 취소
-  function onRowPointerMove(e) {
-    if (!pressRef.current || dragRef.current) return
-    if (Math.abs(e.clientY - pressRef.current.startY) > 10) clearPress()
-  }
-  function onRowPointerUp() { clearPress() }
 
   // 드래그 중 전역 이동/종료 처리
   useEffect(() => {
@@ -158,13 +124,13 @@ export default function AdminStore() {
     }
   }, [dragId, currentSectionIds, relayoutSection, scheduleSave])
 
-  function onRowClick(it) {
+  function onCardClick(it) {
     if (suppressClick.current) return
     nav(`/admin/store/${it.id}`)
   }
 
   return (
-    <div className="page admin-page admin-store-page">
+    <div className="page admin-page aq-page">
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="admin-store-tabbar">
@@ -174,9 +140,15 @@ export default function AdminStore() {
         </div>
       </div>
 
-      <div className="admin-list-head">
-        <h3 className="card-title" style={{ margin: 0 }}>아이템 <span className="muted">({list.length})</span></h3>
-        <Link to="/admin/store/new" className="btn btn-sm btn-primary">아이템 추가</Link>
+      <div className="aq-section-head">
+        <span className="aq-section-title">아이템</span>
+        <span className="aq-count">{list.length}</span>
+        <Link to="/admin/store/new" className="aq-add-btn" aria-label="아이템 추가">
+          <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span className="aq-add-label">아이템 추가</span>
+        </Link>
       </div>
 
       {loading && <div className="spinner" />}
@@ -184,38 +156,39 @@ export default function AdminStore() {
       {!loading && sections.map((sec) => (
         <div key={sec.key} className="admin-cat">
           <div className="admin-cat-title">{sec.label} <span className="muted sm">{sec.items.length}</span></div>
-          <div className="card admin-cat-card">
-            <ul className="admin-rows">
-              {sec.items.map((it, i) => (
-                <li
-                  key={it.id}
-                  className={`admin-row-wrap${dragId === it.id ? ' is-dragging' : ''}`}
-                  data-row-id={it.id}
-                  data-sec={sec.key}
-                  style={dragId ? { touchAction: 'none' } : undefined}
-                >
-                  <button
-                    type="button"
-                    className="admin-row"
-                    onClick={() => onRowClick(it)}
-                    onPointerDown={(e) => onRowPointerDown(e, sec.key, it)}
-                    onPointerMove={onRowPointerMove}
-                    onPointerUp={onRowPointerUp}
-                    onPointerLeave={onRowPointerUp}
-                    style={{ opacity: it.isActive ? (dragId === it.id ? .85 : 1) : .5 }}
-                  >
-                    <span className="admin-row-grip" aria-hidden="true">⠿</span>
-                    <span className="admin-row-emoji" aria-hidden="true">{it.emoji || '🐾'}</span>
-                    <span className="admin-row-main">{it.name}{!it.isActive && <span className="muted sm"> · 숨김</span>}</span>
-                    <span className="admin-row-price">{formatCoin(it.price)}</span>
-                  </button>
-                  <div className="admin-ord">
-                    <button type="button" className="admin-ord-btn" disabled={i === 0} aria-label="위로" onClick={() => move(sec.key, sec.items, it, -1)}>▲</button>
-                    <button type="button" className="admin-ord-btn" disabled={i === sec.items.length - 1} aria-label="아래로" onClick={() => move(sec.key, sec.items, it, 1)}>▼</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <div className="aq-cards">
+            {sec.items.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${it.isActive ? '' : ' inactive'}`}
+                data-row-id={it.id}
+                data-sec={sec.key}
+                style={dragId ? { touchAction: 'none' } : undefined}
+                onClick={() => onCardClick(it)}
+                onPointerDown={(e) => onCardPointerDown(e, sec.key, it)}
+              >
+                <span className="aq-card-icon" style={{ background: it.imageBg || imgBgOf(it.id, it.premium) }} aria-hidden="true">
+                  <StoreItemImage id={it.id} emoji={it.emoji} svg={it.imageSvg} className="aq-card-img" />
+                </span>
+                <span className="aq-card-body">
+                  <span className="aq-card-name">{itemName(it.id, it.name)}</span>
+                  <span className="aq-card-badges-mobile">
+                    <span className="aq-card-badges">
+                      <span className={`aq-badge-status ${it.isActive ? 'on' : ''}`}>{it.isActive ? '노출' : '숨김'}</span>
+                    </span>
+                  </span>
+                  {it.description ? <span className="aq-card-desc aq-card-desc-desktop">{it.description}</span> : null}
+                </span>
+                <span className="aq-card-reward">{formatCoin(it.price)}</span>
+                <span className="aq-card-badges-desktop">
+                  <span className="aq-card-badges">
+                    <span className={`aq-badge-status ${it.isActive ? 'on' : ''}`}>{it.isActive ? '노출' : '숨김'}</span>
+                  </span>
+                </span>
+                <span className="aq-card-chevron" aria-hidden="true">›</span>
+              </button>
+            ))}
           </div>
         </div>
       ))}
