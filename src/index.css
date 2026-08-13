@@ -1651,14 +1651,18 @@ button.mention-chip:active { opacity: .6; }
 /* 좌우 분리 토글 + 왼쪽/오른쪽 배지(라디오 개념, 알약 모양) — 같은 줄, 모달 폭 기준 좌측 정렬 */
 .deco-adj-split-row { display: flex; align-items: center; gap: 8px; width: 100%; align-self: flex-start; flex-wrap: wrap; }
 .deco-adj-split-label { font-size: 13px; font-weight: 700; color: var(--text); flex-shrink: 0; }
-.deco-adj-side-badges { display: flex; gap: 6px; margin-left: 2px; }
+/* 토글(cg-toggle 은 공용 컴포넌트라 여기서만 "좌우 분리" 글자 높이에 맞게 축소 — 비율은 원본과 동일) */
+.deco-adj-split-row .cg-toggle { width: 30px; height: 18px; padding: 2px; }
+.deco-adj-split-row .cg-knob { width: 14px; height: 14px; }
+.deco-adj-side-badges { display: flex; align-items: center; gap: 6px; margin-left: 2px; }
 .deco-adj-side-badge { font-family: inherit; border: 1.5px solid #ece9f4; background: #fff; color: #8b8798;
-  border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  border-radius: 999px; height: 18px; padding: 0 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; box-sizing: border-box; }
 .deco-adj-side-badge.on { background: #7363e8; border-color: #7363e8; color: #fff; }
 /* 컨트롤 바: 크기·각도·초기화가 항상 한 줄. 남는 폭은 숫자 양옆이 흡수하고,
    글자는 절대 줄어들지 않게 해서(flex-shrink:0) 값이 잘리지 않는다. */
 .deco-adj-ctrl { display: flex; align-items: center; justify-content: center; gap: 4px; background: #f4f3f7;
-  border-radius: 999px; padding: 5px 6px; width: 100%; max-width: 300px; box-sizing: border-box; }
+  border-radius: 999px; padding: 5px 6px; width: 100%; box-sizing: border-box; }
 .deco-adj-ctrl button { flex-shrink: 0; border: none; background: #fff; color: #191722; width: 30px; height: 30px;
   border-radius: 50%; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: grid;
   place-items: center; box-shadow: 0 1px 3px rgba(25, 23, 34, .08);
