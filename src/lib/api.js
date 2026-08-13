@@ -1798,6 +1798,13 @@ export async function adminDeleteQuestDef(id) {
   const { error } = await supabase.from('quest_defs').delete().eq('id', id)
   if (error) throw error
 }
+// 정렬 순서 일괄 갱신(관리자 목록 드래그 재정렬용). items: [{ id, sortOrder }]
+export async function adminReorderQuestDefs(items) {
+  for (const { id, sortOrder } of items) {
+    const { error } = await supabase.from('quest_defs').update({ sort_order: sortOrder }).eq('id', id)
+    if (error) throw error
+  }
+}
 
 // ---- 관리자: 데일리 퀘스트 정의(quest_daily_defs) — key 는 고정(attend/visit/note),
 // 이모지·배경색·명칭·보상만 수정. RLS 상 쓰기는 관리자만 ----
