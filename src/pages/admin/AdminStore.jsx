@@ -6,6 +6,7 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../../lib/storeMeta'
 import { flagsToKind, ITEM_KIND_SHORT } from './adminMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 import { decoSlot } from '../../components/AvatarDeco'
+import CgToggle from '../../components/CgToggle'
 
 // 프로필 꾸미기 유형 배지(머리/얼굴/안경/테두리) — 신규 아이템은 deco_slot 에 한글 그대로 저장되므로
 // 매핑에 없으면 원문을 그대로 표시
@@ -69,6 +70,7 @@ export default function AdminStore() {
   const dragRef = useRef(null)   // { id, sectionKey }
   const suppressClick = useRef(false)
   const [dragId, setDragId] = useState(null)
+  const [sortMode, setSortMode] = useState(false) // 켜져 있을 때만 미리보기 이미지 핸들 드래그 정렬 동작
 
   const currentSectionIds = useCallback((sectionKey) => (
     itemsRef.current
@@ -80,6 +82,7 @@ export default function AdminStore() {
   // 포인터를 캡처해 이후 move/up 이벤트를 계속 받고(핑거가 카드를 벗어나도),
   // 모바일에서 스크롤로 가로채가지 않게 한다.
   function onCardPointerDown(e, sectionKey, it) {
+    if (!sortMode) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
     if (!e.target?.closest?.('.aq-card-icon')) return
     e.preventDefault()
@@ -145,6 +148,10 @@ export default function AdminStore() {
           <button type="button" className={`seg-tab ${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>일반 상점</button>
           <button type="button" className={`seg-tab ${tab === 'premium' ? 'active' : ''}`} onClick={() => setTab('premium')}>프리미엄 상점</button>
         </div>
+        <div className="admin-store-sort-row">
+          <span className="aq-sort-toggle-label">정렬 수정</span>
+          <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+        </div>
       </div>
 
       {loading && <div className="spinner" />}
@@ -173,7 +180,7 @@ export default function AdminStore() {
                 <button
                   key={it.id}
                   type="button"
-                  className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${dimmed ? ' inactive' : ''}`}
+                  className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragId === it.id ? ' is-dragging' : ''}${dimmed ? ' inactive' : ''}`}
                   data-row-id={it.id}
                   data-sec={sec.key}
                   style={dragId ? { touchAction: 'none' } : undefined}
