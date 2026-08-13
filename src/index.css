@@ -3322,6 +3322,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .inv-section-title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #191722; }
 .inv-section-count { font-size: 12px; font-weight: 600; color: #b0b0b8; }
 .inv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.inv-slot-empty { margin: 0; padding: 22px 16px; text-align: center; border-radius: 18px;
+  background: #f7f6fa; color: #b0b0b8; font-size: 12.5px; font-weight: 600; }
 /* PC: 상점·인벤토리 아이템 카드는 한 줄에 6개 (모바일은 3개 유지) */
 @media (min-width: 641px) {
   .st-grid, .inv-grid { grid-template-columns: repeat(6, 1fr); }

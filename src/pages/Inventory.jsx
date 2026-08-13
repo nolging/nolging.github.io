@@ -30,6 +30,8 @@ const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경'
 // 얼굴 슬롯은 한 번에 2개까지 동시 장착 가능(나머지는 1개, 백엔드 apply_avatar_deco 와 동일 규칙).
 // deco_slot 값은 관리자가 자유 문자열로 설정하므로 영문/한글 표기 둘 다 인식한다.
 const slotCapacity = (slot) => (slot === 'face' || slot === '얼굴' ? 2 : 1)
+// 프로필 꾸미기 섹션 유형 필터 알약 순서(상점과 동일). 실제로 보유한 유형만 노출한다.
+const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 // 푸린 마이크 used 행이 아직 유효(24h 내)한지 — 명찰과 동일 패턴
@@ -81,6 +83,7 @@ export default function Inventory() {
   const [boardItemName, setBoardItemName] = useState('') // 아이템 이름(관리자에서 변경 가능 → 하드코딩 금지)
   const [megaphoneOpen, setMegaphoneOpen] = useState(false) // 확성기 모달
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
+  const [decoSlotFilter, setDecoSlotFilter] = useState('전체') // 프로필 꾸미기 섹션 유형 필터
 
   async function reload() {
     if (!user?.id) return
@@ -139,10 +142,18 @@ export default function Inventory() {
     return [...list].sort((a, b) => prem(a.id) - prem(b.id) || ord(a.id) - ord(b.id))
   }, [groups, ledBanner, meta])
 
-  // 카테고리 섹션으로 묶기 (상점과 동일한 분류)
-  const invSections = useMemo(() => CAT_ORDER.map((key) => ({
-    key, label: CAT[key], items: displayGroups.filter((g) => catOf(g.id, meta[g.id]?.category) === key),
-  })).filter((s) => s.items.length), [displayGroups, meta])
+  // 카테고리 섹션으로 묶기 (상점과 동일한 분류). 프로필 꾸미기(avatar)는 상점처럼
+  // 전체/머리/얼굴/안경/테두리 유형 필터를 붙이되, 하나도 보유하지 않은 유형은 배지 자체를 뺀다.
+  const invSections = useMemo(() => CAT_ORDER.map((key) => {
+    const isAvatar = key === 'avatar'
+    const allItems = displayGroups.filter((g) => catOf(g.id, meta[g.id]?.category) === key)
+    const ownedSlots = isAvatar ? DECO_SLOT_ORDER.filter((label) => allItems.some((g) => slotLabel(slotOf(g.id)) === label)) : []
+    const slotFilters = ownedSlots.length > 0 ? ['전체', ...ownedSlots] : null
+    const items = isAvatar && decoSlotFilter !== '전체'
+      ? allItems.filter((g) => slotLabel(slotOf(g.id)) === decoSlotFilter)
+      : allItems
+    return { key, label: CAT[key], items, slotFilters }
+  }).filter((s) => s.items.length || (s.slotFilters && s.slotFilters.length > 1)), [displayGroups, meta, decoSlotFilter])
 
   const wishRows = useMemo(() => items.filter((r) => r.item_id === 'wish'), [items])
   // 이미 커플 링을 보냈거나(수락 대기) 장착한 그룹(중복 방지)
@@ -219,6 +230,17 @@ export default function Inventory() {
               <span className="inv-section-title">{sec.label}</span>
               <span className="inv-section-count">{sec.items.length}종</span>
             </div>
+            {sec.slotFilters && (
+              <div className="st-slot-filter">
+                {sec.slotFilters.map((s) => (
+                  <button key={s} type="button" className={`st-slot-chip ${decoSlotFilter === s ? 'on' : ''}`}
+                    onClick={() => setDecoSlotFilter(s)}>{s}</button>
+                ))}
+              </div>
+            )}
+            {sec.slotFilters && sec.items.length === 0 ? (
+              <p className="inv-slot-empty">해당 유형의 아이템이 없어요.</p>
+            ) : (
             <div className="inv-grid">
               {sec.items.map((g) => {
                 const activeCount = g.rows.filter((r) => r.status === 'active').length
@@ -276,6 +298,7 @@ export default function Inventory() {
                 )
               })}
             </div>
+            )}
           </section>
         ))
       )}
