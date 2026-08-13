@@ -5901,6 +5901,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   padding: 10px var(--pad-x);
 }
 .admin-store-tabbar .seg-tabs { margin-bottom: 0; }
+.admin-store-sort-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 /* 탭↔첫 카테고리 라벨 간격 축소(.page 기본 gap 18px 을 상쇄) */
 .admin-store-tabbar + .admin-cat { margin-top: -10px; }
 .admin-cat { display: flex; flex-direction: column; gap: 4px; }

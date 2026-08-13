@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listNotifTemplates, adminReorderNotifTemplates } from '../../lib/api'
+import CgToggle from '../../components/CgToggle'
 
 // 알림 메시지 관리 — 알림 종류 목록. 카드 클릭 → 제목/본문 수정.
 // 이모지 아이콘을 잡고 드래그하면 정렬 순서를 바꿀 수 있다(퀘스트/상점 관리와 동일한 패턴).
@@ -26,6 +27,7 @@ export default function AdminNotifs() {
   const dragRef = useRef(null)           // 드래그 중인 key
   const suppressClick = useRef(false)
   const [dragKey, setDragKey] = useState(null)
+  const [sortMode, setSortMode] = useState(false) // 켜져 있을 때만 이모지 핸들 드래그 정렬 동작
 
   const flushSave = useCallback(async () => {
     const ups = [...pendingRef.current.entries()].map(([key, sortOrder]) => ({ key, sortOrder }))
@@ -49,6 +51,7 @@ export default function AdminNotifs() {
   }, [flushSave])
 
   function onIconPointerDown(e, key) {
+    if (!sortMode) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
     if (!e.target?.closest?.('.aq-card-icon')) return
     e.preventDefault()
@@ -108,6 +111,10 @@ export default function AdminNotifs() {
       <div className="aq-section-head">
         <span className="aq-section-title">알림 메시지</span>
         <span className="aq-count">{rows.length}</span>
+        <span className="aq-sort-toggle">
+          <span className="aq-sort-toggle-label">정렬 수정</span>
+          <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+        </span>
       </div>
       {loading ? <div className="spinner" /> : rows.length === 0 ? (
         <p className="muted sm">등록된 알림이 없습니다.</p>
@@ -117,7 +124,7 @@ export default function AdminNotifs() {
             <button
               key={r.key}
               type="button"
-              className={`aq-card aq-card-draggable${dragKey === r.key ? ' is-dragging' : ''}`}
+              className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragKey === r.key ? ' is-dragging' : ''}`}
               data-row-id={r.key}
               style={dragKey ? { touchAction: 'none' } : undefined}
               onClick={() => onCardClick(r.key)}
