@@ -425,10 +425,13 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
 
   // willApply=true 인데 정원이 이미 찬 슬롯이면, 실제 적용 전에 무엇을 해제할지 사용자가
   // 고르게 한다(pickReplace 확인창) → 고르면 doApply(선택한 id) 로 이어진다.
+  // 정원이 1개인 슬롯(얼굴 외 전부)은 후보가 항상 1개뿐이라 고를 필요가 없으므로,
+  // 확인창 없이 그 하나를 바로 해제하고 교체한다(정원 2개인 얼굴 슬롯만 선택창을 띄운다).
   function apply() {
     if (!target) { setError('그룹을 선택해 주세요.'); return }
     const willApply = changed || !applied
-    if (willApply && replaceOptions.length) { setPickReplace({ selected: replaceOptions[0].id }); return }
+    if (willApply && replaceOptions.length === 1) { doApply(replaceOptions[0].id); return }
+    if (willApply && replaceOptions.length > 1) { setPickReplace({ selected: replaceOptions[0].id }); return }
     doApply()
   }
   async function doApply(unequipFirst) {
