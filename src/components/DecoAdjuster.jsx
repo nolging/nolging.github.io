@@ -231,6 +231,7 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
           <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0.01, 0)) }}
             onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="크게">＋</button>
         </div>
+        <i className="deco-adj-sep" />
         <div className="deco-adj-ctrl-group">
           <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0, -1)) }}
             onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="왼쪽으로 회전">↺</button>
@@ -238,6 +239,7 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
           <button type="button" onPointerDown={(e) => { e.preventDefault(); startHold(() => step(0, 1)) }}
             onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} aria-label="오른쪽으로 회전">↻</button>
         </div>
+        <i className="deco-adj-sep" />
         <button type="button" className="deco-adj-reset" onClick={reset} disabled={resetDisabled}>초기화</button>
       </div>
     </div>
