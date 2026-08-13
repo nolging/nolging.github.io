@@ -933,11 +933,11 @@ export default function Layout() {
     topbar = (
       <header className="topbar admin-topbar">
         <nav className="admin-tabs" ref={adminTabsRef}>
-          <NavLink to="/admin/members">회원 관리</NavLink>
           <NavLink to="/admin/store">상점 관리</NavLink>
           <NavLink to="/admin/quests">퀘스트 관리</NavLink>
           <NavLink to="/admin/notifs">알림 관리</NavLink>
           <NavLink to="/admin/reports">오류 관리</NavLink>
+          <NavLink to="/admin/members">회원 관리</NavLink>
           <span className="admin-tabs-indicator" aria-hidden="true"
             style={{ transform: `translateX(${adminIndicator.left}px)`, width: adminIndicator.width }} />
         </nav>
