@@ -2002,6 +2002,13 @@ export async function updateNotifTemplate(key, title, body, emoji, emojiBg) {
   }
   throw error
 }
+// 정렬 순서 일괄 갱신(관리자 목록 이모지 드래그 재정렬용). items: [{ key, sortOrder }]
+export async function adminReorderNotifTemplates(items) {
+  const { error } = await supabase.rpc('admin_reorder_notifs', {
+    p_items: items.map(({ key, sortOrder }) => ({ key, sortOrder })),
+  })
+  if (error) throw error
+}
 // 알림센터 아이콘 맵 (type/key → { emoji, bg }). 미배포 시 emoji 만 있는 구버전으로 폴백.
 export async function getNotifStyles() {
   const { data, error } = await supabase.rpc('notif_styles')
