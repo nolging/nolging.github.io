@@ -3666,7 +3666,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .rc-closed { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); padding: 13px; background: var(--surface-sunken, #f4f3f7); border-radius: 12px; margin-top: 8px; flex-shrink: 0; }
 
 /* 관리자 오류 상세 = 채팅 화면 (모달 채팅과 동일한 말풍선/입력창 재사용) */
-.content:has(> .admin-report-chat) { display: flex; flex-direction: column; }
+/* 채팅창(.arc-thread) 안에서만 스크롤되게 — .content 자체는 스크롤 컨테이너에서 빠짐.
+   그대로 두면 키보드가 열려 뷰포트가 리사이즈될 때 .content 도 같이 흔들리며(더블
+   스크롤) 상단바까지 통째로 버벅이며 튀는 문제가 있었다. */
+.content:has(> .admin-report-chat) { display: flex; flex-direction: column; overflow: hidden; }
 .admin-report-chat { flex: 1; min-height: 0; gap: 12px; }
 .arc-report { background: var(--surface-sunken, #f4f3f7); border-radius: 14px; padding: 13px 15px; flex-shrink: 0; }
 .arc-report-top { display: flex; align-items: flex-start; gap: 10px; }
@@ -3678,7 +3681,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .arc-report-login { font-size: 11.5px; font-weight: 600; color: var(--text); }
 .arc-report-time { font-size: 11px; font-weight: 300; color: var(--muted); }
 .arc-thread-label { flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--muted); padding: 0 2px; }
-.arc-thread { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 4px 2px 6px; }
+.arc-thread { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 9px; padding: 4px 2px 6px; }
 .arc-empty { margin: auto; text-align: center; font-size: 13px; color: var(--muted); }
 
 /* 해결 처리 + 보상 지급 모달 */
