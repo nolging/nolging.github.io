@@ -1342,11 +1342,11 @@ button.mention-chip:active { opacity: .6; }
 .sched-val:focus { outline: none; }
 .sched-num { grid-column: 2; width: 58px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
 .sched-custom { padding: 2px 2px 12px; }
-.weekday-row { display: flex; gap: 6px; margin-top: 8px; }
+.weekday-row { display: flex; gap: 6px; margin-top: 8px; justify-content: space-between; }
 .weekday {
-  flex: 1; max-width: 42px; height: 38px; border-radius: 50%;
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
   border: 1px solid var(--border); background: none; color: var(--text);
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-size: 13px; font-weight: 600; cursor: pointer; padding: 0;
 }
 .weekday.on { background: var(--primary); border-color: var(--primary); color: #fff; }
 .sched-sec-title { font-weight: 700; font-size: 14px; margin: 4px 2px 8px; }
@@ -3297,11 +3297,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sc-pick-input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; border: none; padding: 0; cursor: pointer; }
 .sc-select { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
 .sc-select select { appearance: none; -webkit-appearance: none; border: none; background: #f4f3f7; border-radius: 10px;
-  padding: 9px 32px 9px 13px; font-size: 13px; font-weight: 700; color: #191722; cursor: pointer; outline: none; min-height: 0; }
+  height: 38px; box-sizing: border-box; padding: 0 32px 0 13px; font-size: 13px; font-weight: 700; color: #191722; cursor: pointer; outline: none; min-height: 0; }
 .sc-select > svg { position: absolute; right: 11px; pointer-events: none; color: #8b8798; }
 .sc-custom { padding: 4px 0 14px; display: flex; flex-direction: column; gap: 10px; }
 .sc-custom-freq { display: flex; gap: 8px; align-items: center; }
-.sc-num { width: 64px; text-align: center; background: #f4f3f7; border: none; border-radius: 10px; padding: 9px 10px; font-size: 13px; font-weight: 700; min-height: 0; }
+.sc-num { width: 64px; height: 38px; box-sizing: border-box; text-align: center; background: #f4f3f7; border: none; border-radius: 10px; padding: 0 10px; font-size: 13px; font-weight: 700; min-height: 0; }
 .inv-card { position: relative; }
 .inv-count {
   position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px;
