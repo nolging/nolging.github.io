@@ -11,7 +11,7 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 // "신상" 배지: 유저에게 공개된 시점(public_since) 기준 일주일 이내
-const NEW_BADGE_MS = 7 * 24 * 60 * 60 * 1000
+const NEW_BADGE_MS = 5 * 24 * 60 * 60 * 1000
 const isNewItem = (item) => !!item.publicSince && Date.now() - new Date(item.publicSince).getTime() < NEW_BADGE_MS
 // 프로필 꾸미기 섹션 필터 알약(전체 + 유형별). 유형명은 deco_slot 에 저장된 값 그대로 사용.
 const DECO_SLOT_FILTERS = ['전체', '머리', '얼굴', '안경', '테두리']
