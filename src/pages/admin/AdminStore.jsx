@@ -3,7 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { adminListStoreItems, adminReorderStoreItems } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../../lib/storeMeta'
+import { flagsToKind, ITEM_KIND_SHORT } from './adminMeta'
 import StoreItemImage from '../../components/StoreItemImage'
+import { decoSlot } from '../../components/AvatarDeco'
+
+// 프로필 꾸미기 유형 배지(머리/얼굴/안경/테두리) — 신규 아이템은 deco_slot 에 한글 그대로 저장되므로
+// 매핑에 없으면 원문을 그대로 표시
+const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경' }
+const slotLabel = (slot) => SLOT_LABEL[slot] || slot
 
 // 상세로 들어갔다가 뒤로 나올 때(컴포넌트 재마운트) 직전 탭을 유지하기 위한 모듈 변수
 let lastStoreTab = 'general'
@@ -130,7 +137,7 @@ export default function AdminStore() {
   }
 
   return (
-    <div className="page admin-page aq-page">
+    <div className="page admin-page admin-store-page aq-page">
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="admin-store-tabbar">
@@ -157,38 +164,46 @@ export default function AdminStore() {
         <div key={sec.key} className="admin-cat">
           <div className="admin-cat-title">{sec.label} <span className="muted sm">{sec.items.length}</span></div>
           <div className="aq-cards">
-            {sec.items.map((it) => (
-              <button
-                key={it.id}
-                type="button"
-                className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${it.isActive ? '' : ' inactive'}`}
-                data-row-id={it.id}
-                data-sec={sec.key}
-                style={dragId ? { touchAction: 'none' } : undefined}
-                onClick={() => onCardClick(it)}
-                onPointerDown={(e) => onCardPointerDown(e, sec.key, it)}
-              >
-                <span className="aq-card-icon" style={{ background: it.imageBg || imgBgOf(it.id, it.premium) }} aria-hidden="true">
-                  <StoreItemImage id={it.id} emoji={it.emoji} svg={it.imageSvg} className="aq-card-img" />
+            {sec.items.map((it) => {
+              const slot = it.decoSlot || decoSlot(it.id)
+              const kindKey = flagsToKind(it.premium, it.tier)
+              const tierLabel = tab === 'premium' ? ITEM_KIND_SHORT[kindKey] : null
+              const statusLabel = it.adminOnly ? '비매품' : (it.isActive ? '판매' : '숨김')
+              const statusOn = !it.adminOnly && it.isActive
+              const badges = (
+                <span className="aq-card-badges">
+                  {tierLabel && <span className="aq-badge-target">{tierLabel}</span>}
+                  <span className={`aq-badge-status ${statusOn ? 'on' : ''}`}>{statusLabel}</span>
                 </span>
-                <span className="aq-card-body">
-                  <span className="aq-card-name">{itemName(it.id, it.name)}</span>
-                  <span className="aq-card-badges-mobile">
-                    <span className="aq-card-badges">
-                      <span className={`aq-badge-status ${it.isActive ? 'on' : ''}`}>{it.isActive ? '노출' : '숨김'}</span>
+              )
+              return (
+                <button
+                  key={it.id}
+                  type="button"
+                  className={`aq-card aq-card-draggable${dragId === it.id ? ' is-dragging' : ''}${it.isActive ? '' : ' inactive'}`}
+                  data-row-id={it.id}
+                  data-sec={sec.key}
+                  style={dragId ? { touchAction: 'none' } : undefined}
+                  onClick={() => onCardClick(it)}
+                  onPointerDown={(e) => onCardPointerDown(e, sec.key, it)}
+                >
+                  <span className="aq-card-icon" style={{ background: it.imageBg || imgBgOf(it.id, it.premium) }} aria-hidden="true">
+                    <StoreItemImage id={it.id} emoji={it.emoji} svg={it.imageSvg} className="aq-card-img" />
+                  </span>
+                  <span className="aq-card-body">
+                    <span className="aq-card-title-row">
+                      <span className="aq-card-name">{itemName(it.id, it.name)}</span>
+                      {slot && <span className="aq-badge-target">{slotLabel(slot)}</span>}
                     </span>
+                    <span className="aq-card-badges-mobile">{badges}</span>
+                    {it.description ? <span className="aq-card-desc aq-card-desc-desktop">{it.description}</span> : null}
                   </span>
-                  {it.description ? <span className="aq-card-desc aq-card-desc-desktop">{it.description}</span> : null}
-                </span>
-                <span className="aq-card-reward">{formatCoin(it.price)}</span>
-                <span className="aq-card-badges-desktop">
-                  <span className="aq-card-badges">
-                    <span className={`aq-badge-status ${it.isActive ? 'on' : ''}`}>{it.isActive ? '노출' : '숨김'}</span>
-                  </span>
-                </span>
-                <span className="aq-card-chevron" aria-hidden="true">›</span>
-              </button>
-            ))}
+                  <span className="aq-card-reward">{formatCoin(it.price)}</span>
+                  <span className="aq-card-badges-desktop">{badges}</span>
+                  <span className="aq-card-chevron" aria-hidden="true">›</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       ))}

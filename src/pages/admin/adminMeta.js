@@ -30,6 +30,8 @@ export const kindToFlags = (kind) => kind === 'prem' ? { premium: true, tier: ''
   : { premium: false, tier: '' }
 export const flagsToKind = (premium, tier) => !premium ? 'general' : tier === 'couple' ? 'couple' : tier === 'friend' ? 'friend' : 'prem'
 export const kindLabel = (premium, tier) => ITEM_KINDS.find((k) => k.key === flagsToKind(premium, tier))?.label || '일반 상점'
+// 목록 카드의 판매 대상 배지용 짧은 표기(select 안내문과 별개)
+export const ITEM_KIND_SHORT = { prem: '프리미엄', couple: '커플', friend: '우정' }
 // 상점 카테고리(섹션) — 관리자가 직접 지정. '' = 자동(ID 규칙)
 export const CATEGORY_OPTIONS = [
   { value: '', label: '자동 (ID 규칙)' },

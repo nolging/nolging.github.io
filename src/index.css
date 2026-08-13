@@ -5764,6 +5764,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-draggable .aq-card-icon { cursor: grab; touch-action: none; }
 .aq-card-draggable.is-dragging .aq-card-icon { cursor: grabbing; }
 .aq-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.aq-card-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.aq-card-title-row .aq-card-name { flex: 1; min-width: 0; }
+.aq-card-title-row .aq-badge-target { flex-shrink: 0; }
 .aq-card-name { font-size: 14px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aq-card-desc { font-size: 12.5px; color: #8b8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aq-card-desc-desktop { display: none; }
@@ -5885,9 +5888,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-detail-row:last-child { border-bottom: none; }
 .admin-detail dt { color: var(--muted); font-size: 13px; }
 .admin-detail dd { margin: 0; font-weight: 700; text-align: right; word-break: break-all; }
-/* 세그먼트 탭(일반/프리미엄) */
-.seg-tabs { display: flex; background: rgba(0, 0, 0, .05); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
-.seg-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 9px; font: inherit; font-weight: 700; color: var(--muted); cursor: pointer; }
+/* 세그먼트 탭(일반/프리미엄) — 알약 형태 */
+.seg-tabs { display: flex; background: rgba(0, 0, 0, .05); border-radius: 999px; padding: 4px; margin-bottom: 14px; }
+.seg-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 999px; font: inherit; font-weight: 700; color: var(--muted); cursor: pointer; }
 .seg-tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 /* 체크박스 라벨 */
 .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; }
