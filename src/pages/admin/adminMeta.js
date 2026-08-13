@@ -13,6 +13,8 @@ export const QUEST_GRADES = [
   { key: 'vip', label: 'VIP(우정)' },
 ]
 export const QUEST_GRADE_LABEL = Object.fromEntries(QUEST_GRADES.map((g) => [g.key, g.label]))
+// 목록 카드의 대상 배지용 짧은 표기(select 안내문과 별개)
+export const QUEST_GRADE_SHORT = { all: '전체', premium: '프리미엄', vvip: '커플', vip: '우정' }
 export const EMPTY_QUEST = { id: '', title: '', body: '', emoji: '', emoji_bg: '', reward: '', grade: 'all', active: true }
 
 // 상점 아이템 노출 위치 ↔ premium/tier 매핑

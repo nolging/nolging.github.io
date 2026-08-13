@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListQuestDefs, adminUpsertQuestDef, adminDeleteQuestDef } from '../../lib/api'
 import { QUEST_GRADES, EMPTY_QUEST } from './adminMeta'
+import CgToggle from '../../components/CgToggle'
 
-// 이모지 배경색 프리셋(마이 페이지 퀘스트 카드에 쓰이는 파스텔 톤)
-const BG_PRESETS = ['#eef1fb', '#e8f4ec', '#fde8ee', '#fdeee6', '#fff0d6', '#eaf3fb', '#eeebfe']
+// 이모지 배경색 프리셋(시안 8종)
+const BG_PRESETS = ['#f0eee9', '#eeebfe', '#eafaf0', '#fdf2f3', '#fff7e0', '#e6f4fd', '#fde8d8', '#e4e2f9']
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
 // 퀘스트 추가(/admin/quests/new) + 상세·수정(/admin/quests/:id)
@@ -18,7 +19,7 @@ export default function AdminQuestDetail() {
   const [loading, setLoading] = useState(editing)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+  const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const load = useCallback(async () => {
     if (!editing) return
@@ -51,54 +52,66 @@ export default function AdminQuestDetail() {
   return (
     <div className="page admin-page">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="card">
-        {!editing && (
-          <>
-            <h3 className="card-title">퀘스트 추가</h3>
-            <p className="muted sm" style={{ margin: '0 0 10px' }}>
-              ID는 완료 판정 키예요. 새 ID로 추가하면 목록엔 뜨지만, 완료 처리는 개발자가 코드로 구현해야 동작해요.
-            </p>
-          </>
-        )}
+      <div className="aq-form-wrap">
+        <h2 className="aq-form-title">{editing ? '랜덤 퀘스트 수정' : '랜덤 퀘스트 추가'}</h2>
         {/* label 은 htmlFor 로만 연결하고 텍스트 입력은 defaultValue (관리자 폼 공통 규칙) */}
-        <form onSubmit={save} className="form" key={id || 'new'}>
-          <div className="field"><label htmlFor="q-id">ID *</label>
-            <input id="q-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: r_wish" disabled={editing} autoCapitalize="none" /></div>
-          <div className="field"><label htmlFor="q-title">제목 *</label>
-            <input id="q-title" defaultValue={form.title} onChange={setField('title')} placeholder="예: 위시 작성하기" /></div>
-          <div className="field"><label htmlFor="q-body">내용</label>
-            <textarea id="q-body" rows={2} defaultValue={form.body} onChange={setField('body')} placeholder="퀘스트 설명" style={{ resize: 'vertical' }} /></div>
-          <div className="field-row">
-            <div className="field field-narrow"><label htmlFor="q-emoji">이모지</label>
-              <input id="q-emoji" defaultValue={form.emoji} onChange={setField('emoji')} placeholder="예: ⭐" maxLength={16} autoCapitalize="none" /></div>
-            <div className="field field-narrow"><label htmlFor="q-reward">보상(츄르) *</label>
-              <input id="q-reward" type="number" inputMode="numeric" min="0" defaultValue={form.reward} onChange={setField('reward')} placeholder="예: 2" /></div>
+        <form onSubmit={save} className="aq-form" key={id || 'new'}>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-id">ID <span className="aq-required">*</span></label>
+            <input id="q-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: quest_random_006" disabled={editing} autoCapitalize="none" />
           </div>
-          <div className="field"><label htmlFor="q-bg">이모지 배경색</label>
-            <div className="an-bg-row">
-              {BG_PRESETS.map((c) => (
-                <button key={c} type="button" className={`an-bg-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
-                  style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
-              ))}
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-title">제목 <span className="aq-required">*</span></label>
+            <input id="q-title" defaultValue={form.title} onChange={setField('title')} placeholder="퀘스트 이름을 입력하세요" />
+          </div>
+          <div className="aq-frow aq-frow-top">
+            <label className="aq-flabel" htmlFor="q-body">내용</label>
+            <textarea id="q-body" rows={2} defaultValue={form.body} onChange={setField('body')} placeholder="퀘스트 내용을 입력하세요" />
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-emoji">아이콘</label>
+            <div className="aq-icon-row">
+              <input id="q-emoji" className="aq-icon-input" defaultValue={form.emoji} onChange={setField('emoji')}
+                placeholder="🎁" maxLength={16} autoCapitalize="none" style={form.emoji_bg ? { background: form.emoji_bg } : undefined} />
+              <div className="aq-swatch-row">
+                {BG_PRESETS.map((c) => (
+                  <button key={c} type="button" className={`aq-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
+                    style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
+                ))}
+              </div>
+              <input id="q-bg" ref={bgRef} className="aq-hex" defaultValue={form.emoji_bg} onChange={setField('emoji_bg')}
+                placeholder="#RRGGBB" maxLength={7} autoCapitalize="none" spellCheck={false} />
             </div>
-            <input id="q-bg" ref={bgRef} className="an-bg-hex" defaultValue={form.emoji_bg} onChange={setField('emoji_bg')}
-              placeholder="#RRGGBB" maxLength={7} autoCapitalize="none" spellCheck={false} />
           </div>
-          <div className="field"><label htmlFor="q-grade">대상 등급</label>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-reward">보상</label>
+            <div className="aq-reward-row">
+              <input id="q-reward" type="number" inputMode="numeric" min="0" defaultValue={form.reward} onChange={setField('reward')} placeholder="예: 20" />
+              <span className="aq-unit">츄르</span>
+            </div>
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-grade">대상</label>
             <select id="q-grade" value={form.grade} onChange={setField('grade')}>
               {QUEST_GRADES.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
-            </select></div>
-          <label className="chk"><input type="checkbox" checked={form.active} onChange={setField('active')} /> 활성(랜덤 풀에 포함)</label>
-          <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '퀘스트 추가'}</button>
+            </select>
+          </div>
+          <div className="aq-toggle-row">
+            <div>
+              <div className="aq-toggle-title">사용자에게 노출</div>
+              <div className="aq-toggle-sub">비활성화하면 앱에서 이 퀘스트가 보이지 않아요</div>
+            </div>
+            <CgToggle on={form.active} onClick={() => setForm((f) => ({ ...f, active: !f.active }))} />
+          </div>
+          <div className="aq-actions">
+            {editing && <button type="button" className="aq-btn-delete" disabled={busy} onClick={remove}>삭제</button>}
+            <div className="aq-actions-right">
+              <button type="button" className="aq-btn-cancel" onClick={() => nav('/admin/quests')}>취소</button>
+              <button type="submit" className="aq-btn-save" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
+            </div>
+          </div>
         </form>
       </div>
-
-      {editing && (
-        <div className="card">
-          <h3 className="card-title">퀘스트 관리</h3>
-          <button type="button" className="btn btn-danger" disabled={busy} onClick={remove}>퀘스트 삭제</button>
-        </div>
-      )}
     </div>
   )
 }
