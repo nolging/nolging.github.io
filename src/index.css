@@ -5766,6 +5766,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .aq-card-name { font-size: 14px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aq-card-desc { font-size: 12.5px; color: #8b8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aq-card-desc-desktop { display: none; }
+.aq-card-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; }
+.aq-card-img img.store-img { width: 78%; height: 78%; object-fit: contain; }
 .aq-card-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .aq-badge-target { font-size: 11.5px; font-weight: 700; color: #6f6c7a; background: #f4f3f7; border-radius: 999px; padding: 4px 9px; white-space: nowrap; }
 .aq-badge-status { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: #f4f3f7; color: #8b8798; white-space: nowrap; }
@@ -5773,7 +5776,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-reward { font-size: 13px; font-weight: 700; color: #191722; flex-shrink: 0; white-space: nowrap; align-self: center; }
 .aq-card-badges-desktop { display: none; }
 .aq-card-chevron { display: none; }
-/* 비활성 랜덤 퀘스트: 카드 배경을 살짝 어둡게, 내부 텍스트·아이콘은 흐릿하게 */
+/* 비활성(숨김) 아이템/퀘스트: 카드 배경을 살짝 어둡게, 내부 텍스트·아이콘은 흐릿하게 */
 .aq-card.inactive { background: #f3f1ee; }
 .aq-card.inactive:hover { background: #eeece8; }
 .aq-card.inactive .aq-card-icon { opacity: .55; }
@@ -5783,6 +5786,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @media (min-width: 700px) {
   .aq-card { padding: 14px 20px; }
   .aq-card-badges-mobile { display: none; }
+  .aq-card-desc-desktop { display: block; }
   .aq-card-badges-desktop { display: flex; flex-shrink: 0; }
   .aq-badge-target { width: 90px; box-sizing: border-box; text-align: center; }
   .aq-badge-status { width: 96px; box-sizing: border-box; text-align: center; }
@@ -5873,21 +5877,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-cat { display: flex; flex-direction: column; gap: 8px; }
 .admin-cat + .admin-cat { margin-top: 0; }
 .admin-cat-title { font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 0 2px; }
-.admin-page .admin-cat-card { margin-bottom: 0; padding: 6px 14px; }
-.admin-row-wrap { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
-.admin-row-wrap:last-child { border-bottom: none; }
-.admin-row-wrap .admin-row { flex: 1; min-width: 0; border-bottom: none; }
-.admin-ord { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-.admin-ord-btn { width: 30px; height: 22px; border: 1px solid rgba(0, 0, 0, .12); background: #fff; border-radius: 7px;
-  cursor: pointer; font-size: 11px; line-height: 1; color: #55525f; display: flex; align-items: center; justify-content: center; }
-.admin-ord-btn:active { background: #eee; }
-.admin-ord-btn:disabled { opacity: .3; cursor: default; }
 /* 길게 눌러 드래그 정렬 — 롱프레스 시 행 텍스트가 블록 선택되지 않도록 */
-.admin-rows, .admin-row-wrap, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.admin-row-grip { font-size: 16px; color: #c3c0cc; flex-shrink: 0; width: 22px; margin-left: -4px; text-align: center; cursor: grab;
-  user-select: none; -webkit-user-select: none; touch-action: none; -webkit-touch-callout: none; }
-.admin-row-wrap.is-dragging { background: #f3eefb; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.14); position: relative; z-index: 2; }
-.admin-row-wrap.is-dragging .admin-row-grip { color: #8a63d2; cursor: grabbing; }
+.admin-rows, .admin-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 /* 상세 정보 나열 */
 .admin-detail { margin: 0; }
 .admin-detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0, 0, 0, .06); }
