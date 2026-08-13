@@ -147,22 +147,14 @@ export default function AdminStore() {
         </div>
       </div>
 
-      <div className="aq-section-head">
-        <span className="aq-section-title">아이템</span>
-        <span className="aq-count">{list.length}</span>
-        <Link to="/admin/store/new" className="aq-add-btn" aria-label="아이템 추가">
-          <svg width="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span className="aq-add-label">아이템 추가</span>
-        </Link>
-      </div>
-
       {loading && <div className="spinner" />}
       {!loading && sections.length === 0 && <p className="muted sm">아이템이 없습니다.</p>}
       {!loading && sections.map((sec) => (
         <div key={sec.key} className="admin-cat">
-          <div className="admin-cat-title">{sec.label} <span className="muted sm">{sec.items.length}</span></div>
+          <div className="aq-section-head">
+            <span className="aq-section-title">{sec.label}</span>
+            <span className="aq-count">{sec.items.length}</span>
+          </div>
           <div className="aq-cards">
             {sec.items.map((it) => {
               const slot = it.decoSlot || decoSlot(it.id)
@@ -208,6 +200,13 @@ export default function AdminStore() {
           </div>
         </div>
       ))}
+
+      <Link to="/admin/store/new" state={{ kind: tab === 'premium' ? 'prem' : 'general' }}
+        className="aq-fab" aria-label={tab === 'premium' ? '프리미엄 상점 아이템 추가' : '일반 상점 아이템 추가'}>
+        <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </Link>
     </div>
   )
 }
