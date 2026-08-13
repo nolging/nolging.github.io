@@ -88,7 +88,7 @@ export default function AdminReportDetail() {
   async function send(e) {
     e?.preventDefault?.()
     const text = msg.trim()
-    if (!text || busy) return
+    if (!text || busy || report?.resolved) return
     setBusy(true); setError('')
     try {
       await adminSendErrorReport(id, text)
@@ -232,11 +232,15 @@ export default function AdminReportDetail() {
         <div ref={endRef} />
       </div>
 
-      <form className="rc-input" onSubmit={send}>
-        <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="메시지를 입력하세요" maxLength={1000} enterKeyHint="send"
-          onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
-        <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !msg.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
-      </form>
+      {report.resolved ? (
+        <div className="rc-closed">해결 완료된 리포트예요. 다시 문의하려면 먼저 미해결로 되돌려 주세요.</div>
+      ) : (
+        <form className="rc-input" onSubmit={send}>
+          <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="메시지를 입력하세요" maxLength={1000} enterKeyHint="send"
+            onFocus={() => setTimeout(() => endRef.current?.scrollIntoView({ block: 'end' }), 300)} />
+          <button type="submit" className="rc-send" aria-label="전송" disabled={busy || !msg.trim()} onMouseDown={(e) => e.preventDefault()}><SendIcon /></button>
+        </form>
+      )}
 
       {/* 해결 처리 + 보상 지급(선택). 아이템 지급 시트(z-index 낮음)가 가려지지 않게 시트가
           열려 있는 동안엔 잠시 숨긴다(gifts/coin 등 상태는 유지되므로 다시 열려도 안 사라짐). */}
