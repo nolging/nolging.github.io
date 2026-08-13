@@ -5729,14 +5729,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* ===== 관리자 페이지 ===== */
 .admin-page .card { margin-bottom: 14px; }
 .admin-topbar { gap: 8px; align-items: flex-end; }
-.admin-tabs { display: flex; gap: 3px; flex: 1; min-width: 0; align-items: flex-end; align-self: stretch; }
+.admin-tabs { position: relative; display: flex; gap: 3px; flex: 1; min-width: 0; align-items: flex-end; align-self: stretch; }
 .admin-tabs a {
-  flex: 1; text-align: center; padding: 0 2px 12px; text-decoration: none; box-sizing: border-box;
+  flex: 1; text-align: center; padding: 0 2px 8px; text-decoration: none; box-sizing: border-box;
   font-size: 12px; font-weight: 600; color: #8b8798; white-space: nowrap;
   border-bottom: 3px solid transparent; margin-bottom: -1px;
 }
 .admin-tabs a:hover { text-decoration: none; }
-.admin-tabs a.active { background: transparent; color: #191722; font-weight: 700; border-bottom-color: #191722; }
+.admin-tabs a.active { background: transparent; color: #191722; font-weight: 700; }
+/* 현재 탭 밑줄 — 위치·너비를 JS 로 측정해 슬라이드 애니메이션 */
+.admin-tabs-indicator {
+  position: absolute; left: 0; bottom: -1px; height: 3px; background: #191722; border-radius: 2px;
+  transition: transform .25s cubic-bezier(.4, 0, .2, 1), width .25s cubic-bezier(.4, 0, .2, 1);
+  pointer-events: none;
+}
 
 /* ===== 퀘스트 관리(목록/카드/추가·수정) — 시안 적용 ===== */
 .aq-head { margin-bottom: 4px; }
