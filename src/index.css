@@ -5754,8 +5754,6 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   background: #fff; border: none; border-radius: 14px; box-shadow: 0 2px 10px rgba(25, 23, 34, .05);
   cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
-.aq-card:hover { background: #faf9f7; }
-.aq-card:active { background: #f4f2f5; }
 .aq-card.is-dragging { box-shadow: 0 10px 26px rgba(25, 23, 34, .18); position: relative; z-index: 2; }
 .aq-card-icon {
   width: 40px; height: 40px; align-self: center; border-radius: 12px; flex-shrink: 0; background: #f4f3f7;
@@ -5784,8 +5782,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-badges-desktop { display: none; }
 .aq-card-chevron { display: none; }
 /* 비활성(숨김) 아이템/퀘스트: 카드 배경을 살짝 어둡게, 내부 텍스트·아이콘은 흐릿하게 */
-.aq-card.inactive { background: #f3f1ee; }
-.aq-card.inactive:hover { background: #eeece8; }
+.aq-card.inactive { background: #f4f2f5; }
 .aq-card.inactive .aq-card-icon { opacity: .55; }
 .aq-card.inactive .aq-card-name { color: #8b8798; }
 .aq-card.inactive .aq-card-desc { color: #b3afbb; }
