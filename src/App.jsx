@@ -118,7 +118,7 @@ export default function App() {
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
         <Route path="/notes/new" element={<ProtectedRoute><NoteCompose /></ProtectedRoute>} />
-        <Route path="/admin" element={<Navigate to="/admin/members" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/store" replace />} />
         <Route path="/admin/members" element={<ProtectedRoute adminOnly><AdminMembers /></ProtectedRoute>} />
         <Route path="/admin/members/new" element={<ProtectedRoute adminOnly><AdminMemberNew /></ProtectedRoute>} />
         <Route path="/admin/members/:userId" element={<ProtectedRoute adminOnly><AdminMemberDetail /></ProtectedRoute>} />
