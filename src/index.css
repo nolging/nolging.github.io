@@ -5755,7 +5755,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-count { font-size: 12px; font-weight: 700; color: #6a5cd6; background: #eeebfe; border-radius: 999px; padding: 3px 10px; }
 /* 랜덤 퀘스트 목록: 이모지 핸들 드래그 정렬을 켜고 끄는 토글(기본 off) */
 .aq-sort-toggle { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.aq-sort-toggle-label { font-size: 13px; font-weight: 700; color: #191722; }
+.aq-sort-toggle-label { font-size: 13px; font-weight: 500; color: #57525f; }
+.aq-sort-toggle .cg-toggle { width: 30px; height: 18px; padding: 2px; }
+.aq-sort-toggle .cg-knob { width: 14px; height: 14px; }
 /* 화면 우측 하단 고정 추가 버튼(상점/퀘스트 관리 공용) */
 .aq-fab {
   position: fixed; right: 20px; bottom: 24px; z-index: 25;
