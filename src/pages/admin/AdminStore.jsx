@@ -6,7 +6,6 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../../lib/storeMeta'
 import { flagsToKind, ITEM_KIND_SHORT } from './adminMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 import { decoSlot } from '../../components/AvatarDeco'
-import CgToggle from '../../components/CgToggle'
 
 // 프로필 꾸미기 유형 배지(머리/얼굴/안경/테두리) — 신규 아이템은 deco_slot 에 한글 그대로 저장되므로
 // 매핑에 없으면 원문을 그대로 표시
@@ -173,10 +172,13 @@ export default function AdminStore() {
                 onClick={() => setQuery('')} aria-label="검색어 지우기">×</button>
             )}
           </div>
-          <span className="aq-sort-toggle">
-            <span className="aq-sort-toggle-label">정렬 수정</span>
-            <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
-          </span>
+          <button
+            type="button"
+            className={`admin-store-sort-btn${sortMode ? ' on' : ''}`}
+            onClick={() => setSortMode((v) => !v)}
+          >
+            {sortMode ? '정렬 ON' : '정렬 OFF'}
+          </button>
         </div>
       </div>
 
