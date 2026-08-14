@@ -4,7 +4,6 @@ import { catalogSvg, useStoreCatalog } from '../lib/storeCatalog'
 import ThemeHearts from './ThemeHearts'
 import ThemeBubbles from './ThemeBubbles'
 import ThemeFireworks from './ThemeFireworks'
-import ThemeWaterpark from './ThemeWaterpark'
 import { DecoPreview } from './AvatarDeco'
 
 // 아이템 이미지: 업로드 SVG(svg prop 또는 카탈로그) 우선 → public/store/{id}.svg → 이모지 폴백.
@@ -41,11 +40,7 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
     )
   }
   if (id === 'theme-waterpark') {
-    return (
-      <span className={`${className} store-wp`} aria-hidden="true">
-        <ThemeWaterpark />
-      </span>
-    )
+    return <span className={`${className} store-wp`} aria-hidden="true" />
   }
 
   // 프로필 꾸미기: 아바타 원 없이 꾸미기 아이템만 크게 미리보기

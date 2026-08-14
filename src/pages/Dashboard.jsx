@@ -8,7 +8,6 @@ import PeekCat from '../components/PeekCat'
 import ThemeHearts from '../components/ThemeHearts'
 import ThemeBubbles from '../components/ThemeBubbles'
 import ThemeFireworks from '../components/ThemeFireworks'
-import ThemeWaterpark from '../components/ThemeWaterpark'
 import LedBanner from '../components/LedBanner'
 import { LedEditModal } from '../components/LedModals'
 import InviteCodeSheet from '../components/InviteCodeSheet'
@@ -198,7 +197,6 @@ export default function Dashboard() {
                 {g.deco_theme === 'heart' && <ThemeHearts />}
                 {g.deco_theme === 'bubble' && <ThemeBubbles />}
                 {g.deco_theme === 'firework' && <ThemeFireworks />}
-                {g.deco_theme === 'waterpark' && <ThemeWaterpark />}
               </Link>
             )
           })}
