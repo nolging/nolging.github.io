@@ -2,6 +2,7 @@ import kittyRibbonPng from '../assets/deco/kitty-ribbon.png'
 import partyHatPng from '../assets/deco/party-hat.png'
 import cherryCreamPng from '../assets/deco/cherry-cream.png'
 import alienShadesPng from '../assets/deco/alien-shades.png'
+import koreaPng from '../assets/deco/korea.png'
 
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
@@ -9,7 +10,7 @@ import alienShadesPng from '../assets/deco/alien-shades.png'
 //    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) | deco-devil-horn(악마 뿔·앞)
 //    | deco-kitty-ribbon(고양이 리본·앞) | deco-party-hat(고깔모자·앞) | deco-cherry-cream(체리 콕·앞) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고)
-//    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) | deco-chupa-chups(막대사탕·앞) → 하나만
+//    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) | deco-chupa-chups(막대사탕·앞) | deco-korea(태극 배지·앞) → 하나만
 //  - 안경(글라스류와 별도 슬롯. DB store_items.deco_slot='안경'): deco-circle-glasses(동그리 안경·앞)
 //    → face 슬롯 아이템(선글라스 등)과 동시 장착 가능
 // 귀(jaguar/wolf/bunny/bear)와 날개(angel-wing/devil-wing)는 아바타 "뒤" 레이어(back)에 그려,
@@ -17,7 +18,7 @@ import alienShadesPng from '../assets/deco/alien-shades.png'
 // 나비넥타이·막대사탕·동그리 안경은 "앞" 레이어(front).
 
 export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream']
-export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie', 'deco-chupa-chups']
+export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie', 'deco-chupa-chups', 'deco-korea']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
 
@@ -337,6 +338,12 @@ function AlienShades() {
   return <image href={alienShadesPng} x="20.8" y="23.6" width="58.2" height="31.9" preserveAspectRatio="xMidYMid meet" />
 }
 
+// 태극 배지(얼굴 유형): 앞(front) 레이어, 오른쪽 볼에 붙는 작은 원형 배지. 관리자가 준 PNG
+// 원본을 그대로 SVG <image> 로 삽입 — 좌표계(0~100)는 관리자가 준 적용 샘플 위치를 그대로 재현.
+function Korea() {
+  return <image href={koreaPng} x="64.8" y="50" width="13.2" height="13" preserveAspectRatio="xMidYMid meet" />
+}
+
 // 하트 렌즈 path (중심 cx,cy · 반폭 a). 통통한 봉우리 + 짧고 둥근 아래 꼭짓점.
 const heartPath = (cx, cy, a) =>
   `M${cx} ${cy - a * 0.36}`
@@ -542,6 +549,7 @@ const PREVIEW_VB = {
   'deco-chupa-chups': '54 81 25 14',
   'deco-cherry-cream': '39 -18 21 27',
   'deco-circle-glasses': '13 29 74 34',
+  'deco-korea': '61 46 20 20',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
@@ -623,6 +631,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-anger' && <Anger />}
       {id === 'deco-pixel-shades' && <PixelShades />}
       {id === 'deco-alien-shades' && <AlienShades />}
+      {id === 'deco-korea' && <Korea />}
       {id === 'deco-bandage' && <Bandage />}
       {id === 'deco-gum' && <BubbleGum />}
       {id === 'deco-heart-shades' && <HeartShades />}
@@ -638,7 +647,7 @@ export function DecoPreview({ id }) {
 const ART = {
   'deco-sprout': Sprout, 'deco-jaguar': CatEars, 'deco-wolf': WolfEars,
   'deco-blush': Blush, 'deco-anger': Anger, 'deco-pixel-shades': PixelShades,
-  'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum,
+  'deco-alien-shades': AlienShades, 'deco-bandage': Bandage, 'deco-gum': BubbleGum, 'deco-korea': Korea,
   'deco-heart-shades': HeartShades, 'deco-circle-glasses': CircleGlasses, 'deco-halo': Halo, 'deco-angel-ring': AngelRing,
   'deco-bubble': Bubble, 'deco-tomato': Tomato, 'deco-bunny': BunnyEars, 'deco-bear': BearEars,
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
