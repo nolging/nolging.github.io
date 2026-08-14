@@ -153,13 +153,26 @@ export default function AdminStore() {
           <button type="button" className={`seg-tab ${tab === 'premium' ? 'active' : ''}`} onClick={() => setTab('premium')}>프리미엄 상점</button>
         </div>
         <div className="admin-store-sort-row">
-          <input
-            type="search"
-            className="admin-store-search"
-            placeholder="아이템 이름 검색"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <div className="admin-store-search-box">
+            <svg className="admin-store-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              className="admin-store-search-input"
+              placeholder="아이템 검색"
+              aria-label="아이템 검색"
+              autoComplete="off" autoCorrect="off" autoCapitalize="none"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button type="button" className="admin-store-search-clear"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setQuery('')} aria-label="검색어 지우기">×</button>
+            )}
+          </div>
           <span className="aq-sort-toggle">
             <span className="aq-sort-toggle-label">정렬 수정</span>
             <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
