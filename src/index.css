@@ -5915,6 +5915,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 .admin-store-search-input::placeholder { color: #8b8798; }
 .admin-store-search-input:focus { outline: none; border-color: transparent; box-shadow: none; }
+.admin-store-sort-btn {
+  flex-shrink: 0; border: none; border-radius: 999px; height: 36px; padding: 0 14px;
+  font: inherit; font-size: 13px; font-weight: 700; color: #726d7d; cursor: pointer;
+  background: #e4e2ea; transition: background .15s ease, color .15s ease;
+}
+.admin-store-sort-btn.on { background: #7363e8; color: #fff; }
 .admin-store-search-clear { flex-shrink: 0; border: none; background: transparent; color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 1px; }
 /* 탭↔첫 카테고리 라벨 간격 축소(.page 기본 gap 18px 을 상쇄) */
 .admin-store-tabbar + .admin-cat { margin-top: -10px; }
