@@ -5904,6 +5904,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 .admin-store-tabbar .seg-tabs { margin-bottom: 0; }
 .admin-store-sort-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.admin-store-search {
+  flex: 1; min-width: 0; height: 30px; box-sizing: border-box;
+  border: none; border-radius: 999px; padding: 0 14px;
+  background: rgba(0, 0, 0, .05); font: inherit; font-size: 13px; color: var(--text);
+}
+.admin-store-search::placeholder { color: var(--muted); }
+.admin-store-search:focus { outline: 2px solid rgba(115, 99, 232, .3); outline-offset: 0; }
 /* 탭↔첫 카테고리 라벨 간격 축소(.page 기본 gap 18px 을 상쇄) */
 .admin-store-tabbar + .admin-cat { margin-top: -10px; }
 .admin-cat { display: flex; flex-direction: column; gap: 4px; }
