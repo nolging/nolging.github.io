@@ -5906,7 +5906,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-store-sort-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .admin-store-search-box {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
-  height: 26px; background: var(--canvas); border-radius: 999px; padding: 0 10px;
+  height: 36px; background: var(--canvas); border-radius: 999px; padding: 0 10px;
 }
 .admin-store-search-icon { color: #8b8798; flex-shrink: 0; }
 .admin-store-search-input {
