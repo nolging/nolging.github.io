@@ -24,6 +24,7 @@ export default function AdminStore() {
   const setTab = (t) => { lastStoreTab = t; setTabState(t) }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [query, setQuery] = useState('') // 아이템 이름 검색(현재 탭 내에서만)
   // 낙관적 정렬: 로컬 즉시 반영 + 마지막 조작 후 디바운스로 한 번만 저장
   const pendingRef = useRef(new Map())   // id -> sortOrder
   const saveTimer = useRef(null)
@@ -48,7 +49,10 @@ export default function AdminStore() {
   // 언마운트 시 대기 중인 저장 반영
   useEffect(() => () => { clearTimeout(saveTimer.current); flushSave() }, [flushSave])
 
-  const list = items.filter((it) => (tab === 'premium' ? it.premium : !it.premium))
+  const q = query.trim().toLowerCase()
+  const list = items
+    .filter((it) => (tab === 'premium' ? it.premium : !it.premium))
+    .filter((it) => !q || itemName(it.id, it.name).toLowerCase().includes(q))
   const sections = CAT_ORDER.map((key) => ({
     key, label: CAT[key],
     items: list.filter((it) => catOf(it.id, it.category) === key).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
@@ -149,13 +153,24 @@ export default function AdminStore() {
           <button type="button" className={`seg-tab ${tab === 'premium' ? 'active' : ''}`} onClick={() => setTab('premium')}>프리미엄 상점</button>
         </div>
         <div className="admin-store-sort-row">
-          <span className="aq-sort-toggle-label">정렬 수정</span>
-          <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+          <input
+            type="search"
+            className="admin-store-search"
+            placeholder="아이템 이름 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <span className="aq-sort-toggle">
+            <span className="aq-sort-toggle-label">정렬 수정</span>
+            <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+          </span>
         </div>
       </div>
 
       {loading && <div className="spinner" />}
-      {!loading && sections.length === 0 && <p className="muted sm">아이템이 없습니다.</p>}
+      {!loading && sections.length === 0 && (
+        <p className="muted sm">{q ? '검색 결과가 없습니다.' : '아이템이 없습니다.'}</p>
+      )}
       {!loading && sections.map((sec) => (
         <div key={sec.key} className="admin-cat">
           <div className="aq-section-head">
