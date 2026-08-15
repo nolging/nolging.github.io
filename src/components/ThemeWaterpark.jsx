@@ -7,6 +7,8 @@ import waterparkLeafPng from '../assets/theme/wp-leaf.png'
 import waterparkLeafShadowPng from '../assets/theme/wp-leaf-shadow.png'
 import waterparkLeafTrPng from '../assets/theme/wp-leaf-tr.png'
 import waterparkLeafTrShadowPng from '../assets/theme/wp-leaf-tr-shadow.png'
+import waterparkLeafMidPng from '../assets/theme/wp-leaf-mid.png'
+import waterparkLeafMidShadowPng from '../assets/theme/wp-leaf-mid-shadow.png'
 
 // 워터파크 테마: 이미지 없이 CSS + SVG 필터로 직접 그린 격자 타일 배경.
 // 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터의 baseFrequency 를
@@ -39,6 +41,11 @@ const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%' }
 // 자연스럽게 드러난다(빈 배경이 아니라 잎 자체가 나타나는 것). topOffsetPx 로 표현.
 const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '100% 0%', topOffsetPx: -10 }
 const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%', topOffsetPx: -10 }
+// 상단 중앙 잎: 화면 왼쪽/오른쪽 어느 변에도 닿지 않고 위쪽 변에만 걸쳐 있어서(코너가 아닌
+// 한 변만 걸치는 형태), 좌측 하단 잎과 같은 방식으로 안전하게 다룰 수 있다 — 이미지 자체
+// 오른쪽 위 잎끝(줄기처럼 보이는 지점)을 origin 으로 두고 아주 미세하게 좌우로 흔든다.
+const LEAF_MID = { left: 41.20, top: 0, width: 30.36, origin: '95% 3%' }
+const LEAF_MID_SHADOW = { left: 43.91, top: 0, width: 29.57, origin: '94% 3%' }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -64,6 +71,10 @@ export default function ThemeWaterpark({ className = '' }) {
         style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `calc(${LEAF_TR_SHADOW.top}% + ${LEAF_TR_SHADOW.topOffsetPx}px)`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
         style={{ left: `${LEAF_TR.left}%`, top: `calc(${LEAF_TR.top}% + ${LEAF_TR.topOffsetPx}px)`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
+      <img className="wp-leaf-sway" src={waterparkLeafMidShadowPng} alt=""
+        style={{ left: `${LEAF_MID_SHADOW.left}%`, top: `${LEAF_MID_SHADOW.top}%`, width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin }} />
+      <img className="wp-leaf-sway" src={waterparkLeafMidPng} alt=""
+        style={{ left: `${LEAF_MID.left}%`, top: `${LEAF_MID.top}%`, width: `${LEAF_MID.width}%`, transformOrigin: LEAF_MID.origin }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
