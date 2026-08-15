@@ -19,6 +19,7 @@ import GroupBadge from '../components/GroupBadge'
 import ThemeHearts from '../components/ThemeHearts'
 import ThemeBubbles from '../components/ThemeBubbles'
 import ThemeFireworks from '../components/ThemeFireworks'
+import ThemeWaterpark from '../components/ThemeWaterpark'
 import Fireworks from '../components/Fireworks'
 import CategoryChip from '../components/CategoryChip'
 import CalendarIcon from '../components/CalendarIcon'
@@ -561,6 +562,7 @@ export default function GroupDetail() {
       {group.deco_theme === 'heart' && <ThemeHearts durScale={2.8} className="gd-hearts-over" />}
       {group.deco_theme === 'bubble' && <ThemeBubbles durScale={2.6} className="gd-bubbles-over" />}
       {group.deco_theme === 'firework' && <ThemeFireworks page />}
+      {group.deco_theme === 'waterpark' && <ThemeWaterpark className="gd-wp-over" />}
       {annivToday && <Fireworks className="fw-over" />}
 
       {/* 좌측 고정 섹션 (PC 전용): 그룹 정보 + 설정 */}
