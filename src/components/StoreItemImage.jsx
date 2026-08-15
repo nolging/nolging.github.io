@@ -43,7 +43,7 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
   if (id === 'theme-waterpark') {
     return (
       <span className={`${className} store-wp`} aria-hidden="true">
-        <ThemeWaterpark />
+        <ThemeWaterpark variant="preview" />
       </span>
     )
   }

@@ -18,11 +18,12 @@ import waterparkLeafMidShadowPng from '../assets/theme/wp-leaf-mid-shadow.png'
 // 이미지 크기가 다르면 같은 % 라도 실제 이동 거리가 달라지므로, 크기 그룹별로 화면상 이동
 // 거리가 똑같아지도록 보정한 keyframes(wp-float-drift-*)를 쓴다(cls 로 구분). 대신
 // animation-delay/direction 으로 위상만 어긋나게 줘서 서로 다른 지점에서 따로 떠다니는 것처럼 보이게 한다.
-// cardOnly*: 그룹 카드(정사각형 타일)에서만 적용하는 보정 — 그룹 상세(전체 화면)는 그대로 둔다.
-// cardHide: 카드에서는 아예 안 보여준다(가장 위에 있던 꽃1, 오른쪽에 있던 꽃3).
+// cardOnly*/previewOnly*: 각각 그룹 카드(정사각형 타일) / 상점 미리보기에서만 적용하는
+// 보정 — 그룹 상세(전체 화면)는 그대로 둔다. cardHide: 카드에서는 아예 안 보여준다
+// (가장 위에 있던 꽃1, 오른쪽에 있던 꽃3).
 const FLOATS = [
   { src: waterparkBallPng, cls: 'wp-float-ball', left: 69.5, top: 87.9, width: 20.9, delay: '0s', cardOnlyTopPx: -10 },
-  { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-4.4s', cardHide: true },
+  { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-4.4s', cardHide: true, previewOnlyTopPx: 8 },
   { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-8.8s', reverse: true, cardOnlyTopPx: -20 },
   { src: waterparkFlower3Png, cls: 'wp-float-fl34', left: 87.92, top: 55.02, width: 13.32, delay: '-13.2s', cardHide: true },
   { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-17.6s', reverse: true, cardOnlyTopPx: -20 },
@@ -50,8 +51,8 @@ const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%',
 // left/top 을 이미지 자체의 bbox 로 바로 쓰면 안 되고, 원본 샘플 이미지와 픽셀 단위로
 // 대조(윤곽 겹침 최적화)해서 찾은 실제 위치를 써야 한다 — top 이 약 -2.3%만큼 위로
 // 더 올라간다(샘플에서 보이는 부분은 이 이미지의 아래쪽 일부일 뿐).
-const LEAF_MID = { left: 41.65, top: -2.29, width: 30.36, origin: '95% 3%', cardOnlyTopPx: -30 }
-const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%', cardOnlyTopPx: -30 }
+const LEAF_MID = { left: 41.65, top: -2.29, width: 30.36, origin: '95% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
+const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -64,45 +65,45 @@ const RippleDefs = () => (
   </svg>
 )
 
-// leaf/float 의 top 값을 계산: 기본 topOffsetPx(항상 적용) + cardOnlyTopPx(카드에서만 추가 적용).
-function leafTop(item, isCard) {
-  const px = (item.topOffsetPx || 0) + (isCard ? (item.cardOnlyTopPx || 0) : 0)
+// leaf/float 의 top 값을 계산: 기본 topOffsetPx(항상 적용) + {variant}OnlyTopPx(해당
+// variant 에서만 추가 적용, 예: cardOnlyTopPx, previewOnlyTopPx). detail 은 둘 다 없음.
+function leafTop(item, variant) {
+  const px = (item.topOffsetPx || 0) + (item[`${variant}OnlyTopPx`] || 0)
   return px ? `calc(${item.top}% + ${px}px)` : `${item.top}%`
 }
-// left 값도 같은 방식(카드에서만 cardOnlyLeftPx 만큼 추가 이동).
-function leafLeft(item, isCard) {
-  const px = isCard ? (item.cardOnlyLeftPx || 0) : 0
+// left 값도 같은 방식({variant}OnlyLeftPx 만큼 추가 이동).
+function leafLeft(item, variant) {
+  const px = item[`${variant}OnlyLeftPx`] || 0
   return px ? `calc(${item.left}% + ${px}px)` : `${item.left}%`
 }
 
-// 쌓임 순서(카드/상세 공통): 잎 그림자(맨 뒤) < 공/꽃 < 잎(맨 앞).
+// 쌓임 순서(모든 variant 공통): 잎 그림자(맨 뒤) < 공/꽃 < 잎(맨 앞).
 const SHADOW_Z = 0
 const FLOAT_Z = 1
 const LEAF_Z = 2
 
 export default function ThemeWaterpark({ className = '', variant = 'detail' }) {
-  const isCard = variant === 'card'
-  const floats = isCard ? FLOATS.filter((f) => !f.cardHide) : FLOATS
+  const floats = variant === 'card' ? FLOATS.filter((f) => !f.cardHide) : FLOATS
   return (
     <div className={`theme-wp${className ? ` ${className}` : ''}`} aria-hidden="true">
       <RippleDefs />
       <div className="wp-tiles" />
       <img className="wp-leaf-sway" src={waterparkLeafShadowPng} alt=""
-        style={{ left: leafLeft(LEAF_SHADOW, isCard), top: leafTop(LEAF_SHADOW, isCard), width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin, zIndex: SHADOW_Z }} />
+        style={{ left: leafLeft(LEAF_SHADOW, variant), top: leafTop(LEAF_SHADOW, variant), width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
-        style={{ left: leafLeft(LEAF, isCard), top: leafTop(LEAF, isCard), width: `${LEAF.width}%`, transformOrigin: LEAF.origin, zIndex: LEAF_Z }} />
+        style={{ left: leafLeft(LEAF, variant), top: leafTop(LEAF, variant), width: `${LEAF.width}%`, transformOrigin: LEAF.origin, zIndex: LEAF_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidShadowPng} alt=""
-        style={{ left: `${LEAF_MID_SHADOW.left}%`, top: leafTop(LEAF_MID_SHADOW, isCard), width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin, zIndex: SHADOW_Z }} />
+        style={{ left: leafLeft(LEAF_MID_SHADOW, variant), top: leafTop(LEAF_MID_SHADOW, variant), width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidPng} alt=""
-        style={{ left: `${LEAF_MID.left}%`, top: leafTop(LEAF_MID, isCard), width: `${LEAF_MID.width}%`, transformOrigin: LEAF_MID.origin, zIndex: LEAF_Z }} />
+        style={{ left: leafLeft(LEAF_MID, variant), top: leafTop(LEAF_MID, variant), width: `${LEAF_MID.width}%`, transformOrigin: LEAF_MID.origin, zIndex: LEAF_Z }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
-        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: leafTop(LEAF_TR_SHADOW, isCard), width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin, zIndex: SHADOW_Z }} />
+        style={{ left: leafLeft(LEAF_TR_SHADOW, variant), top: leafTop(LEAF_TR_SHADOW, variant), width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
-        style={{ left: `${LEAF_TR.left}%`, top: leafTop(LEAF_TR, isCard), width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin, zIndex: LEAF_Z }} />
+        style={{ left: leafLeft(LEAF_TR, variant), top: leafTop(LEAF_TR, variant), width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin, zIndex: LEAF_Z }} />
       {floats.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
-            left: `${f.left}%`, top: leafTop(f, isCard), width: `${f.width}%`, zIndex: FLOAT_Z,
+            left: leafLeft(f, variant), top: leafTop(f, variant), width: `${f.width}%`, zIndex: FLOAT_Z,
             animationDelay: f.delay, animationDirection: f.reverse ? 'reverse' : 'normal',
           }} />
       ))}
