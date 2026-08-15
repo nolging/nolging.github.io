@@ -198,7 +198,7 @@ export default function Dashboard() {
                 {g.deco_theme === 'heart' && <ThemeHearts />}
                 {g.deco_theme === 'bubble' && <ThemeBubbles />}
                 {g.deco_theme === 'firework' && <ThemeFireworks />}
-                {g.deco_theme === 'waterpark' && <ThemeWaterpark />}
+                {g.deco_theme === 'waterpark' && <ThemeWaterpark variant="card" />}
               </Link>
             )
           })}
