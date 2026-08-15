@@ -3088,7 +3088,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .theme-wp { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .theme-wp.gd-wp-over { position: fixed; inset: 0; z-index: 0; }
 .gd-themed > .theme-wp { z-index: 0; }
-.tile-waterpark .theme-wp { z-index: 0; }
+.tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 테마 요소를 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 
 /* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그리고, feTurbulence 의 baseFrequency 를
    천천히 흔들어(SMIL) 물 때문에 선이 일렁이는 것처럼 보이게 한다(정적 왜곡이 아니라 애니메이션). */
