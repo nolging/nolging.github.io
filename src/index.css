@@ -3223,6 +3223,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .wp-float { animation: none; } }
 
+/* 좌측 하단 야자잎 — 줄기 밑동(transform-origin, 요소별 인라인 style)을 고정하고
+   바람에 살랑거리듯 아주 미세하게 좌우로 회전한다. 그림자도 같은 keyframes 를 딜레이
+   없이 그대로 써서 풀과 정확히 같은 타이밍으로 함께 흔들린다. */
+.wp-leaf-sway { position: absolute; height: auto; animation: wp-leaf-sway 4.5s ease-in-out infinite; }
+@keyframes wp-leaf-sway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+@media (prefers-reduced-motion: reduce) { .wp-leaf-sway { animation: none; } }
+
 /* 워터파크 FAB */
 .gd-theme-waterpark .fab { background: linear-gradient(140deg, #4fd6ef, #2f9fd0); box-shadow: 0 10px 24px rgba(47,159,208,.42); }
 
