@@ -3100,6 +3100,17 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .wp-tiles { filter: none; } }
 
+/* 비치볼 — 물살에 밀리듯 작은 순환 경로로 표류(제자리로 돌아오는 루프라 멀리 안 감) */
+.wp-ball { position: absolute; height: auto; transform: translate(-50%, -50%); animation: wp-ball-drift 9s ease-in-out infinite; }
+@keyframes wp-ball-drift {
+  0%   { transform: translate(-50%, -50%) translate(0%, 0%); }
+  22%  { transform: translate(-50%, -50%) translate(9%, -7%); }
+  48%  { transform: translate(-50%, -50%) translate(4%, 8%); }
+  74%  { transform: translate(-50%, -50%) translate(-8%, -4%); }
+  100% { transform: translate(-50%, -50%) translate(0%, 0%); }
+}
+@media (prefers-reduced-motion: reduce) { .wp-ball { animation: none; } }
+
 /* 워터파크 FAB */
 .gd-theme-waterpark .fab { background: linear-gradient(140deg, #4fd6ef, #2f9fd0); box-shadow: 0 10px 24px rgba(47,159,208,.42); }
 
