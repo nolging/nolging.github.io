@@ -23,17 +23,17 @@ import waterparkLeafMidShadowPng from '../assets/theme/wp-leaf-mid-shadow.png'
 const FLOATS = [
   { src: waterparkBallPng, cls: 'wp-float-ball', left: 69.5, top: 87.9, width: 20.9, delay: '0s', cardOnlyTopPx: -10 },
   { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-4.4s', cardHide: true },
-  { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-8.8s', reverse: true, cardOnlyTopPx: -15 },
+  { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-8.8s', reverse: true, cardOnlyTopPx: -20 },
   { src: waterparkFlower3Png, cls: 'wp-float-fl34', left: 87.92, top: 55.02, width: 13.32, delay: '-13.2s', cardHide: true },
-  { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-17.6s', reverse: true, cardOnlyTopPx: -15 },
+  { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-17.6s', reverse: true, cardOnlyTopPx: -20 },
 ]
 
 // 야자잎(풀 + 그림자, 캔버스 밖으로 살짝 걸침) — 줄기 밑동 쪽을 고정하고 바람에 살랑거리듯
 // 아주 미세하게 회전한다. 그림자는 풀과 각도만 다를 뿐 같은 keyframes 를 딜레이 없이 그대로
 // 써서 정확히 같은 타이밍으로 함께 흔들리게 한다. origin 은 밑동(고정되는 쪽) 위치.
 // 좌측 하단 잎: 아랫부분(밑동) 고정, 윗부분이 흔들림 → origin 이 아래쪽(y=100%).
-const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -5 }
-const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -5 }
+const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -10 }
+const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -10 }
 // 우측 상단 잎: 윗부분(밑동) 고정, 아랫부분이 흔들림 → origin 이 위쪽(y=0%). bbox 가
 // 캔버스 위/오른쪽 두 변에 동시에 딱 붙어 있어서, origin 을 그 교점(두 변이 만나는 정확한
 // 모서리, 100% 0%)에 둬야 어느 방향으로 돌려도 overflow:hidden 에 잘리지 않는다. left 는
