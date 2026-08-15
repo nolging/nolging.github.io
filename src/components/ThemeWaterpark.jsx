@@ -31,8 +31,10 @@ const FLOATS = [
 const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%' }
 const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%' }
 // 우측 상단 잎: 윗부분(밑동) 고정, 아랫부분이 흔들림 → origin 이 위쪽(y=0%).
-const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '78% 3%' }
-const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '82% 3%' }
+// bbox 가 캔버스 위/오른쪽 두 변에 동시에 딱 붙어 있어서, origin 을 그 교점(두 변이 만나는
+// 정확한 모서리, 100% 0%)에 둬야 어느 방향으로 돌려도 overflow:hidden 에 잘리지 않는다.
+const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '100% 0%' }
+const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%' }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -54,9 +56,9 @@ export default function ThemeWaterpark({ className = '' }) {
         style={{ left: `${LEAF_SHADOW.left}%`, top: `${LEAF_SHADOW.top}%`, width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin }} />
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
         style={{ left: `${LEAF.left}%`, top: `${LEAF.top}%`, width: `${LEAF.width}%`, transformOrigin: LEAF.origin }} />
-      <img className="wp-leaf-sway" src={waterparkLeafTrShadowPng} alt=""
+      <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
         style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `${LEAF_TR_SHADOW.top}%`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
-      <img className="wp-leaf-sway" src={waterparkLeafTrPng} alt=""
+      <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
         style={{ left: `${LEAF_TR.left}%`, top: `${LEAF_TR.top}%`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
