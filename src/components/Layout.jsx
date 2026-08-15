@@ -357,6 +357,9 @@ export default function Layout() {
     }
     function onStart(e) {
       if (!refreshHandler || refreshing || e.touches.length !== 1) { ptr.current.active = false; return }
+      // 그룹 상세: 헤더/탭 영역(.gd-sticky-head)에서 시작한 터치는 당겨서 새로고침 대상에서 제외
+      // (카드 목록 영역에서 당길 때만 동작하게)
+      if (e.target.closest?.('.gd-sticky-head')) { ptr.current.active = false; return }
       const sc = scrollerAt(e.target)
       if (sc && sc.scrollTop <= 0) {
         ptr.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, dist: 0, active: true, sc, locked: null }
