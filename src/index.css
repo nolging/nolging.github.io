@@ -3228,6 +3228,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @keyframes wp-leaf-sway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
 @media (prefers-reduced-motion: reduce) { .wp-leaf-sway { animation: none; } }
 
+/* 우측 상단 야자잎 — 주어진 이미지 각도 자체가 흔들림의 가장 왼쪽 지점이라, 거기서
+   더 왼쪽으로는 안 돌아가고 반대쪽(오른쪽)으로만 살랑거린다. */
+.wp-leaf-sway-tr { position: absolute; height: auto; animation: wp-leaf-sway-tr 4.5s ease-in-out infinite; }
+@keyframes wp-leaf-sway-tr { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-3.2deg); } }
+@media (prefers-reduced-motion: reduce) { .wp-leaf-sway-tr { animation: none; } }
+
 /* 워터파크 FAB */
 .gd-theme-waterpark .fab { background: linear-gradient(140deg, #4fd6ef, #2f9fd0); box-shadow: 0 10px 24px rgba(47,159,208,.42); }
 
