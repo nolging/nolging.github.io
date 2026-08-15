@@ -138,7 +138,12 @@ export default function GroupDetail() {
   const { setHeaderFilter, setHeaderInvite, setRefreshHandler } = useOutletContext()
 
   const [searchParams] = useSearchParams()
-  const initialTab = TASK_STATUSES.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'open'
+  const explicitTab = TASK_STATUSES.includes(searchParams.get('tab'))
+  // 기본 진입 탭은 약속(accepted). 단, 약속 카드가 하나도 없으면 위시(open)로 진입한다.
+  // 약속 개수는 로딩 후에나 알 수 있으므로 일단 낙관적으로 'accepted' 로 시작하고,
+  // 로딩이 끝난 뒤 아래 useEffect 에서 필요하면 'open' 으로 되돌린다. URL 에 ?tab= 이
+  // 명시된 경우(알림 클릭 등)는 이 자동 전환을 하지 않고 그대로 존중한다.
+  const initialTab = explicitTab ? searchParams.get('tab') : 'accepted'
 
   const [group, setGroup] = useState(null)
   const [members, setMembers] = useState([])
@@ -395,6 +400,15 @@ export default function GroupDetail() {
   }, [groupId])
 
   useEffect(() => { load() }, [load])
+
+  // 기본 진입 탭 보정: ?tab= 이 명시되지 않았을 때만, 로딩이 끝난 뒤 약속 카드가
+  // 하나도 없으면 위시 탭으로 되돌린다(한 번만 — 이후 사용자가 직접 바꾼 탭은 유지).
+  const autoTabDone = useRef(explicitTab)
+  useEffect(() => {
+    if (autoTabDone.current || loading) return
+    autoTabDone.current = true
+    if (!tasks.some((t) => t.status === 'accepted')) setFilter('open')
+  }, [loading, tasks])
 
   // 데일리 '그룹 방문' 퀘스트: 그룹 상세 진입 기록(그룹당 1회면 충분)
   useEffect(() => { touchGroupVisit() }, [groupId])
