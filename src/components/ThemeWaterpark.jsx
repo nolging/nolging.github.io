@@ -3,6 +3,8 @@ import waterparkFlower1Png from '../assets/theme/wp-flower-1.png'
 import waterparkFlower2Png from '../assets/theme/wp-flower-2.png'
 import waterparkFlower3Png from '../assets/theme/wp-flower-3.png'
 import waterparkFlower4Png from '../assets/theme/wp-flower-4.png'
+import waterparkLeafPng from '../assets/theme/wp-leaf.png'
+import waterparkLeafShadowPng from '../assets/theme/wp-leaf-shadow.png'
 
 // 워터파크 테마: 이미지 없이 CSS + SVG 필터로 직접 그린 격자 타일 배경.
 // 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터의 baseFrequency 를
@@ -20,6 +22,12 @@ const FLOATS = [
   { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-17.6s', reverse: true },
 ]
 
+// 좌측 하단 야자잎(풀 + 그림자, 캔버스 밖으로 살짝 걸침) — 아랫부분(줄기 밑동)을 고정하고
+// 바람에 살랑거리듯 아주 미세하게 좌우로 회전한다. 그림자는 풀과 각도만 다를 뿐 같은
+// keyframes 를 딜레이 없이 그대로 써서 정확히 같은 타이밍으로 함께 흔들리게 한다.
+const LEAF = { left: 1.69, top: 79.54, width: 37.47, originX: 38 }
+const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, originX: 32 }
+
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
     <filter id="wpRipple" x="-12%" y="-12%" width="124%" height="124%">
@@ -36,6 +44,10 @@ export default function ThemeWaterpark({ className = '' }) {
     <div className={`theme-wp${className ? ` ${className}` : ''}`} aria-hidden="true">
       <RippleDefs />
       <div className="wp-tiles" />
+      <img className="wp-leaf-sway" src={waterparkLeafShadowPng} alt=""
+        style={{ left: `${LEAF_SHADOW.left}%`, top: `${LEAF_SHADOW.top}%`, width: `${LEAF_SHADOW.width}%`, transformOrigin: `${LEAF_SHADOW.originX}% 100%` }} />
+      <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
+        style={{ left: `${LEAF.left}%`, top: `${LEAF.top}%`, width: `${LEAF.width}%`, transformOrigin: `${LEAF.originX}% 100%` }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
