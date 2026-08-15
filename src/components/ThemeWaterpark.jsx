@@ -36,8 +36,10 @@ const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%' }
 // 안쪽으로 당겨서 여유를 두면 정지 상태부터 오른쪽 모서리에서 늘 떨어져 보여서(빈 공백이
 // 상시 노출) 안 됨 — 주어진 이미지 그대로 모서리에 딱 붙이고, 흔들리는 동안 아주 미세하게
 // 실제로 넘어가는 몇 px 는(overflow:hidden 이 잘라내는) 감수한다.
-const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '100% 0%' }
-const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%' }
+// topOffsetPx: 실험용 — 이 px 만큼 위로 더 올려서 확인해보는 중(계산상 개선 효과 없음을
+// 이미 확인했지만 직접 눈으로 보고 싶다고 하셔서 임시로 반영).
+const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '100% 0%', topOffsetPx: -10 }
+const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%', topOffsetPx: -10 }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -60,9 +62,9 @@ export default function ThemeWaterpark({ className = '' }) {
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
         style={{ left: `${LEAF.left}%`, top: `${LEAF.top}%`, width: `${LEAF.width}%`, transformOrigin: LEAF.origin }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
-        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `${LEAF_TR_SHADOW.top}%`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
+        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `calc(${LEAF_TR_SHADOW.top}% + ${LEAF_TR_SHADOW.topOffsetPx}px)`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
-        style={{ left: `${LEAF_TR.left}%`, top: `${LEAF_TR.top}%`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
+        style={{ left: `${LEAF_TR.left}%`, top: `calc(${LEAF_TR.top}% + ${LEAF_TR.topOffsetPx}px)`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
