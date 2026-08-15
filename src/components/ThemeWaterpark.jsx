@@ -14,10 +14,10 @@ import waterparkFlower4Png from '../assets/theme/wp-flower-4.png'
 // animation-delay/direction 으로 위상만 어긋나게 줘서 서로 다른 지점에서 따로 떠다니는 것처럼 보이게 한다.
 const FLOATS = [
   { src: waterparkBallPng, cls: 'wp-float-ball', left: 69.5, top: 87.9, width: 20.9, delay: '0s' },
-  { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-2.2s' },
-  { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-4.4s', reverse: true },
-  { src: waterparkFlower3Png, cls: 'wp-float-fl34', left: 87.92, top: 55.02, width: 13.32, delay: '-6.6s' },
-  { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-8.8s', reverse: true },
+  { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-4.4s' },
+  { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-8.8s', reverse: true },
+  { src: waterparkFlower3Png, cls: 'wp-float-fl34', left: 87.92, top: 55.02, width: 13.32, delay: '-13.2s' },
+  { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-17.6s', reverse: true },
 ]
 
 const RippleDefs = () => (
