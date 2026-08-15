@@ -44,8 +44,12 @@ const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%',
 // 상단 중앙 잎: 화면 왼쪽/오른쪽 어느 변에도 닿지 않고 위쪽 변에만 걸쳐 있어서(코너가 아닌
 // 한 변만 걸치는 형태), 좌측 하단 잎과 같은 방식으로 안전하게 다룰 수 있다 — 이미지 자체
 // 오른쪽 위 잎끝(줄기처럼 보이는 지점)을 origin 으로 두고 아주 미세하게 좌우로 흔든다.
-const LEAF_MID = { left: 41.20, top: 0, width: 30.36, origin: '95% 3%' }
-const LEAF_MID_SHADOW = { left: 43.91, top: 0, width: 29.57, origin: '94% 3%' }
+// 이 이미지는 흔들릴 때를 대비해 화면 밖(위쪽)으로 가려질 부분까지 그려서 받은 것이라,
+// left/top 을 이미지 자체의 bbox 로 바로 쓰면 안 되고, 원본 샘플 이미지와 픽셀 단위로
+// 대조(윤곽 겹침 최적화)해서 찾은 실제 위치를 써야 한다 — top 이 약 -2.3%만큼 위로
+// 더 올라간다(샘플에서 보이는 부분은 이 이미지의 아래쪽 일부일 뿐).
+const LEAF_MID = { left: 41.65, top: -2.29, width: 30.36, origin: '95% 3%' }
+const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%' }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
