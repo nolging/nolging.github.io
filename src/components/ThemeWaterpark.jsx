@@ -1,10 +1,24 @@
 import waterparkBallPng from '../assets/theme/waterpark-ball.png'
+import waterparkFlower1Png from '../assets/theme/wp-flower-1.png'
+import waterparkFlower2Png from '../assets/theme/wp-flower-2.png'
+import waterparkFlower3Png from '../assets/theme/wp-flower-3.png'
+import waterparkFlower4Png from '../assets/theme/wp-flower-4.png'
 
 // 워터파크 테마: 이미지 없이 CSS + SVG 필터로 직접 그린 격자 타일 배경.
 // 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터의 baseFrequency 를
 // SMIL 애니메이션으로 천천히 흔들어 선이 수영장 물 때문에 살짝 일렁이는 것처럼 보이게 한다.
-// 비치볼은 샘플 이미지 속 위치(우측 하단)에 떠 있고, 물살에 밀리듯 아주 조금씩 움직이다가
-// 다시 제자리로 돌아오는 순환 경로로 살짝 표류한다(계속 멀어지지 않고 일정 범위만 맴돎).
+// 비치볼·꽃은 샘플 이미지 속 위치 그대로 떠 있고, 물살에 밀리듯 작은 타원 경로를 등속으로
+// 맴돈다(제자리로 돌아오는 루프라 멀리 안 감). transform 의 %는 각 요소 자기 박스 기준이라
+// 이미지 크기가 다르면 같은 % 라도 실제 이동 거리가 달라지므로, 크기 그룹별로 화면상 이동
+// 거리가 똑같아지도록 보정한 keyframes(wp-float-drift-*)를 쓴다(cls 로 구분). 대신
+// animation-delay/direction 으로 위상만 어긋나게 줘서 서로 다른 지점에서 따로 떠다니는 것처럼 보이게 한다.
+const FLOATS = [
+  { src: waterparkBallPng, cls: 'wp-float-ball', left: 69.5, top: 87.9, width: 20.9, delay: '0s' },
+  { src: waterparkFlower1Png, cls: 'wp-float-fl1', left: 57.96, top: 13.38, width: 13.21, delay: '-2.2s' },
+  { src: waterparkFlower2Png, cls: 'wp-float-fl2', left: 10.95, top: 45.73, width: 14.45, delay: '-4.4s', reverse: true },
+  { src: waterparkFlower3Png, cls: 'wp-float-fl34', left: 87.92, top: 55.02, width: 13.32, delay: '-6.6s' },
+  { src: waterparkFlower4Png, cls: 'wp-float-fl34', left: 48.31, top: 76.08, width: 13.32, delay: '-8.8s', reverse: true },
+]
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -22,7 +36,13 @@ export default function ThemeWaterpark({ className = '' }) {
     <div className={`theme-wp${className ? ` ${className}` : ''}`} aria-hidden="true">
       <RippleDefs />
       <div className="wp-tiles" />
-      <img className="wp-ball" src={waterparkBallPng} alt="" style={{ left: '69.5%', top: '87.9%', width: '20.9%' }} />
+      {FLOATS.map((f, i) => (
+        <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
+          style={{
+            left: `${f.left}%`, top: `${f.top}%`, width: `${f.width}%`,
+            animationDelay: f.delay, animationDirection: f.reverse ? 'reverse' : 'normal',
+          }} />
+      ))}
     </div>
   )
 }
