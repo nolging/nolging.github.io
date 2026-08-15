@@ -30,17 +30,12 @@ const FLOATS = [
 // 좌측 하단 잎: 아랫부분(밑동) 고정, 윗부분이 흔들림 → origin 이 아래쪽(y=100%).
 const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%' }
 const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%' }
-// 우측 상단 잎: 윗부분(밑동) 고정, 아랫부분이 흔들림 → origin 이 위쪽(y=0%).
-// bbox 가 캔버스 위/오른쪽 두 변에 동시에 딱 붙어 있어서, origin 을 그 교점(두 변이 만나는
-// 정확한 모서리, 100% 0%)에 둬야 어느 방향으로 돌려도 overflow:hidden 에 잘리지 않는다.
-// 흔들림은 오른쪽 가장자리 쪽(아래쪽 잎 끝)을 화면 오른쪽 밖으로 살짝 밀어내므로, 그만큼
-// left 를 안쪽으로 당겨서(2.2%p, 화면 폭에 비례하는 여유분) 잘리지 않을 여유를 둔다.
-// top 을 음수로 올리는 건 시도하지 말 것: 이 PNG 는 잎 실루엣에 딱 맞춰 크롭돼 있어
-// 위쪽에 여백이 없다 — top 을 올리면 흔들림과 무관하게 항상(정지 상태 포함) 위쪽이
-// 실제로 잘려나간다(실측: 화면 폭에 비례해 19~32px). 흔들려서 "위가 비어 보이는" 건
-// 실제 잘림이 아니라 흔들리며 잎이 살짝 물러나 배경이 드러나는 정상적인 흔들림 표현이다.
-const LEAF_TR = { left: 62.47, top: 0, width: 35.33, origin: '100% 0%' }
-const LEAF_TR_SHADOW = { left: 71.61, top: 1.2, width: 26.19, origin: '100% 0%' }
+// 우측 상단 잎: 이 잎은 위/오른쪽 두 변에 동시에 딱 붙는 모양이라, 조금이라도 회전시키면 반드시 한쪽은
+// 모서리에서 떨어져 배경이 비치고(빈 공백) 다른 쪽은 경계를 넘어간다(잘림) — 정지 상태처럼
+// "준 이미지 범위와 완전히 동일"하게 유지할 방법이 기하학적으로 없다. 그래서 흔들지 않고
+// 주어진 이미지 그대로 모서리에 고정 배치한다(그림자도 동일).
+const LEAF_TR = { left: 64.67, top: 0, width: 35.33 }
+const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19 }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -62,10 +57,8 @@ export default function ThemeWaterpark({ className = '' }) {
         style={{ left: `${LEAF_SHADOW.left}%`, top: `${LEAF_SHADOW.top}%`, width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin }} />
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
         style={{ left: `${LEAF.left}%`, top: `${LEAF.top}%`, width: `${LEAF.width}%`, transformOrigin: LEAF.origin }} />
-      <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
-        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `${LEAF_TR_SHADOW.top}%`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
-      <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
-        style={{ left: `${LEAF_TR.left}%`, top: `${LEAF_TR.top}%`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
+      <img src={waterparkLeafTrShadowPng} alt="" style={{ position: 'absolute', height: 'auto', left: `${LEAF_TR_SHADOW.left}%`, top: `${LEAF_TR_SHADOW.top}%`, width: `${LEAF_TR_SHADOW.width}%` }} />
+      <img src={waterparkLeafTrPng} alt="" style={{ position: 'absolute', height: 'auto', left: `${LEAF_TR.left}%`, top: `${LEAF_TR.top}%`, width: `${LEAF_TR.width}%` }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
