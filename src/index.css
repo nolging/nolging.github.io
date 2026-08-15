@@ -3079,11 +3079,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .app-shell.gd-bg-waterpark .content { background: transparent; }
 .app-shell.gd-bg-waterpark .topbar,
 .app-shell.gd-bg-waterpark .topbar-heading { color: #fff; }
-.app-shell.gd-bg-waterpark .gd-head h1 { color: #fff; text-shadow: 0 1px 3px rgba(0,55,85,.28); }
-.app-shell.gd-bg-waterpark .gd-title-text .muted { color: rgba(255,255,255,.9); }
+/* 그룹명·그룹 설명(헤더)은 별도 색상 지정 없이 기본 테마와 같은 var(--text)/var(--muted) 를
+   그대로 씀 — 옅은 하늘색 배경이라 흰 글자보다 원래 어두운 글자색이 더 잘 읽힌다. */
 .group-card.group-tile.tile-waterpark { background: #A2DFF6; isolation: isolate; }
-.tile-waterpark .tile-name { color: #fff; text-shadow: 0 1px 3px rgba(0,55,85,.3); }
-.tile-waterpark .tile-desc, .tile-waterpark .muted { color: rgba(255,255,255,.92); }
 
 .theme-wp { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .theme-wp.gd-wp-over { position: fixed; inset: 0; z-index: 0; }
