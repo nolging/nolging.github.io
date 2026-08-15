@@ -6,9 +6,9 @@ const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
     <filter id="wpRipple" x="-12%" y="-12%" width="124%" height="124%">
       <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
-        <animate attributeName="baseFrequency" values="0.011 0.02;0.015 0.026;0.011 0.02" dur="10s" repeatCount="indefinite" />
+        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
       </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" />
     </filter>
   </svg>
 )
