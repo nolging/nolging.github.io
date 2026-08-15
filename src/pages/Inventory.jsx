@@ -954,10 +954,10 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   return (
     <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal lotto-modal">
       <div className="lotto-modal-body">
-        <ItemHead id="lotto" name="로또" sub="번호 6개를 골라 이번 회차에 응모해요" emoji="🎱" />
         {error && <div className="alert alert-error">{error}</div>}
         {!submitted ? (
           <>
+            <ItemHead id="lotto" name="로또" sub="번호 6개를 골라 이번 회차에 응모해요" emoji="🎱" />
             <div className="lotto-count">{selected.length}/6 선택</div>
             <div className="lotto-grid">
               {LOTTO_NUMS.map((n) => (
@@ -971,20 +971,22 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
               onClick={submit}>{busy ? '제출 중…' : '제출하기'}</button>
           </>
         ) : (
-          <div className="lotto-done">
-            <span className="lotto-done-emoji">🎉</span>
-            <p className="lotto-done-text">{roundNo}회차 응모가 완료됐어요!</p>
+          <div className="st-done">
+            <div className="st-done-ico">
+              <svg width="30" viewBox="0 0 24 24" fill="none" stroke="#4a9d6a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div className="st-done-t">응모가 완료됐어요!</div>
             {remaining > 0 ? (
-              <button type="button" className="st-btn-buy st-btn-block" onClick={next}>이어서 제출 · {remaining}장 남음</button>
+              <button type="button" className="st-btn-buy st-btn-block lotto-done-btn" onClick={next}>이어서 제출 · {remaining}장 남음</button>
             ) : (
-              <button type="button" className="st-btn-buy st-btn-block" onClick={finish}>확인</button>
+              <button type="button" className="st-btn-buy st-btn-block lotto-done-btn" onClick={finish}>확인</button>
             )}
-            <button type="button" className="scratch-reveal-link" onClick={() => setTicketsOpen(true)}>이번 회차 용지 확인</button>
+            <button type="button" className="scratch-reveal-link" onClick={() => setTicketsOpen(true)}>이번 회차 응모 번호 확인</button>
           </div>
         )}
       </div>
 
-      <Modal open={ticketsOpen} onClose={() => setTicketsOpen(false)} title={roundNo != null ? `${roundNo}회차 제출 번호` : ''}>
+      <Modal open={ticketsOpen} onClose={() => setTicketsOpen(false)} title="이번 회차 응모 번호">
         {ticketsLoading ? <div className="spinner" /> : tickets.length === 0 ? (
           <p className="muted sm">이번 회차에 제출한 번호가 없어요.</p>
         ) : (
