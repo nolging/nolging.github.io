@@ -33,8 +33,10 @@ const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%' }
 // 우측 상단 잎: 윗부분(밑동) 고정, 아랫부분이 흔들림 → origin 이 위쪽(y=0%).
 // bbox 가 캔버스 위/오른쪽 두 변에 동시에 딱 붙어 있어서, origin 을 그 교점(두 변이 만나는
 // 정확한 모서리, 100% 0%)에 둬야 어느 방향으로 돌려도 overflow:hidden 에 잘리지 않는다.
-const LEAF_TR = { left: 64.67, top: 0, width: 35.33, origin: '100% 0%' }
-const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%' }
+// 흔들림은 오른쪽 가장자리 쪽(아래쪽 잎 끝)을 화면 오른쪽 밖으로 살짝 밀어내므로, 그만큼
+// left 를 안쪽으로 당겨서(2.2%p, 화면 폭에 비례하는 여유분) 잘리지 않을 여유를 둔다.
+const LEAF_TR = { left: 62.47, top: 0, width: 35.33, origin: '100% 0%' }
+const LEAF_TR_SHADOW = { left: 71.61, top: 1.2, width: 26.19, origin: '100% 0%' }
 
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
