@@ -187,8 +187,9 @@ export default function Inventory() {
       // 2개 이상 보유 + 이미 1곳 이상 적용 중 → 여분 사본으로 다른 그룹에도 적용할 수 있는
       // 그룹 선택 모달. 그 외(1개만 보유, 또는 아직 아무 데도 적용 안 함)는 기존 모달 그대로.
       if (g.count >= 2 && usedRows.length >= 1) {
+        const hasSpare = g.rows.some((r) => r.status === 'active')
         setDecoMultiItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '',
-          appliedRows: usedRows.map((r) => ({ groupId: r.group_id, tf: r.deco_tf || null })) })
+          appliedRows: usedRows.map((r) => ({ groupId: r.group_id, tf: r.deco_tf || null })), hasSpare })
       } else {
         const appliedRow = usedRows[0]
         setDecoItem({ id: g.id, name: g.name, desc: meta[g.id]?.desc || '',
@@ -594,12 +595,14 @@ function DecoMultiModal({ open, onClose, myId, item, onPick }) {
           })}
         </div>
 
-        <div className="field">
-          <select value={pickedGroupId} onChange={(e) => { const v = e.target.value; setPickedGroupId(v); if (v) onPick(v, false, null) }}>
-            <option value="">{eligible.length ? '추가 적용할 그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
-            {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-        </div>
+        {item?.hasSpare && (
+          <div className="field">
+            <select value={pickedGroupId} onChange={(e) => { const v = e.target.value; setPickedGroupId(v); if (v) onPick(v, false, null) }}>
+              <option value="">{eligible.length ? '추가 적용할 그룹 선택' : '적용할 수 있는 프리미엄 그룹이 없어요'}</option>
+              {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+          </div>
+        )}
       </div>
     </Modal>
   )
