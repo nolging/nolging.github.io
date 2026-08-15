@@ -1357,6 +1357,29 @@ export async function scratchNyangpito() {
   return Number(data) || 0
 }
 
+// 로또: 보유한 로또 1장 소모 + 번호 6개 응모. 응모 시점에 결정된 회차·잔여 로또 개수를 반환.
+export async function submitLottoEntry(numbers) {
+  const { data, error } = await supabase.rpc('submit_lotto_entry', { p_numbers: numbers })
+  if (error) {
+    if (error.code === 'PGRST202' || /submit_lotto_entry/.test(error.message || '')) {
+      throw new Error('로또 기능이 아직 DB에 설정되지 않았습니다. (submit_lotto_entry 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return { roundNo: data?.roundNo, remaining: data?.remaining ?? 0 }
+}
+
+// 이번 회차(round_no)에 내가 제출한 번호 목록(제출 시각 오름차순)
+export async function listMyLottoEntries(roundNo) {
+  const { data, error } = await supabase
+    .from('lotto_entries')
+    .select('numbers, created_at')
+    .eq('round_no', roundNo)
+    .order('created_at', { ascending: true })
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return data ?? []
+}
+
 // 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.
 export async function useLedboard({ text, color }) {
   const { error } = await supabase.rpc('use_ledboard', { p_text: text, p_color: color })

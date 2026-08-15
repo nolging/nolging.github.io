@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -73,6 +73,7 @@ export default function Inventory() {
   const [guideItem, setGuideItem] = useState(null) // 사용 방법 + 선물/사용 선택 모달 (id)
   const [giftItemId, setGiftItemId] = useState(null) // 아이템 선물 모달 (id)
   const [scratchOpen, setScratchOpen] = useState(false)
+  const [lottoOpen, setLottoOpen] = useState(false)
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [decoMultiItem, setDecoMultiItem] = useState(null) // 2개 이상 보유 + 이미 1곳 이상 적용 중 → 그룹 선택 모달 { id, name, desc, appliedRows }
@@ -174,6 +175,7 @@ export default function Inventory() {
     else if (g.id === 'friend-ring') setFriendOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
+    else if (g.id === 'lotto') setLottoOpen(true)
     else if (g.id === 'secret-board') { setBoardItemName(g.name); setBoardOpen(true) }
     else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
@@ -341,6 +343,9 @@ export default function Inventory() {
 
       <ScratchModal open={scratchOpen} onClose={() => setScratchOpen(false)} onDone={reload} refreshCoin={refreshCoin}
         count={displayGroups.find((g) => g.id === 'nyangpito')?.count || 0} />
+
+      <LottoModal open={lottoOpen} onClose={() => setLottoOpen(false)} onDone={reload}
+        count={displayGroups.find((g) => g.id === 'lotto')?.count || 0} />
 
       <ThemeModal open={!!themeItem} onClose={() => setThemeItem(null)} myId={user?.id}
         item={themeItem} onDone={reload} />
@@ -873,6 +878,125 @@ function ScratchModal({ open, onClose, onDone, refreshCoin, count = 0 }) {
           </>
         )}
       </div>
+    </Modal>
+  )
+}
+
+const LOTTO_NUMS = Array.from({ length: 30 }, (_, i) => i + 1)
+
+// ---- 로또: 번호 6개 선택 → 응모(보유 로또 1장 소모, 회차는 제출 시점에 결정) ----
+function LottoModal({ open, onClose, onDone, count = 0 }) {
+  const [selected, setSelected] = useState([])   // 선택한 번호(최대 6개)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false) // 이번 장 제출 완료 여부
+  const [roundNo, setRoundNo] = useState(null)
+  const [used, setUsed] = useState(0)            // 이번 세션에서 소모한 로또 수
+  const [ticketsOpen, setTicketsOpen] = useState(false)
+  const [tickets, setTickets] = useState([])
+  const [ticketsLoading, setTicketsLoading] = useState(false)
+  const openCountRef = useRef(0)
+
+  useEffect(() => {
+    if (open) {
+      setSelected([]); setBusy(false); setError(''); setSubmitted(false); setRoundNo(null)
+      setUsed(0); setTicketsOpen(false); setTickets([]); openCountRef.current = count
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const remaining = Math.max(0, openCountRef.current - used) // 이 장 제출 후 남은 로또 수
+
+  function toggleNum(n) {
+    if (busy) return
+    setSelected((prev) => {
+      if (prev.includes(n)) return prev.filter((x) => x !== n)
+      if (prev.length >= 6) return prev
+      return [...prev, n].sort((a, b) => a - b)
+    })
+  }
+
+  async function submit() {
+    if (selected.length !== 6 || busy) return
+    setBusy(true); setError('')
+    try {
+      const { roundNo: rn, remaining: rem } = await submitLottoEntry(selected)
+      setRoundNo(rn); setUsed(Math.max(0, openCountRef.current - rem)); setSubmitted(true)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function next() {
+    if (remaining <= 0) return
+    setSelected([]); setSubmitted(false); setError('')
+  }
+
+  async function finish() {
+    try { await onDone() } catch { /* noop */ }
+    onClose()
+  }
+  // 배경 클릭 등으로 닫기: 하나라도 제출했으면 정리(갱신 후 닫기), 안 했으면 그냥 닫기
+  function handleClose() { if (used > 0) finish(); else onClose() }
+
+  useEffect(() => {
+    if (!ticketsOpen || roundNo == null) return
+    let on = true
+    setTicketsLoading(true)
+    listMyLottoEntries(roundNo).then((rows) => { if (on) setTickets(rows) })
+      .catch((e) => { if (on) setError(e.message) })
+      .finally(() => { if (on) setTicketsLoading(false) })
+    return () => { on = false }
+  }, [ticketsOpen, roundNo])
+
+  return (
+    <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal lotto-modal">
+      <div className="lotto-modal-body">
+        <ItemHead id="lotto" name="로또" sub="번호 6개를 골라 이번 회차에 응모해요" emoji="🎱" />
+        {error && <div className="alert alert-error">{error}</div>}
+        {!submitted ? (
+          <>
+            <div className="lotto-count">{selected.length}/6 선택</div>
+            <div className="lotto-grid">
+              {LOTTO_NUMS.map((n) => (
+                <button key={n} type="button"
+                  className={`lotto-num ${selected.includes(n) ? 'on' : ''}`}
+                  disabled={busy || (!selected.includes(n) && selected.length >= 6)}
+                  onClick={() => toggleNum(n)}>{n}</button>
+              ))}
+            </div>
+            <button type="button" className="st-btn-buy st-btn-block" disabled={selected.length !== 6 || busy}
+              onClick={submit}>{busy ? '제출 중…' : '제출하기'}</button>
+          </>
+        ) : (
+          <div className="lotto-done">
+            <span className="lotto-done-emoji">🎉</span>
+            <p className="lotto-done-text">{roundNo}회차 응모가 완료됐어요!</p>
+            {remaining > 0 ? (
+              <button type="button" className="st-btn-buy st-btn-block" onClick={next}>이어서 제출 · {remaining}장 남음</button>
+            ) : (
+              <button type="button" className="st-btn-buy st-btn-block" onClick={finish}>확인</button>
+            )}
+            <button type="button" className="scratch-reveal-link" onClick={() => setTicketsOpen(true)}>이번 회차 용지 확인</button>
+          </div>
+        )}
+      </div>
+
+      <Modal open={ticketsOpen} onClose={() => setTicketsOpen(false)} title={roundNo != null ? `${roundNo}회차 제출 번호` : ''}>
+        {ticketsLoading ? <div className="spinner" /> : tickets.length === 0 ? (
+          <p className="muted sm">이번 회차에 제출한 번호가 없어요.</p>
+        ) : (
+          <div className="lotto-tickets">
+            {tickets.map((t, i) => (
+              <div key={i} className="lotto-ticket-row">
+                {t.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </Modal>
   )
 }
