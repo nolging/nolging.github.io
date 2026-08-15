@@ -71,14 +71,14 @@ export default function ThemeWaterpark({ className = '' }) {
         style={{ left: `${LEAF_SHADOW.left}%`, top: `${LEAF_SHADOW.top}%`, width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin }} />
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
         style={{ left: `${LEAF.left}%`, top: `${LEAF.top}%`, width: `${LEAF.width}%`, transformOrigin: LEAF.origin }} />
-      <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
-        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `calc(${LEAF_TR_SHADOW.top}% + ${LEAF_TR_SHADOW.topOffsetPx}px)`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
-      <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
-        style={{ left: `${LEAF_TR.left}%`, top: `calc(${LEAF_TR.top}% + ${LEAF_TR.topOffsetPx}px)`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidShadowPng} alt=""
         style={{ left: `${LEAF_MID_SHADOW.left}%`, top: `${LEAF_MID_SHADOW.top}%`, width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidPng} alt=""
         style={{ left: `${LEAF_MID.left}%`, top: `${LEAF_MID.top}%`, width: `${LEAF_MID.width}%`, transformOrigin: LEAF_MID.origin }} />
+      <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
+        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: `calc(${LEAF_TR_SHADOW.top}% + ${LEAF_TR_SHADOW.topOffsetPx}px)`, width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin }} />
+      <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
+        style={{ left: `${LEAF_TR.left}%`, top: `calc(${LEAF_TR.top}% + ${LEAF_TR.topOffsetPx}px)`, width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin }} />
       {FLOATS.map((f, i) => (
         <img key={i} className={`wp-float ${f.cls}`} src={f.src} alt=""
           style={{
