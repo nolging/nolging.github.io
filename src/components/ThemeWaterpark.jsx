@@ -54,6 +54,8 @@ const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%',
 const LEAF_MID = { left: 41.65, top: -2.29, width: 30.36, origin: '95% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
 const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
 
+// wpRippleSm: 상점/인벤토리 미리보기(아주 작은 정사각형)용 — scale 을 줄여서 같은 절대
+// 픽셀 변위가 작은 화면에서 과하게 출렁여 보이지 않게 한다(격자 크기 축소와 같은 이유).
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
     <filter id="wpRipple" x="-12%" y="-12%" width="124%" height="124%">
@@ -61,6 +63,12 @@ const RippleDefs = () => (
         <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
       </feTurbulence>
       <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="wpRippleSm" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
+        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
     </filter>
   </svg>
 )
