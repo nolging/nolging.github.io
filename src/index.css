@@ -3100,6 +3100,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   filter: url(#wpRipple);
 }
 @media (prefers-reduced-motion: reduce) { .wp-tiles { filter: none; } }
+/* 상점 미리보기는 아주 작아서 60px 격자를 그대로 쓰면 타일 한 칸도 다 못 보여준다 —
+   비율에 맞게 축소한 격자. */
+.store-wp .wp-tiles { inset: -5px;
+  background:
+    repeating-linear-gradient(0deg,  #E9FCF8 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, #E9FCF8 0 1px, transparent 1px 20px);
+}
 
 /* 둥둥 떠다니는 요소(비치볼·꽃) 공통 — 작은 타원 경로를 느린 등속으로 맴돈다(제자리로
    돌아오는 루프라 멀리 안 감). 구간을 24개로 촘촘히 나누고 linear 로 이어야 다각형
