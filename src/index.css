@@ -3084,7 +3084,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .group-card.group-tile.tile-waterpark { background: #A2DFF6; isolation: isolate; }
 
 .theme-wp { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.theme-wp.gd-wp-over { position: fixed; inset: 0; z-index: 0; }
+/* iOS Safari 는 형제 요소(.tab-pane)가 -webkit-overflow-scrolling:touch 로 스크롤/당겨서
+   새로고침 애니메이션(transform)을 탈 때, position:fixed 인 이 배경을 잠깐 합성 레이어에서
+   빼버려 흰 배경이 살짝 비치는 경우가 있다. 자체 GPU 합성 레이어를 강제해 방지. */
+.theme-wp.gd-wp-over { position: fixed; inset: 0; z-index: 0; will-change: transform; transform: translateZ(0); }
 .gd-themed > .theme-wp { z-index: 0; }
 .tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 테마 요소를 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 
