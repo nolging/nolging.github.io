@@ -2879,7 +2879,6 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 로또 */
 .lotto-modal .st-btn-buy { background: #191722; }
 .lotto-modal-body { display: flex; flex-direction: column; gap: 14px; }
-.lotto-count { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
 .lotto-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .lotto-num {
   aspect-ratio: 1 / 1; border-radius: 50%; border: 1.5px solid var(--border); background: none;

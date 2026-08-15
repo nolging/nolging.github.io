@@ -1034,7 +1034,7 @@ export async function listInventory(userId) {
     .from('user_items')
     .select(sel)
     .eq('user_id', userId)
-    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.eq.purin-mic,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null)')
+    .or('status.eq.active,and(item_id.eq.couple-ring,status.in.(used,pending)),and(item_id.eq.friend-ring,status.eq.used),and(item_id.eq.name-tag,status.eq.used),and(item_id.eq.purin-mic,status.eq.used),and(item_id.like.theme-*,status.eq.used,group_id.not.is.null),and(item_id.like.deco-*,status.eq.used,group_id.not.is.null),and(item_id.eq.lotto,status.eq.used)')
     .order('created_at', { ascending: false })
   let { data, error } = await q(`${cols}, deco_tf`)
   if (error?.code === '42703') ({ data, error } = await q(cols)) // deco_tf 미배포 폴백
@@ -1378,6 +1378,19 @@ export async function listMyLottoEntries(roundNo) {
     .order('created_at', { ascending: true })
   if (error) { if (error.code === '42P01') return []; throw error }
   return data ?? []
+}
+
+// 내가 마지막으로 응모한 회차 번호(응모 이력이 없으면 null). round_no 를 미리 알지
+// 못하는 상황(예: 응모 가능 수량 없이 카드만 클릭)에서 "이번 회차 응모 번호" 모달을
+// 바로 띄우기 위해 사용.
+export async function myLatestLottoRound() {
+  const { data, error } = await supabase
+    .from('lotto_entries')
+    .select('round_no')
+    .order('round_no', { ascending: false })
+    .limit(1)
+  if (error) { if (error.code === '42P01') return null; throw error }
+  return data?.[0]?.round_no ?? null
 }
 
 // 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.

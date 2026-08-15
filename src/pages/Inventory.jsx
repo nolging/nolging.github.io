@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -74,6 +74,7 @@ export default function Inventory() {
   const [giftItemId, setGiftItemId] = useState(null) // 아이템 선물 모달 (id)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [lottoOpen, setLottoOpen] = useState(false)
+  const [lottoTicketsOpen, setLottoTicketsOpen] = useState(false) // 응모 가능 수량 없이 카드만 클릭 → 바로 이번 회차 응모 번호 모달
   const [themeItem, setThemeItem] = useState(null) // 적용할 테마 아이템 { id, name }
   const [decoItem, setDecoItem] = useState(null)   // 적용할 아바타 데코 { id, name, appliedGroupId }
   const [decoMultiItem, setDecoMultiItem] = useState(null) // 2개 이상 보유 + 이미 1곳 이상 적용 중 → 그룹 선택 모달 { id, name, desc, appliedRows }
@@ -175,7 +176,12 @@ export default function Inventory() {
     else if (g.id === 'friend-ring') setFriendOpen(true)
     else if (g.id === 'ledboard') setLedboardOpen(true)
     else if (g.id === 'nyangpito') setScratchOpen(true)
-    else if (g.id === 'lotto') setLottoOpen(true)
+    else if (g.id === 'lotto') {
+      // 응모 가능한 수량이 없고 응모 완료된 것만 있으면 번호 선택 없이 바로 확인 모달
+      const hasActive = g.rows.some((r) => r.status === 'active')
+      if (!hasActive && g.rows.some((r) => r.status === 'used')) setLottoTicketsOpen(true)
+      else setLottoOpen(true)
+    }
     else if (g.id === 'secret-board') { setBoardItemName(g.name); setBoardOpen(true) }
     else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
@@ -261,6 +267,8 @@ export default function Inventory() {
                 const nameTagActive = isNameTag && g.rows.some(nameTagLive)
                 const isPurinMic = g.id === 'purin-mic'
                 const purinMicActive = isPurinMic && g.rows.some(purinMicLive)
+                const isLotto = g.id === 'lotto'
+                const lottoEntryCount = isLotto ? g.rows.filter((r) => r.status === 'used').length : 0
                 // 시안: 상태 뱃지(좌) + 개수(우) + 카드 전체 클릭
                 let badge = null, onClick = () => useItem(g), actionable = true
                 let countShown = g.count, showCount = g.count > 1
@@ -268,6 +276,8 @@ export default function Inventory() {
                 else if (isPurinMic) { badge = purinMicActive ? '사용 중' : null; countShown = activeCount; showCount = activeCount >= 1 }
                 else if (isTheme) badge = themeApplied ? '적용 중' : null
                 else if (isDeco) badge = decoApplied ? '장착 중' : null
+                // 로또: 좌측엔 이번 회차 응모 개수, 우측엔 응모 가능한(미사용) 보유 개수
+                else if (isLotto) { badge = lottoEntryCount > 0 ? `${lottoEntryCount} 응모` : null; countShown = activeCount; showCount = activeCount >= 1 }
                 else if (ledLive) { badge = '게재 중'; onClick = () => setLedEditOpen(true) }
                 else if (equipped) {
                   // 장착 중이어도 미사용(active) 스페어가 있으면 "장착 중" 뱃지 + ×(남은 개수)
@@ -346,7 +356,9 @@ export default function Inventory() {
         count={displayGroups.find((g) => g.id === 'nyangpito')?.count || 0} />
 
       <LottoModal open={lottoOpen} onClose={() => setLottoOpen(false)} onDone={reload}
-        count={displayGroups.find((g) => g.id === 'lotto')?.count || 0} />
+        count={displayGroups.find((g) => g.id === 'lotto')?.rows.filter((r) => r.status === 'active').length || 0} />
+
+      <LottoTicketsModal open={lottoTicketsOpen} onClose={() => setLottoTicketsOpen(false)} />
 
       <ThemeModal open={!!themeItem} onClose={() => setThemeItem(null)} myId={user?.id}
         item={themeItem} onDone={reload} />
@@ -887,6 +899,50 @@ function ScratchModal({ open, onClose, onDone, refreshCoin, count = 0 }) {
 
 const LOTTO_NUMS = Array.from({ length: 30 }, (_, i) => i + 1)
 
+// ---- 로또: 이번 회차에 내가 제출한 번호 목록. roundNo 를 안 넘기면(응모 가능 수량 없이
+// 카드만 클릭한 경우) 내가 마지막으로 응모한 회차를 스스로 찾아서 보여준다. ----
+function LottoTicketsModal({ open, onClose, roundNo: roundNoProp = null }) {
+  const [roundNo, setRoundNo] = useState(roundNoProp)
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setError('')
+    if (roundNoProp != null) { setRoundNo(roundNoProp); return }
+    setLoading(true)
+    myLatestLottoRound().then(setRoundNo).catch((e) => setError(e.message)).finally(() => setLoading(false))
+  }, [open, roundNoProp])
+
+  useEffect(() => {
+    if (!open || roundNo == null) { setTickets([]); return }
+    let on = true
+    setLoading(true)
+    listMyLottoEntries(roundNo).then((rows) => { if (on) setTickets(rows) })
+      .catch((e) => { if (on) setError(e.message) })
+      .finally(() => { if (on) setLoading(false) })
+    return () => { on = false }
+  }, [open, roundNo])
+
+  return (
+    <Modal open={open} onClose={onClose} title="이번 회차 응모 번호">
+      {error && <div className="alert alert-error">{error}</div>}
+      {loading ? <div className="spinner" /> : tickets.length === 0 ? (
+        <p className="muted sm">이번 회차에 제출한 번호가 없어요.</p>
+      ) : (
+        <div className="lotto-tickets">
+          {tickets.map((t, i) => (
+            <div key={i} className="lotto-ticket-row">
+              {t.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 // ---- 로또: 번호 6개 선택 → 응모(보유 로또 1장 소모, 회차는 제출 시점에 결정) ----
 function LottoModal({ open, onClose, onDone, count = 0 }) {
   const [selected, setSelected] = useState([])   // 선택한 번호(최대 6개)
@@ -896,14 +952,12 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   const [roundNo, setRoundNo] = useState(null)
   const [used, setUsed] = useState(0)            // 이번 세션에서 소모한 로또 수
   const [ticketsOpen, setTicketsOpen] = useState(false)
-  const [tickets, setTickets] = useState([])
-  const [ticketsLoading, setTicketsLoading] = useState(false)
   const openCountRef = useRef(0)
 
   useEffect(() => {
     if (open) {
       setSelected([]); setBusy(false); setError(''); setSubmitted(false); setRoundNo(null)
-      setUsed(0); setTicketsOpen(false); setTickets([]); openCountRef.current = count
+      setUsed(0); setTicketsOpen(false); openCountRef.current = count
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -944,16 +998,6 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   // 배경 클릭 등으로 닫기: 하나라도 제출했으면 정리(갱신 후 닫기), 안 했으면 그냥 닫기
   function handleClose() { if (used > 0) finish(); else onClose() }
 
-  useEffect(() => {
-    if (!ticketsOpen || roundNo == null) return
-    let on = true
-    setTicketsLoading(true)
-    listMyLottoEntries(roundNo).then((rows) => { if (on) setTickets(rows) })
-      .catch((e) => { if (on) setError(e.message) })
-      .finally(() => { if (on) setTicketsLoading(false) })
-    return () => { on = false }
-  }, [ticketsOpen, roundNo])
-
   return (
     <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal lotto-modal">
       <div className="lotto-modal-body">
@@ -961,7 +1005,6 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
         {!submitted ? (
           <>
             <ItemHead id="lotto" name="로또" sub="번호 6개를 골라 이번 회차에 응모해요" emoji="🎱" />
-            <div className="lotto-count">{selected.length}/6 선택</div>
             <div className="lotto-grid">
               {LOTTO_NUMS.map((n) => (
                 <button key={n} type="button"
@@ -971,7 +1014,8 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
               ))}
             </div>
             <button type="button" className="st-btn-buy st-btn-block" disabled={selected.length !== 6 || busy}
-              onClick={submit}>{busy ? '제출 중…' : '제출하기'}</button>
+              onClick={submit}>{busy ? '응모 중…' : '응모하기'}</button>
+            <button type="button" className="scratch-reveal-link" onClick={() => setTicketsOpen(true)}>이번 회차 응모 번호 확인</button>
           </>
         ) : (
           <div className="st-done">
@@ -989,19 +1033,7 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
         )}
       </div>
 
-      <Modal open={ticketsOpen} onClose={() => setTicketsOpen(false)} title="이번 회차 응모 번호">
-        {ticketsLoading ? <div className="spinner" /> : tickets.length === 0 ? (
-          <p className="muted sm">이번 회차에 제출한 번호가 없어요.</p>
-        ) : (
-          <div className="lotto-tickets">
-            {tickets.map((t, i) => (
-              <div key={i} className="lotto-ticket-row">
-                {t.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
-              </div>
-            ))}
-          </div>
-        )}
-      </Modal>
+      <LottoTicketsModal open={ticketsOpen} onClose={() => setTicketsOpen(false)} roundNo={roundNo} />
     </Modal>
   )
 }
