@@ -32,8 +32,8 @@ const FLOATS = [
 // 아주 미세하게 회전한다. 그림자는 풀과 각도만 다를 뿐 같은 keyframes 를 딜레이 없이 그대로
 // 써서 정확히 같은 타이밍으로 함께 흔들리게 한다. origin 은 밑동(고정되는 쪽) 위치.
 // 좌측 하단 잎: 아랫부분(밑동) 고정, 윗부분이 흔들림 → origin 이 아래쪽(y=100%).
-const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -10 }
-const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%', cardOnlyTopPx: -30, cardOnlyLeftPx: -10 }
+const LEAF = { left: 1.69, top: 79.54, width: 37.47, origin: '38% 100%', cardOnlyTopPx: -35, cardOnlyLeftPx: -10 }
+const LEAF_SHADOW = { left: 7.79, top: 87.04, width: 39.28, origin: '32% 100%', cardOnlyTopPx: -35, cardOnlyLeftPx: -10 }
 // 우측 상단 잎: 윗부분(밑동) 고정, 아랫부분이 흔들림 → origin 이 위쪽(y=0%). bbox 가
 // 캔버스 위/오른쪽 두 변에 동시에 딱 붙어 있어서, origin 을 그 교점(두 변이 만나는 정확한
 // 모서리, 100% 0%)에 둬야 어느 방향으로 돌려도 overflow:hidden 에 잘리지 않는다. left 는
@@ -75,9 +75,10 @@ function leafLeft(item, isCard) {
   return px ? `calc(${item.left}% + ${px}px)` : `${item.left}%`
 }
 
-// 공/꽃은 잎(풀) 요소보다 항상 뒤에 있어야 한다 — 카드/상세 공통.
-const LEAF_Z = 1
-const FLOAT_Z = 0
+// 쌓임 순서(카드/상세 공통): 잎 그림자(맨 뒤) < 공/꽃 < 잎(맨 앞).
+const SHADOW_Z = 0
+const FLOAT_Z = 1
+const LEAF_Z = 2
 
 export default function ThemeWaterpark({ className = '', variant = 'detail' }) {
   const isCard = variant === 'card'
@@ -87,15 +88,15 @@ export default function ThemeWaterpark({ className = '', variant = 'detail' }) {
       <RippleDefs />
       <div className="wp-tiles" />
       <img className="wp-leaf-sway" src={waterparkLeafShadowPng} alt=""
-        style={{ left: leafLeft(LEAF_SHADOW, isCard), top: leafTop(LEAF_SHADOW, isCard), width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin, zIndex: LEAF_Z }} />
+        style={{ left: leafLeft(LEAF_SHADOW, isCard), top: leafTop(LEAF_SHADOW, isCard), width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafPng} alt=""
         style={{ left: leafLeft(LEAF, isCard), top: leafTop(LEAF, isCard), width: `${LEAF.width}%`, transformOrigin: LEAF.origin, zIndex: LEAF_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidShadowPng} alt=""
-        style={{ left: `${LEAF_MID_SHADOW.left}%`, top: leafTop(LEAF_MID_SHADOW, isCard), width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin, zIndex: LEAF_Z }} />
+        style={{ left: `${LEAF_MID_SHADOW.left}%`, top: leafTop(LEAF_MID_SHADOW, isCard), width: `${LEAF_MID_SHADOW.width}%`, transformOrigin: LEAF_MID_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway" src={waterparkLeafMidPng} alt=""
         style={{ left: `${LEAF_MID.left}%`, top: leafTop(LEAF_MID, isCard), width: `${LEAF_MID.width}%`, transformOrigin: LEAF_MID.origin, zIndex: LEAF_Z }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrShadowPng} alt=""
-        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: leafTop(LEAF_TR_SHADOW, isCard), width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin, zIndex: LEAF_Z }} />
+        style={{ left: `${LEAF_TR_SHADOW.left}%`, top: leafTop(LEAF_TR_SHADOW, isCard), width: `${LEAF_TR_SHADOW.width}%`, transformOrigin: LEAF_TR_SHADOW.origin, zIndex: SHADOW_Z }} />
       <img className="wp-leaf-sway-tr" src={waterparkLeafTrPng} alt=""
         style={{ left: `${LEAF_TR.left}%`, top: leafTop(LEAF_TR, isCard), width: `${LEAF_TR.width}%`, transformOrigin: LEAF_TR.origin, zIndex: LEAF_Z }} />
       {floats.map((f, i) => (
