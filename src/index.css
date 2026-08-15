@@ -3246,7 +3246,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @media (prefers-reduced-motion: reduce) { .wp-leaf-sway-tr { animation: none; } }
 
 /* 워터파크 FAB */
-.gd-theme-waterpark .fab { background: linear-gradient(140deg, #4fd6ef, #2f9fd0); box-shadow: 0 10px 24px rgba(47,159,208,.42); }
+/* 야자잎(#A3D25C)에서 딴 초록 — 하늘색 배경 위에서 파란 계열보다 또렷하게 대비된다. */
+.gd-theme-waterpark .fab { background: linear-gradient(140deg, #b8e06e, #7cb342); box-shadow: 0 10px 24px rgba(124,179,66,.42); }
 
 /* ===== 폭죽 팡팡 테마: 다크 밤하늘 + 반짝이는 별 + 폭죽(커플 기념일 폭죽 재사용) ===== */
 /* 많이 진 노을(거의 밤): 어두운 영역을 넓게(위 절반+), 보라·주황은 아래쪽에 좁게 */
