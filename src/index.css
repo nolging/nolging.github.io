@@ -3100,14 +3100,24 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) { .wp-tiles { filter: none; } }
 
-/* 비치볼 — 물살에 밀리듯 작은 순환 경로로 표류(제자리로 돌아오는 루프라 멀리 안 감) */
-.wp-ball { position: absolute; height: auto; transform: translate(-50%, -50%); animation: wp-ball-drift 9s ease-in-out infinite; }
+/* 비치볼 — 물살에 밀리듯 작은 타원 경로를 일정한 속도로 맴돈다(제자리로 돌아오는 루프라 멀리 안 감).
+   구간을 촘촘히 나누고 linear 로 이어야 매 구간 끝에서 감속-정지-재가속하는 "훅 밀렸다 멈추는"
+   느낌 없이 둥둥 떠서 계속 흐르는 것처럼 보인다. */
+.wp-ball { position: absolute; height: auto; transform: translate(-50%, -50%); animation: wp-ball-drift 11s linear infinite; }
 @keyframes wp-ball-drift {
-  0%   { transform: translate(-50%, -50%) translate(0%, 0%); }
-  22%  { transform: translate(-50%, -50%) translate(9%, -7%); }
-  48%  { transform: translate(-50%, -50%) translate(4%, 8%); }
-  74%  { transform: translate(-50%, -50%) translate(-8%, -4%); }
-  100% { transform: translate(-50%, -50%) translate(0%, 0%); }
+  0%      { transform: translate(-50%, -50%) translate(6.00%, 0.00%); }
+  8.33%   { transform: translate(-50%, -50%) translate(5.20%, 2.25%); }
+  16.67%  { transform: translate(-50%, -50%) translate(3.00%, 3.90%); }
+  25%     { transform: translate(-50%, -50%) translate(0.00%, 4.50%); }
+  33.33%  { transform: translate(-50%, -50%) translate(-3.00%, 3.90%); }
+  41.67%  { transform: translate(-50%, -50%) translate(-5.20%, 2.25%); }
+  50%     { transform: translate(-50%, -50%) translate(-6.00%, 0.00%); }
+  58.33%  { transform: translate(-50%, -50%) translate(-5.20%, -2.25%); }
+  66.67%  { transform: translate(-50%, -50%) translate(-3.00%, -3.90%); }
+  75%     { transform: translate(-50%, -50%) translate(0.00%, -4.50%); }
+  83.33%  { transform: translate(-50%, -50%) translate(3.00%, -3.90%); }
+  91.67%  { transform: translate(-50%, -50%) translate(5.20%, -2.25%); }
+  100%    { transform: translate(-50%, -50%) translate(6.00%, 0.00%); }
 }
 @media (prefers-reduced-motion: reduce) { .wp-ball { animation: none; } }
 
