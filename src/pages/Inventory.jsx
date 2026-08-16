@@ -323,7 +323,7 @@ export default function Inventory() {
       <CoupleRingModal view={coupleView} myId={user?.id} navigate={navigate}
         onClose={() => setCoupleView(null)}
         onShareSpare={() => { setCoupleView(null); setCoupleOpen(true) }} />
-      <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={friendGroupIds} onDone={reload}
+      <FriendModal open={friendOpen} onClose={() => setFriendOpen(false)} myId={user?.id} excludeGroupIds={[...new Set([...coupleGroupIds, ...friendGroupIds])]} onDone={reload}
         equippedGroupIds={friendGroupIds} onViewEquipped={() => { setFriendOpen(false); setFriendView({ groupIds: friendGroupIds }) }} />
       <FriendRingModal view={friendView} navigate={navigate} onClose={() => setFriendView(null)} />
       <MediaSendModal open={cassetteOpen} itemId="cassette" onClose={() => setCassetteOpen(false)} onDone={reload} />
@@ -1653,7 +1653,6 @@ function CoupleModal({ open, onClose, myId, excludeGroupIds, onDone }) {
         <p className="couple-hint">멤버가 2명인 그룹에서 함께 낄 수 있어요. 상대가 수령하면 그때 적용돼요.</p>
 
         <label className="field">
-          <span>그룹</span>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{eligible.length ? '그룹 선택' : '나눠 낄 수 있는 그룹이 없어요'}</option>
             {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -1771,7 +1770,6 @@ function FriendModal({ open, onClose, myId, excludeGroupIds, onDone, equippedGro
         <p className="couple-hint">멤버 2명 이상 그룹에 사용하면 바로 적용돼요. 모든 멤버에게 우정 링 쪽지가 전송돼요.</p>
 
         <label className="field">
-          <span>그룹</span>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{eligible.length ? '그룹 선택' : '사용할 수 있는 그룹이 없어요'}</option>
             {eligible.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
