@@ -251,28 +251,30 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .desknav-me:hover { background: rgba(0,0,0,.04); text-decoration: none; }
 .desknav-me.active { color: var(--text); }
 .desknav-icon {
-  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  position: relative; width: 22px; height: 22px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; color: var(--muted);
   background: none; border: none; padding: 0; cursor: pointer; font: inherit;
 }
-.desknav-icon svg { width: 22px; height: 22px; }
+.desknav-icon svg { width: 14px; height: 14px; }
 .desknav-icon:hover { background: rgba(0,0,0,.04); text-decoration: none; }
 .desknav-icon.active { color: var(--text); }
 .desknav-icon .nav-ico-wrap { position: relative; display: inline-flex; }
 .desknav-icon .nav-dot {
-  position: absolute; top: 0; right: 0;
-  width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+  position: absolute; top: -1px; right: -1px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
 }
 .desknav-icon .bell-badge {
-  position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px;
+  position: absolute; top: -4px; right: -4px; min-width: 14px; height: 14px; padding: 0 3px;
   border-radius: 999px; background: var(--primary); color: #fff;
-  font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; box-sizing: border-box;
+  font-size: 9px; font-weight: 800; line-height: 14px; text-align: center; box-sizing: border-box;
 }
 /* 데스크톱: 모든 페이지에서 상단 내비게이션 상시 노출 + 페이지별 상단바 숨김
    (단, .topbar-keep 은 유지 — 예: 낙서장 '갤러리에 저장') */
 @media (min-width: 641px) and (orientation: landscape) {
   .app-shell > .desknav { display: flex; }
   .app-shell > .topbar:not(.topbar-keep) { display: none; }
+  /* 상단바↔본문 간격이 모바일 기준(28px)만큼 크면 답답해 보여서 축소 */
+  .app-shell > .content { --pad-y: 16px; }
 }
 /* 프리미엄(다크) 상점에서의 상단 내비게이션 톤 보정 */
 .premium-shop .desknav { background: transparent; }
