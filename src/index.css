@@ -224,28 +224,29 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   max-width: 1080px; width: 100%; margin: 0 auto;
   padding: env(safe-area-inset-top) 0 0; height: calc(58px + env(safe-area-inset-top));
   box-sizing: border-box;
-  display: flex; align-items: center; gap: 20px;
+  display: flex; align-items: flex-end; gap: 20px;
 }
-.desknav-inner .brand { flex-shrink: 0; }
+/* 브랜드/메뉴/우측 아이콘·아이디 — 모두 같은 하단 여백(11px)을 공유해 하단 라인을 맞춤 */
+.desknav-inner .brand { flex-shrink: 0; padding-bottom: 11px; }
 /* 탭 밑줄(현재 선택된 탭에 먹색 밑줄) — 모바일 관리자 페이지 상단바(.admin-tabs)와 동일한 방식 */
-.desknav-left { position: relative; display: flex; gap: 14px; align-items: flex-end; align-self: stretch; }
+.desknav-left { position: relative; display: flex; gap: 8px; align-items: flex-end; align-self: stretch; }
 .desknav-left a {
-  padding: 0 2px 8px; text-decoration: none; box-sizing: border-box;
+  padding: 0 2px 11px; text-decoration: none; box-sizing: border-box;
   font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap;
-  border-bottom: 3px solid transparent; margin-bottom: -1px;
 }
 .desknav-left a:hover { text-decoration: none; }
 .desknav-left a.active { background: transparent; color: var(--text); font-weight: 700; }
 .desknav-indicator {
-  position: absolute; left: 0; bottom: -1px; height: 3px; background: var(--text); border-radius: 2px;
+  position: absolute; left: 0; bottom: 5px; height: 2px; background: var(--text); border-radius: 1px;
   transition: transform .25s cubic-bezier(.4, 0, .2, 1), width .25s cubic-bezier(.4, 0, .2, 1);
   pointer-events: none;
 }
-.desknav-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.desknav-right { margin-left: auto; display: flex; align-items: flex-end; gap: 4px; padding-bottom: 7px; }
 .desknav-me {
-  margin-left: 4px; padding: 7px 12px; border-radius: 8px;
-  color: var(--text); font-weight: 700; font-size: 14px;
+  margin-left: 4px; padding: 4px 12px; border-radius: 8px;
+  color: var(--text); font-weight: 700; font-size: 14px; line-height: 1;
   max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  box-sizing: border-box;
 }
 .desknav-me:hover { background: rgba(0,0,0,.04); text-decoration: none; }
 .desknav-me.active { color: var(--text); }
@@ -610,8 +611,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 .mp-logout { text-align: center; margin-top: 10px; }
 .mp-logout-link { background: none; border: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 1px solid #dcdce2; padding: 0 0 1px; }
 .mp-logout-link:hover { color: var(--danger); border-bottom-color: var(--danger); }
-/* 마이 페이지: 모든 콘텐츠가 한 화면에 들어가므로 세로 스크롤 비활성화 */
+/* 마이 페이지: 모바일은 모든 콘텐츠가 한 화면에 들어가므로 세로 스크롤 비활성화.
+   PC(데스크톱)는 창 높이가 짧으면 내용이 잘릴 수 있어 스크롤 허용 */
 .me-view .content { overflow-y: hidden; }
+@media (min-width: 641px) and (orientation: landscape) {
+  .me-view .content { overflow-y: auto; }
+}
 /* 상단바 우측 관리자 링크 */
 .topbar-admin { margin-left: auto; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--primary); background: var(--primary-soft); border-radius: 999px; padding: 7px 14px; text-decoration: none; }
 .topbar-admin:hover { text-decoration: none; }
