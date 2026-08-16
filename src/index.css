@@ -3704,6 +3704,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .note-card.note-couple { position: relative; }
 /* 우정 링(민트) */
 .note-tag-friend { color: #1f9e8b; background: rgba(31, 158, 139, .14); }
+/* 우정 링을 받은 그룹을 탈퇴해 수령 불가 — 통통 튀는 효과 없이 비활성화된 회색으로 */
+.note-tag-friend.note-tag-disabled { color: #9a97a6; background: rgba(25, 23, 34, .07); }
 .note-card.note-friend { position: relative; background: linear-gradient(135deg, #e7f8f2, #eefaf5); box-shadow: 0 2px 12px rgba(31, 158, 139, .14); }
 .modal-card.modal-friend { background: linear-gradient(160deg, #e7f8f2, #f2fbf7); }
 .modal-friend .note-view-body { background: rgba(255,255,255,.6); }

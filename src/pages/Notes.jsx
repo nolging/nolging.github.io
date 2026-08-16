@@ -888,7 +888,9 @@ export default function Notes() {
             const cardTime = sysResolved && n.report_resolved_at ? n.report_resolved_at : n.created_at
             const sysHasReward = system && !!n.report_has_reward_item // 아이템 보상이 한 번이라도 지급된 리포트
             const sysRewardPending = system && !!n.report_reward_pending // 아직 안 받은 아이템 보상 있음
-            const needClaim = (couple || friend || gift || polaroid) && tab === 'received' && !n.claimed && !n.rejected
+            // 우정 링을 받은 그룹을 이미 탈퇴한 경우 — 수령 불가(모달과 동일 조건)
+            const friendUnavailable = friend && n.group_id && membersByGroup[n.group_id] && !membersByGroup[n.group_id][user.id]
+            const needClaim = (couple || (friend && !friendUnavailable) || gift || polaroid) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
             const waterBlue = popped || (tab === 'sent' && isWater(n)) // 옅은 파란색(보낸함 물풍선은 처음부터)
@@ -896,7 +898,7 @@ export default function Notes() {
             // 타입 배지(라벨, 클래스) — 본문 줄 우측으로 이동
             const tagInfo = wish ? ['🌟 소원', 'note-tag']
               : couple ? [n.rejected ? '💍 거절' : '💍 커플 링', 'note-tag note-tag-couple']
-                : friend ? ['🤝 우정 링', 'note-tag note-tag-friend']
+                : friend ? ['🤝 우정 링', `note-tag note-tag-friend${friendUnavailable ? ' note-tag-disabled' : ''}`]
                   : gift ? ['📦 아이템', 'note-tag note-tag-gift']
                     : cassette ? ['🎶 이어폰', 'note-tag note-tag-cassette']
                       : link ? ['🎁 선물', 'note-tag note-tag-link']
