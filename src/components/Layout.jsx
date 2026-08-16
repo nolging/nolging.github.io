@@ -259,7 +259,7 @@ export default function Layout() {
     if (!nav) return
     const update = () => {
       const active = nav.querySelector('a.active')
-      if (active) setDesknavIndicator({ left: active.offsetLeft, width: active.offsetWidth })
+      setDesknavIndicator(active ? { left: active.offsetLeft, width: active.offsetWidth } : { left: 0, width: 0 })
     }
     update()
     window.addEventListener('resize', update)
