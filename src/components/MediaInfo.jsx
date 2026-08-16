@@ -2,9 +2,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { gamePlatformLabels } from '../lib/constants'
 
-// 쿠팡플레이(쿠플)는 OTT 검색 제공처에서 빠지는 경우가 많아 사용자가 직접 추가/제거
-const COUPANG_PROVIDER = { name: '쿠팡플레이', logo: '/ott/coupang.png' }
-const isCoupang = (p) => /coupang|쿠팡/i.test(typeof p === 'string' ? p : p?.name || '')
+// 삼선 메뉴에서 켜고 끌 수 있는 OTT 목록(요청 순서). 쿠팡플레이는 검색 제공처에
+// 거의 안 나와서 항상 수동 토글 대상이고, 나머지는 API 로 이미 들어와 있으면
+// (수동으로 켠 게 아니라면) 메뉴에서 제외한다 — manual 플래그로 구분.
+const OTT_TOGGLES = [
+  { name: '넷플릭스', logo: '/ott/netflix.jpg', test: /netflix/i },
+  { name: '티빙', logo: '/ott/tving.png', test: /tving/i },
+  { name: '웨이브', logo: '/ott/wavve.png', test: /wavve/i },
+  { name: '디즈니플러스', logo: '/ott/disney.png', test: /disney/i },
+  { name: '왓챠', logo: '/ott/watcha.png', test: /watcha/i },
+  { name: '쿠팡플레이', logo: '/ott/coupang.png', test: /coupang|쿠팡/i, alwaysManual: true },
+]
+const matchProvider = (list, def) => list.find((p) => def.test.test(typeof p === 'string' ? p : p?.name || ''))
 
 // 특정 브랜드는 로고를 지정 이미지로 대체 (TMDB 로고가 마음에 안 들 때)
 const LOGO_OVERRIDE = [
@@ -35,43 +44,59 @@ function ProviderBadges({ list, suffix }) {
 
 function MenuDotsIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" aria-hidden="true">
       <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
     </svg>
   )
 }
 
-// 우측 상단 삼선 드롭다운: 쿠팡플레이 표시 여부를 토글로 켜고 끈다.
-function CoupangToggle({ providers, onSetProviders }) {
+// 우측 상단 삼선 드롭다운: OTT 별로 수동 표시 여부를 토글로 켜고 끈다. API 로 이미
+// 들어온(수동 아닌) 제공처는 목록에서 제외 — 이미 뱃지로 보이고 있어 중복 노출 불필요.
+function OttToggleMenu({ providers, onSetProviders }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  const has = providers.some(isCoupang)
   useEffect(() => {
     if (!open) return
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
-  const toggle = () => {
-    const next = has ? providers.filter((p) => !isCoupang(p)) : [...providers, COUPANG_PROVIDER]
+
+  const rows = OTT_TOGGLES.filter((def) => {
+    const m = matchProvider(providers, def)
+    return !m || def.alwaysManual || m.manual
+  })
+  if (!rows.length) return null
+
+  const toggle = (def) => {
+    const m = matchProvider(providers, def)
+    const on = def.alwaysManual ? !!m : !!m?.manual
+    const next = on ? providers.filter((p) => p !== m) : [...providers, { name: def.name, logo: def.logo, manual: true }]
     onSetProviders(next)
   }
+
   return (
     <div className="mi-cp" ref={ref}>
       <button type="button" className="mi-cp-btn" onClick={() => setOpen((v) => !v)}
-        aria-label="쿠팡플레이 설정" aria-expanded={open}>
+        aria-label="OTT 표시 설정" aria-expanded={open}>
         <MenuDotsIcon />
       </button>
       {open && (
         <div className="mi-cp-menu" role="menu">
-          <div className="mi-cp-item">
-            <span>쿠팡플레이</span>
-            <button type="button" className={`me-switch ${has ? 'on' : ''}`}
-              role="switch" aria-checked={has} aria-label="쿠팡플레이" onClick={toggle}>
-              <span className="me-knob" />
-            </button>
-          </div>
+          {rows.map((def) => {
+            const m = matchProvider(providers, def)
+            const on = def.alwaysManual ? !!m : !!m?.manual
+            return (
+              <div className="mi-cp-item" key={def.name}>
+                <span>{def.name}</span>
+                <button type="button" className={`me-switch ${on ? 'on' : ''}`}
+                  role="switch" aria-checked={on} aria-label={def.name} onClick={() => toggle(def)}>
+                  <span className="me-knob" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -116,7 +141,7 @@ export default function MediaInfo({ category, info, onClear, onSetProviders }) {
   return (
     <div className="media-info">
       {category === 'OTT' && onSetProviders && (
-        <CoupangToggle providers={info.providers || []} onSetProviders={onSetProviders} />
+        <OttToggleMenu providers={info.providers || []} onSetProviders={onSetProviders} />
       )}
       <div className="media-info-body">
         {info.poster
