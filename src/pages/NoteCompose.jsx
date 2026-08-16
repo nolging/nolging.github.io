@@ -108,7 +108,7 @@ export default function NoteCompose() {
     listStoreItems().then((rows) => {
       if (!on) return
       const m = {}
-      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null, sort: r.sort_order ?? 999, category: r.category || '' }
+      for (const r of rows) m[r.id] = { name: r.name, emoji: r.emoji, premium: !!r.premium, tier: r.tier || null, sort: r.sortOrder ?? 999, category: r.category || '' }
       setStore(m)
     }).catch(() => {})
     // 링 사용 시 제외할 그룹 + 프리미엄 선물 대상 판별용(커플/우정 그룹)
