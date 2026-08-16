@@ -30,7 +30,7 @@ import GroupSettingsPage from './GroupSettingsPage'
 import TaskForm from '../components/TaskForm'
 import ScheduleAppointment from './ScheduleAppointment'
 import SecretBoard, { BoardCompose, BoardSearch, BoardSettings, BoardPost, BoardComments } from './SecretBoard'
-import { openMember, SETTINGS_EVENT } from '../lib/memberModal'
+import { openMember, SETTINGS_EVENT, MEMBER_EVENT } from '../lib/memberModal'
 
 const PANE_GAP = 24 // 스와이프 시 넘어오는 탭 화면 사이의 간격(거터)
 
@@ -178,24 +178,31 @@ export default function GroupDetail() {
   })
   const [detailReview, setDetailReview] = useState(false)
   const [settingsView, setSettingsView] = useState(null) // null | 'group' | 'me'
+  const [settingsFromMember, setSettingsFromMember] = useState(null) // 'me' 설정을 멤버 모달에서 열었으면 그 userId(닫을 때 다시 열기용)
   const [editView, setEditView] = useState(null) // PC 가운데 편집 임베드: null | { kind:'wish'|'appointment', taskId }
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
   function openTask(t, { review = false } = {}) {
-    if (isDesktop()) { setSettingsView(null); setEditView(null); setBoardView(null); setDetailReview(review); setDetailTaskId(t.id) }
+    if (isDesktop()) { setSettingsView(null); setSettingsFromMember(null); setEditView(null); setBoardView(null); setDetailReview(review); setDetailTaskId(t.id) }
     else navigate(`/groups/${groupId}/tasks/${t.id}`, { state: { groupType: group?.group_type, ...(review ? { openReview: true } : {}) } })
   }
   // 좌측 헤더(이모지/그룹명) 클릭 → 그룹 홈(위시 탭). 임베드 상세/편집/설정/게시판 닫고 위시 탭으로.
   function goGroupHome() {
-    setDetailTaskId(null); setDetailReview(false); setEditView(null); setSettingsView(null); setBoardView(null)
+    setDetailTaskId(null); setDetailReview(false); setEditView(null); setSettingsView(null); setSettingsFromMember(null); setBoardView(null)
     setFilter('open')
   }
   function openSettings(view) {
-    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setBoardView(null); setSettingsView(view) }
+    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setBoardView(null); setSettingsView(view); setSettingsFromMember(null) }
     else navigate(view === 'group' ? `/groups/${groupId}/settings/group` : `/groups/${groupId}/settings`)
+  }
+  // 설정 임베드 닫기 — 멤버 모달(내 정보 수정)에서 열었던 거면 그 멤버 모달을 다시 열어 돌아간다.
+  function closeSettings() {
+    const backTo = settingsFromMember
+    setSettingsView(null); setSettingsFromMember(null); refresh()
+    if (backTo) window.dispatchEvent(new CustomEvent(MEMBER_EVENT, { detail: { groupId, userId: backTo } }))
   }
   // 비밀 게시판: PC 는 가운데 임베드(화면 전환 없이 내부 상태로 목록/검색/글쓰기/상세/댓글 전환), 모바일은 기존처럼 라우트 이동
   function openBoard() {
-    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(null); setBoardView({ view: 'list' }) }
+    if (isDesktop()) { setDetailTaskId(null); setEditView(null); setSettingsView(null); setSettingsFromMember(null); setBoardView({ view: 'list' }) }
     else navigate(`/groups/${groupId}/board`, { state: { from: 'members' } })
   }
   // 게시판 임베드 내 "뒤로" — 하위 화면마다 되돌아갈 자리가 다름(댓글→글, 수정→그 글, 그 외→목록, 목록→닫기)
@@ -209,7 +216,8 @@ export default function GroupDetail() {
   // '수정' → 가운데를 편집 폼으로 전환. 상세에서 오면 detailTaskId, 카드 스와이프에서
   // 오면 해당 카드 id 를 대상으로. (완료/취소 시 detailTaskId 있으면 상세, 없으면 목록 복귀)
   function openEdit(kind, taskId = detailTaskId) { if (taskId) setEditView({ kind, taskId }) }
-  // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시)
+  // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시).
+  // 멤버 모달(userId 포함)에서 온 'me' 설정이면 닫을 때 그 멤버 모달로 되돌아가야 하므로 기억해 둔다.
   useEffect(() => {
     const on = (e) => {
       const d = e.detail || {}
@@ -218,6 +226,7 @@ export default function GroupDetail() {
       if (!isDesktop()) return
       d.handled = true
       setDetailTaskId(null); setSettingsView(d.view)
+      setSettingsFromMember(d.view === 'me' && d.userId ? d.userId : null)
     }
     window.addEventListener(SETTINGS_EVENT, on)
     return () => window.removeEventListener(SETTINGS_EVENT, on)
@@ -239,7 +248,7 @@ export default function GroupDetail() {
   useEffect(() => {
     const oid = location.state?.openTaskId
     if (!oid) return
-    if (isDesktop()) { setSettingsView(null); setDetailReview(false); setDetailTaskId(oid) }
+    if (isDesktop()) { setSettingsView(null); setSettingsFromMember(null); setDetailReview(false); setDetailTaskId(oid) }
     navigate(`/groups/${groupId}`, { replace: true, state: {} }) // 뒤로가기/새로고침 시 재오픈 방지
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -636,13 +645,13 @@ export default function GroupDetail() {
         </div>
       ) : settingsView ? (
         <div className="gd-detail gd-detail--scroll">
-          <button type="button" className="gd-detail-back" onClick={() => { setSettingsView(null); refresh() }}>
+          <button type="button" className="gd-detail-back" onClick={closeSettings}>
             <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
             뒤로
           </button>
           {settingsView === 'group'
-            ? <GroupConfigPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />
-            : <GroupSettingsPage embedded groupId={groupId} onClose={() => { setSettingsView(null); refresh() }} />}
+            ? <GroupConfigPage embedded groupId={groupId} onClose={closeSettings} />
+            : <GroupSettingsPage embedded groupId={groupId} onClose={closeSettings} />}
         </div>
       ) : boardView ? (
         <div className={`gd-detail gd-detail--board${boardView.view === 'list' ? '' : ' gd-detail--scroll'}`}>
