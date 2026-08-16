@@ -261,9 +261,15 @@ export default function NoteCompose() {
     }
     return set === null ? null : [...set]
   }, [gifts, store, coupleGroups, friendGroups])
-  // 사용 시트 섹션(보유분만)
+  // 사용 시트 섹션(보유분만). 섹션 구성(스페셜/기능 강화)은 고정이지만, 섹션 안 카드
+  // 순서는 giftSections 와 마찬가지로 상점 배열(sort_order) 순서를 따르게 한다.
   const useSections = USE_SECTIONS
-    .map((s) => ({ label: s.label, ids: s.ids.filter((id) => (owned[id] || 0) > 0) }))
+    .map((s) => ({
+      label: s.label,
+      ids: s.ids
+        .filter((id) => (owned[id] || 0) > 0)
+        .sort((a, b) => (store[a]?.sort ?? 999) - (store[b]?.sort ?? 999)),
+    }))
     .filter((s) => s.ids.length)
 
   async function handleSend() {
