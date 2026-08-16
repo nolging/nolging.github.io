@@ -28,6 +28,7 @@ export const NOTIF_ICONS = {
   megaphone: '📣',
   error_report: '🐞',
   system_note: '🐱',
+  polaroid: '📷',
 }
 
 export function timeAgo(iso) {
@@ -42,8 +43,8 @@ export function timeAgo(iso) {
   } catch { return '' }
 }
 
-// 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권 등 + SYSTEM(오류 리포트) 쪽지
-const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note'])
+// 쪽지함(받은 쪽지)으로 보내는 알림 유형: 선물/커플 링/소원권/사진(폴라로이드) 등 + SYSTEM(오류 리포트) 쪽지
+const NOTE_TYPES = new Set(['gift', 'couple_ring', 'friend_ring', 'wish', 'cassette', 'link', 'video', 'system_note', 'polaroid'])
 
 // 알림 클릭 시 이동할 경로(없으면 null → 클릭 불가)
 export function notifTarget(n) {
