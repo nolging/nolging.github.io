@@ -175,17 +175,26 @@ export default function NoteCompose() {
     if (id === 'waterbomb') { setTimerVal(30); setTimerOpen(true); setSheet(null); return } // 타이머 설정
     setLinkFor(id); setLinkUrl(''); setLinkErr(''); setSheet(null)   // 미디어 → URL 입력
   }
-  // 폴라로이드 필름 사진 선택 → 리사이즈 후 업로드 → photos 에 추가(필름 소모는 전송 시 서버에서)
+  // 폴라로이드 필름 사진 선택(여러 장 한 번에 가능) → 리사이즈 후 업로드 → photos 에 추가
+  // (필름 소모는 전송 시 서버에서). 남은 자리(최대 장수·보유 필름 수)보다 많이 고르면
+  // 앞에서부터 자리만큼만 담고 안내한다.
   async function onPickPolaroidPhoto(e) {
-    const f = e.target.files?.[0]
+    const files = Array.from(e.target.files || [])
     e.target.value = ''
-    if (!f) return
-    if (photos.length >= MAX_PHOTOS || photos.length >= (owned['polaroid-film'] || 0)) return
+    if (!files.length) return
+    const remaining = Math.min(MAX_PHOTOS, owned['polaroid-film'] || 0) - photos.length
+    if (remaining <= 0) return
+    const toUpload = files.slice(0, remaining)
     setUploadingPhoto(true); setError('')
     try {
-      const { blob } = await resizeToJpeg(f, 1600)
-      const url = await uploadPolaroidPhoto(blob, user.id, photos.length)
-      setPhotos((prev) => [...prev, { url }])
+      const startIdx = photos.length
+      const uploaded = await Promise.all(toUpload.map(async (f, i) => {
+        const { blob } = await resizeToJpeg(f, 1600)
+        const url = await uploadPolaroidPhoto(blob, user.id, startIdx + i)
+        return { url }
+      }))
+      setPhotos((prev) => [...prev, ...uploaded])
+      if (files.length > toUpload.length) setError(`사진은 최대 ${MAX_PHOTOS}장까지만 첨부할 수 있어서 ${toUpload.length}장만 담았어요.`)
     } catch (err) { setError(err.message || '사진 업로드에 실패했어요.') }
     finally { setUploadingPhoto(false) }
   }
@@ -401,7 +410,7 @@ export default function NoteCompose() {
           </div>
         </div>
       )}
-      <input ref={polaroidInputRef} type="file" accept="image/*" hidden onChange={onPickPolaroidPhoto} />
+      <input ref={polaroidInputRef} type="file" accept="image/*" multiple hidden onChange={onPickPolaroidPhoto} />
 
       {/* From. */}
       {anonymous ? (

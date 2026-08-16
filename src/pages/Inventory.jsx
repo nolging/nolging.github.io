@@ -1163,14 +1163,22 @@ function PolaroidSendModal({ open, ownedCount, onClose, onDone }) {
   }, [open])
 
   async function onPick(e) {
-    const f = e.target.files?.[0]
+    const files = Array.from(e.target.files || [])
     e.target.value = ''
-    if (!f || photos.length >= max) return
+    if (!files.length) return
+    const remaining = max - photos.length
+    if (remaining <= 0) return
+    const toUpload = files.slice(0, remaining)
     setUploading(true); setError('')
     try {
-      const { blob } = await resizeToJpeg(f, 1600)
-      const url = await uploadPolaroidPhoto(blob, user.id, photos.length)
-      setPhotos((p) => [...p, { url }])
+      const startIdx = photos.length
+      const uploaded = await Promise.all(toUpload.map(async (f, i) => {
+        const { blob } = await resizeToJpeg(f, 1600)
+        const url = await uploadPolaroidPhoto(blob, user.id, startIdx + i)
+        return { url }
+      }))
+      setPhotos((p) => [...p, ...uploaded])
+      if (files.length > toUpload.length) setError(`사진은 최대 ${max}장까지만 첨부할 수 있어서 ${toUpload.length}장만 담았어요.`)
     } catch (e2) { setError(e2.message || '사진 업로드에 실패했어요.') }
     finally { setUploading(false) }
   }
@@ -1218,7 +1226,7 @@ function PolaroidSendModal({ open, ownedCount, onClose, onDone }) {
               </button>
             )}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPick} />
+          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPick} />
           <div className="nc-photo-picker-hint">{photos.length}/{max}장 · 보유 필름 {ownedCount || 0}개</div>
 
           <div className="nc-body-wrap">
