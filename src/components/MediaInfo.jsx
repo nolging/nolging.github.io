@@ -33,7 +33,16 @@ function ProviderBadges({ list, suffix }) {
   )
 }
 
-// 우측 상단 +/- 드롭다운: 쿠팡플레이 추가/제거
+function MenuDotsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
+  )
+}
+
+// 우측 상단 삼선 드롭다운: 쿠팡플레이 표시 여부를 토글로 켜고 끈다.
 function CoupangToggle({ providers, onSetProviders }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -46,20 +55,23 @@ function CoupangToggle({ providers, onSetProviders }) {
   }, [open])
   const toggle = () => {
     const next = has ? providers.filter((p) => !isCoupang(p)) : [...providers, COUPANG_PROVIDER]
-    setOpen(false)
     onSetProviders(next)
   }
   return (
     <div className="mi-cp" ref={ref}>
       <button type="button" className="mi-cp-btn" onClick={() => setOpen((v) => !v)}
-        aria-label={has ? '쿠팡플레이 제거' : '쿠팡플레이 추가'} aria-expanded={open}>
-        {has ? '−' : '+'}
+        aria-label="쿠팡플레이 설정" aria-expanded={open}>
+        <MenuDotsIcon />
       </button>
       {open && (
         <div className="mi-cp-menu" role="menu">
-          <button type="button" className="mi-cp-item" role="menuitem" onClick={toggle}>
-            {has ? '쿠팡 플레이 제거' : '쿠팡 플레이 추가'}
-          </button>
+          <div className="mi-cp-item">
+            <span>쿠팡플레이</span>
+            <button type="button" className={`me-switch ${has ? 'on' : ''}`}
+              role="switch" aria-checked={has} aria-label="쿠팡플레이" onClick={toggle}>
+              <span className="me-knob" />
+            </button>
+          </div>
         </div>
       )}
     </div>
