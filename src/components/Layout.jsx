@@ -251,6 +251,20 @@ export default function Layout() {
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [adminSection, location.pathname])
+  // PC 상단 내비게이션(desknav) 탭 밑줄 — 관리자 탭 밑줄과 동일한 방식(위치·너비 측정 후 슬라이드)
+  const desknavRef = useRef(null)
+  const [desknavIndicator, setDesknavIndicator] = useState({ left: 0, width: 0 })
+  useLayoutEffect(() => {
+    const nav = desknavRef.current
+    if (!nav) return
+    const update = () => {
+      const active = nav.querySelector('a.active')
+      if (active) setDesknavIndicator({ left: active.offsetLeft, width: active.offsetWidth })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [location.pathname])
   // 마이 페이지 '도전'으로 진입했는지 (뒤로가기 시 마이 페이지 복귀)
   const fromMe = location.state?.from === '/me'
 
@@ -996,11 +1010,13 @@ export default function Layout() {
       <header className="desknav">
           <div className="desknav-inner">
             <Link to="/" className="brand"><Brand /></Link>
-            <nav className="desknav-left">
+            <nav className="desknav-left" ref={desknavRef}>
               <NavLink to="/" end>내 그룹</NavLink>
               <NavLink to="/schedule">일정</NavLink>
               <NavLink to="/store">상점</NavLink>
               <NavLink to="/inventory">인벤토리</NavLink>
+              <span className="desknav-indicator" aria-hidden="true"
+                style={{ transform: `translateX(${desknavIndicator.left}px)`, width: desknavIndicator.width }} />
             </nav>
             <div className="desknav-right">
               <div className="desknav-notif" ref={notifRef}>
