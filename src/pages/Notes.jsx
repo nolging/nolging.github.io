@@ -184,7 +184,7 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
               <span className="pv-camera-flash-icon" />
             </div>
             <div className="pv-camera-lens">
-              <span className="pv-camera-lens-glass"><span className="pv-camera-lens-pupil" /><span className="pv-camera-lens-glint" /></span>
+              <span className="pv-camera-lens-glass"><span className="pv-camera-lens-glint" /></span>
             </div>
             <div className="pv-camera-wordmark"><span>nolging</span><span>polaroid</span></div>
           </div>
@@ -657,9 +657,10 @@ export default function Notes() {
     finally { setBusy(false) }
   }
   // 이미 인화됐거나(수신자) 내가 보낸 쪽지(발신자)면 바로 뷰어를 연다(애니메이션 없이).
+  // TEMP: 카메라 연출 테스트용으로 "사진 보기"도 animate:true 로 열게 해둠 — 테스트 끝나면 false로 되돌릴 것.
   function openPolaroidViewer(n) {
     fetchNotePhotos(n.id)
-    setPolaroidView({ noteId: n.id, index: 0, animate: false })
+    setPolaroidView({ noteId: n.id, index: 0, animate: true })
   }
 
   // 깜냥 명의 보상 쪽지 삭제(아이템을 전부 수령한 뒤에만 가능)

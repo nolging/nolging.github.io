@@ -4053,14 +4053,16 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 }
 .pv-camera-scene.is-out { opacity: 0; transform: scale(.94) translateY(6px); pointer-events: none; }
 .pv-camera {
-  position: relative; width: 100%; aspect-ratio: 300 / 200; border-radius: 26px;
+  position: relative; width: 100%; aspect-ratio: 300 / 200; border-radius: 14px;
   background: linear-gradient(#f3f3f5, #c6c6cb 52%, #e2e6e6);
   box-shadow: 0 14px 30px rgba(25,23,34,.22), inset 0 1px 0 #fff;
 }
 .pv-camera-slot {
-  position: absolute; top: 27%; left: 2%; right: 2%; bottom: 7%; border-radius: 9px;
+  position: absolute; top: 27%; left: 2%; right: 2%; bottom: 7%; border-radius: 8px;
   background-color: #18181b;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, rgba(0,0,0,0) 1.4px);
+  /* radial-gradient 만으로는 background-size 가 없으면 점이 하나만 찍히고 안 반복됨 — 타일 크기 지정 필수 */
+  background-image: radial-gradient(circle, rgba(255,255,255,.14) 1px, rgba(0,0,0,0) 1.3px);
+  background-size: 7px 7px;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), inset 0 2px 6px rgba(0,0,0,.4);
 }
 .pv-camera-brand {
@@ -4091,24 +4093,23 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   background: linear-gradient(135deg, #fff, #dfe6ea); box-shadow: inset 0 0 0 1px #b4b4ba;
 }
 .pv-camera-lens {
-  position: absolute; top: 37%; left: 50%; width: 104px; height: 104px; border-radius: 50%; transform: translateX(-50%);
-  background-image: radial-gradient(circle at 42% 38%, #3f3f47, #141418);
-  box-shadow: 0 0 0 6px #171719, 0 0 0 8px #cecece, 0 0 0 12px #9a9a9f, 0 0 0 13px #6f6f74, inset 0 0 20px rgba(0,0,0,.7);
+  position: absolute; top: 27%; left: 50%; width: 150px; height: 150px; border-radius: 50%; transform: translateX(-50%);
+  background-image: radial-gradient(circle at 42% 38%, #45454f, #101014 68%);
+  box-shadow: 0 0 0 5px #d6d6da, 0 0 0 6px #18181a, inset 0 0 24px rgba(0,0,0,.75);
 }
 .pv-camera-lens-glass {
-  position: absolute; inset: 20px; border-radius: 50%;
-  background-image: radial-gradient(circle at 40% 36%, #5a5a64, #0e0e12);
-  box-shadow: inset 0 0 0 3px #2a2a30, inset 0 0 14px rgba(0,0,0,.8);
+  position: absolute; inset: 12px; border-radius: 50%;
+  background-image: radial-gradient(circle at 40% 35%, #565660, #0c0c10 65%);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.5), inset 0 0 18px rgba(0,0,0,.8);
 }
-.pv-camera-lens-pupil {
-  position: absolute; inset: 16px; border-radius: 50%;
-  background-image: radial-gradient(circle at 38% 34%, #3a3a44, #050507);
+.pv-camera-lens-glint {
+  position: absolute; top: 32px; left: 40px; width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(205,213,230,.55), rgba(205,213,230,0) 70%);
 }
-.pv-camera-lens-glint { position: absolute; top: 30px; left: 34px; width: 15px; height: 15px; border-radius: 50%; background: rgba(180,190,210,.4); }
 .pv-camera-wordmark {
   position: absolute; top: 81%; left: 81%; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3;
 }
-.pv-camera-wordmark span:first-child { font-size: 10px; font-weight: 800; color: #e7e7ea; }
+.pv-camera-wordmark span:first-child { font-size: 10px; font-weight: 800; font-style: italic; color: #e7e7ea; }
 .pv-camera-wordmark span:last-child { font-size: 7px; font-weight: 600; color: #b9b9bf; }
 
 /* 인화되는 필름: 흰 프레임 + 검은 사진 영역(시안과 동일한 폴라로이드 필름 형태), 카메라 슬롯에서 천천히 배출.
