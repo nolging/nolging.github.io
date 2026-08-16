@@ -4048,6 +4048,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* ── 카메라 시안(NOLGING polaroid) 그대로 반영: 색/무늬/구성 요소 색상 값 동일 ───────────── */
 .pv-camera-scene {
   --pv-cam-w: min(88vw, 360px);
+  /* 시안은 300px 폭 기준으로 그려졌는데 실제 카메라 폭(--pv-cam-w)은 그보다 커질 수 있어(최대
+     360px) 버튼/렌즈처럼 고정 px 로 박아둔 디테일이 상대적으로 작아 보였다 — 이 배율(--pv-s)을
+     모든 고정 px 값에 곱해서 카메라 전체 크기에 비례해 같이 커지게 한다. */
+  --pv-s: calc(var(--pv-cam-w) / 300px);
   position: relative; width: var(--pv-cam-w);
   transition: opacity .4s ease-out, transform .4s cubic-bezier(.3,0,.2,1);
 }
@@ -4058,65 +4062,77 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   box-shadow: 0 14px 30px rgba(25,23,34,.22), inset 0 1px 0 rgba(255,255,255,.9);
 }
 .pv-camera-slot {
-  position: absolute; top: 27%; left: 2%; right: 2%; bottom: 7%; border-radius: 9px;
+  position: absolute; top: 27%; left: 2%; right: 2%; bottom: 7%; border-radius: calc(var(--pv-s) * 9px);
   background-color: #18181b;
   background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.4px);
-  background-position: 0 0; background-size: 5px 5px;
+  background-position: 0 0; background-size: calc(var(--pv-s) * 5px) calc(var(--pv-s) * 5px);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), inset 0 2px 6px rgba(0,0,0,.4);
 }
 .pv-camera-brand {
-  position: absolute; top: 9.5%; left: 5.33%; font-size: 12px; font-weight: 800; letter-spacing: .02em; color: #26262a;
+  position: absolute; top: 9.5%; left: 5.33%; font-size: calc(var(--pv-s) * 12px); font-weight: 800; letter-spacing: .02em; color: #26262a;
 }
 .pv-camera-indicator {
-  position: absolute; top: 8%; left: 50%; width: 28px; height: 22px; border-radius: 4px; background: #3b3b40;
+  position: absolute; top: 8%; left: 50%; width: calc(var(--pv-s) * 28px); height: calc(var(--pv-s) * 22px);
+  border-radius: calc(var(--pv-s) * 4px); background: #3b3b40;
   box-shadow: inset 0 0 0 2px #ababb0, inset 0 0 6px rgba(0,0,0,.7);
 }
 .pv-camera-dial {
-  position: absolute; top: 6%; left: 65.33%; width: 32px; height: 32px; border-radius: 50%; padding: 0; border: none; cursor: default;
+  position: absolute; top: 6%; left: 65.33%; width: calc(var(--pv-s) * 32px); height: calc(var(--pv-s) * 32px);
+  border-radius: 50%; padding: 0; border: none; cursor: default;
   background-image: repeating-conic-gradient(#e6e6ea 0deg 6deg, #b7b7bd 6deg 12deg);
   box-shadow: 0 2px 5px rgba(0,0,0,.3), inset 0 0 0 2px #d3d3d8;
 }
 .pv-camera-dial span {
-  position: absolute; inset: 8px; border-radius: 50%;
+  position: absolute; inset: calc(var(--pv-s) * 8px); border-radius: 50%;
   background-image: radial-gradient(circle at 40% 36%, #7a7a80, #3a3a3f);
   box-shadow: inset 0 1px 2px rgba(255,255,255,.3);
 }
 .pv-camera-flashbox {
-  position: absolute; top: 7.5%; left: 80%; width: 44px; height: 28px; border-radius: 5px;
+  position: absolute; top: 7.5%; left: 80%; width: calc(var(--pv-s) * 44px); height: calc(var(--pv-s) * 28px);
+  border-radius: calc(var(--pv-s) * 5px);
   background: linear-gradient(#efeff1, #cfcfd4); box-shadow: inset 0 0 0 1.5px #b4b4ba;
 }
-.pv-camera-bars { position: absolute; top: 4px; left: 4px; bottom: 4px; width: 8px; border-radius: 2px; display: flex; flex-direction: column; justify-content: space-between; }
-.pv-camera-bars i { width: 8px; height: 3px; border-radius: 1px; background: #d84a3a; }
+.pv-camera-bars {
+  position: absolute; top: calc(var(--pv-s) * 4px); left: calc(var(--pv-s) * 4px); bottom: calc(var(--pv-s) * 4px);
+  width: calc(var(--pv-s) * 8px); border-radius: calc(var(--pv-s) * 2px);
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.pv-camera-bars i { width: calc(var(--pv-s) * 8px); height: calc(var(--pv-s) * 3px); border-radius: calc(var(--pv-s) * 1px); background: #d84a3a; }
 .pv-camera-bars i:last-child { background: #3a3a3f; }
 .pv-camera-flash-icon {
-  position: absolute; top: 4px; left: 16px; right: 5px; bottom: 4px; border-radius: 3px;
+  position: absolute; top: calc(var(--pv-s) * 4px); left: calc(var(--pv-s) * 16px); right: calc(var(--pv-s) * 5px); bottom: calc(var(--pv-s) * 4px);
+  border-radius: calc(var(--pv-s) * 3px);
   background: linear-gradient(135deg, #fff, #dfe6ea); box-shadow: inset 0 0 0 1px #b4b4ba;
 }
 /* 렌즈: lens(베젤+몸통) 안에 glass/pupil/glint 를 형제로 겹쳐서(중첩 아님) 시안과 동일하게 —
-   glint 의 left/top %는 lens(104px) 기준이라 glass 안에 중첩시키면 기준 박스가 달라져 위치가 틀어짐. */
+   glint 의 left/top %는 lens 기준이라 glass 안에 중첩시키면 기준 박스가 달라져 위치가 틀어짐. */
 .pv-camera-lens {
-  position: absolute; top: 37%; left: 50%; width: 104px; height: 104px; border-radius: 50%; transform: translateX(-50%);
+  position: absolute; top: 37%; left: 50%; width: calc(var(--pv-s) * 104px); height: calc(var(--pv-s) * 104px);
+  border-radius: 50%; transform: translateX(-50%);
   background-image: radial-gradient(circle at 42% 38%, #3f3f47, #141418);
-  box-shadow: 0 0 0 6px #171719, 0 0 0 8px #cececd, 0 0 0 12px #9a9a9f, 0 0 0 13px #6f6f74, inset 0 0 20px rgba(0,0,0,.7);
+  box-shadow:
+    0 0 0 calc(var(--pv-s) * 6px) #171719, 0 0 0 calc(var(--pv-s) * 8px) #cececd,
+    0 0 0 calc(var(--pv-s) * 12px) #9a9a9f, 0 0 0 calc(var(--pv-s) * 13px) #6f6f74,
+    inset 0 0 20px rgba(0,0,0,.7);
 }
 .pv-camera-lens-glass {
-  position: absolute; inset: 20px; border-radius: 50%;
+  position: absolute; inset: calc(var(--pv-s) * 20px); border-radius: 50%;
   background-image: radial-gradient(circle at 40% 36%, #5a5a64, #0e0e12);
   box-shadow: inset 0 0 0 3px #2a2a30, inset 0 0 14px rgba(0,0,0,.8);
 }
 .pv-camera-lens-pupil {
-  position: absolute; inset: 36px; border-radius: 50%;
+  position: absolute; inset: calc(var(--pv-s) * 36px); border-radius: 50%;
   background-image: radial-gradient(circle at 38% 34%, #3a3a44, #050507);
 }
 .pv-camera-lens-glint {
-  position: absolute; left: 33%; top: 29%; width: 15px; height: 15px; border-radius: 50%;
+  position: absolute; left: 33%; top: 29%; width: calc(var(--pv-s) * 15px); height: calc(var(--pv-s) * 15px); border-radius: 50%;
   background: rgba(180,190,210,.4); filter: blur(.5px);
 }
 .pv-camera-wordmark {
   position: absolute; right: 5.33%; bottom: 10%; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05;
 }
-.pv-camera-wordmark span:first-child { font-size: 10px; font-weight: 800; font-style: italic; color: #e7e7ea; }
-.pv-camera-wordmark span:last-child { font-size: 7px; font-weight: 600; color: #b9b9bf; }
+.pv-camera-wordmark span:first-child { font-size: calc(var(--pv-s) * 10px); font-weight: 800; font-style: italic; color: #e7e7ea; }
+.pv-camera-wordmark span:last-child { font-size: calc(var(--pv-s) * 7px); font-weight: 600; color: #b9b9bf; }
 
 /* 인화되는 필름: 흰 프레임 + 검은 사진 영역(시안과 동일한 폴라로이드 필름 형태), 카메라 슬롯에서 천천히 배출.
    패딩은 %가 아니라 자기 자신의 너비(--pv-card-w) 기준 calc() 로 계산 — 그래야 인화 완료 후의 .pv-frame 과
