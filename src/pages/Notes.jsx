@@ -1132,6 +1132,9 @@ export default function Notes() {
               ) : friend && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 🤝</button>
+                ) : open.group_id && membersByGroup[open.group_id] && !membersByGroup[open.group_id][user.id] ? (
+                  // 우정 링을 받은 그룹을 이미 탈퇴한 경우 — 해당 그룹에 더 이상 적용할 수 없음
+                  <button type="button" className="btn btn-block" disabled>수령 불가</button>
                 ) : (
                   <button type="button" className="btn btn-primary btn-block" onClick={() => acceptFriend(open)} disabled={busy}>
                     {busy ? '수령 중…' : '수령하기'}
