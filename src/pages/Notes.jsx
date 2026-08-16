@@ -184,7 +184,9 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
               <span className="pv-camera-flash-icon" />
             </div>
             <div className="pv-camera-lens">
-              <span className="pv-camera-lens-glass"><span className="pv-camera-lens-pupil" /><span className="pv-camera-lens-glint" /></span>
+              <span className="pv-camera-lens-glass" />
+              <span className="pv-camera-lens-pupil" />
+              <span className="pv-camera-lens-glint" />
             </div>
             <div className="pv-camera-wordmark"><span>nolging</span><span>polaroid</span></div>
           </div>
