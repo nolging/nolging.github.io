@@ -4014,17 +4014,24 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 폴라로이드 사진 뷰어 모달: 기본 흰 카드 대신 필름 프레임이 배경 위에 바로 뜬다 */
 .modal-card.modal-polaroid-viewer { background: transparent; box-shadow: none; padding: 0; max-width: 400px; overflow: visible; }
-.pv-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+/* --pv-cam-w 를 카메라(.pv-camera-scene)가 아니라 여기(공통 조상)에 둬서 .pv-frame 도 똑같이
+   참조할 수 있게 한다 — 카메라에서 배출되는 필름(.pv-eject-card)과 인화 완료된 프레임이 서로
+   다른 폭 공식을 쓰면(카메라 인화 직후 크로스페이드 되는 순간) 크기가 훅 바뀌어 뚝 끊겨 보인다. */
+.pv-wrap { --pv-cam-w: min(88vw, 360px); display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .pv-frame {
-  --pv-w: min(72vw, 260px);
+  /* .pv-eject-card 의 --pv-card-w 와 동일한 공식 — 카메라에서 나온 필름과 완성된 프레임이 정확히
+     같은 크기로 이어지게(폭이 다르면 인화 직후 전환될 때 크기가 훅 바뀌어 보임). */
+  --pv-w: calc(var(--pv-cam-w) * .6333);
   width: var(--pv-w); box-sizing: border-box;
   padding: calc(var(--pv-w) * .055) calc(var(--pv-w) * .055) calc(var(--pv-w) * .23);
   background: linear-gradient(160deg, #fff, #f3f1ec 60%, #ded9cf); border-radius: 6px;
-  box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: rotate(-2deg); opacity: 1;
+  box-shadow: 0 16px 40px rgba(0,0,0,.32); transform: translateY(0) scale(1) rotate(-2deg); opacity: 1;
   transition: transform .5s cubic-bezier(.22,.85,.26,1), opacity .4s ease-out;
 }
-/* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며 자리잡음 */
-.pv-frame.is-camera { opacity: 0; transform: scale(.5) rotate(-2deg); pointer-events: none; }
+/* 인화 직후 카메라 연출 중엔 프레임을 작게 접어 숨겨둔다 → 연출 끝나면 위 transition 으로 확대되며
+   자리잡는데, 필름이 나오던 자리(카메라 바로 아래, gap 없이)에서 시작해 실제 놓이는 자리(.pv-wrap
+   의 gap 만큼 더 아래)로 내려오듯 자연스럽게 이어지도록 위쪽(-gap)에서 시작해 제자리로 내려온다. */
+.pv-frame.is-camera { opacity: 0; transform: translateY(-16px) scale(.5) rotate(-2deg); pointer-events: none; }
 /* 사진(검은 영역) 대 프레임(흰 여백) 비율은 인화 중인 필름(.pv-eject-card)과 동일하게 맞춤 */
 .pv-photo { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 3px; overflow: hidden; background: #191b1f; touch-action: pan-y; }
 /* 여러 장이어도 전부 겹쳐서 마운트해두고 현재 사진만 보여준다 — 그래야 안 보이는 사진의 30초 리빌도
@@ -4047,10 +4054,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* ── 카메라 시안(NOLGING polaroid) 그대로 반영: 색/무늬/구성 요소 색상 값 동일 ───────────── */
 .pv-camera-scene {
-  --pv-cam-w: min(88vw, 360px);
-  /* 시안은 300px 폭 기준으로 그려졌는데 실제 카메라 폭(--pv-cam-w)은 그보다 커질 수 있어(최대
-     360px) 버튼/렌즈처럼 고정 px 로 박아둔 디테일이 상대적으로 작아 보였다 — 이 배율(--pv-s)을
-     모든 고정 px 값에 곱해서 카메라 전체 크기에 비례해 같이 커지게 한다. */
+  /* --pv-cam-w 는 .pv-wrap 에서 상속(필름/프레임과 폭 기준 공유). 시안은 300px 폭 기준으로
+     그려졌는데 실제 카메라 폭(--pv-cam-w)은 그보다 커질 수 있어(최대 360px) 버튼/렌즈처럼
+     고정 px 로 박아둔 디테일이 상대적으로 작아 보였다 — 이 배율(--pv-s)을 모든 고정 px 값에
+     곱해서 카메라 전체 크기에 비례해 같이 커지게 한다. */
   --pv-s: calc(var(--pv-cam-w) / 300px);
   position: relative; width: var(--pv-cam-w);
   transition: opacity .4s ease-out, transform .4s cubic-bezier(.3,0,.2,1);
@@ -4143,10 +4150,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   width: var(--pv-card-w); box-sizing: border-box; border-radius: 3px;
   padding: calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .055) calc(var(--pv-card-w) * .23);
   background: #fbfbf7; box-shadow: 0 10px 26px rgba(0,0,0,.28);
-  opacity: 0; transform: translate(-50%, -105%);
+  opacity: 0; transform: translate(-50%, -105%) rotate(-2deg);
   transition: transform 3s cubic-bezier(.16,.72,.22,1), opacity .6s ease-out;
 }
-.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0); }
+/* .pv-frame 과 같은 -2deg 기울기로 배출 — 인화 직후 크로스페이드될 때 각도가 안 튀도록 */
+.pv-eject-card.is-ejecting { opacity: 1; transform: translate(-50%, 0) rotate(-2deg); }
 .pv-eject-photo { width: 100%; aspect-ratio: 1 / 1; background: #0c0b09; border-radius: 1px; }
 
 .pv-nav { display: flex; align-items: center; gap: 16px; }
