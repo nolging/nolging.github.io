@@ -13,7 +13,7 @@ import { BluraySlot } from '../components/BlurayPlayer'
 import StoreItemImage from '../components/StoreItemImage'
 import { itemName, resolveItemText } from '../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../lib/storeCatalog'
-import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, deleteReportGiftNote, listNotePhotos, developPolaroidNote } from '../lib/api'
+import { listReceivedNotes, listSentNotes, claimCoupleRing, rejectCoupleRing, claimGift, claimFriendRing, getGroupDecoMap, getGroupMemberMap, listNoteItems, claimGiftItem, claimGiftNoteAll, openWaterNote, markNoteRead, useTimeMachine, listInventory, deleteReportGiftNote, listNotePhotos, developPolaroidNote } from '../lib/api'
 import { PAGE, notesCache } from '../lib/notesCache'
 import { openCompose, NOTE_CHANNEL } from '../lib/composeWindow'
 
@@ -345,6 +345,7 @@ export default function Notes() {
   const [open, setOpen] = useState(null) // 열려 있는 쪽지
   const [busy, setBusy] = useState(false)
   const [decosByGroup, setDecosByGroup] = useState({}) // { groupId: {userId:{head,face}} }
+  const [membersByGroup, setMembersByGroup] = useState({}) // { groupId: {userId:{name,avatar}} } — 프로필 사진 최신화용
   const [noteItems, setNoteItems] = useState({})       // { noteId: [{item_id,item_name,qty,claimed}] }
   const [notePhotos, setNotePhotos] = useState({})     // { noteId: [{id,url,sort_order}] } — 폴라로이드(인화 전엔 빈 배열)
   const [polaroidView, setPolaroidView] = useState(null) // { noteId, index } — 폴라로이드 사진 뷰어 모달
@@ -370,6 +371,19 @@ export default function Notes() {
       .then((pairs) => {
         pairs.forEach(([id, m]) => { decoCacheRef.current[id] = m })
         setDecosByGroup({ ...decoCacheRef.current })
+      }).catch(() => {})
+  }, [])
+  const memberCacheRef = useRef(notesCache.uid === user?.id ? notesCache.members : {}) // 그룹 멤버(현재 프로필 사진) 캐시
+  // 쪽지에 스냅샷된 sender_avatar/recipient_avatar 는 전송 시점 사진이라, 프로필 사진을 바꾸면
+  // 예전 쪽지에서 옛날 사진 그대로 보인다 — 그룹 멤버의 "현재" 아바타를 따로 조회해 덮어씌운다.
+  const ensureMembers = useCallback((rows) => {
+    const gids = [...new Set(rows.map((n) => n.group_id).filter(Boolean))]
+    const missing = gids.filter((id) => !memberCacheRef.current[id])
+    if (!missing.length) return
+    Promise.all(missing.map((id) => getGroupMemberMap(id).then((m) => [id, m]).catch(() => [id, {}])))
+      .then((pairs) => {
+        pairs.forEach(([id, m]) => { memberCacheRef.current[id] = m })
+        setMembersByGroup({ ...memberCacheRef.current })
       }).catch(() => {})
   }, [])
   // 선물 쪽지 동봉 아이템(상세)은 목록에서 미리 조회하지 않고, 쪽지 모달을 열 때
@@ -402,8 +416,12 @@ export default function Notes() {
     if (notesCache.uid !== user.id) { notesCache.uid = user.id; notesCache.decos = {}; decoCacheRef.current = notesCache.decos }
     notesCache.received = r; notesCache.sent = s; notesCache.recvMore = rr.hasMore; notesCache.sentMore = ss.hasMore; notesCache.at = Date.now()
     ensureDecos([...r, ...s])
+    // 멤버(현재 아바타) 캐시는 목록을 실제로 새로 불러올 때마다 매번 초기화 — 프로필 사진을
+    // 바꾼 직후 다시 들어와도(같은 uid 라 decos 캐시는 안 지워짐) 옛 사진이 남아있지 않게.
+    memberCacheRef.current = {}; notesCache.members = {}
+    ensureMembers([...r, ...s])
     // 동봉 아이템(선물 쪽지 상세)은 여기서 조회하지 않는다 → 쪽지 모달 열 때 fetchNoteItems 로 조회.
-  }, [user?.id, ensureDecos])
+  }, [user?.id, ensureDecos, ensureMembers])
 
   // 더 과거 쪽지 조회(스크롤 하단 도달 시) — 현재 탭만 다음 페이지 append.
   const loadMore = useCallback(async (which) => {
@@ -419,17 +437,17 @@ export default function Notes() {
         recvCntRef.current = off + res.rows.length // 서버 offset 전진(중복 제거와 무관)
         setReceived((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
         setRecvMore(res.hasMore)
-        ensureDecos(res.rows)
+        ensureDecos(res.rows); ensureMembers(res.rows)
       } else {
         const off = sentCntRef.current
         const res = await listSentNotes(user.id, PAGE, off)
         sentCntRef.current = off + res.rows.length
         setSent((prev) => { const seen = new Set(prev.map((x) => x.id)); return [...prev, ...res.rows.filter((x) => !seen.has(x.id))] })
         setSentMore(res.hasMore)
-        ensureDecos(res.rows)
+        ensureDecos(res.rows); ensureMembers(res.rows)
       }
     } finally { setLoadingMore(false) }
-  }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos])
+  }, [user?.id, loadingMore, recvMore, sentMore, ensureDecos, ensureMembers])
   // 액션(수령 등) 후 목록만 갱신
   async function load() {
     try { await fetchNotes() } catch (err) { setError(err.message) }
@@ -445,7 +463,8 @@ export default function Notes() {
     const hasCache = notesCache.uid === user.id && notesCache.at > 0
     if (hasCache) {
       setReceived(notesCache.received); setSent(notesCache.sent); setNoteItems(notesCache.noteItems)
-      setDecosByGroup({ ...notesCache.decos }); setRecvMore(notesCache.recvMore); setSentMore(notesCache.sentMore)
+      setDecosByGroup({ ...notesCache.decos }); setMembersByGroup({ ...notesCache.members })
+      setRecvMore(notesCache.recvMore); setSentMore(notesCache.sentMore)
       recvCntRef.current = notesCache.received.length; sentCntRef.current = notesCache.sent.length
       setError(''); setLoading(false)
     } else {
@@ -794,12 +813,16 @@ export default function Notes() {
     ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`, transition: gesture?.active ? 'none' : 'transform .2s ease, width .2s ease' }
     : { opacity: 0 }
 
+  // 쪽지에 스냅샷된 아바타(전송 시점 사진) 대신, 그 그룹 멤버의 "현재" 아바타가 있으면 그걸 쓴다
+  // (탈퇴 등으로 없으면 스냅샷으로 폴백).
+  const liveAvatar = (groupId, userId, fallback) => (groupId && userId ? membersByGroup[groupId]?.[userId]?.avatar : undefined) ?? fallback
+
   // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
   function replyTo(n) {
     openCompose(navigate, {
       reply: {
-        recipient: { groupId: n.group_id, groupName: '', userId: n.sender_id, name: n.sender_name, avatar: n.sender_avatar },
-        me: { name: n.recipient_name, avatar: n.recipient_avatar },
+        recipient: { groupId: n.group_id, groupName: '', userId: n.sender_id, name: n.sender_name, avatar: liveAvatar(n.group_id, n.sender_id, n.sender_avatar) },
+        me: { name: n.recipient_name, avatar: liveAvatar(n.group_id, n.recipient_id, n.recipient_avatar) },
       },
     })
   }
@@ -810,8 +833,8 @@ export default function Notes() {
   const peer = (n) => (n.kind === 'system' || isSysGift(n))
     ? { name: '깜냥', avatar: null, label: '님이 보냄', userId: null, groupId: null }
     : tab === 'received'
-      ? { name: n.sender_name, avatar: n.sender_avatar, label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
-      : { name: n.recipient_name, avatar: n.recipient_avatar, label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
+      ? { name: n.sender_name, avatar: liveAvatar(n.group_id, n.sender_id, n.sender_avatar), label: '님이 보냄', userId: n.sender_id, groupId: n.group_id }
+      : { name: n.recipient_name, avatar: liveAvatar(n.group_id, n.recipient_id, n.recipient_avatar), label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
   // 익명(지우개) 쪽지의 아바타는 받은 쪽지함에서 발신자를 '?'로 가림
   const anonAva = (n) => tab === 'received' && n.anonymous
   const peerDeco = (p) => (p.groupId && p.userId ? decosByGroup[p.groupId]?.[p.userId] : undefined)

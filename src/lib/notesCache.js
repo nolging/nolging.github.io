@@ -4,6 +4,6 @@
 export const NOTES_TTL = 60000 // 60초
 export const PAGE = 15 // 한 번에 불러오는 쪽지 수(화면에 ~9개 노출 → 여유분 포함). 더 과거는 스크롤 시 조회.
 
-export const notesCache = { uid: null, received: [], sent: [], noteItems: {}, notePhotos: {}, decos: {}, recvMore: false, sentMore: false, at: 0 }
+export const notesCache = { uid: null, received: [], sent: [], noteItems: {}, notePhotos: {}, decos: {}, members: {}, recvMore: false, sentMore: false, at: 0 }
 
 export function invalidateNotesCache() { notesCache.at = 0 }
