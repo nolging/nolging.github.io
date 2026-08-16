@@ -813,9 +813,15 @@ export default function Notes() {
     ? { transform: `translateX(${uLeft}px)`, width: `${uWidth}px`, transition: gesture?.active ? 'none' : 'transform .2s ease, width .2s ease' }
     : { opacity: 0 }
 
+  // 내가 그 그룹을 탈퇴했는지: 탈퇴해도 소프트 삭제라 group_members 행은 남지만
+  // getGroupMemberMap 은 left_at 이 없는(현재 멤버인) 행만 돌려주므로, 내 아이디가 없으면 탈퇴한 것.
+  const iLeftGroup = (groupId) => { const m = membersByGroup[groupId]; return !!m && !m[user.id] }
+
   // 쪽지에 스냅샷된 아바타(전송 시점 사진) 대신, 그 그룹 멤버의 "현재" 아바타가 있으면 그걸 쓴다
-  // (탈퇴 등으로 없으면 스냅샷으로 폴백).
-  const liveAvatar = (groupId, userId, fallback) => (groupId && userId ? membersByGroup[groupId]?.[userId]?.avatar : undefined) ?? fallback
+  // (탈퇴 등으로 없으면 스냅샷으로 폴백). 단, 내가 그 그룹을 탈퇴했으면 상대가 사진을 바꿔도
+  // 더 이상 반영하지 않고 스냅샷에 고정한다.
+  const liveAvatar = (groupId, userId, fallback) =>
+    (groupId && userId && !iLeftGroup(groupId) ? membersByGroup[groupId]?.[userId]?.avatar : undefined) ?? fallback
 
   // 받은 쪽지에 답장: 원래 보낸이를 To, 그 그룹의 내 정보를 From 으로 자동 채워 작성 화면 이동
   function replyTo(n) {
@@ -837,7 +843,8 @@ export default function Notes() {
       : { name: n.recipient_name, avatar: liveAvatar(n.group_id, n.recipient_id, n.recipient_avatar), label: n.anonymous ? '님에게 익명으로 보냄' : '님에게', userId: n.recipient_id, groupId: n.group_id }
   // 익명(지우개) 쪽지의 아바타는 받은 쪽지함에서 발신자를 '?'로 가림
   const anonAva = (n) => tab === 'received' && n.anonymous
-  const peerDeco = (p) => (p.groupId && p.userId ? decosByGroup[p.groupId]?.[p.userId] : undefined)
+  // 내가 탈퇴한 그룹이면 상대의 꾸미기도 더 이상 표시하지 않는다(스냅샷 고정과 동일한 기준).
+  const peerDeco = (p) => (p.groupId && p.userId && !iLeftGroup(p.groupId) ? decosByGroup[p.groupId]?.[p.userId] : undefined)
 
   return (
     <div className="page notes-page" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
@@ -889,7 +896,7 @@ export default function Notes() {
             const sysHasReward = system && !!n.report_has_reward_item // 아이템 보상이 한 번이라도 지급된 리포트
             const sysRewardPending = system && !!n.report_reward_pending // 아직 안 받은 아이템 보상 있음
             // 우정 링을 받은 그룹을 이미 탈퇴한 경우 — 수령 불가(모달과 동일 조건)
-            const friendUnavailable = friend && n.group_id && membersByGroup[n.group_id] && !membersByGroup[n.group_id][user.id]
+            const friendUnavailable = friend && n.group_id && iLeftGroup(n.group_id)
             const needClaim = (couple || (friend && !friendUnavailable) || gift || polaroid) && tab === 'received' && !n.claimed && !n.rejected
             const hasFlag = needClaim || (couple && n.rejected)
             const popped = tab === 'received' && (waterExploded(n) || poppedIds.has(n.id))
@@ -1134,7 +1141,7 @@ export default function Notes() {
               ) : friend && mine ? (
                 open.claimed ? (
                   <button type="button" className="btn btn-block" disabled>수령 완료 🤝</button>
-                ) : open.group_id && membersByGroup[open.group_id] && !membersByGroup[open.group_id][user.id] ? (
+                ) : open.group_id && iLeftGroup(open.group_id) ? (
                   // 우정 링을 받은 그룹을 이미 탈퇴한 경우 — 해당 그룹에 더 이상 적용할 수 없음
                   <button type="button" className="btn btn-block" disabled>수령 불가</button>
                 ) : (
