@@ -426,6 +426,20 @@ export default function Layout() {
     }
   }, [refreshHandler, refreshing])
 
+  // PC: 스크롤바를 스크롤 중일 때만 보이게 (macOS 오버레이 스타일). 리렌더 없이 DOM에 직접 클래스 토글
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    let hideT
+    const onScroll = () => {
+      el.classList.add('is-scrolling')
+      clearTimeout(hideT)
+      hideT = setTimeout(() => el.classList.remove('is-scrolling'), 650)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => { el.removeEventListener('scroll', onScroll); clearTimeout(hideT) }
+  }, [])
+
   // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + 60초 주기로 갱신
   const [unread, setUnread] = useState(0)
   const refreshUnread = () => unreadNotificationCount().then(setUnread).catch(() => {})

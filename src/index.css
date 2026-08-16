@@ -270,6 +270,19 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .app-shell > .topbar:not(.topbar-keep) { display: none; }
   /* 상단바↔본문 간격이 모바일 기준(28px)만큼 크면 답답해 보여서 축소 */
   .app-shell > .content { --pad-y: 16px; }
+  /* 스크롤바를 macOS 오버레이처럼: 평소엔 숨기고 스크롤 중이거나 마우스를 올렸을 때만 표시 */
+  .app-shell > .content {
+    scrollbar-width: thin; scrollbar-color: transparent transparent;
+  }
+  .app-shell > .content:hover, .app-shell > .content.is-scrolling {
+    scrollbar-color: rgba(25, 23, 34, .25) transparent;
+  }
+  .app-shell > .content::-webkit-scrollbar { width: 8px; }
+  .app-shell > .content::-webkit-scrollbar-track { background: transparent; }
+  .app-shell > .content::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; transition: background .2s; }
+  .app-shell > .content:hover::-webkit-scrollbar-thumb,
+  .app-shell > .content.is-scrolling::-webkit-scrollbar-thumb { background: rgba(25, 23, 34, .25); }
+  .app-shell > .content::-webkit-scrollbar-thumb:hover { background: rgba(25, 23, 34, .4); }
 }
 /* 프리미엄(다크) 상점에서의 상단 내비게이션 톤 보정 */
 .premium-shop .desknav { background: transparent; }
