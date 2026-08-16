@@ -186,7 +186,7 @@ export default function Dashboard() {
             )
             return (
               <Link key={g.id} to={`/groups/${g.id}`}
-                className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''} ${friend ? 'friend' : ''} ${g.deco_theme === 'bubble' ? 'tile-bubble' : ''} ${g.deco_theme === 'firework' ? 'tile-fw' : ''} ${g.deco_theme === 'waterpark' ? 'tile-waterpark' : ''}`}>
+                className={`group-tile group-card ${isMember ? '' : 'not-joined'} ${premium ? 'premium' : ''} ${friend ? 'friend' : ''} ${g.deco_theme === 'heart' ? 'tile-heart' : ''} ${g.deco_theme === 'bubble' ? 'tile-bubble' : ''} ${g.deco_theme === 'firework' ? 'tile-fw' : ''} ${g.deco_theme === 'waterpark' ? 'tile-waterpark' : ''}`}>
                 <GroupBadge emoji={g.emoji} bg={g.emoji_bg} name={g.name} size={34} radius={12} />
                 {premium && daysSince(g.anniversary) != null && (
                   <span className="tile-anniv">D+{daysSince(g.anniversary)}</span>
