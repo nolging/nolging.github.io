@@ -146,11 +146,12 @@ export default function MemberDetail({ groupId: groupIdProp, userId: userIdProp,
     catch (err) { setError(err.message) } finally { setNickBusy(false) }
   }
   // 내 정보 수정: 그룹 상세가 마운트돼 있으면 가운데 임베드로 열고, 아니면 설정 페이지로 이동
+  // (저장 후 그룹 상세가 아니라 이 멤버 정보 페이지로 돌아오도록 returnTo 를 넘긴다)
   function editMe() {
     const ev = new CustomEvent(SETTINGS_EVENT, { detail: { groupId, view: 'me', handled: false } })
     window.dispatchEvent(ev)
     if (ev.detail.handled) onClose?.()
-    else navigate(`/groups/${groupId}/settings`)
+    else navigate(`/groups/${groupId}/settings`, { state: { returnTo: `/groups/${groupId}/members/${userId}` } })
   }
 
   if (loading) return <div className="page"><div className="spinner" /></div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getGroup, getMyGroupMember, leaveGroup } from '../lib/api'
 import MySettings from '../components/MySettings'
@@ -10,6 +10,7 @@ export default function GroupSettingsPage({ groupId: groupIdProp, embedded = fal
   const groupId = groupIdProp ?? params.groupId
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [group, setGroup] = useState(null)
   const [member, setMember] = useState(null)
@@ -29,7 +30,11 @@ export default function GroupSettingsPage({ groupId: groupIdProp, embedded = fal
     nick_locked_until: member.nick_locked_until || null,
     graffiti_locked_until: member.graffiti_locked_until || null,
   }
-  const backToGroup = () => { if (embedded && onClose) onClose(); else navigate(`/groups/${groupId}`) }
+  // returnTo 가 있으면(예: 내 멤버 정보 페이지에서 넘어온 경우) 저장 후 거기로, 없으면 그룹 상세로.
+  const backToGroup = () => {
+    if (embedded && onClose) onClose()
+    else navigate(location.state?.returnTo || `/groups/${groupId}`)
+  }
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
