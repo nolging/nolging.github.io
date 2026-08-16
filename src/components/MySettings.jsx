@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { updateMyGroupMember } from '../lib/api'
-import { deleteAvatarByUrl } from '../lib/storage'
 import AvatarEditor from './AvatarEditor'
 import CgToggle from './CgToggle'
 import { hhmmLeft, nametagActive, useCountdownTick } from '../lib/nametag'
@@ -31,6 +30,9 @@ export default function MySettings({ group, me, onSaved, secondary }) {
   const avatarLocked = nametagActive(me?.graffiti_locked_until)
   useCountdownTick(nickLocked || avatarLocked)   // 남은 시간(23:59) 표기 갱신
 
+  // 저장 시 이전 아바타 스토리지 파일은 지우지 않는다 — 쪽지(notes.sender_avatar/
+  // recipient_avatar) 등이 전송 시점 URL을 그대로 스냅샷해 두기 때문에, 여기서 지우면
+  // 프로필 사진을 바꾼 뒤 과거 쪽지함에서 그 이미지가 깨져(엑박) 보이게 된다.
   async function save() {
     if (!form.display_nickname.trim()) { setNickErr('닉네임을 입력해 주세요.'); return }
     setBusy(true); setError('')
@@ -42,7 +44,6 @@ export default function MySettings({ group, me, onSaved, secondary }) {
         show_birthdate: group.show_birthdate && form.show_birthdate,
         show_ott: group.show_ott && form.show_ott,
       })
-      if (me.avatar_url && me.avatar_url !== form.avatar_url) deleteAvatarByUrl(me.avatar_url)
       onSaved()
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
