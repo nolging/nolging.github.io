@@ -170,11 +170,11 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
   return (
     <div className="pv-wrap">
       {showCamera && (
-        <div className={`pv-camera-scene ${stage === 'print' ? 'is-out' : ''}`}>
-          <div className={`pv-eject-card ${ejecting ? 'is-ejecting' : ''}`}>
+        <div className="pv-camera-scene">
+          <div className={`pv-eject-card ${ejecting ? 'is-ejecting' : ''} ${stage === 'print' ? 'is-settled' : ''}`}>
             <div className="pv-eject-photo" />
           </div>
-          <div className="pv-camera">
+          <div className={`pv-camera ${stage === 'print' ? 'is-hidden' : ''}`}>
             <div className="pv-camera-slot" />
             <span className="pv-camera-brand">NOLGING</span>
             <span className="pv-camera-indicator" />
@@ -192,7 +192,7 @@ function PolaroidPhotoViewer({ polaroidView, notePhotos, onNav }) {
           </div>
         </div>
       )}
-      <div className={`pv-frame ${stage === 'camera' ? 'is-camera' : ''}`}>
+      <div className={`pv-frame ${showCamera ? 'is-camera' : ''}`}>
         <div
           className={`pv-photo ${canOpenFullscreen ? 'is-tappable' : ''}`}
           {...photoGesture}
