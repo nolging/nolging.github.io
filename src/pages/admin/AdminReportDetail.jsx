@@ -121,7 +121,7 @@ export default function AdminReportDetail() {
     setResolveOpen(true)
     Promise.all([listStoreItems(), adminReportRewardContext(id)]).then(([items, ctx]) => {
       const sm = {}
-      items.forEach((it) => { sm[it.id] = { name: it.name, emoji: it.emoji, premium: !!it.premium, tier: it.tier || null, sort: it.sort_order ?? 999 } })
+      items.forEach((it) => { sm[it.id] = { name: it.name, emoji: it.emoji, premium: !!it.premium, tier: it.tier || null, sort: it.sortOrder ?? 999 } })
       setStore(sm)
       const cm = {}
       ctx.forEach((r) => { cm[r.item_id] = { eligible: !!r.eligible, owned: r.owned_qty || 0 } })
