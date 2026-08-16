@@ -13,7 +13,14 @@ const OTT_TOGGLES = [
   { name: '왓챠', logo: '/ott/watcha.png', test: /watcha/i },
   { name: '쿠팡플레이', logo: '/ott/coupang.png', test: /coupang|쿠팡/i, alwaysManual: true },
 ]
-const matchProvider = (list, def) => list.find((p) => def.test.test(typeof p === 'string' ? p : p?.name || ''))
+// 직접 추가한 항목은 name 이 한글 표시명(def.name)이라 영문 브랜드 정규식(def.test)에
+// 안 걸린다 — def.test 는 API 가 주는 영문 이름만 잡아내므로, 자기 자신이 추가한
+// 항목을 다시 찾으려면 def.name 과의 완전 일치도 함께 봐야 한다(안 그러면 항상
+// "없음"으로 판정돼 토글이 꺼지지 않고 클릭할 때마다 계속 추가됨).
+const matchProvider = (list, def) => list.find((p) => {
+  const name = typeof p === 'string' ? p : p?.name || ''
+  return def.test.test(name) || name === def.name
+})
 
 // 특정 브랜드는 로고를 지정 이미지로 대체 (TMDB 로고가 마음에 안 들 때)
 const LOGO_OVERRIDE = [
@@ -89,7 +96,10 @@ function OttToggleMenu({ providers, onSetProviders }) {
             const on = def.alwaysManual ? !!m : !!m?.manual
             return (
               <div className="mi-cp-item" key={def.name}>
-                <span>{def.name}</span>
+                <span className="mi-cp-label">
+                  <img className="mi-cp-logo" src={def.logo} alt="" />
+                  {def.name}
+                </span>
                 <button type="button" className={`me-switch ${on ? 'on' : ''}`}
                   role="switch" aria-checked={on} aria-label={def.name} onClick={() => toggle(def)}>
                   <span className="me-knob" />
