@@ -263,11 +263,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   position: absolute; top: -1px; right: -1px;
   width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
 }
-.desknav-icon .bell-badge {
-  position: absolute; top: -4px; right: -4px; min-width: 14px; height: 14px; padding: 0 3px;
-  border-radius: 999px; background: var(--primary); color: #fff;
-  font-size: 9px; font-weight: 800; line-height: 14px; text-align: center; box-sizing: border-box;
-}
 /* 데스크톱: 모든 페이지에서 상단 내비게이션 상시 노출 + 페이지별 상단바 숨김
    (단, .topbar-keep 은 유지 — 예: 낙서장 '갤러리에 저장') */
 @media (min-width: 641px) and (orientation: landscape) {

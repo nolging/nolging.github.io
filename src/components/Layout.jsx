@@ -1023,7 +1023,7 @@ export default function Layout() {
                 <button type="button" className={`desknav-icon ${notifOpen ? 'active' : ''}`}
                   aria-label="알림" title="알림" aria-haspopup="dialog" aria-expanded={notifOpen}
                   onClick={() => setNotifOpen((o) => !o)}>
-                  <BellIcon />{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
+                  <span className="nav-ico-wrap"><BellIcon />{unread > 0 && <span className="nav-dot" aria-label="읽지 않은 알림" />}</span>
                 </button>
                 {notifOpen && <NotifDropdown onClose={() => setNotifOpen(false)} onChange={refreshUnread} />}
               </div>
