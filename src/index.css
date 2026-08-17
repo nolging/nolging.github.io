@@ -1529,14 +1529,13 @@ button.mention-chip:active { opacity: .6; }
 /* ---- 약속 정보 (태스크 상세) ---- */
 /* 상세: 약속 정보(보라 박스 제거, 완료/리뷰 버튼과 같은 줄의 좌측) */
 .td-appt { min-width: 0; }
-.appt-when { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
+.appt-when { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; position: relative; }
 .appt-cal { font-size: 16px; }
 .appt-repeat { font-size: 12px; font-weight: 600; color: var(--muted); }
 .appt-bell { color: var(--muted); }
 .appt-edit { margin-left: auto; }
 .appt-people { display: flex; flex-wrap: wrap; gap: 10px; }
-/* 약속이 2개 이상일 때 날짜 옆 화살표 → 전체 약속 날짜 드롭다운 */
-.appt-dates-wrap { position: relative; display: inline-flex; align-items: center; }
+/* 약속이 2개 이상일 때 날짜 옆 화살표 → 전체 약속 날짜 드롭다운(날짜 바로 아래로 펼침) */
 .appt-dates-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; border: none; background: none; padding: 0;
@@ -1544,14 +1543,23 @@ button.mention-chip:active { opacity: .6; }
 }
 .appt-dates-toggle:hover { color: var(--text); }
 .appt-dates-dd {
-  position: absolute; top: calc(100% + 6px); left: 0; z-index: 41; min-width: 176px;
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 41; min-width: 240px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
   box-shadow: 0 6px 20px rgba(20, 22, 40, .14); padding: 6px; margin: 0;
   list-style: none; display: flex; flex-direction: column; gap: 2px;
 }
-.appt-dates-dd li { padding: 8px 10px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--text); }
+.appt-dates-dd-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 10px; border-radius: 7px; }
+.appt-dates-dd-when { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.appt-dates-dd-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.appt-dd-pill {
+  border: none; border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700;
+  cursor: pointer; background: #f0eef4; color: #6f6a80;
+}
+.appt-dd-pill:hover { background: #e9e6f0; }
+.appt-dd-pill-danger { background: #fdeceb; color: #dc3545; }
+.appt-dd-pill-danger:hover { background: #fbdcda; }
 
-/* 약속 추가 모달 (일정 섹션만) */
+/* 약속 추가 모달 (일정 섹션만, 헤더 없이) */
 .modal-card.appt-add-modal { max-width: 400px; }
 .appt-add-modal .cg-footer { padding-bottom: 4px; }
 
@@ -1564,6 +1572,10 @@ button.mention-chip:active { opacity: .6; }
 }
 .appt-pick-row:hover { background: #efeef4; }
 .appt-pick-rep { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+/* 약속 하나의 날짜만 수정하는 경량 모달 */
+.modal-card.appt-date-edit-modal { max-width: 320px; }
+.appt-date-edit-modal .cg-footer { margin-top: 16px; padding-bottom: 4px; }
 .notif-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
 .notif-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 /* 왼쪽으로 밀면 삭제 버튼 노출 (위시 카드와 동일 패턴) */
