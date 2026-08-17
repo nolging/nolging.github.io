@@ -2038,6 +2038,13 @@ export async function updateNotifTemplate(key, title, body, emoji, emojiBg) {
   }
   throw error
 }
+// 새 알림 템플릿 생성(키는 새로 짓는 값 — 실제로 발송되려면 별도 트리거 코드가 그 키를 사용해야 함)
+export async function createNotifTemplate(key, label, title, body, emoji, emojiBg) {
+  const { error } = await supabase.rpc('admin_create_notif', {
+    p_key: key, p_label: label, p_title: title, p_body: body, p_emoji: emoji ?? '', p_emoji_bg: emojiBg ?? '',
+  })
+  if (error) throw error
+}
 // 정렬 순서 일괄 갱신(관리자 목록 이모지 드래그 재정렬용). items: [{ key, sortOrder }]
 export async function adminReorderNotifTemplates(items) {
   const { error } = await supabase.rpc('admin_reorder_notifs', {

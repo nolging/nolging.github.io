@@ -6067,6 +6067,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 우측 하단 고정 + 버튼(.aq-fab)에 마지막 카드가 가리지 않도록 여유 스크롤 공간 확보 */
 .admin-store-page { padding-bottom: 88px; }
 .admin-quests-page { padding-bottom: 88px; }
+.admin-notifs-page { padding-bottom: 88px; }
 .admin-store-tabbar {
   position: sticky; top: 0; z-index: 6; background: var(--bg);
   margin: 0 calc(-1 * var(--pad-x));

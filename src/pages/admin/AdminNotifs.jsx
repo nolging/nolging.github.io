@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { listNotifTemplates, adminReorderNotifTemplates } from '../../lib/api'
 import CgToggle from '../../components/CgToggle'
 import useScrollRestore from '../../lib/useScrollRestore'
@@ -108,40 +108,48 @@ export default function AdminNotifs() {
   }
 
   return (
-    <div className="page admin-page aq-page">
+    <div className="page admin-page aq-page admin-notifs-page">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="aq-section-head">
-        <span className="aq-section-title">알림 메시지</span>
-        <span className="aq-count">{rows.length}</span>
-        <span className="aq-sort-toggle">
-          <span className="aq-sort-toggle-label">정렬 수정</span>
-          <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
-        </span>
-      </div>
-      {loading ? <div className="spinner" /> : rows.length === 0 ? (
-        <p className="muted sm">등록된 알림이 없습니다.</p>
-      ) : (
-        <div className="aq-cards">
-          {rows.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragKey === r.key ? ' is-dragging' : ''}`}
-              data-row-id={r.key}
-              style={dragKey ? { touchAction: 'none' } : undefined}
-              onClick={() => onCardClick(r.key)}
-              onPointerDown={(e) => onIconPointerDown(e, r.key)}
-            >
-              <span className="aq-card-icon" style={r.emoji_bg ? { background: r.emoji_bg } : undefined} aria-hidden="true">{r.emoji || '🔔'}</span>
-              <span className="aq-card-body">
-                <span className="aq-card-name">{r.title}</span>
-                <span className="aq-card-desc">{r.body}</span>
-              </span>
-              <span className="aq-card-chevron" aria-hidden="true">›</span>
-            </button>
-          ))}
+      <section>
+        <div className="aq-section-head">
+          <span className="aq-section-title">알림 메시지</span>
+          <span className="aq-count">{rows.length}</span>
+          <span className="aq-sort-toggle">
+            <span className="aq-sort-toggle-label">정렬 수정</span>
+            <CgToggle on={sortMode} onClick={() => setSortMode((v) => !v)} />
+          </span>
         </div>
-      )}
+        {loading ? <div className="spinner" /> : rows.length === 0 ? (
+          <p className="muted sm">등록된 알림이 없습니다.</p>
+        ) : (
+          <div className="aq-cards">
+            {rows.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragKey === r.key ? ' is-dragging' : ''}`}
+                data-row-id={r.key}
+                style={dragKey ? { touchAction: 'none' } : undefined}
+                onClick={() => onCardClick(r.key)}
+                onPointerDown={(e) => onIconPointerDown(e, r.key)}
+              >
+                <span className="aq-card-icon" style={r.emoji_bg ? { background: r.emoji_bg } : undefined} aria-hidden="true">{r.emoji || '🔔'}</span>
+                <span className="aq-card-body">
+                  <span className="aq-card-name">{r.title}</span>
+                  <span className="aq-card-desc">{r.body}</span>
+                </span>
+                <span className="aq-card-chevron" aria-hidden="true">›</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <Link to="/admin/notifs/new" className="aq-fab" aria-label="알림 메시지 추가">
+        <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </Link>
     </div>
   )
 }
