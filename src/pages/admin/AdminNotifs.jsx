@@ -127,7 +127,7 @@ export default function AdminNotifs() {
               <button
                 key={r.key}
                 type="button"
-                className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragKey === r.key ? ' is-dragging' : ''}`}
+                className={`aq-card${sortMode ? ' aq-card-draggable' : ''}${dragKey === r.key ? ' is-dragging' : ''}${r.active === false ? ' inactive' : ''}`}
                 data-row-id={r.key}
                 style={dragKey ? { touchAction: 'none' } : undefined}
                 onClick={() => onCardClick(r.key)}

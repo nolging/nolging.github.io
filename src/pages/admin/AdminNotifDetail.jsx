@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listNotifTemplates, updateNotifTemplate, createNotifTemplate } from '../../lib/api'
 import { useScrollToTop } from '../../lib/useScrollRestore'
+import CgToggle from '../../components/CgToggle'
 
 // 알림센터 이모지 배경색 프리셋(알림 아이콘에 쓰이는 파스텔 톤)
 const BG_PRESETS = [
@@ -10,7 +11,8 @@ const BG_PRESETS = [
 ]
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
-const EMPTY_NOTIF = { key: '', label: '', title: '', body: '', emoji: '', emoji_bg: '' }
+// active 기본값 false: 새 알림 메시지는 관리자가 켜기 전까지 비활성으로 시작
+const EMPTY_NOTIF = { key: '', label: '', title: '', body: '', emoji: '', emoji_bg: '', active: false }
 
 // 알림 메시지 추가(/admin/notifs/new) + 수정(/admin/notifs/:key)
 export default function AdminNotifDetail() {
@@ -36,7 +38,7 @@ export default function AdminNotifDetail() {
       const rows = await listNotifTemplates()
       const t = rows.find((x) => x.key === routeKey)
       if (!t) { setError('알림 템플릿을 찾을 수 없어요.'); return }
-      setForm({ key: t.key, label: t.label || '', title: t.title || '', body: t.body || '', emoji: t.emoji || '', emoji_bg: t.emoji_bg || '' })
+      setForm({ key: t.key, label: t.label || '', title: t.title || '', body: t.body || '', emoji: t.emoji || '', emoji_bg: t.emoji_bg || '', active: t.active !== false })
       setVars(t.vars || '')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, routeKey])
@@ -53,8 +55,8 @@ export default function AdminNotifDetail() {
     const bodyToSave = isMegaphone ? (form.body || '(내용은 사용자가 입력)') : form.body.trim()
     setBusy(true)
     try {
-      if (editing) await updateNotifTemplate(routeKey, form.title.trim(), bodyToSave, form.emoji.trim(), hex)
-      else await createNotifTemplate(form.key.trim(), form.label.trim(), form.title.trim(), bodyToSave, form.emoji.trim(), hex)
+      if (editing) await updateNotifTemplate(routeKey, form.title.trim(), bodyToSave, form.emoji.trim(), hex, form.active)
+      else await createNotifTemplate(form.key.trim(), form.label.trim(), form.title.trim(), bodyToSave, form.emoji.trim(), hex, form.active)
       nav('/admin/notifs', { replace: true })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
@@ -121,6 +123,14 @@ export default function AdminNotifDetail() {
               <div className="admin-notif-preview-t">{form.title || '제목'}</div>
               <div className="admin-notif-preview-b">{isMegaphone ? '(사용자가 입력한 메시지)' : (form.body || '본문')}</div>
             </div>
+          </div>
+
+          <div className="aq-toggle-row">
+            <div>
+              <div className="aq-toggle-title">활성</div>
+              <div className="aq-toggle-sub">{form.active ? '관리자 목록에 정상적으로 표시돼요' : '관리자 목록에서 흐리게 표시돼요'}</div>
+            </div>
+            <CgToggle on={form.active} onClick={() => setForm((f) => ({ ...f, active: !f.active }))} />
           </div>
 
           <div className="aq-actions">

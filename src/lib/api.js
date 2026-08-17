@@ -2026,22 +2026,25 @@ export async function listNotifTemplates() {
   if (error) { if (error.code === 'PGRST202') return [] ; throw error }
   return data ?? []
 }
-export async function updateNotifTemplate(key, title, body, emoji, emojiBg) {
+export async function updateNotifTemplate(key, title, body, emoji, emojiBg, active) {
   const args = { p_key: key, p_title: title, p_body: body, p_emoji: emoji ?? '' }
-  const { error } = await supabase.rpc('admin_set_notif', { ...args, p_emoji_bg: emojiBg ?? '' })
+  const { error } = await supabase.rpc('admin_set_notif', { ...args, p_emoji_bg: emojiBg ?? '', p_active: active ?? null })
   if (!error) return
-  // emoji_bg 인자 미배포(구버전 함수) → 배경색 없이 저장
+  // active/emoji_bg 인자 미배포(구버전 함수) → 해당 값 없이 저장
   if (error.code === 'PGRST202') {
-    const { error: e2 } = await supabase.rpc('admin_set_notif', args)
-    if (e2) throw e2
+    const { error: e2 } = await supabase.rpc('admin_set_notif', { ...args, p_emoji_bg: emojiBg ?? '' })
+    if (!e2) return
+    if (e2.code !== 'PGRST202') throw e2
+    const { error: e3 } = await supabase.rpc('admin_set_notif', args)
+    if (e3) throw e3
     return
   }
   throw error
 }
 // 새 알림 템플릿 생성(키는 새로 짓는 값 — 실제로 발송되려면 별도 트리거 코드가 그 키를 사용해야 함)
-export async function createNotifTemplate(key, label, title, body, emoji, emojiBg) {
+export async function createNotifTemplate(key, label, title, body, emoji, emojiBg, active) {
   const { error } = await supabase.rpc('admin_create_notif', {
-    p_key: key, p_label: label, p_title: title, p_body: body, p_emoji: emoji ?? '', p_emoji_bg: emojiBg ?? '',
+    p_key: key, p_label: label, p_title: title, p_body: body, p_emoji: emoji ?? '', p_emoji_bg: emojiBg ?? '', p_active: !!active,
   })
   if (error) throw error
 }
