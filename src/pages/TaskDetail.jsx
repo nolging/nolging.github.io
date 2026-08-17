@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext, useLocation 
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
-  completeTask, reopenTask, listTaskParticipants, listTaskAppointments, cancelAppointment, deleteTask,
+  completeTask, reopenTask, listTaskParticipants, listTaskAppointments, deleteAppointment, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
   updateTaskMedia,
 } from '../lib/api'
@@ -20,6 +20,7 @@ import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
 import AppointmentAddModal from '../components/AppointmentAddModal'
 import AppointmentPickModal from '../components/AppointmentPickModal'
+import AppointmentDateEditModal from '../components/AppointmentDateEditModal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
@@ -113,6 +114,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [apptAddOpen, setApptAddOpen] = useState(false) // "약속 추가" 모달
   const [apptPickOpen, setApptPickOpen] = useState(false) // 약속 2개 이상일 때 "수정" 대상 선택 모달
   const [dateDdOpen, setDateDdOpen] = useState(false)   // 날짜 옆 화살표 → 전체 약속 날짜 드롭다운
+  const [dateEditTarget, setDateEditTarget] = useState(null) // 드롭다운의 "수정" → 날짜만 수정할 약속
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
@@ -433,6 +435,14 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   function pickAppointmentToEdit(id) { setApptPickOpen(false); proceedEditAppointment(id) }
   function openAddAppointment() { setHeadMenu(false); setApptAddOpen(true) }
   async function onAppointmentAdded() { setApptAddOpen(false); await load() }
+  function openDateEdit(a) { setDateDdOpen(false); setDateEditTarget(a) }
+  async function onDateEdited() { setDateEditTarget(null); await load() }
+  async function deleteOneAppointment(a) {
+    setDateDdOpen(false)
+    const when = a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정'
+    if (!confirm(`${when} 약속을 취소할까요?`)) return
+    try { await deleteAppointment(a.id); await load() } catch (err) { setError(err.message) }
+  }
   async function doCancelAppointment() {
     setHeadMenu(false)
     if (!confirm('약속을 취소하고 위시로 되돌릴까요?')) return
@@ -742,25 +752,29 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
             <CalendarIcon className="appt-cal" size={15} />
             <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
             {appointments.length > 1 && (
-              <span className="appt-dates-wrap">
-                <button type="button" className="appt-dates-toggle" aria-label="약속 날짜 목록"
-                  onClick={() => setDateDdOpen((v) => !v)}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-                {dateDdOpen && (
-                  <>
-                    <div className="menu-backdrop" onClick={() => setDateDdOpen(false)} />
-                    <ul className="appt-dates-dd" role="menu">
-                      {appointments.map((a) => (
-                        <li key={a.id}>{a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정'}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </span>
+              <button type="button" className="appt-dates-toggle" aria-label="약속 날짜 목록"
+                onClick={() => setDateDdOpen((v) => !v)}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            )}
+            {appointments.length > 1 && dateDdOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setDateDdOpen(false)} />
+                <ul className="appt-dates-dd" role="menu">
+                  {appointments.map((a) => (
+                    <li key={a.id} className="appt-dates-dd-row">
+                      <span className="appt-dates-dd-when">{a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정'}</span>
+                      <span className="appt-dates-dd-actions">
+                        <button type="button" className="appt-dd-pill" onClick={() => openDateEdit(a)}>수정</button>
+                        <button type="button" className="appt-dd-pill appt-dd-pill-danger" onClick={() => deleteOneAppointment(a)}>삭제</button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
             {task.repeat_rule && (
               <span className="appt-repeat">
@@ -846,6 +860,8 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
         onClose={() => setApptAddOpen(false)} onAdded={onAppointmentAdded} />
       <AppointmentPickModal open={apptPickOpen} appointments={appointments}
         onClose={() => setApptPickOpen(false)} onPick={pickAppointmentToEdit} />
+      <AppointmentDateEditModal open={!!dateEditTarget} appointment={dateEditTarget}
+        onClose={() => setDateEditTarget(null)} onSaved={onDateEdited} />
 
       {(() => {
         const composerContent = reviewComposeMode ? (

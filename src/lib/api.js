@@ -621,6 +621,12 @@ export async function setTaskParticipants(taskId, participantIds) {
   if (error) throw error
 }
 
+// 여러 약속 중 하나만 삭제(위시 자체는 그대로, 날짜 드롭다운의 개별 삭제용)
+export async function deleteAppointment(appointmentId) {
+  const { error } = await supabase.rpc('delete_appointment', { p_appointment_id: appointmentId })
+  if (error) throw error
+}
+
 // 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용. 위시 하나에 약속이
 // 여러 개면 그 개수만큼 행이 나온다(일정 페이지가 날짜마다 표시해야 하므로).
 export async function listMyAppointments() {

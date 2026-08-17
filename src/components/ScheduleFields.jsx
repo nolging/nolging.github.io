@@ -78,7 +78,7 @@ function SelectPill({ value, onChange, options }) {
   )
 }
 
-export default function ScheduleFields({ value, onChange, members = [], meId, authorId }) {
+export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true }) {
   const v = value
   const set = (patch) => onChange(patch)
   const toggleWeekday = (i) => {
@@ -93,7 +93,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
   return (
     <>
       {/* 일정 */}
-      <div className="cg-section-title cg-mt-24">일정</div>
+      {showTitle && <div className="cg-section-title cg-mt-24">일정</div>}
       <div className="cg-list cg-mt-12">
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>

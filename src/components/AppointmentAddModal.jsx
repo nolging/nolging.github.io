@@ -5,12 +5,15 @@ import Modal from './Modal'
 
 // 이미 약속인 위시에 일정을 하나 더 추가하는 모달. ScheduleFields 의 "일정" 섹션만
 // 쓰고(members=[] 로 참여자 섹션은 숨김) 위시 정보 등은 다루지 않는다.
+// 날짜 토글은 기본으로 켜둔 채 시작(약속을 추가하는 목적상 날짜를 바로 입력하도록)
+const initialSchedule = () => ({ ...defaultSchedule(), dateOn: true })
+
 export default function AppointmentAddModal({ open, onClose, taskId, onAdded }) {
-  const [sched, setSched] = useState(defaultSchedule)
+  const [sched, setSched] = useState(initialSchedule)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  function close() { if (saving) return; onClose(); setSched(defaultSchedule()); setError('') }
+  function close() { if (saving) return; onClose(); setSched(initialSchedule()); setError('') }
 
   async function submit(e) {
     e.preventDefault()
@@ -18,15 +21,15 @@ export default function AppointmentAddModal({ open, onClose, taskId, onAdded }) 
     setSaving(true); setError('')
     try {
       await addAppointment(taskId, buildSchedulePayload(sched))
-      setSched(defaultSchedule())
+      setSched(initialSchedule())
       onAdded?.()
     } catch (err) { setError(err.message) } finally { setSaving(false) }
   }
 
   return (
-    <Modal open={open} onClose={close} title="약속 추가" cardClassName="appt-add-modal">
+    <Modal open={open} onClose={close} cardClassName="appt-add-modal">
       <form onSubmit={submit}>
-        <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))} members={[]} />
+        <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))} members={[]} showTitle={false} />
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
           <button type="submit" className="cg-btn-primary appt-add-submit" disabled={saving}>
