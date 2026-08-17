@@ -41,4 +41,5 @@ export const CATEGORY_OPTIONS = [
   { value: 'theme', label: '테마' },
   { value: 'etc', label: '기타' },
 ]
-export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: false, imageSvg: '', imageBg: '', category: '', decoSlot: '' }
+// adminOnly 기본값 true: 새 아이템은 "판매" 토글을 켜기 전까지 관리자에게만 보임(테스트 후 노출)
+export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: true, imageSvg: '', imageBg: '', category: '', decoSlot: '' }
