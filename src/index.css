@@ -3437,7 +3437,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sc-select > svg { position: absolute; right: 11px; pointer-events: none; color: #8b8798; }
 .sc-custom { padding: 4px 0 14px; display: flex; flex-direction: column; gap: 10px; }
 .sc-custom-freq { display: flex; gap: 8px; align-items: center; }
-.sc-num { width: 64px; height: 38px; box-sizing: border-box; text-align: center; background: #f4f3f7; border: none; border-radius: 10px; padding: 0 10px; font-size: 13px; font-weight: 700; min-height: 0; }
+/* :not() 패턴으로 전역 input min-height:46px(0,2,1) 보다 특이도를 높여 셀렉트(.sc-select)와 높이 통일 */
+.sc-num:not([type="checkbox"]):not([type="radio"]) { width: 64px; height: 38px; box-sizing: border-box; text-align: center; background: #f4f3f7; border: none; border-radius: 10px; padding: 0 10px; font-size: 13px; font-weight: 700; min-height: 0; }
 .inv-card { position: relative; }
 .inv-count {
   position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px;
