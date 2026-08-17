@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminCreateUser } from '../../lib/api'
 import BirthdayInput from '../../components/BirthdayInput'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 신규 계정 생성 페이지
 export default function AdminMemberNew() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const nav = useNavigate()
   const [form, setForm] = useState({ nickname: '', password: '', role: 'member', contact: '', birthdate: '' })
   const [busy, setBusy] = useState(false)

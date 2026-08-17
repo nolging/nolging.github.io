@@ -4,6 +4,7 @@ import { adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adm
 import { ITEM_KINDS, CATEGORY_OPTIONS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
 import { cleanSvg, imgBgOf, catOf, DECO_SLOT_ORDER } from '../../lib/storeMeta'
 import StoreItemImage from '../../components/StoreItemImage'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 배경색 팔레트(파스텔 + 프리미엄 다크 + 투명)
 const BG_PRESETS = ['#f3f2f7', '#fde8ee', '#e6eefd', '#fff0d6', '#eaf4ec', '#fbf1d3', '#eeebfe', '#e3f1fb', '#fdeee6', '#f4ece0', '#fdeceb', '#332c52', 'transparent']
@@ -30,6 +31,7 @@ function nextAvatarSortOrder(items, slot) {
 // 상점 아이템 추가(/admin/store/new) + 상세·수정(/admin/store/:id)
 // 추가 시 목록의 + 버튼이 넘겨준 탭(state.kind)으로 노출 위치 기본값을 맞춘다.
 export default function AdminStoreItem() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { id } = useParams()
   const editing = !!id
   const nav = useNavigate()

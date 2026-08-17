@@ -4,9 +4,11 @@ import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminD
 import { formatCoin } from '../../lib/constants'
 import { formatBirthDot } from '../../lib/birthday'
 import { STATUS } from './adminMeta'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 회원 상세 — 정보 나열 + 역할 수정(관리자 부여) + 츄르 지급/차감 + 삭제
 export default function AdminMemberDetail() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { userId } = useParams()
   const nav = useNavigate()
   const [user, setUser] = useState(null)

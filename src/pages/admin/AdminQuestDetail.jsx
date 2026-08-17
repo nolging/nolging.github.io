@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { adminListQuestDefs, adminUpsertQuestDef, adminDeleteQuestDef } from '../../lib/api'
 import { QUEST_GRADES, EMPTY_QUEST } from './adminMeta'
 import CgToggle from '../../components/CgToggle'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 이모지 배경색 프리셋(마이 페이지 퀘스트 카드에 쓰이는 파스텔 톤)
 const BG_PRESETS = ['#eef1fb', '#e8f4ec', '#fde8ee', '#fdeee6', '#fff0d6', '#eaf3fb', '#eeebfe']
@@ -10,6 +11,7 @@ const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b ||
 
 // 퀘스트 추가(/admin/quests/new) + 상세·수정(/admin/quests/:id)
 export default function AdminQuestDetail() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { id } = useParams()
   const editing = !!id
   const nav = useNavigate()

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminListDailyQuestDefs, adminUpsertDailyQuestDef } from '../../lib/api'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 이모지 배경색 프리셋(마이 페이지 데일리 퀘스트 카드에 쓰이는 파스텔 톤)
 const BG_PRESETS = ['#eef1fb', '#e8f4ec', '#fde8ee', '#fdeee6', '#fff0d6', '#eaf3fb', '#eeebfe']
@@ -8,6 +9,7 @@ const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b ||
 
 // 데일리 퀘스트 수정(/admin/quests/daily/:key) — key 는 고정, 이모지·배경색·명칭·보상만 편집
 export default function AdminDailyQuestDetail() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { key } = useParams()
   const nav = useNavigate()
   const [q, setQ] = useState(null)

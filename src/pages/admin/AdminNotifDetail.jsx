@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listNotifTemplates, updateNotifTemplate } from '../../lib/api'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 // 알림센터 이모지 배경색 프리셋(알림 아이콘에 쓰이는 파스텔 톤)
 const BG_PRESETS = [
@@ -11,6 +12,7 @@ const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b ||
 
 // 푸시 알림 메시지 수정 (/admin/notifs/:key)
 export default function AdminNotifDetail() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { key } = useParams()
   const isMegaphone = key === 'megaphone'   // 확성기: 본문은 사용자가 입력(제목·이모지·배경만 편집)
   const nav = useNavigate()
