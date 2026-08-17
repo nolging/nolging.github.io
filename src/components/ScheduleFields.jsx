@@ -101,7 +101,7 @@ function SelectPill({ value, onChange, options }) {
   )
 }
 
-export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true }) {
+export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true }) {
   const v = value
   const set = (patch) => onChange(patch)
   const toggleWeekday = (i) => {
@@ -117,7 +117,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
     <>
       {/* 일정 */}
       {showTitle && <div className="cg-section-title cg-mt-24">일정</div>}
-      <div className="cg-list cg-mt-12">
+      <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
           <div className="cg-row-main">
@@ -139,7 +139,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
         )}
 
         {v.dateOn && (
-          <div className="cg-row">
+          <div className={`cg-row ${v.repeat === 'custom' ? 'cg-row-nb' : ''}`}>
             <span className="cg-row-icon" style={{ background: '#e8f4ec' }}>🔁</span>
             <div className="cg-row-main"><div className="cg-row-title">반복</div></div>
             <SelectPill value={v.repeat} onChange={(x) => set({ repeat: x })} options={REPEAT_OPTIONS} />
@@ -186,7 +186,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
       {needChoose && (
         <>
           <div className="cg-section-title cg-mt-24">참여자</div>
-          <div className="cg-list cg-mt-12">
+          <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
             <ul className="member-pick">
               {members.map((m) => {
                 const checked = parts.has(m.user_id)

@@ -3472,7 +3472,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sc-select select { appearance: none; -webkit-appearance: none; border: none; background: #f4f3f7; border-radius: 10px;
   height: 38px; box-sizing: border-box; padding: 0 32px 0 13px; font-size: 13px; font-weight: 700; color: #191722; cursor: pointer; outline: none; min-height: 0; }
 .sc-select > svg { position: absolute; right: 11px; pointer-events: none; color: #8b8798; }
-.sc-custom { padding: 4px 0 14px; display: flex; flex-direction: column; gap: 10px; }
+/* 반복=사용자화일 때: 반복 행 자체의 구분선은 없애고, 사용자화 입력 아래로 옮김
+   (반복/사용자화 입력이 한 그룹으로 보이고, 그 아래에서 반복종료 행과 구분되도록) */
+.cg-row.cg-row-nb { border-bottom: none; }
+.sc-custom { padding: 4px 0 14px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #f1eff5; }
 .sc-custom-freq { display: flex; gap: 8px; align-items: center; }
 /* :not() 패턴으로 전역 input min-height:46px(0,2,1) 보다 특이도를 높여 셀렉트(.sc-select)와 높이 통일 */
 .sc-num:not([type="checkbox"]):not([type="radio"]) { width: 64px; height: 38px; box-sizing: border-box; text-align: center; background: #f4f3f7; border: none; border-radius: 10px; padding: 0 10px; font-size: 13px; font-weight: 700; min-height: 0; }

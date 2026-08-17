@@ -29,7 +29,7 @@ export default function AppointmentEditModal({ open, appointment, onClose, onSav
   return (
     <Modal open={open} onClose={close} cardClassName="appt-add-modal">
       <form onSubmit={submit}>
-        <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))} members={[]} showTitle={false} />
+        <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))} members={[]} showTitle={false} boxed={false} />
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
           <button type="submit" className="cg-btn-primary appt-add-submit" disabled={saving}>
