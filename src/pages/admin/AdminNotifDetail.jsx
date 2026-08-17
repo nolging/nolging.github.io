@@ -109,8 +109,6 @@ export default function AdminNotifDetail() {
                   <button key={c} type="button" className={`aq-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
                     style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
                 ))}
-                <button type="button" className={`aq-swatch an-bg-none ${form.emoji_bg ? '' : 'active'}`}
-                  onClick={() => pickBg('')} aria-label="기본" title="기본(타입별 기본 색)">기본</button>
               </div>
               <input ref={bgRef} className="an-bg-hex aq-hex" defaultValue={form.emoji_bg} onChange={setField('emoji_bg')}
                 placeholder="#RRGGBB (비우면 기본)" maxLength={7} autoCapitalize="none" spellCheck={false} />
@@ -128,7 +126,7 @@ export default function AdminNotifDetail() {
           <div className="aq-toggle-row">
             <div>
               <div className="aq-toggle-title">활성</div>
-              <div className="aq-toggle-sub">유저에게 알림이 발송돼요</div>
+              <div className="aq-toggle-sub">{form.active ? '유저에게 알림이 발송돼요' : '유저에게 알림이 발송되지 않아요'}</div>
             </div>
             <CgToggle on={form.active} onClick={() => setForm((f) => ({ ...f, active: !f.active }))} />
           </div>
