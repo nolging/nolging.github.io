@@ -90,7 +90,7 @@ function PickField({ type, value, onChange, format }) {
     </label>
   )
 }
-function SelectPill({ value, onChange, options }) {
+export function SelectPill({ value, onChange, options }) {
   return (
     <span className="sc-select">
       <select value={value} onChange={(e) => onChange(e.target.value)}>
@@ -101,7 +101,7 @@ function SelectPill({ value, onChange, options }) {
   )
 }
 
-export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true }) {
+export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true, topRow = null }) {
   const v = value
   const set = (patch) => onChange(patch)
   const toggleWeekday = (i) => {
@@ -118,6 +118,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
       {/* 일정 */}
       {showTitle && <div className="cg-section-title cg-mt-24">일정</div>}
       <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
+        {topRow}
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
           <div className="cg-row-main">

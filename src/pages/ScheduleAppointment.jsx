@@ -5,14 +5,10 @@ import {
   getGroup, getTask, listMemberCards, listTaskParticipants, listTaskAppointments, scheduleTask, rescheduleTask,
   updateTask, updateTaskMedia,
 } from '../lib/api'
-import { resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
-import ScheduleFields, { defaultSchedule, buildSchedulePayload } from '../components/ScheduleFields'
+import { resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint, formatWhen } from '../lib/constants'
+import ScheduleFields, { defaultSchedule, buildSchedulePayload, scheduleFromAppointment, SelectPill } from '../components/ScheduleFields'
 import MediaCard from '../components/MediaCard'
 import WorkSearchSheet from '../components/WorkSearchSheet'
-
-const pad = (n) => String(n).padStart(2, '0')
-const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const timeStr = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 
 export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp, appointmentId: aidProp, embedded = false, onSaved }) {
   const params = useParams()
@@ -36,6 +32,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const [saving, setSaving] = useState(false)
 
   const [sched, setSched] = useState(defaultSchedule)
+  const [appointments, setAppointments] = useState([]) // 이 위시의 약속들(2개 이상이면 선택 UI 노출)
   // 위시 정보(작성자=유형·제목·작품, 참여자=작품 카드) 편집
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
@@ -57,37 +54,30 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       let appt = null
       if (t.status !== 'open') {
         const appts = await listTaskAppointments(taskId)
+        setAppointments(appts)
         appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam)) || appts[0] || null
         setAppointmentId(appt?.id || null)
       }
-      const patch = {}
-      if (appt?.scheduled_at) {
-        const d = new Date(appt.scheduled_at)
-        patch.dateOn = true; patch.date = dateStr(d)
-        patch.timeOn = appt.scheduled_time_set !== false; patch.time = timeStr(d)
-      } else if (t.status !== 'open') {
-        patch.dateOn = false // 날짜 없이 올린 약속·추억 → 날짜 토글 꺼진 상태로 진입
-      }
-      if (appt?.repeat_rule) {
-        if (appt.repeat_rule[0] === '{') {
-          try {
-            const c = JSON.parse(appt.repeat_rule)
-            patch.repeat = 'custom'; patch.cFreq = c.freq || 'weekly'; patch.cInterval = c.interval || 1
-            patch.cWeekdays = c.weekdays || []
-          } catch { patch.repeat = 'none' }
-        } else patch.repeat = appt.repeat_rule
-      }
-      if (appt?.repeat_until) { patch.untilOn = true; patch.until = appt.repeat_until }
-      if (appt?.remind_min !== null && appt?.remind_min !== undefined) patch.remind = String(appt.remind_min)
+      const { participants: _p, ...schedPatch } = scheduleFromAppointment(appt) // eslint-disable-line no-unused-vars
 
       const existing = t.status !== 'open' ? await listTaskParticipants(taskId) : []
       // 2인 그룹은 기본으로 두 명 다 체크. 그 외엔 위시 작성자·나 + 기존 참여자.
       const base = m.length === 2 ? m.map((x) => x.user_id) : [t.created_by, profile.id]
-      patch.participants = [...new Set([...base, ...existing].filter(Boolean))]
-      setSched((s) => ({ ...s, ...patch }))
+      const participants = [...new Set([...base, ...existing].filter(Boolean))]
+      setSched((s) => ({ ...s, ...schedPatch, participants }))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId, profile.id, appointmentIdParam])
   useEffect(() => { load() }, [load])
+
+  // 약속 선택 셀렉트에서 다른 약속으로 바꾸면, 그 약속의 일정 값으로 폼을 다시 채운다
+  // (참여자는 위시 공용이라 건드리지 않음).
+  function pickAppointment(id) {
+    const appt = appointments.find((a) => a.id === id)
+    if (!appt) return
+    setAppointmentId(id)
+    const { participants: _p, ...schedPatch } = scheduleFromAppointment(appt) // eslint-disable-line no-unused-vars
+    setSched((s) => ({ ...s, ...schedPatch }))
+  }
 
   const isReschedule = task && task.status !== 'open'
   const isCreator = task?.created_by === profile.id
@@ -212,7 +202,18 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
         )}
 
         <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))}
-          members={members} meId={profile.id} authorId={task.created_by} />
+          members={members} meId={profile.id} authorId={task.created_by}
+          topRow={appointments.length > 1 && (
+            <div className="cg-row">
+              <span className="cg-row-icon" style={{ background: '#eeebfe' }}>🗓️</span>
+              <div className="cg-row-main"><div className="cg-row-title">약속 선택</div></div>
+              <SelectPill value={appointmentId} onChange={pickAppointment}
+                options={appointments.map((a) => ({
+                  value: a.id,
+                  label: a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정',
+                }))} />
+            </div>
+          )} />
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">

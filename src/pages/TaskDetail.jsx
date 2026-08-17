@@ -19,7 +19,6 @@ import MediaInfo from '../components/MediaInfo'
 import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
 import AppointmentAddModal from '../components/AppointmentAddModal'
-import AppointmentPickModal from '../components/AppointmentPickModal'
 import AppointmentEditModal from '../components/AppointmentEditModal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
@@ -112,7 +111,6 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [headMenu, setHeadMenu] = useState(false)      // 상단 약속 ⋮ 메뉴
   const [appointments, setAppointments] = useState([]) // 이 위시의 약속들(2개 이상 가능)
   const [apptAddOpen, setApptAddOpen] = useState(false) // "약속 추가" 모달
-  const [apptPickOpen, setApptPickOpen] = useState(false) // 약속 2개 이상일 때 "수정" 대상 선택 모달
   const [dateDdOpen, setDateDdOpen] = useState(false)   // 날짜 옆 화살표 → 전체 약속 날짜 드롭다운
   const [dateEditTarget, setDateEditTarget] = useState(null) // 드롭다운의 "수정" → 편집할 약속
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
@@ -423,16 +421,14 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   }
 
   // 상단 약속 메뉴 동작
-  function proceedEditAppointment(appointmentId) {
+  // 약속이 여러 개여도 모달로 먼저 고르게 하지 않고 바로 수정 페이지를 띄운다.
+  // 그 안의 "일정" 섹션에 약속 선택 셀렉트가 있어 거기서 바꿀 수 있다.
+  function goEditAppointment() {
+    setHeadMenu(false)
+    const appointmentId = appointments[0]?.id || null
     if (embedded && onEdit) { onEdit('appointment', taskId, appointmentId); return } // PC 임베드: 가운데에서 편집
     navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded, appointmentId } })
   }
-  function goEditAppointment() {
-    setHeadMenu(false)
-    if (appointments.length > 1) { setApptPickOpen(true); return } // 약속이 여러 개면 먼저 하나 선택
-    proceedEditAppointment(appointments[0]?.id || null)
-  }
-  function pickAppointmentToEdit(id) { setApptPickOpen(false); proceedEditAppointment(id) }
   function openAddAppointment() { setHeadMenu(false); setApptAddOpen(true) }
   async function onAppointmentAdded() { setApptAddOpen(false); await load() }
   function openDateEdit(a) { setDateDdOpen(false); setDateEditTarget(a) }
@@ -858,8 +854,6 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
 
       <AppointmentAddModal open={apptAddOpen} taskId={taskId}
         onClose={() => setApptAddOpen(false)} onAdded={onAppointmentAdded} />
-      <AppointmentPickModal open={apptPickOpen} appointments={appointments}
-        onClose={() => setApptPickOpen(false)} onPick={pickAppointmentToEdit} />
       <AppointmentEditModal open={!!dateEditTarget} appointment={dateEditTarget}
         onClose={() => setDateEditTarget(null)} onSaved={onDateEdited} />
 
