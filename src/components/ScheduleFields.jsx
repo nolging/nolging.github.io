@@ -56,6 +56,29 @@ export function buildSchedulePayload(v) {
   }
 }
 
+// appointments 행 → 일정 상태 값(수정 모달의 초기값 채우기용, buildSchedulePayload 의 역변환)
+export function scheduleFromAppointment(appt) {
+  const s = defaultSchedule()
+  if (!appt) return s
+  if (appt.scheduled_at) {
+    const d = new Date(appt.scheduled_at)
+    s.dateOn = true; s.date = dateStr(d)
+    s.timeOn = appt.scheduled_time_set !== false; s.time = timeStr(d)
+  }
+  if (appt.repeat_rule) {
+    if (appt.repeat_rule[0] === '{') {
+      try {
+        const c = JSON.parse(appt.repeat_rule)
+        s.repeat = 'custom'; s.cFreq = c.freq || 'weekly'; s.cInterval = c.interval || 1
+        s.cWeekdays = c.weekdays || []
+      } catch { s.repeat = 'none' }
+    } else s.repeat = appt.repeat_rule
+  }
+  if (appt.repeat_until) { s.untilOn = true; s.until = appt.repeat_until }
+  if (appt.remind_min !== null && appt.remind_min !== undefined) s.remind = String(appt.remind_min)
+  return s
+}
+
 function Chevron() {
   return <svg width="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
 }

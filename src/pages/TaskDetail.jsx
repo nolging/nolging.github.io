@@ -20,7 +20,7 @@ import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
 import AppointmentAddModal from '../components/AppointmentAddModal'
 import AppointmentPickModal from '../components/AppointmentPickModal'
-import AppointmentDateEditModal from '../components/AppointmentDateEditModal'
+import AppointmentEditModal from '../components/AppointmentEditModal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
@@ -114,7 +114,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [apptAddOpen, setApptAddOpen] = useState(false) // "약속 추가" 모달
   const [apptPickOpen, setApptPickOpen] = useState(false) // 약속 2개 이상일 때 "수정" 대상 선택 모달
   const [dateDdOpen, setDateDdOpen] = useState(false)   // 날짜 옆 화살표 → 전체 약속 날짜 드롭다운
-  const [dateEditTarget, setDateEditTarget] = useState(null) // 드롭다운의 "수정" → 날짜만 수정할 약속
+  const [dateEditTarget, setDateEditTarget] = useState(null) // 드롭다운의 "수정" → 편집할 약속
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
@@ -860,7 +860,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
         onClose={() => setApptAddOpen(false)} onAdded={onAppointmentAdded} />
       <AppointmentPickModal open={apptPickOpen} appointments={appointments}
         onClose={() => setApptPickOpen(false)} onPick={pickAppointmentToEdit} />
-      <AppointmentDateEditModal open={!!dateEditTarget} appointment={dateEditTarget}
+      <AppointmentEditModal open={!!dateEditTarget} appointment={dateEditTarget}
         onClose={() => setDateEditTarget(null)} onSaved={onDateEdited} />
 
       {(() => {
