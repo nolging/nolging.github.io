@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 // 관리자 목록 페이지에서 상세로 들어갔다 뒤로 나오면(라우트가 달라 목록 컴포넌트가
@@ -24,4 +24,14 @@ export default function useScrollRestore(ready = true) {
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [pathname, ready])
+}
+
+// 목록에서 상세/추가 화면으로 들어왔을 때 항상 맨 위에서 시작하게 한다.
+// .content 는 Layout 이 계속 들고 있는 공유 스크롤 컨테이너라, 직전 목록의 스크롤 위치가
+// 그대로 남아있는 채로 새 페이지가 열려버리기 때문 — 페인트 전에(useLayoutEffect) 초기화.
+export function useScrollToTop() {
+  useLayoutEffect(() => {
+    const el = document.querySelector('.content')
+    if (el) el.scrollTop = 0
+  }, [])
 }

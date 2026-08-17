@@ -10,6 +10,7 @@ import BottomSheet from '../../components/BottomSheet'
 import StoreItemImage from '../../components/StoreItemImage'
 import { itemName } from '../../lib/storeMeta'
 import { bgOf, useStoreCatalog } from '../../lib/storeCatalog'
+import { useScrollToTop } from '../../lib/useScrollRestore'
 
 const PICK_MAX = 20 // 지급 수량 스텝퍼 상한(넉넉한 UI 상한, 서버는 99까지 허용)
 
@@ -35,6 +36,7 @@ function fmt(ts) {
 
 // 관리자: 오류 리포트 상세 — 채팅 UI. 회원(상대) 왼쪽 / SYSTEM(나) 오른쪽. 실시간 반영.
 export default function AdminReportDetail() {
+  useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작(채팅 하단 자동 스크롤이 이후 덮어씀)
   const { id } = useParams()
   const [report, setReport] = useState(null)
   const [thread, setThread] = useState([])
