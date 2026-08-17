@@ -7,7 +7,7 @@ import CgToggle from '../../components/CgToggle'
 // 알림센터 이모지 배경색 프리셋(알림 아이콘에 쓰이는 파스텔 톤)
 const BG_PRESETS = [
   '#eeebfe', '#e8f4ec', '#fdeee6', '#e6eefd', '#fde8ee',
-  '#fff0d6', '#eaf3fb', '#fdecec', '#f3f2f7', '#332c52',
+  '#fff0d6', '#eaf3fb', '#fdecec', '#332c52',
 ]
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
@@ -106,10 +106,10 @@ export default function AdminNotifDetail() {
                 placeholder="🔔" maxLength={16} autoCapitalize="none" />
               <div className="an-bg-row" style={{ margin: 0 }}>
                 {BG_PRESETS.map((c) => (
-                  <button key={c} type="button" className={`an-bg-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
+                  <button key={c} type="button" className={`aq-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
                     style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
                 ))}
-                <button type="button" className={`an-bg-swatch an-bg-none ${form.emoji_bg ? '' : 'active'}`}
+                <button type="button" className={`aq-swatch an-bg-none ${form.emoji_bg ? '' : 'active'}`}
                   onClick={() => pickBg('')} aria-label="기본" title="기본(타입별 기본 색)">기본</button>
               </div>
               <input ref={bgRef} className="an-bg-hex aq-hex" defaultValue={form.emoji_bg} onChange={setField('emoji_bg')}
