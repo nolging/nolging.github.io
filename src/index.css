@@ -1572,10 +1572,6 @@ button.mention-chip:active { opacity: .6; }
 }
 .appt-pick-row:hover { background: #efeef4; }
 .appt-pick-rep { font-size: 12px; font-weight: 600; color: var(--muted); }
-
-/* 약속 하나의 날짜만 수정하는 경량 모달 */
-.modal-card.appt-date-edit-modal { max-width: 320px; }
-.appt-date-edit-modal .cg-footer { margin-top: 16px; padding-bottom: 4px; }
 .notif-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
 .notif-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 /* 왼쪽으로 밀면 삭제 버튼 노출 (위시 카드와 동일 패턴) */
