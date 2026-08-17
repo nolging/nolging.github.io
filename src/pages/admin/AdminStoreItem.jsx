@@ -2,11 +2,30 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { adminListStoreItems, adminUpsertStoreItem, adminSetStoreItemActive, adminDeleteStoreItem } from '../../lib/api'
 import { ITEM_KINDS, CATEGORY_OPTIONS, EMPTY_ITEM, kindToFlags, flagsToKind } from './adminMeta'
-import { cleanSvg, imgBgOf } from '../../lib/storeMeta'
+import { cleanSvg, imgBgOf, catOf, DECO_SLOT_ORDER } from '../../lib/storeMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 
 // 배경색 팔레트(파스텔 + 프리미엄 다크 + 투명)
 const BG_PRESETS = ['#f3f2f7', '#fde8ee', '#e6eefd', '#fff0d6', '#eaf4ec', '#fbf1d3', '#eeebfe', '#e3f1fb', '#fdeee6', '#f4ece0', '#fdeceb', '#332c52', 'transparent']
+
+// 새 프로필 꾸미기 아이템의 정렬 순서: 같은 유형(머리/얼굴/안경/테두리 순)의 마지막 자리에 삽입.
+// (해당 유형 아이템이 하나도 없으면 null → 호출부에서 전체 목록 맨 끝으로 폴백)
+function nextAvatarSortOrder(items, slot) {
+  const avatarItems = items
+    .filter((x) => catOf(x.id, x.category) === 'avatar')
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  if (!avatarItems.length) return null
+  const rankOf = (s) => { const i = DECO_SLOT_ORDER.indexOf(s); return i < 0 ? DECO_SLOT_ORDER.length : i }
+  const newRank = rankOf(slot)
+  let lastBefore = null, firstAfter = null
+  for (const it of avatarItems) {
+    if (rankOf(it.decoSlot) <= newRank) lastBefore = it
+    else if (!firstAfter) firstAfter = it
+  }
+  if (lastBefore) return lastBefore.sortOrder + (firstAfter ? 1 : 10)
+  if (firstAfter) return firstAfter.sortOrder - 1
+  return null
+}
 
 // 상점 아이템 추가(/admin/store/new) + 상세·수정(/admin/store/:id)
 // 추가 시 목록의 + 버튼이 넘겨준 탭(state.kind)으로 노출 위치 기본값을 맞춘다.
@@ -58,11 +77,15 @@ export default function AdminStoreItem() {
       const { premium, tier } = kindToFlags(form.kind)
       const description = (form.description || '').replace(/\r\n/g, '\n').replace(/\\n/g, '\n')
       // 새 아이템은 목록 맨 끝으로(가장 큰 sort_order + 10). 수정은 기존 순서 유지.
+      // 단, 프로필 꾸미기(avatar) 아이템은 같은 유형(머리/얼굴/안경/테두리 순)의 마지막 자리에 삽입.
       let sortOrder = form.sortOrder
       if (!editing) {
         const items = await adminListStoreItems().catch(() => [])
-        const max = items.reduce((mx, x) => Math.max(mx, x.sortOrder || 0), 0)
-        sortOrder = max + 10
+        const category = catOf(form.id, form.category)
+        const bySlot = category === 'avatar' && form.decoSlot.trim()
+          ? nextAvatarSortOrder(items, form.decoSlot.trim())
+          : null
+        sortOrder = bySlot ?? (items.reduce((mx, x) => Math.max(mx, x.sortOrder || 0), 0) + 10)
       }
       await adminUpsertStoreItem({ ...form, sortOrder, description, premium, tier })
       nav('/admin/store', { replace: true })
