@@ -47,7 +47,7 @@ export default function AdminNotifDetail() {
   async function save(e) {
     e.preventDefault(); setError('')
     if (!editing && !form.key.trim()) { setError('키를 입력해 주세요.'); return }
-    if (!editing && !form.label.trim()) { setError('이름을 입력해 주세요.'); return }
+    if (!editing && !form.label.trim()) { setError('메모를 입력해 주세요.'); return }
     if (!form.title.trim() || (!isMegaphone && !form.body.trim())) { setError('제목과 본문을 입력해 주세요.'); return }
     const hex = form.emoji_bg.trim()
     if (hex && !/^#[0-9a-fA-F]{6}$/.test(hex)) { setError('배경색은 #RRGGBB 형식으로 입력해 주세요.'); return }
@@ -79,10 +79,20 @@ export default function AdminNotifDetail() {
             </div>
           )}
           <div className="aq-frow">
-            <label className="aq-flabel" htmlFor="nt-label">이름 {!editing && <span className="aq-required">*</span>}</label>
+            <label className="aq-flabel" htmlFor="nt-label">메모 {!editing && <span className="aq-required">*</span>}</label>
             <input id="nt-label" defaultValue={form.label} onChange={setField('label')}
-              placeholder="관리자 목록에 보일 이름" disabled={editing} />
+              placeholder="관리자용 메모(예: 이 알림이 쓰이는 상황)" disabled={editing} />
           </div>
+          {(form.label || vars) && (
+            <div className="admin-notif-memo">
+              <div className="admin-notif-memo-title">{form.label || '메모'}</div>
+              {vars && (
+                <div className="admin-notif-memo-vars">
+                  {vars.split(/,\s*/).map((v, i) => <div key={i}>{v}</div>)}
+                </div>
+              )}
+            </div>
+          )}
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="nt-title">제목</label>
             <input id="nt-title" defaultValue={form.title} onChange={setField('title')} placeholder="알림 제목" />
@@ -98,7 +108,6 @@ export default function AdminNotifDetail() {
               <textarea id="nt-body" rows={3} defaultValue={form.body} onChange={setField('body')} placeholder="알림 본문" />
             </div>
           )}
-          {vars && <p className="muted sm" style={{ margin: '-10px 0 18px' }}>사용 가능한 치환자 — {vars}</p>}
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="nt-emoji">아이콘</label>
             <div className="aq-icon-row">
