@@ -5,6 +5,7 @@ import { ITEM_KINDS, CATEGORY_OPTIONS, EMPTY_ITEM, kindToFlags, flagsToKind } fr
 import { cleanSvg, imgBgOf, catOf, DECO_SLOT_ORDER } from '../../lib/storeMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 import { useScrollToTop } from '../../lib/useScrollRestore'
+import CgToggle from '../../components/CgToggle'
 
 // 배경색 팔레트(파스텔 + 프리미엄 다크 + 투명)
 const BG_PRESETS = ['#f3f2f7', '#fde8ee', '#e6eefd', '#fff0d6', '#eaf4ec', '#fbf1d3', '#eeebfe', '#e3f1fb', '#fdeee6', '#f4ece0', '#fdeceb', '#332c52', 'transparent']
@@ -206,10 +207,19 @@ export default function AdminStoreItem() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <label className="chk"><input type="checkbox" checked={form.giftOnly} onChange={setField('giftOnly')} /> 선물 전용(구매 불가)</label>
-            <label className="chk"><input type="checkbox" checked={form.isActive} onChange={setField('isActive')} /> 활성(상점 노출)</label>
-            <label className="chk"><input type="checkbox" checked={form.adminOnly} onChange={setField('adminOnly')} /> 관리자에게만 보이게(테스트용)</label>
+          <div className="aq-toggle-row">
+            <div>
+              <div className="aq-toggle-title">판매</div>
+              <div className="aq-toggle-sub">{form.adminOnly ? '관리자 전용 — 상점에 노출되지 않아요' : '상점에 노출돼요'}</div>
+            </div>
+            <CgToggle on={!form.adminOnly} onClick={() => setForm((f) => ({ ...f, adminOnly: !f.adminOnly }))} />
+          </div>
+          <div className="aq-toggle-row">
+            <div>
+              <div className="aq-toggle-title">선물 전용</div>
+              <div className="aq-toggle-sub">{form.giftOnly ? '선물만 가능(구매 불가)' : '구매도 가능'}</div>
+            </div>
+            <CgToggle on={form.giftOnly} onClick={() => setForm((f) => ({ ...f, giftOnly: !f.giftOnly }))} />
           </div>
           <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '아이템 추가'}</button>
         </form>
