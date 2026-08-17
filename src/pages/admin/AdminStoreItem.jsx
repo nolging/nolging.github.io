@@ -177,7 +177,7 @@ export default function AdminStoreItem() {
             </div>
           )}
           <div className="aq-frow aq-frow-top">
-            <label className="aq-flabel">아이콘 · 배경</label>
+            <label className="aq-flabel">미리 보기</label>
             <div style={{ flex: 1 }}>
               <div className="si-img-row">
                 <span className="si-img-prev" style={{ background: form.imageBg || imgBgOf(form.id, kindToFlags(form.kind).premium) }}>
@@ -193,7 +193,6 @@ export default function AdminStoreItem() {
                     <input type="file" accept=".svg,image/svg+xml" onChange={onSvgFile} style={{ display: 'none' }} />
                   </label>
                   {form.imageSvg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageSvg: '' }))}>이미지 제거</button>}
-                  <span className="si-hint">파일명은 무시하고 아이템 ID로 저장돼요.</span>
                 </div>
               </div>
               <div className="si-bg-row">
@@ -220,7 +219,6 @@ export default function AdminStoreItem() {
             <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
               placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ whiteSpace: 'pre-wrap' }} />
           </div>
-          <p className="si-hint" style={{ margin: '-8px 0 18px' }}>정렬 순서는 아이템 목록에서 ▲▼ 로 조정해요. 새 아이템은 목록 맨 끝에 추가돼요.</p>
 
           <div className="aq-toggle-row">
             <div>
