@@ -6,6 +6,7 @@ import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../../lib/storeMeta'
 import { flagsToKind, ITEM_KIND_SHORT } from './adminMeta'
 import StoreItemImage from '../../components/StoreItemImage'
 import { decoSlot } from '../../components/AvatarDeco'
+import useScrollRestore from '../../lib/useScrollRestore'
 
 // 프로필 꾸미기 유형 배지(머리/얼굴/안경/테두리) — 신규 아이템은 deco_slot 에 한글 그대로 저장되므로
 // 매핑에 없으면 원문을 그대로 표시
@@ -37,6 +38,7 @@ export default function AdminStore() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
   const flushSave = useCallback(async () => {
     const ups = [...pendingRef.current.entries()].map(([id, sortOrder]) => ({ id, sortOrder }))

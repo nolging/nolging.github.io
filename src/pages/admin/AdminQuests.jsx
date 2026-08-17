@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { adminListQuestDefs, adminListDailyQuestDefs, adminReorderQuestDefs } from '../../lib/api'
 import { QUEST_GRADE_SHORT } from './adminMeta'
 import CgToggle from '../../components/CgToggle'
+import useScrollRestore from '../../lib/useScrollRestore'
 
 // 목록 카드: PC 가로형 / 모바일 세로형은 CSS 로 반응형 전환. 데일리는 설명·배지 없음(랜덤만 표시).
 // draggable(랜덤 전용)이면 이모지 아이콘이 정렬 드래그 핸들 역할을 한다.
@@ -57,6 +58,7 @@ export default function AdminQuests() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
   // ── 랜덤 퀘스트 이모지 핸들 드래그 정렬(상점 관리와 동일한 패턴) ──
   const questsRef = useRef(quests)

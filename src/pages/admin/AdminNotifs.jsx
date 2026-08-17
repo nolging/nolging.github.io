@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listNotifTemplates, adminReorderNotifTemplates } from '../../lib/api'
 import CgToggle from '../../components/CgToggle'
+import useScrollRestore from '../../lib/useScrollRestore'
 
 // 알림 메시지 관리 — 알림 종류 목록. 카드 클릭 → 제목/본문 수정.
 // 이모지 아이콘을 잡고 드래그하면 정렬 순서를 바꿀 수 있다(퀘스트/상점 관리와 동일한 패턴).
@@ -18,6 +19,7 @@ export default function AdminNotifs() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
   // ── 이모지 핸들 드래그 정렬 ──────────────────────────────
   const rowsRef = useRef(rows)
