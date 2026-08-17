@@ -128,7 +128,7 @@ export default function AdminNotifDetail() {
           <div className="aq-toggle-row">
             <div>
               <div className="aq-toggle-title">활성</div>
-              <div className="aq-toggle-sub">{form.active ? '관리자 목록에 정상적으로 표시돼요' : '관리자 목록에서 흐리게 표시돼요'}</div>
+              <div className="aq-toggle-sub">유저에게 알림이 발송돼요</div>
             </div>
             <CgToggle on={form.active} onClick={() => setForm((f) => ({ ...f, active: !f.active }))} />
           </div>
