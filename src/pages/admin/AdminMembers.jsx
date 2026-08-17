@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminListUsers, adminSetStatus, adminDeleteUser } from '../../lib/api'
 import { STATUS } from './adminMeta'
+import useScrollRestore from '../../lib/useScrollRestore'
 
 // 회원 관리 — 가입 승인 + 회원 목록(모바일: 아이디/역할/상태만). 행 클릭 → 상세.
 export default function AdminMembers() {
@@ -18,6 +19,7 @@ export default function AdminMembers() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
   async function act(fn, okMsg) {
     setError(''); setNotice('')

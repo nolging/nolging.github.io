@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminListErrorReports } from '../../lib/api'
+import useScrollRestore from '../../lib/useScrollRestore'
 
 // 관리자: 오류 리포트 목록 — 제목 / 회원 아이디 / 해결 여부
 export default function AdminReports() {
@@ -16,6 +17,7 @@ export default function AdminReports() {
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+  useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
   return (
     <div className="page admin-page">
