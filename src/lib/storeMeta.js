@@ -12,6 +12,9 @@ export function catOf(id, category) {
   return 'feature'
 }
 
+// 프로필 꾸미기(avatar) 유형 표시 순서 — 상점 필터 칩 순서와 동일
+export const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
+
 // id 별 썸네일 배경(파스텔). 없으면 기본값(프리미엄=어두운 톤).
 const IMG_BG = {
   'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
