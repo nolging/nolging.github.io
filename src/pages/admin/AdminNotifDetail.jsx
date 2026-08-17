@@ -82,7 +82,7 @@ export default function AdminNotifDetail() {
             <div className="aq-frow">
               <label className="aq-flabel" htmlFor="nt-label">메모 <span className="aq-required">*</span></label>
               <input id="nt-label" defaultValue={form.label} onChange={setField('label')}
-                placeholder="관리자용 메모(예: 이 알림이 쓰이는 상황)" />
+                placeholder="알림이 발송되는 상황" />
             </div>
           )}
           {(form.label || vars) && (
