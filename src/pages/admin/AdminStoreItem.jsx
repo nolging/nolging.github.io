@@ -122,90 +122,105 @@ export default function AdminStoreItem() {
     <div className="page admin-page">
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
-      <div className="card">
-        <h3 className="card-title">{editing ? '아이템 수정' : '아이템 추가'}</h3>
+      <div className="aq-form-wrap">
         {/* 입력창을 label 로 감싸지 않고 htmlFor 로 연결 + value 대신 defaultValue.
             (iOS 에서 label 안의 컨트롤은 탭이 이중 처리되고, 제어 입력은 리렌더가
              입력값을 되돌릴 수 있다. key 로 아이템마다 리마운트해 값을 새로 채운다) */}
-        <form onSubmit={save} className="form" key={id || 'new'}>
-          <div className="field"><label htmlFor="si-id">ID *</label>
-            <input id="si-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" /></div>
-          <div className="field"><label htmlFor="si-name">이름 *</label>
-            <input id="si-name" defaultValue={form.name} onChange={setField('name')} placeholder="예: 소원권" /></div>
-          <div className="field-row">
-            <div className="field field-narrow"><label htmlFor="si-emoji">이모지</label>
-              <input id="si-emoji" defaultValue={form.emoji} onChange={setField('emoji')} placeholder="🎁" maxLength={16} /></div>
-            <div className="field field-narrow"><label htmlFor="si-price">가격 *</label>
-              <input id="si-price" type="number" inputMode="numeric" min="0" defaultValue={form.price} onChange={setField('price')} placeholder="예: 300" /></div>
+        <form onSubmit={save} className="aq-form" key={id || 'new'}>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="si-id">ID <span className="aq-required">*</span></label>
+            <input id="si-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" />
           </div>
-          <div className="field-row">
-            <div className="field"><label htmlFor="si-kind">노출 위치</label>
-              <select id="si-kind" value={form.kind} onChange={setField('kind')}>
-                {ITEM_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
-              </select></div>
-            <div className="field"><label htmlFor="si-cat">카테고리</label>
-              <select id="si-cat" value={form.category} onChange={setField('category')}>
-                {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select></div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="si-name">이름 <span className="aq-required">*</span></label>
+            <input id="si-name" defaultValue={form.name} onChange={setField('name')} placeholder="예: 소원권" />
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="si-price">가격 <span className="aq-required">*</span></label>
+            <div className="aq-reward-row">
+              <input id="si-price" type="number" inputMode="numeric" min="0" defaultValue={form.price} onChange={setField('price')} placeholder="예: 300" />
+              <span className="aq-unit">츄르</span>
+            </div>
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="si-kind">노출 위치</label>
+            <select id="si-kind" value={form.kind} onChange={setField('kind')}>
+              {ITEM_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
+            </select>
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="si-cat">카테고리</label>
+            <select id="si-cat" value={form.category} onChange={setField('category')}>
+              {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
           </div>
           {form.id.startsWith('deco-') && (
-            <div className="field"><label htmlFor="si-decoslot">꾸미기 유형(상점 표시 이름)</label>
-              <select id="si-decoslot" value={newSlot ? '__new__' : (form.decoSlot || '')}
-                onChange={(e) => {
-                  const v = e.target.value
-                  if (v === '__new__') { setNewSlot(true); setForm((f) => ({ ...f, decoSlot: '' })) }
-                  else { setNewSlot(false); setForm((f) => ({ ...f, decoSlot: v })) }
-                }}>
-                <option value="">유형 선택</option>
-                {slotOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                <option value="__new__">＋ 새 유형 추가…</option>
-              </select>
-              {newSlot && (
-                <input style={{ marginTop: 8 }} value={form.decoSlot} onChange={setField('decoSlot')}
-                  placeholder="상점에 보일 유형 이름 (예: 안경)" autoFocus />
-              )}
-              <p className="si-hint" style={{ margin: '4px 0 0' }}>여기서 고른(입력한) 이름이 상점·인벤토리에 그대로 표시돼요. 같은 유형끼리는 하나만, 다른 유형은 동시에 장착돼요.</p>
-            </div>
-          )}
-          <p className="si-hint" style={{ margin: '-4px 0 2px' }}>정렬 순서는 아이템 목록에서 ▲▼ 로 조정해요. 새 아이템은 목록 맨 끝에 추가돼요.</p>
-          <div className="field"><label htmlFor="si-desc">설명</label>
-            <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
-              placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }} /></div>
-
-          {/* 이미지(SVG 업로드) + 배경색 + 상점 미리보기 */}
-          <div className="field">
-            <label>이미지 · 배경</label>
-            <div className="si-img-row">
-              <span className="si-img-prev" style={{ background: form.imageBg || imgBgOf(form.id, kindToFlags(form.kind).premium) }}>
-                <StoreItemImage id={form.id || '_preview'} emoji={form.emoji || '🖼️'} svg={form.imageSvg} className="si-img-prev-in" />
-              </span>
-              <div className="si-img-ctrls">
-                <label className="btn btn-ghost btn-sm si-upload">
-                  {form.imageSvg ? 'SVG 교체' : 'SVG 올리기'}
-                  <input type="file" accept=".svg,image/svg+xml" onChange={onSvgFile} style={{ display: 'none' }} />
-                </label>
-                {form.imageSvg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageSvg: '' }))}>이미지 제거</button>}
-                <span className="si-hint">파일명은 무시하고 아이템 ID로 저장돼요.</span>
+            <div className="aq-frow aq-frow-top">
+              <label className="aq-flabel" htmlFor="si-decoslot">꾸미기 유형</label>
+              <div style={{ flex: 1 }}>
+                <select id="si-decoslot" value={newSlot ? '__new__' : (form.decoSlot || '')}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '__new__') { setNewSlot(true); setForm((f) => ({ ...f, decoSlot: '' })) }
+                    else { setNewSlot(false); setForm((f) => ({ ...f, decoSlot: v })) }
+                  }}>
+                  <option value="">유형 선택</option>
+                  {slotOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  <option value="__new__">＋ 새 유형 추가…</option>
+                </select>
+                {newSlot && (
+                  <input style={{ marginTop: 8 }} value={form.decoSlot} onChange={setField('decoSlot')}
+                    placeholder="상점에 보일 유형 이름 (예: 안경)" autoFocus />
+                )}
+                <p className="si-hint" style={{ margin: '4px 0 0' }}>여기서 고른(입력한) 이름이 상점·인벤토리에 그대로 표시돼요. 같은 유형끼리는 하나만, 다른 유형은 동시에 장착돼요.</p>
               </div>
             </div>
-            <div className="si-bg-row">
-              <span>배경색</span>
-              <input type="color" aria-label="배경색 선택"
-                value={/^#[0-9a-fA-F]{6}$/.test(form.imageBg) ? form.imageBg : '#f3f2f7'}
-                onChange={(e) => setForm((f) => ({ ...f, imageBg: e.target.value }))} />
-              <input className="si-bg-text" value={form.imageBg} onChange={setField('imageBg')}
-                placeholder="#f3f2f7 / transparent / gradient" autoCapitalize="none" />
-              {form.imageBg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageBg: '' }))}>초기화</button>}
-            </div>
-            <div className="si-bg-palette">
-              {BG_PRESETS.map((c) => (
-                <button type="button" key={c} title={c}
-                  className={`si-bg-swatch${c === 'transparent' ? ' none' : ''}${form.imageBg === c ? ' on' : ''}`}
-                  style={c === 'transparent' ? undefined : { background: c }}
-                  onClick={() => setForm((f) => ({ ...f, imageBg: c }))} />
-              ))}
+          )}
+          <div className="aq-frow aq-frow-top">
+            <label className="aq-flabel">아이콘 · 배경</label>
+            <div style={{ flex: 1 }}>
+              <div className="si-img-row">
+                <span className="si-img-prev" style={{ background: form.imageBg || imgBgOf(form.id, kindToFlags(form.kind).premium) }}>
+                  <StoreItemImage id={form.id || '_preview'} emoji={form.emoji || '🖼️'} svg={form.imageSvg} className="si-img-prev-in" />
+                </span>
+                <div className="si-img-ctrls">
+                  <div className="aq-icon-row" style={{ flex: 'none' }}>
+                    <input aria-label="이모지" defaultValue={form.emoji} onChange={setField('emoji')}
+                      className="aq-icon-input" placeholder="🎁" maxLength={16} />
+                  </div>
+                  <label className="btn btn-ghost btn-sm si-upload">
+                    {form.imageSvg ? 'SVG 교체' : 'SVG 올리기'}
+                    <input type="file" accept=".svg,image/svg+xml" onChange={onSvgFile} style={{ display: 'none' }} />
+                  </label>
+                  {form.imageSvg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageSvg: '' }))}>이미지 제거</button>}
+                  <span className="si-hint">파일명은 무시하고 아이템 ID로 저장돼요.</span>
+                </div>
+              </div>
+              <div className="si-bg-row">
+                <span>배경색</span>
+                <input type="color" aria-label="배경색 선택"
+                  value={/^#[0-9a-fA-F]{6}$/.test(form.imageBg) ? form.imageBg : '#f3f2f7'}
+                  onChange={(e) => setForm((f) => ({ ...f, imageBg: e.target.value }))} />
+                <input className="si-bg-text" value={form.imageBg} onChange={setField('imageBg')}
+                  placeholder="#f3f2f7 / transparent / gradient" autoCapitalize="none" />
+                {form.imageBg && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, imageBg: '' }))}>초기화</button>}
+              </div>
+              <div className="si-bg-palette">
+                {BG_PRESETS.map((c) => (
+                  <button type="button" key={c} title={c}
+                    className={`si-bg-swatch${c === 'transparent' ? ' none' : ''}${form.imageBg === c ? ' on' : ''}`}
+                    style={c === 'transparent' ? undefined : { background: c }}
+                    onClick={() => setForm((f) => ({ ...f, imageBg: c }))} />
+                ))}
+              </div>
             </div>
           </div>
+          <div className="aq-frow aq-frow-top">
+            <label className="aq-flabel" htmlFor="si-desc">설명</label>
+            <textarea id="si-desc" rows={3} defaultValue={form.description} onChange={setField('description')}
+              placeholder="상세 설명 (Enter 로 줄바꿈)" style={{ whiteSpace: 'pre-wrap' }} />
+          </div>
+          <p className="si-hint" style={{ margin: '-8px 0 18px' }}>정렬 순서는 아이템 목록에서 ▲▼ 로 조정해요. 새 아이템은 목록 맨 끝에 추가돼요.</p>
 
           <div className="aq-toggle-row">
             <div>
@@ -221,19 +236,21 @@ export default function AdminStoreItem() {
             </div>
             <CgToggle on={form.giftOnly} onClick={() => setForm((f) => ({ ...f, giftOnly: !f.giftOnly }))} />
           </div>
-          <button className="btn btn-primary btn-block" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '아이템 추가'}</button>
+
+          <div className="aq-actions">
+            {editing && (
+              <>
+                <button type="button" className="aq-btn-cancel" disabled={busy} onClick={toggleActive}>{form.isActive ? '숨기기' : '노출'}</button>
+                <button type="button" className="aq-btn-delete" disabled={busy} onClick={remove}>삭제</button>
+              </>
+            )}
+            <div className="aq-actions-right">
+              <button type="button" className="aq-btn-cancel" onClick={() => nav('/admin/store')}>취소</button>
+              <button type="submit" className="aq-btn-save" disabled={busy}>{busy ? '저장 중…' : editing ? '수정 저장' : '아이템 추가'}</button>
+            </div>
+          </div>
         </form>
       </div>
-
-      {editing && (
-        <div className="card">
-          <h3 className="card-title">아이템 관리</h3>
-          <div className="row-gap" style={{ flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-ghost" disabled={busy} onClick={toggleActive}>{form.isActive ? '숨기기' : '노출'}</button>
-            <button type="button" className="btn btn-danger" disabled={busy} onClick={remove}>아이템 삭제</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
