@@ -99,7 +99,7 @@ export default function SchedulePage() {
       return raw ? JSON.parse(raw) : null
     } catch { return null }
   })
-  const [editView, setEditView] = useState(null) // { taskId, groupId } (약속/추억 편집)
+  const [editView, setEditView] = useState(null) // { taskId, groupId, appointmentId } (약속/추억 편집)
   const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches
 
   // 일정 페이지 방문 → 랜덤 퀘스트 '일정 확인하기'
@@ -313,7 +313,7 @@ export default function SchedulePage() {
     const extra = parts.length - 3
     return (
       <button key={a.id} type="button" className={`cal-appt ${a.status === 'done' ? 'done' : ''}`}
-        onClick={() => { if (isDesktop()) { setEditView(null); setDetail({ taskId: a.id, groupId: a.group_id }) } else navigate(`/groups/${a.group_id}/tasks/${a.id}`, { state: { from: 'schedule' } }) }}>
+        onClick={() => { if (isDesktop()) { setEditView(null); setDetail({ taskId: a.task_id, groupId: a.group_id }) } else navigate(`/groups/${a.group_id}/tasks/${a.task_id}`, { state: { from: 'schedule' } }) }}>
         <span className="cal-appt-time">{timeOf(a)}</span>
         <span className="cal-appt-body">
           <span className="cal-appt-head">
@@ -343,7 +343,7 @@ export default function SchedulePage() {
             <svg width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
             뒤로
           </button>
-          <ScheduleAppointment embedded groupId={editView.groupId} taskId={editView.taskId}
+          <ScheduleAppointment embedded groupId={editView.groupId} taskId={editView.taskId} appointmentId={editView.appointmentId}
             onSaved={() => { setEditView(null); reload() }} />
         </div>
       </div>
@@ -358,7 +358,7 @@ export default function SchedulePage() {
             목록으로
           </button>
           <TaskDetail key={detail.taskId} embedded groupId={detail.groupId} taskId={detail.taskId}
-            onEdit={() => setEditView({ taskId: detail.taskId, groupId: detail.groupId })}
+            onEdit={(kind, taskId, appointmentId) => setEditView({ taskId: detail.taskId, groupId: detail.groupId, appointmentId })}
             onBack={() => { setDetail(null); reload() }} />
         </div>
       </div>

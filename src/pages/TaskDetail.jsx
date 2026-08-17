@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams, useOutletContext, useLocation 
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listComments, addComment, updateComment, deleteComment,
-  completeTask, reopenTask, listTaskParticipants, cancelAppointment, deleteTask,
+  completeTask, reopenTask, listTaskParticipants, listTaskAppointments, cancelAppointment, deleteTask,
   getTaskReviews, submitReview, deleteReview, revertToAppointment, useTelescope, ownsTelescope, getGroupDecoMap,
   updateTaskMedia,
 } from '../lib/api'
@@ -18,6 +18,8 @@ import MemberStack from '../components/MemberStack'
 import MediaInfo from '../components/MediaInfo'
 import CalendarIcon from '../components/CalendarIcon'
 import Modal from '../components/Modal'
+import AppointmentAddModal from '../components/AppointmentAddModal'
+import AppointmentPickModal from '../components/AppointmentPickModal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
@@ -107,6 +109,10 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [menuId, setMenuId] = useState(null)           // ⋮ 메뉴가 열린 댓글 id
   const [menuPos, setMenuPos] = useState(null)         // 댓글 ⋮ 메뉴 고정 위치(임베드 스크롤 클리핑 회피)
   const [headMenu, setHeadMenu] = useState(false)      // 상단 약속 ⋮ 메뉴
+  const [appointments, setAppointments] = useState([]) // 이 위시의 약속들(2개 이상 가능)
+  const [apptAddOpen, setApptAddOpen] = useState(false) // "약속 추가" 모달
+  const [apptPickOpen, setApptPickOpen] = useState(false) // 약속 2개 이상일 때 "수정" 대상 선택 모달
+  const [dateDdOpen, setDateDdOpen] = useState(false)   // 날짜 옆 화살표 → 전체 약속 날짜 드롭다운
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
   const [toast, setToast] = useState('')
   const [bottomEl, setBottomEl] = useState(null)
@@ -276,6 +282,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
         listTaskParticipants(taskId), getGroupDecoMap(groupId).catch(() => ({})),
       ])
       setGroup(g); setTask(t); setMembers(m); setComments(c); setParticipants(p); setDecoMap(d || {})
+      setAppointments(t.status !== 'open' ? await listTaskAppointments(taskId) : [])
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId])
 
@@ -414,11 +421,18 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   }
 
   // 상단 약속 메뉴 동작
+  function proceedEditAppointment(appointmentId) {
+    if (embedded && onEdit) { onEdit('appointment', taskId, appointmentId); return } // PC 임베드: 가운데에서 편집
+    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded, appointmentId } })
+  }
   function goEditAppointment() {
     setHeadMenu(false)
-    if (embedded && onEdit) { onEdit('appointment'); return } // PC 임베드: 가운데에서 편집
-    navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded } })
+    if (appointments.length > 1) { setApptPickOpen(true); return } // 약속이 여러 개면 먼저 하나 선택
+    proceedEditAppointment(appointments[0]?.id || null)
   }
+  function pickAppointmentToEdit(id) { setApptPickOpen(false); proceedEditAppointment(id) }
+  function openAddAppointment() { setHeadMenu(false); setApptAddOpen(true) }
+  async function onAppointmentAdded() { setApptAddOpen(false); await load() }
   async function doCancelAppointment() {
     setHeadMenu(false)
     if (!confirm('약속을 취소하고 위시로 되돌릴까요?')) return
@@ -683,6 +697,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
                     <button type="button" onClick={goEditAppointment}>수정</button>
+                    {!isDone && <button type="button" onClick={openAddAppointment}>약속 추가</button>}
                     {!isDone && <button type="button" onClick={doCancelAppointment}>약속 취소</button>}
                     {isDone && reviews.length === 0 && <button type="button" onClick={doRevertAppointment}>약속으로 되돌리기</button>}
                     {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
@@ -726,6 +741,27 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
           <div className="td-appt appt-when">
             <CalendarIcon className="appt-cal" size={15} />
             <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+            {appointments.length > 1 && (
+              <span className="appt-dates-wrap">
+                <button type="button" className="appt-dates-toggle" aria-label="약속 날짜 목록"
+                  onClick={() => setDateDdOpen((v) => !v)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {dateDdOpen && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setDateDdOpen(false)} />
+                    <ul className="appt-dates-dd" role="menu">
+                      {appointments.map((a) => (
+                        <li key={a.id}>{a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정'}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </span>
+            )}
             {task.repeat_rule && (
               <span className="appt-repeat">
                 {repeatLabel(task.repeat_rule)}{task.repeat_until ? ` ~${task.repeat_until}` : ''}
@@ -805,6 +841,11 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
             onClick={() => { setNoTeleModal(false); navigate('/store') }}>상점으로 이동 ›</button>
         </div>
       </Modal>
+
+      <AppointmentAddModal open={apptAddOpen} taskId={taskId}
+        onClose={() => setApptAddOpen(false)} onAdded={onAppointmentAdded} />
+      <AppointmentPickModal open={apptPickOpen} appointments={appointments}
+        onClose={() => setApptPickOpen(false)} onPick={pickAppointmentToEdit} />
 
       {(() => {
         const composerContent = reviewComposeMode ? (

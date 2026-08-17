@@ -215,7 +215,8 @@ export default function GroupDetail() {
   }
   // '수정' → 가운데를 편집 폼으로 전환. 상세에서 오면 detailTaskId, 카드 스와이프에서
   // 오면 해당 카드 id 를 대상으로. (완료/취소 시 detailTaskId 있으면 상세, 없으면 목록 복귀)
-  function openEdit(kind, taskId = detailTaskId) { if (taskId) setEditView({ kind, taskId }) }
+  // appointmentId: 위시 상세에서 약속이 여러 개 중 하나를 골라 수정할 때 전달됨.
+  function openEdit(kind, taskId = detailTaskId, appointmentId = null) { if (taskId) setEditView({ kind, taskId, appointmentId }) }
   // 멤버 모달 등에서 "가운데에 설정 임베드 열기" 요청을 받아 처리(동기적으로 handled 표시).
   // 멤버 모달(userId 포함)에서 온 'me' 설정이면 닫을 때 그 멤버 모달로 되돌아가야 하므로 기억해 둔다.
   useEffect(() => {
@@ -632,7 +633,7 @@ export default function GroupDetail() {
             ? <TaskForm key={`edit-${editView.taskId}`} initial={tasks.find((t) => t.id === editView.taskId) || {}}
                 categories={cats} groupType={group.group_type} submitLabel="저장"
                 onSubmit={async (values) => { await updateTask(editView.taskId, values); setEditView(null); refresh() }} />
-            : <ScheduleAppointment embedded groupId={groupId} taskId={editView.taskId}
+            : <ScheduleAppointment embedded groupId={groupId} taskId={editView.taskId} appointmentId={editView.appointmentId}
                 onSaved={() => { setEditView(null); refresh() }} />}
         </div>
       ) : detailTaskId ? (

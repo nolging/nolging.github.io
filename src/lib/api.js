@@ -552,7 +552,7 @@ export async function deleteTask(taskId) {
   if (error) throw error
 }
 
-// ---- 약속 잡기 (놀깅) ----------------------------------------
+// ---- 약속 잡기 (놀깅) — 위시 하나에 약속(appointments) 여러 개 가능 ----
 
 function scheduleArgs({ taskId, scheduledAt, timeSet, repeat, repeatUntil, remind, participantIds }) {
   const r = remind === '' || remind === null || remind === undefined ? null : Number(remind)
@@ -567,31 +567,78 @@ function scheduleArgs({ taskId, scheduledAt, timeSet, repeat, repeatUntil, remin
   }
 }
 
-// 놀기 신청 확정: 일정/시간여부/반복/반복종료/미리알림/참여자 저장 + 상태 accepted
+function appointmentArgs({ scheduledAt, timeSet, repeat, repeatUntil, remind }) {
+  const r = remind === '' || remind === null || remind === undefined ? null : Number(remind)
+  return {
+    p_scheduled_at: scheduledAt ?? null,
+    p_time_set: timeSet ?? true,
+    p_repeat: repeat || null,
+    p_repeat_until: repeatUntil || null,
+    p_remind: r,
+  }
+}
+
+// 놀기 신청 확정: 첫 약속(일정/반복/반복종료/미리알림) + 참여자 저장 + 상태 accepted
 export async function scheduleTask(opts) {
   const { data, error } = await supabase.rpc('schedule_task', scheduleArgs(opts))
   if (error) throw error
   return Array.isArray(data) ? data[0] : data
 }
 
-// 이미 잡힌 약속 수정
-export async function rescheduleTask(opts) {
-  const { data, error } = await supabase.rpc('reschedule_task', scheduleArgs(opts))
-  if (error) throw error
-  return Array.isArray(data) ? data[0] : data
+// 이미 잡힌 약속 중 하나(appointmentId)를 수정 + 참여자(위시 공용) 갱신
+export async function rescheduleTask({ appointmentId, taskId, participantIds, ...schedule }) {
+  const appt = await updateAppointment(appointmentId, schedule)
+  await setTaskParticipants(taskId, participantIds)
+  return appt
 }
 
-// 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용
-export async function listMyAppointments() {
-  // accepted(약속) + done(추억) 모두 — 일정 캘린더에서 지난 추억도 보이도록
+// 위시 하나의 모든 약속(날짜순)
+export async function listTaskAppointments(taskId) {
   const { data, error } = await supabase
-    .from('tasks')
-    .select('*, groups(name), task_participants(user_id)')
-    .in('status', ['accepted', 'done'])
+    .from('appointments').select('*').eq('task_id', taskId)
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+  if (error) throw error
+  return data ?? []
+}
+
+// 이미 약속/추억 상태인 위시에 약속을 하나 더 추가
+export async function addAppointment(taskId, opts) {
+  const { data, error } = await supabase.rpc('add_appointment', { p_task_id: taskId, ...appointmentArgs(opts) })
+  if (error) throw error
+  return data
+}
+
+// 여러 약속 중 특정 하나만 수정
+export async function updateAppointment(appointmentId, opts) {
+  const { data, error } = await supabase.rpc('update_appointment', { p_appointment_id: appointmentId, ...appointmentArgs(opts) })
+  if (error) throw error
+  return data
+}
+
+// 위시 참여자(약속 전체 공용) 갱신
+export async function setTaskParticipants(taskId, participantIds) {
+  const { error } = await supabase.rpc('set_task_participants', { p_task_id: taskId, p_participants: participantIds ?? [] })
+  if (error) throw error
+}
+
+// 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용. 위시 하나에 약속이
+// 여러 개면 그 개수만큼 행이 나온다(일정 페이지가 날짜마다 표시해야 하므로).
+export async function listMyAppointments() {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('id, task_id, scheduled_at, scheduled_time_set, repeat_rule, repeat_until, remind_min, tasks!inner(title, category, status, group_id, groups(name), task_participants(user_id))')
+    .in('tasks.status', ['accepted', 'done'])
     .not('scheduled_at', 'is', null)
     .order('scheduled_at', { ascending: true })
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map((row) => ({
+    id: row.id, task_id: row.task_id,
+    scheduled_at: row.scheduled_at, scheduled_time_set: row.scheduled_time_set,
+    repeat_rule: row.repeat_rule, repeat_until: row.repeat_until, remind_min: row.remind_min,
+    title: row.tasks?.title, category: row.tasks?.category, status: row.tasks?.status,
+    group_id: row.tasks?.group_id, groups: row.tasks?.groups,
+    task_participants: row.tasks?.task_participants,
+  }))
 }
 
 // 여러 그룹의 멤버 표시정보 → { "groupId:userId": { name, avatar } }

@@ -2,70 +2,31 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGroup, getTask, listMemberCards, listTaskParticipants, scheduleTask, rescheduleTask,
+  getGroup, getTask, listMemberCards, listTaskParticipants, listTaskAppointments, scheduleTask, rescheduleTask,
   updateTask, updateTaskMedia,
 } from '../lib/api'
-import { REPEAT_OPTIONS, REMIND_OPTIONS, CUSTOM_FREQ, WEEKDAYS, resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
-import Avatar from '../components/Avatar'
+import { resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint } from '../lib/constants'
+import ScheduleFields, { defaultSchedule, buildSchedulePayload } from '../components/ScheduleFields'
 import MediaCard from '../components/MediaCard'
 import WorkSearchSheet from '../components/WorkSearchSheet'
-import CgToggle from '../components/CgToggle'
 
 const pad = (n) => String(n).padStart(2, '0')
 const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 const timeStr = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
-function defaultDate() { return dateStr(new Date()) }
-function defaultTime() { const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return timeStr(d) }
 
-const WD = ['일', '월', '화', '수', '목', '금', '토']
-function fmtDate(s) {
-  if (!s) return ''
-  const [y, m, d] = s.split('-').map(Number)
-  const wd = new Date(y, m - 1, d).getDay()
-  return `${y}년 ${m}월 ${d}일 (${WD[wd]})`
-}
-function fmtTime(s) {
-  if (!s) return ''
-  const [h, mi] = s.split(':').map(Number)
-  const ap = h < 12 ? '오전' : '오후'
-  const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${ap} ${h12}:${pad(mi)}`
-}
-
-function Chevron() {
-  return <svg width="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
-}
-
-// 포맷된 값(보라 텍스트) 위에 투명 네이티브 입력을 겹쳐, 탭하면 피커가 열리게
-function PickField({ type, value, onChange, format }) {
-  return (
-    <label className="sc-pick">
-      <span className="sc-pick-text">{format(value)}<Chevron /></span>
-      <input type={type} className="sc-pick-input" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} />
-    </label>
-  )
-}
-
-function SelectPill({ value, onChange, options }) {
-  return (
-    <span className="sc-select">
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <Chevron />
-    </span>
-  )
-}
-
-export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp, embedded = false, onSaved }) {
+export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp, appointmentId: aidProp, embedded = false, onSaved }) {
   const params = useParams()
   const groupId = gidProp ?? params.groupId
   const taskId = tidProp ?? params.taskId
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const locState = useLocation().state
   // embedded: GroupDetail 가운데에 임베드 렌더(라우트 이동 없음) → 저장 후 onSaved 콜백.
   // embed(state): 풀페이지 진입이지만 PC 임베드 상세로 복귀해야 하는 경우.
-  const embed = useLocation().state?.embed
+  const embed = locState?.embed
+  // 약속이 여러 개인 위시를 수정할 때, 어떤 약속을 수정하는지(TaskDetail 의 선택 모달에서 결정).
+  const appointmentIdParam = aidProp ?? locState?.appointmentId ?? null
+  const [appointmentId, setAppointmentId] = useState(appointmentIdParam)
 
   const [group, setGroup] = useState(null)
   const [task, setTask] = useState(null)
@@ -74,18 +35,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const [dateOn, setDateOn] = useState(false)
-  const [timeOn, setTimeOn] = useState(false)
-  const [date, setDate] = useState(defaultDate())
-  const [time, setTime] = useState(defaultTime())
-  const [repeat, setRepeat] = useState('none')
-  const [cFreq, setCFreq] = useState('weekly')
-  const [cInterval, setCInterval] = useState(1)
-  const [cWeekdays, setCWeekdays] = useState(() => new Set())
-  const [untilOn, setUntilOn] = useState(false)
-  const [until, setUntil] = useState(defaultDate())
-  const [remind, setRemind] = useState('')
-  const [participants, setParticipants] = useState(() => new Set())
+  const [sched, setSched] = useState(defaultSchedule)
   // 위시 정보(작성자=유형·제목·작품, 참여자=작품 카드) 편집
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
@@ -102,32 +52,41 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       setTitle(t.title || ''); setCategory(t.category || ''); setMediaInfo(t.media_info || null)
       setComment(t.category && !MEDIA_LOOKUP_CATS.includes(t.category) ? (t.description || '') : '')
 
-      if (t.scheduled_at) {
-        const d = new Date(t.scheduled_at)
-        setDateOn(true); setDate(dateStr(d))
-        setTimeOn(t.scheduled_time_set !== false); setTime(timeStr(d))
+      // 여러 약속 중 수정할 대상 하나를 정한다: 지정된 appointmentId 가 있으면 그것,
+      // 없으면(레거시 경로·약속이 1개뿐) 가장 가까운 것을 사용.
+      let appt = null
+      if (t.status !== 'open') {
+        const appts = await listTaskAppointments(taskId)
+        appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam)) || appts[0] || null
+        setAppointmentId(appt?.id || null)
+      }
+      const patch = {}
+      if (appt?.scheduled_at) {
+        const d = new Date(appt.scheduled_at)
+        patch.dateOn = true; patch.date = dateStr(d)
+        patch.timeOn = appt.scheduled_time_set !== false; patch.time = timeStr(d)
       } else if (t.status !== 'open') {
-        // 날짜 없이 올린 약속·추억 → 날짜 토글 꺼진 상태로 진입
-        setDateOn(false)
+        patch.dateOn = false // 날짜 없이 올린 약속·추억 → 날짜 토글 꺼진 상태로 진입
       }
-      if (t.repeat_rule) {
-        if (t.repeat_rule[0] === '{') {
+      if (appt?.repeat_rule) {
+        if (appt.repeat_rule[0] === '{') {
           try {
-            const c = JSON.parse(t.repeat_rule)
-            setRepeat('custom'); setCFreq(c.freq || 'weekly'); setCInterval(c.interval || 1)
-            setCWeekdays(new Set(c.weekdays || []))
-          } catch { setRepeat('none') }
-        } else setRepeat(t.repeat_rule)
+            const c = JSON.parse(appt.repeat_rule)
+            patch.repeat = 'custom'; patch.cFreq = c.freq || 'weekly'; patch.cInterval = c.interval || 1
+            patch.cWeekdays = c.weekdays || []
+          } catch { patch.repeat = 'none' }
+        } else patch.repeat = appt.repeat_rule
       }
-      if (t.repeat_until) { setUntilOn(true); setUntil(t.repeat_until) }
-      if (t.remind_min !== null && t.remind_min !== undefined) setRemind(String(t.remind_min))
+      if (appt?.repeat_until) { patch.untilOn = true; patch.until = appt.repeat_until }
+      if (appt?.remind_min !== null && appt?.remind_min !== undefined) patch.remind = String(appt.remind_min)
 
       const existing = t.status !== 'open' ? await listTaskParticipants(taskId) : []
       // 2인 그룹은 기본으로 두 명 다 체크. 그 외엔 위시 작성자·나 + 기존 참여자.
       const base = m.length === 2 ? m.map((x) => x.user_id) : [t.created_by, profile.id]
-      setParticipants(new Set([...base, ...existing].filter(Boolean)))
+      patch.participants = [...new Set([...base, ...existing].filter(Boolean))]
+      setSched((s) => ({ ...s, ...patch }))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [groupId, taskId, profile.id])
+  }, [groupId, taskId, profile.id, appointmentIdParam])
   useEffect(() => { load() }, [load])
 
   const isReschedule = task && task.status !== 'open'
@@ -143,22 +102,6 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
     if (!MEDIA_LOOKUP_CATS.includes(next)) setMediaInfo(null); else setComment('')
   }
 
-  function toggleMember(uid) {
-    // 위시 작성자·약속 잡는 멤버도 필수 아님(기본 체크, 해제 가능)
-    setParticipants((p) => { const n = new Set(p); n.has(uid) ? n.delete(uid) : n.add(uid); return n })
-  }
-  function toggleWeekday(i) {
-    setCWeekdays((p) => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n })
-  }
-
-  function buildRepeat() {
-    if (!dateOn || repeat === 'none') return null
-    if (repeat !== 'custom') return repeat
-    const obj = { type: 'custom', freq: cFreq, interval: Math.max(1, Number(cInterval) || 1) }
-    if (cFreq === 'weekly') obj.weekdays = [...cWeekdays].sort((a, b) => a - b)
-    return JSON.stringify(obj)
-  }
-
   async function submit(e) {
     e.preventDefault()
     if (saving) return
@@ -166,7 +109,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       if (!category) { setWishErr('위시 유형을 선택해 주세요.'); return }
       if (!title.trim()) { setWishErr('제목을 입력해 주세요.'); return }
     }
-    const ids = needChoose ? [...participants] : members.map((m) => m.user_id)
+    const ids = needChoose ? sched.participants : members.map((m) => m.user_id)
     if (needChoose && ids.length === 0) { setError('참여자를 한 명 이상 선택해 주세요.'); return }
     setSaving(true); setError('')
     try {
@@ -181,21 +124,9 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       } else if (mediaCat) {
         await updateTaskMedia(taskId, mediaInfo)
       }
-      let scheduledAt = null, timeSet = false
-      // 날짜를 체크하지 않으면 일정 없이 저장(약속/추억 등록 가능)
-      if (dateOn && date) {
-        scheduledAt = new Date(`${date}T${timeOn ? time : '00:00'}`).toISOString()
-        timeSet = timeOn
-      }
-      const rule = buildRepeat()
-      const payload = {
-        taskId, scheduledAt, timeSet, repeat: rule,
-        repeatUntil: (dateOn && rule && untilOn) ? until : null,
-        remind: dateOn ? remind : '',
-        participantIds: ids,
-      }
-      if (isReschedule) await rescheduleTask(payload)
-      else await scheduleTask(payload)
+      const schedule = buildSchedulePayload(sched)
+      if (isReschedule) await rescheduleTask({ appointmentId, taskId, participantIds: ids, ...schedule })
+      else await scheduleTask({ taskId, participantIds: ids, ...schedule })
       if (embedded) { onSaved?.(); return }
       if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
       else navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
@@ -280,97 +211,8 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
           </div>
         )}
 
-        {/* 일정 */}
-        <div className="cg-section-title cg-mt-24">일정</div>
-        <div className="cg-list cg-mt-12">
-          <div className="cg-row">
-            <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
-            <div className="cg-row-main">
-              <div className="cg-row-title">날짜</div>
-              {dateOn && <PickField type="date" value={date} onChange={setDate} format={fmtDate} />}
-            </div>
-            <CgToggle on={dateOn} onClick={() => setDateOn((v) => !v)} />
-          </div>
-
-          {dateOn && (
-            <div className="cg-row">
-              <span className="cg-row-icon" style={{ background: '#eeebfe' }}>🕗</span>
-              <div className="cg-row-main">
-                <div className="cg-row-title">시간</div>
-                {timeOn && <PickField type="time" value={time} onChange={setTime} format={fmtTime} />}
-              </div>
-              <CgToggle on={timeOn} onClick={() => setTimeOn((v) => !v)} />
-            </div>
-          )}
-
-          {dateOn && (
-            <div className="cg-row">
-              <span className="cg-row-icon" style={{ background: '#e8f4ec' }}>🔁</span>
-              <div className="cg-row-main"><div className="cg-row-title">반복</div></div>
-              <SelectPill value={repeat} onChange={setRepeat} options={REPEAT_OPTIONS} />
-            </div>
-          )}
-
-          {dateOn && repeat === 'custom' && (
-            <div className="sc-custom">
-              <div className="sc-custom-freq">
-                <input type="number" min="1" className="sc-num" value={cInterval} onChange={(e) => setCInterval(e.target.value)} />
-                <SelectPill value={cFreq} onChange={setCFreq} options={CUSTOM_FREQ} />
-              </div>
-              {cFreq === 'weekly' && (
-                <div className="weekday-row">
-                  {WEEKDAYS.map((w, i) => (
-                    <button type="button" key={i} className={`weekday ${cWeekdays.has(i) ? 'on' : ''}`}
-                      onClick={() => toggleWeekday(i)}>{w}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {dateOn && repeat !== 'none' && (
-            <div className="cg-row">
-              <span className="cg-row-icon" style={{ background: '#fde8ee' }}>🗓️</span>
-              <div className="cg-row-main">
-                <div className="cg-row-title">반복 종료</div>
-                {untilOn && <PickField type="date" value={until} onChange={setUntil} format={fmtDate} />}
-              </div>
-              <CgToggle on={untilOn} onClick={() => setUntilOn((v) => !v)} />
-            </div>
-          )}
-
-          {dateOn && (
-            <div className="cg-row">
-              <span className="cg-row-icon" style={{ background: '#fdeee6' }}>🔔</span>
-              <div className="cg-row-main"><div className="cg-row-title">알림</div></div>
-              <SelectPill value={remind} onChange={setRemind} options={REMIND_OPTIONS} />
-            </div>
-          )}
-        </div>
-
-        {needChoose && (
-          <>
-            <div className="cg-section-title cg-mt-24">참여자</div>
-            <div className="cg-list cg-mt-12">
-              <ul className="member-pick">
-                {members.map((m) => {
-                  const checked = participants.has(m.user_id)
-                  return (
-                    <li key={m.user_id} className="member-pick-item" onClick={() => toggleMember(m.user_id)}>
-                      <Avatar src={m.avatar_url} name={m.display_nickname} size={32} />
-                      <span className="member-pick-name">
-                        {m.display_nickname}
-                        {m.user_id === profile.id && <span className="mp-badge scp-me">나</span>}
-                        {m.user_id === task.created_by && <span className="mp-badge scp-author">위시 작성자</span>}
-                      </span>
-                      <span className={`pick-check ${checked ? 'on' : ''}`} aria-hidden="true">✓</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          </>
-        )}
+        <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))}
+          members={members} meId={profile.id} authorId={task.created_by} />
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
