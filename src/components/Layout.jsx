@@ -233,7 +233,7 @@ export default function Layout() {
       : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 상세')
         : p.startsWith('/admin/quests/daily') ? '퀘스트 수정'
           : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 수정')
-          : p.startsWith('/admin/notifs') ? '알림 메시지 수정'
+          : p.startsWith('/admin/notifs') ? (p.endsWith('/new') ? '알림 메시지 추가' : '알림 메시지 수정')
             : p.startsWith('/admin/reports') ? '오류 리포트'
             : '관리자'
   // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
