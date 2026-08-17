@@ -114,7 +114,8 @@ export default function AdminNotifDetail() {
             <label className="aq-flabel" htmlFor="nt-emoji">아이콘</label>
             <div className="aq-icon-row">
               <input id="nt-emoji" className="aq-icon-input" defaultValue={form.emoji} onChange={setField('emoji')}
-                placeholder="🔔" maxLength={16} autoCapitalize="none" />
+                placeholder="🔔" maxLength={16} autoCapitalize="none"
+                style={form.emoji_bg ? { background: form.emoji_bg } : undefined} />
               <div className="an-bg-row" style={{ margin: 0 }}>
                 {BG_PRESETS.map((c) => (
                   <button key={c} type="button" className={`aq-swatch ${sameColor(form.emoji_bg, c) ? 'active' : ''}`}
