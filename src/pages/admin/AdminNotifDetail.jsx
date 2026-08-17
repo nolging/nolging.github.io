@@ -78,11 +78,13 @@ export default function AdminNotifDetail() {
                 placeholder="예: welcome_back (영문 소문자/숫자/_)" autoCapitalize="none" />
             </div>
           )}
-          <div className="aq-frow">
-            <label className="aq-flabel" htmlFor="nt-label">메모 {!editing && <span className="aq-required">*</span>}</label>
-            <input id="nt-label" defaultValue={form.label} onChange={setField('label')}
-              placeholder="관리자용 메모(예: 이 알림이 쓰이는 상황)" disabled={editing} />
-          </div>
+          {!editing && (
+            <div className="aq-frow">
+              <label className="aq-flabel" htmlFor="nt-label">메모 <span className="aq-required">*</span></label>
+              <input id="nt-label" defaultValue={form.label} onChange={setField('label')}
+                placeholder="관리자용 메모(예: 이 알림이 쓰이는 상황)" />
+            </div>
+          )}
           {(form.label || vars) && (
             <div className="admin-notif-memo">
               <div className="admin-notif-memo-title">{form.label || '메모'}</div>
