@@ -16,8 +16,9 @@ export default function useScrollRestore(ready = true) {
     const el = document.querySelector('.content')
     if (!el) return
     if (ready && !restoredRef.current) {
-      const saved = positions.get(pathname)
-      if (saved) el.scrollTop = saved
+      // 저장된 위치가 없으면(=상단바 메뉴 등으로 처음 들어온 목록) 이전 페이지 스크롤이
+      // 남아있지 않게 맨 위로 — 있으면(뒤로가기로 돌아옴) 그 위치로 복원.
+      el.scrollTop = positions.get(pathname) || 0
       restoredRef.current = true
     }
     const onScroll = () => { positions.set(pathname, el.scrollTop) }

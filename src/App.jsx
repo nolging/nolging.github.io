@@ -130,6 +130,7 @@ export default function App() {
         <Route path="/admin/quests/daily/:key" element={<ProtectedRoute adminOnly><AdminDailyQuestDetail /></ProtectedRoute>} />
         <Route path="/admin/quests/:id" element={<ProtectedRoute adminOnly><AdminQuestDetail /></ProtectedRoute>} />
         <Route path="/admin/notifs" element={<ProtectedRoute adminOnly><AdminNotifs /></ProtectedRoute>} />
+        <Route path="/admin/notifs/new" element={<ProtectedRoute adminOnly><AdminNotifDetail /></ProtectedRoute>} />
         <Route path="/admin/notifs/:key" element={<ProtectedRoute adminOnly><AdminNotifDetail /></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
         <Route path="/admin/reports/:id" element={<ProtectedRoute adminOnly><AdminReportDetail /></ProtectedRoute>} />
