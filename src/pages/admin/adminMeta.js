@@ -44,18 +44,23 @@ export const CATEGORY_OPTIONS = [
 // adminOnly 기본값 true: 새 아이템은 "판매" 토글을 켜기 전까지 관리자에게만 보임(테스트 후 노출)
 export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: true, imageSvg: '', imageBg: '', category: '', decoSlot: '' }
 
-// 그룹별 사용량 제어: 차단 가능한 기능(우심뽀까/낙서장) — key 는 GroupDetail 의 goCouple(path) 값과 동일
-export const GROUP_FEATURES = [
-  { key: 'touch', label: '우심뽀까', desc: '커플 그룹 전용 터치 기능' },
-  { key: 'draw', label: '낙서장', desc: '함께 그리는 캔버스' },
+// 그룹별 사용량 제어: 차단 가능한 기능 — key 는 GroupDetail 의 goCouple(path) 값과 동일.
+// emoji/emojiBg 는 데이트/놀이터 페이지(GroupMembers.jsx PlayCard)와 동일하게 맞춤.
+// 커플 그룹은 "멍냥꽁냥", 우정 그룹은 "커뮤니티" 구역에 각각 다른 기능 목록이 표시된다.
+export const COUPLE_FEATURES = [
+  { key: 'touch', label: '우심뽀까', emoji: '💘', emojiBg: '#fde8ee', desc: '커플 그룹 전용 터치 기능' },
+  { key: 'draw', label: '낙서장', emoji: '✏️', emojiBg: '#fbf1d3', desc: '함께 그리는 캔버스' },
+]
+export const FRIEND_FEATURES = [
+  { key: 'draw', label: '낙서장', emoji: '✏️', emojiBg: '#fbf1d3', desc: '함께 그리는 캔버스' },
 ]
 // 그룹별 사용량 제어: 차단 가능한 미니 게임
 export const GROUP_GAMES = [
-  { key: 'catchmind', label: '캐치 마인드' },
-  { key: 'davinci', label: '다빈치 코드' },
-  { key: 'puzzle', label: '퍼즐' },
-  { key: 'rps', label: '가위바위보' },
-  { key: 'omok', label: '오목' },
+  { key: 'catchmind', label: '캐치 마인드', emoji: '🎨', emojiBg: '#e6eefd' },
+  { key: 'davinci', label: '다빈치 코드', emoji: '🃏', emojiBg: '#fbf1d3' },
+  { key: 'puzzle', label: '퍼즐', emoji: '🧩', emojiBg: '#e8f4ec' },
+  { key: 'rps', label: '가위바위보', emoji: '✌️', emojiBg: '#fde8ee' },
+  { key: 'omok', label: '오목', emoji: '⚫', emojiBg: '#f3f2f7' },
 ]
 // 기능을 Off 했을 때 카드 설명에 표시되는 문구
 export const BLOCKED_DESC = '사용량 제어로 차단'

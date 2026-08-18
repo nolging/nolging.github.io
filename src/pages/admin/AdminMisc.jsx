@@ -1,28 +1,27 @@
 import { useNavigate } from 'react-router-dom'
 
-// 관리자: 기타 관리 — 하위 관리 화면으로 가는 카드 목록
+// 관리자: 기타 관리 — 하위 관리 화면으로 가는 카드 목록(퀘스트 관리와 동일한 카드 스타일)
 export default function AdminMisc() {
   const nav = useNavigate()
   return (
-    <div className="page admin-page">
-      <div className="card">
-        <div className="admin-list-head">
-          <h3 className="card-title" style={{ margin: 0 }}>기타 관리</h3>
-        </div>
-        <ul className="admin-rows">
-          <li>
-            <button type="button" className="admin-row" onClick={() => nav('/admin/reports')}>
-              <span className="admin-row-main">오류 리포트 관리</span>
-              <span className="admin-row-side"><span className="admin-row-caret" aria-hidden="true">›</span></span>
-            </button>
-          </li>
-          <li>
-            <button type="button" className="admin-row" onClick={() => nav('/admin/misc/groups')}>
-              <span className="admin-row-main">그룹별 사용량 제어</span>
-              <span className="admin-row-side"><span className="admin-row-caret" aria-hidden="true">›</span></span>
-            </button>
-          </li>
-        </ul>
+    <div className="page admin-page aq-page">
+      <div className="aq-cards">
+        <button type="button" className="aq-card" onClick={() => nav('/admin/reports')}>
+          <span className="aq-card-icon" style={{ background: '#fde8ee' }} aria-hidden="true">🐞</span>
+          <span className="aq-card-body">
+            <span className="aq-card-name">오류 리포트 관리</span>
+            <span className="aq-card-desc aq-card-desc-desktop">사용자가 제보한 오류를 확인하고 처리해요.</span>
+          </span>
+          <span className="aq-card-chevron always" aria-hidden="true">›</span>
+        </button>
+        <button type="button" className="aq-card" onClick={() => nav('/admin/misc/groups')}>
+          <span className="aq-card-icon" style={{ background: '#eeebfe' }} aria-hidden="true">🎛️</span>
+          <span className="aq-card-body">
+            <span className="aq-card-name">그룹별 사용량 제어</span>
+            <span className="aq-card-desc aq-card-desc-desktop">그룹별로 기능 사용을 켜고 끌 수 있어요.</span>
+          </span>
+          <span className="aq-card-chevron always" aria-hidden="true">›</span>
+        </button>
       </div>
     </div>
   )

@@ -6008,6 +6008,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .aq-card-title-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .aq-card-title-row .aq-card-name { flex: 0 1 auto; min-width: 0; }
+.aq-card-title-row .badge { flex-shrink: 0; white-space: nowrap; }
 /* 꾸미기 아이템 유형 배지: 목록 카드/인벤토리와 동일한 어두운 톤, 이름 옆에 작게 */
 .aq-card-title-row .aq-badge-target {
   flex-shrink: 0; background: rgba(25, 23, 34, .7); color: #fff;
@@ -6112,11 +6113,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-row-side { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .admin-row-price { font-weight: 800; }
 .admin-row-caret { color: var(--muted); font-size: 18px; line-height: 1; }
-/* 그룹별 사용량 제어 목록: 그룹명 + 배지 (배지가 말줄임에 안 잘리도록 이름만 별도로 감쌈) */
-.admin-gname-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.admin-gname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 제어할 게 없는 일반 그룹: 클릭 불가, 흐리게 표시 */
-.admin-row.admin-row-disabled { cursor: default; opacity: .45; }
+/* 퀘스트 관리 스타일 카드를 순수 이동용(뱃지 없이 화살표만)으로 쓸 때: 모바일에서도 화살표 항상 표시 */
+.aq-card-chevron.always { display: block; color: #c7c3d4; font-size: 16px; flex-shrink: 0; line-height: 1; }
+/* 제어할 게 없는 일반 그룹: 클릭 불가 */
+.aq-card.inactive { cursor: default; }
+/* 그룹별 사용량 제어 상세: 그룹명 + 배지 + 아바타를 한 줄 카드로 */
+.agf-head-card { display: flex; align-items: center; gap: 8px; }
+.agf-head-name { font-size: 16px; font-weight: 800; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agf-head-avatars { margin-left: auto; }
 /* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
 /* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
 /* 상점 관리: 콘텐츠 상단 패딩 제거 → sticky 탭이 상단바 바로 아래(top:0)에 흔들림 없이 고정 */
