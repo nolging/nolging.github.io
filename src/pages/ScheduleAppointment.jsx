@@ -54,12 +54,13 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       let schedPatch
       if (t.status !== 'open') {
         // 여러 약속 중 수정할 대상 하나를 정한다: 지정된 appointmentId 가 있으면 그것,
-        // 없으면(레거시 경로·약속이 1개뿐) 가장 가까운 것을 사용. 참여자는 그 약속의
-        // 참여자(풀의 부분집합)로 채운다.
+        // 없으면 약속 상세에 표시되는 날짜(가장 가까운 미래 약속, task.scheduled_at 캐시)와
+        // 일치하는 약속을 사용. 참여자는 그 약속의 참여자(풀의 부분집합)로 채운다.
         const [appts, pool] = await Promise.all([listTaskAppointments(taskId), listTaskParticipants(taskId)])
         setAppointments(appts)
         setParticipantPool(pool)
-        const appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam)) || appts[0] || null
+        const appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam))
+          || appts.find((a) => a.scheduled_at === t.scheduled_at) || appts[0] || null
         setAppointmentId(appt?.id || null)
         schedPatch = scheduleFromAppointment(appt)
       } else {
