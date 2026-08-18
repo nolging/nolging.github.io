@@ -64,15 +64,20 @@ export default function Davinci() {
   const [peerBals, setPeerBals] = useState({})
   const peerBalsRef = useRef({}); peerBalsRef.current = peerBals
 
-  const ping = useCallback(() => { chanRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} }) }, [])
+  // 채널에 나 혼자면(다른 접속자 없음) 브로드캐스트를 보내도 받을 사람이 없으니 생략
+  const bsend = useCallback((event, payload) => {
+    if (!Object.keys(peerBalsRef.current).length) return
+    chanRef.current?.send({ type: 'broadcast', event, payload })
+  }, [])
+  const ping = useCallback(() => { bsend('sync', {}) }, [bsend])
   const pushChat = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
   const sendChat = useCallback((e) => {
     e?.preventDefault?.()
     const text = draft.trim(); if (!text) return
     // 이름/아바타는 수신 측이 v.players 에서 uid 로 조회(아이디 노출 방지) → payload 엔 uid 만
     const m = { id: uuid(), uid, text }
-    chanRef.current?.send({ type: 'broadcast', event: 'chat', payload: m }); pushChat(m); setDraft('')
-  }, [draft, uid, pushChat])
+    bsend('chat', m); pushChat(m); setDraft('')
+  }, [draft, uid, pushChat, bsend])
 
   const refresh = useCallback(async () => {
     const mid = matchRef.current; if (!mid) return
@@ -121,8 +126,8 @@ export default function Davinci() {
   // 로비 상태 변경을 상대에게 즉시 브로드캐스트(델타) → 오목/캐치처럼 바로 반영.
   // 자리 변경은 { actor, seatIdx }(내 위치만), 판돈은 { stake } 로 보내 서로 덮어쓰지 않게.
   const broadcastLobby = useCallback((payload) => {
-    chanRef.current?.send({ type: 'broadcast', event: 'lobby', payload })
-  }, [])
+    bsend('lobby', payload)
+  }, [bsend])
 
   // 로비 판돈 등 일반 서버 반영(즉시 로컬 반영 후 백그라운드 동기화)
   const bgAct = useCallback((action, payload = {}) => {
@@ -529,7 +534,7 @@ export default function Davinci() {
   else if (v.phase === 'selfreveal' && myTurn) banner = { setup: true, title: '더미가 비었어요', sub: '공개할 내 타일을 고르세요' }
 
   function rematch() {
-    chanRef.current?.send({ type: 'broadcast', event: 'rematch', payload: { uid, name: me.name } })
+    bsend('rematch', { uid, name: me.name })
     act('reset')
   }
   // 정답 후: 이어서 추측할 상대 타일을 고름. 같은 타일을 다시 누르면 '선택만' 해제한다.

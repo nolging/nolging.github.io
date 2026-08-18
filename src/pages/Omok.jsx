@@ -70,7 +70,11 @@ export default function Omok() {
   const [ruleOn, setRuleOn] = useState(false)
   const [toast, setToast] = useState('')
 
-  const emit = useCallback((type, payload) => { chanRef.current?.send({ type: 'broadcast', event: type, payload }) }, [])
+  // 채널에 나 혼자면(다른 접속자 없음) 브로드캐스트를 보내도 받을 사람이 없으니 생략
+  const emit = useCallback((type, payload) => {
+    if (!Object.keys(peersRef.current).length) return
+    chanRef.current?.send({ type: 'broadcast', event: type, payload })
+  }, [])
   const pushSys = useCallback((text) => setChat((c) => [...c.slice(-80), { id: newGameId(), sys: true, text }]), [])
   const pushMsg = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
 

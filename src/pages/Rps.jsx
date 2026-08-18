@@ -63,7 +63,11 @@ export default function Rps() {
   const [now, setNow] = useState(Date.now())
   const [myPick, setMyPick] = useState(null)
 
-  const emit = useCallback((type, payload) => { chanRef.current?.send({ type: 'broadcast', event: type, payload }) }, [])
+  // 채널에 나 혼자면(다른 접속자 없음) 브로드캐스트를 보내도 받을 사람이 없으니 생략
+  const emit = useCallback((type, payload) => {
+    if (!Object.keys(peersRef.current).length) return
+    chanRef.current?.send({ type: 'broadcast', event: type, payload })
+  }, [])
   const broadcastLobby = useCallback((n) => emit('lobby', n), [emit])
   const pushChat = useCallback((m) => setChat((c) => [...c.slice(-80), m]), [])
   const memberName = useCallback((u) => membersRef.current[u]?.name || peersRef.current[u]?.name || (u === uid ? myName.current : '?'), [uid])

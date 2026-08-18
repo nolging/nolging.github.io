@@ -79,6 +79,7 @@ export default function DrawBoard() {
 
   const [canvasW, setCanvasW] = useState(0)   // 실제 캔버스 표시 너비(굵기 미리보기 = 실제 굵기)
   const [members, setMembers] = useState([])  // 접속 중 멤버 [{uid,name,avatar}]
+  const membersRef = useRef([])               // 브로드캐스트 여부 판단용(나 혼자면 1) — state 는 비동기라 ref 로 즉시 참조
   const [busy, setBusy] = useState(false)
   const [isMember, setIsMember] = useState(false) // 이 그룹의 멤버인지(확정 전엔 false → 미가입이 잠깐도 낙서/track 되지 않게). 관전만.
   const isMemberRef = useRef(isMember); isMemberRef.current = isMember
@@ -153,6 +154,7 @@ export default function DrawBoard() {
     ch.on('presence', { event: 'sync' }, () => {
       const st = ch.presenceState()
       const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
+      membersRef.current = list
       setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
     })
 
@@ -183,6 +185,7 @@ export default function DrawBoard() {
     if (!cur) return
     const pts = bufRef.current; bufRef.current = []
     if (!pts.length && !end) return
+    if (membersRef.current.length <= 1) return   // 혼자면 브로드캐스트 생략(저장은 onUp 에서 별도로 함)
     chanRef.current?.send({ type: 'broadcast', event: 'seg', payload: { id: cur.id, uid, c: cur.c, w: cur.w, b: cur.b, p: pts, end: !!end } })
   }, [uid])
 
@@ -240,7 +243,7 @@ export default function DrawBoard() {
     for (let i = list.length - 1; i >= 0; i--) { if (list[i].author === uid) { idx = i; break } }
     if (idx < 0) return
     const [s] = list.splice(idx, 1); idsRef.current.delete(s.id); redrawAll()
-    chanRef.current?.send({ type: 'broadcast', event: 'remove', payload: { id: s.id } })
+    if (membersRef.current.length > 1) chanRef.current?.send({ type: 'broadcast', event: 'remove', payload: { id: s.id } })
     try { await deleteDrawingStroke(s.id) } catch { /* noop */ }
   }
   async function clearAll() {
@@ -248,7 +251,7 @@ export default function DrawBoard() {
     if (!confirm('모두의 그림을 지울까요? 되돌릴 수 없어요.')) return
     setBusy(true)
     committedRef.current = []; idsRef.current = new Set(); liveRef.current.clear(); redrawAll()
-    chanRef.current?.send({ type: 'broadcast', event: 'clear' })
+    if (membersRef.current.length > 1) chanRef.current?.send({ type: 'broadcast', event: 'clear' })
     try { await clearGroupDrawing(groupId) } catch { /* noop */ } finally { setBusy(false) }
   }
 
