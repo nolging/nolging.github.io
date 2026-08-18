@@ -298,10 +298,22 @@ export default function SchedulePage() {
     return out
   }, [shown, selected, datePicked, monthAll, view, today])
 
-  // 검색 중(제목 검색어 있음): 캘린더는 생략하고 검색어가 포함된 약속 카드만 시간순으로.
-  const searchResults = useMemo(() => {
+  // 검색 중(제목 검색어 있음): 캘린더는 생략하고 검색어가 포함된 약속만, 캘린더 하단 목록과 동일하게 날짜별로 묶어서.
+  const searchGroups = useMemo(() => {
     if (!query) return null
-    return [...shown].sort((x, y) => new Date(x.scheduled_at) - new Date(y.scheduled_at))
+    const map = new Map()
+    for (const a of shown) {
+      const key = ymd(new Date(a.scheduled_at))
+      if (!map.has(key)) map.set(key, [])
+      map.get(key).push(a)
+    }
+    return [...map.entries()]
+      .sort((x, y) => x[0].localeCompare(y[0]))
+      .map(([key, list]) => ({
+        key,
+        label: fmtDay(new Date(`${key}T00:00:00`)),
+        appts: list.sort((x, y) => minutesOf(x.scheduled_at) - minutesOf(y.scheduled_at)),
+      }))
   }, [shown, query])
 
   // 카드가 sticky 날짜 헤더 아래로 (거의) 가려지면 그림자까지 완전히 숨김
@@ -436,14 +448,14 @@ export default function SchedulePage() {
           <div className="spinner" />
         ) : query ? (
           <div className="cal-list">
-            {searchResults.length === 0 ? (
+            {searchGroups.length === 0 ? (
               <p className="muted sm cal-empty">검색 결과가 없어요.</p>
-            ) : (
-              <div className="cal-day-group">
-                <div className="cal-list-title">검색 결과 {searchResults.length} 건</div>
-                {searchResults.map(renderAppt)}
+            ) : searchGroups.map((g) => (
+              <div key={g.key} className="cal-day-group">
+                <div className="cal-list-title">{g.label}</div>
+                {g.appts.map(renderAppt)}
               </div>
-            )}
+            ))}
           </div>
         ) : datePicked ? (
           <div className="cal-list">
