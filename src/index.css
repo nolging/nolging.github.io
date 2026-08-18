@@ -4989,6 +4989,15 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   padding: 0 8px; margin-left: -11px; border-radius: 999px; background: #efedf5; border: 2px solid #fff;
   box-sizing: content-box; font-size: 12px; font-weight: 700; color: #6f6a80; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
 .draw-viewonly { text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); padding: 14px 12px 4px; }
+/* 사용량 제어로 낙서장 실시간 반영이 차단됐을 때: 접속자 아바타 자리에 안내 문구 + 새로고침 버튼 */
+.draw-blocked-row { position: absolute; top: 27px; left: 14px; right: 14px; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.draw-blocked-text { font-size: 11.5px; color: #b3afbb; line-height: 1.4; }
+.draw-refresh-btn { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: #efedf5; color: #6f6a80; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0; box-shadow: 0 1px 4px rgba(25,23,34,.15); }
+.draw-refresh-btn:hover { background: #e6e1fc; color: #191722; }
+.draw-refresh-btn:active { transform: scale(.92); }
 /* 낙서 영역: 스케치북처럼 — 상단 스프링 바인딩 공간을 두고 남는 공간을 꽉 채움 */
 .draw-wrap { position: relative; flex: 1; min-height: 0; padding-top: 10px;
   display: flex; align-items: stretch; justify-content: center; }
