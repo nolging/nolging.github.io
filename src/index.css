@@ -5173,7 +5173,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   box-shadow: inset 0 0 0 1px #f3e6e9; }
 .csx-anniv-pill:active { transform: scale(.97); }
 /* 다음 기념일 */
-.csx-mile { background: #fff; border-radius: 20px; padding: 16px 18px; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
+.csx-mile { background: #fff; border-radius: 20px; padding: 16px 18px; box-shadow: 0 4px 16px rgba(25,23,34,.05);
+  border: none; width: 100%; display: block; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .csx-mile-top { display: flex; align-items: center; gap: 8px; }
 .csx-mile-label { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #8b8798; }
 .csx-mile-label b { font-size: 15px; font-weight: 800; color: #191722; margin-left: 3px; }
@@ -5207,6 +5208,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .csx-anniv-input { width: 100%; border: 1.5px solid #ece9f3; border-radius: 12px; padding: 12px 14px;
   font-size: 15px; background: #f4f3f7; color: #191722; box-sizing: border-box; }
 .csx-anniv-reset { color: #8b8798; background: #f4f3f7; }
+/* 다음 기념일 설정 모달: 숫자 인풋 + 단위(일/주년) 셀렉트 */
+.csx-next-row { display: flex; gap: 8px; }
+.csx-next-row .csx-next-value { flex: 1; min-width: 0; }
+.csx-next-unit { flex-shrink: 0; width: 92px; border: 1.5px solid #ece9f3; border-radius: 12px; padding: 12px 10px;
+  font-size: 15px; background: #f4f3f7; color: #191722; box-sizing: border-box; }
+.csx-next-error { margin: -4px 0 0; font-size: 12.5px; font-weight: 600; color: #e5484d; }
 
 /* 커플 그룹 카드 우측 상단 "D+숫자" (알약 없이 회색 텍스트, 그룹 설명과 동일) */
 .tile-anniv { position: absolute; top: 12px; right: 14px; z-index: 3;

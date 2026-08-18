@@ -235,6 +235,17 @@ export async function coupleRingClaimedAt(groupId) {
   return data || null
 }
 
+// 커플 공간: "다음 기념일" 커스텀 지정(그룹 멤버 누구나). kind=null 이면 자동으로 되돌림.
+export async function setGroupNextAnniv(groupId, kind, value) {
+  const { error } = await supabase.rpc('set_group_next_anniv', { p_group_id: groupId, p_kind: kind || null, p_value: value || null })
+  if (error) {
+    if (error.code === 'PGRST202' || /set_group_next_anniv/.test(error.message || '')) {
+      throw new Error('다음 기념일 지정 기능이 아직 DB에 설정되지 않았습니다. (set_group_next_anniv 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+}
+
 // ---- 함께 그리기 (프리미엄 그룹 공용 캔버스) --------------------
 // 저장된 스트로크 로드 (재진입 시 이어 그리기). 테이블 미배포면 빈 배열.
 export async function listDrawingStrokes(groupId) {

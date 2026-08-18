@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, listBlockedFeatures } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, setGroupNextAnniv, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, listBlockedFeatures } from '../lib/api'
 import { formatBirthDot } from '../lib/birthday'
 import { useAuth } from '../context/AuthContext'
 import { openMember } from '../lib/memberModal'
@@ -9,7 +9,7 @@ import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
 import Fireworks from '../components/Fireworks'
 import NightSky from '../components/NightSky'
-import { isAnnivToday } from '../lib/anniv'
+import { isAnnivToday, resolveNextAnniv, customAnnivDayCount } from '../lib/anniv'
 
 function parseYMD(s) {
   const [y, mo, d] = String(s).split('-').map(Number)
@@ -80,6 +80,13 @@ export default function GroupMembers() {
   const [annivOpen, setAnnivOpen] = useState(false) // 기념일 수정 모달
   const [annivDraft, setAnnivDraft] = useState('')
   const [annivBusy, setAnnivBusy] = useState(false)
+  // 다음 기념일(마일스톤) 설정 모달: 자동(100일 단위/N주년 중 가까운 쪽) 또는 커스텀(N일/N주년) 지정
+  const [nextAnnivOpen, setNextAnnivOpen] = useState(false)
+  const [nextAnnivMode, setNextAnnivMode] = useState('auto') // 'auto' | 'custom'
+  const [nextAnnivKindDraft, setNextAnnivKindDraft] = useState('days') // 'days' | 'years'
+  const [nextAnnivValueDraft, setNextAnnivValueDraft] = useState('')
+  const [nextAnnivBusy, setNextAnnivBusy] = useState(false)
+  const [nextAnnivError, setNextAnnivError] = useState('')
   const [burst, setBurst] = useState(false)    // 하트 콕! 애니메이션
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -185,14 +192,16 @@ export default function GroupMembers() {
     const effAnniv = anniv || claimDate || ''
     const days = daysSince(effAnniv)
     const start = parseYMD(effAnniv)
-    // 다음 100일 단위 기념일
-    let mile = null, mileLeft = null, mileDateLabel = null, pct = 0
-    if (days != null && start) {
-      mile = (Math.floor(days / 100) + 1) * 100
-      mileLeft = mile - days
-      const mileD = new Date(start.getTime() + (mile - 1) * 86400000)
+    // 다음 기념일: 그룹이 커스텀 지정을 해 뒀고 아직 안 지났으면 그 값, 아니면 자동(100일 단위/N주년 중 가까운 쪽)
+    const nextAnniv = days != null && start ? resolveNextAnniv(effAnniv, days, group?.next_anniv_kind, group?.next_anniv_value) : null
+    let mileLabel = null, mileLeft = null, mileDateLabel = null, pct = 0
+    if (nextAnniv && start) {
+      mileLabel = nextAnniv.kind === 'years' ? `${nextAnniv.value} 주년` : `${nextAnniv.value} 일`
+      mileLeft = nextAnniv.dayCount - days
+      const mileD = new Date(start.getTime() + (nextAnniv.dayCount - 1) * 86400000)
       mileDateLabel = `${mileD.getMonth() + 1} 월 ${mileD.getDate()} 일`
-      pct = Math.max(3, Math.min(100, Math.round(((days - (mile - 100)) / 100) * 100)))
+      const span = Math.max(1, nextAnniv.dayCount - nextAnniv.prevDayCount)
+      pct = Math.max(3, Math.min(100, Math.round(((days - nextAnniv.prevDayCount) / span) * 100)))
     }
     const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
     const face = (m, sub) => (
@@ -202,6 +211,43 @@ export default function GroupMembers() {
         <span className="csx-face-name">{m?.display_nickname || (sub === 'partner' ? '상대 없음' : '')}</span>
       </button>
     )
+
+    // ---- 다음 기념일(마일스톤) 설정 모달 ----
+    function openNextAnnivEdit() {
+      const hasValidCustom = group?.next_anniv_kind && group?.next_anniv_value
+        && customAnnivDayCount(effAnniv, group.next_anniv_kind, group.next_anniv_value) >= days
+      setNextAnnivMode(hasValidCustom ? 'custom' : 'auto')
+      setNextAnnivKindDraft(hasValidCustom ? group.next_anniv_kind : 'days')
+      setNextAnnivValueDraft(hasValidCustom ? String(group.next_anniv_value) : '')
+      setNextAnnivError('')
+      setNextAnnivOpen(true)
+    }
+    async function saveNextAnniv() {
+      setNextAnnivError('')
+      if (nextAnnivMode === 'auto') {
+        setNextAnnivBusy(true)
+        try {
+          await setGroupNextAnniv(groupId, null, null)
+          setGroup((g) => ({ ...g, next_anniv_kind: null, next_anniv_value: null }))
+          setNextAnnivOpen(false)
+        } catch (err) { setError(err.message) } finally { setNextAnnivBusy(false) }
+        return
+      }
+      const value = Math.floor(Number(nextAnnivValueDraft))
+      if (!value || value <= 0) { setNextAnnivError('숫자를 입력해 주세요.'); return }
+      const dc = customAnnivDayCount(effAnniv, nextAnnivKindDraft, value)
+      if (dc == null || dc < days) {
+        const unit = nextAnnivKindDraft === 'years' ? '주년' : '일'
+        setNextAnnivError(`${value} ${unit}은 이미 지났어요`)
+        return
+      }
+      setNextAnnivBusy(true)
+      try {
+        await setGroupNextAnniv(groupId, nextAnnivKindDraft, value)
+        setGroup((g) => ({ ...g, next_anniv_kind: nextAnnivKindDraft, next_anniv_value: value }))
+        setNextAnnivOpen(false)
+      } catch (err) { setError(err.message) } finally { setNextAnnivBusy(false) }
+    }
 
     return (
       <div className={`page csx-page${annivDark ? ' csx-dark' : ''}`}>
@@ -233,16 +279,16 @@ export default function GroupMembers() {
           </button>
         </div>
 
-        {/* 다음 기념일 카드 */}
-        {mile != null && (
-          <div className="csx-mile">
+        {/* 다음 기념일 카드(클릭하면 다음 기념일을 직접 지정할 수 있는 모달) */}
+        {nextAnniv != null && (
+          <button type="button" className="csx-mile" onClick={openNextAnnivEdit}>
             <div className="csx-mile-top">
-              <div className="csx-mile-label">다음 기념일 <b>{mile} 일</b></div>
+              <div className="csx-mile-label">다음 기념일 <b>{mileLabel}</b></div>
               <span className="csx-mile-d">D-{mileLeft}</span>
             </div>
             <div className="csx-mile-bar"><div className="csx-mile-fill" style={{ width: `${pct}%` }} /></div>
-            <div className="csx-mile-date">{mileDateLabel}에 {mile} 일이 돼요</div>
-          </div>
+            <div className="csx-mile-date">{mileDateLabel}에 {mileLabel}이 돼요</div>
+          </button>
         )}
 
         {/* 멍냥꽁냥 */}
@@ -289,6 +335,37 @@ export default function GroupMembers() {
                 커플 링 수령일로 되돌리기
               </button>
             )}
+          </div>
+        </Modal>
+
+        {/* 다음 기념일 설정 모달 */}
+        <Modal open={nextAnnivOpen} onClose={() => setNextAnnivOpen(false)} title="기념일 설정">
+          <div className="csx-anniv-modal">
+            <div className="seg-tabs">
+              <button type="button" className={`seg-tab ${nextAnnivMode === 'auto' ? 'active' : ''}`} onClick={() => setNextAnnivMode('auto')}>자동</button>
+              <button type="button" className={`seg-tab ${nextAnnivMode === 'custom' ? 'active' : ''}`} onClick={() => setNextAnnivMode('custom')}>커스텀</button>
+            </div>
+            {nextAnnivMode === 'auto' ? (
+              <p className="csx-anniv-hint">다음 100일 단위 또는 다음 주년 중 더 가까운 날을 자동으로 알려드려요.</p>
+            ) : (
+              <>
+                <p className="csx-anniv-hint">직접 다음 기념일을 지정해요. 지정한 날이 지나면 자동으로 다시 계산돼요.</p>
+                <div className="csx-next-row">
+                  <input type="number" min="1" inputMode="numeric" className="csx-anniv-input csx-next-value"
+                    value={nextAnnivValueDraft} placeholder="숫자 입력"
+                    onChange={(e) => { setNextAnnivValueDraft(e.target.value); setNextAnnivError('') }} />
+                  <select className="csx-next-unit" value={nextAnnivKindDraft}
+                    onChange={(e) => { setNextAnnivKindDraft(e.target.value); setNextAnnivError('') }}>
+                    <option value="days">일</option>
+                    <option value="years">주년</option>
+                  </select>
+                </div>
+                {nextAnnivError && <p className="csx-next-error">{nextAnnivError}</p>}
+              </>
+            )}
+            <button type="button" className="btn btn-primary btn-block" onClick={saveNextAnniv} disabled={nextAnnivBusy}>
+              {nextAnnivBusy ? '저장 중…' : '저장'}
+            </button>
           </div>
         </Modal>
       </div>
