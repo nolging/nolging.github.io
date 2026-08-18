@@ -51,6 +51,9 @@ import AdminNotifs from './pages/admin/AdminNotifs'
 import AdminNotifDetail from './pages/admin/AdminNotifDetail'
 import AdminReports from './pages/admin/AdminReports'
 import AdminReportDetail from './pages/admin/AdminReportDetail'
+import AdminMisc from './pages/admin/AdminMisc'
+import AdminGroupFeatures from './pages/admin/AdminGroupFeatures'
+import AdminGroupFeatureDetail from './pages/admin/AdminGroupFeatureDetail'
 
 // 그룹이 바뀌면 리마운트되게 key 부여 → 그룹별 임베드 상세 상태(sessionStorage 복원 포함)가
 // 다른 그룹으로 새지 않도록. (같은 그룹 내에선 리마운트 없음)
@@ -134,6 +137,9 @@ export default function App() {
         <Route path="/admin/notifs/:key" element={<ProtectedRoute adminOnly><AdminNotifDetail /></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
         <Route path="/admin/reports/:id" element={<ProtectedRoute adminOnly><AdminReportDetail /></ProtectedRoute>} />
+        <Route path="/admin/misc" element={<ProtectedRoute adminOnly><AdminMisc /></ProtectedRoute>} />
+        <Route path="/admin/misc/groups" element={<ProtectedRoute adminOnly><AdminGroupFeatures /></ProtectedRoute>} />
+        <Route path="/admin/misc/groups/:groupId" element={<ProtectedRoute adminOnly><AdminGroupFeatureDetail /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

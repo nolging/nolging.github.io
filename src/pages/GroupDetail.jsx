@@ -5,7 +5,7 @@ import {
   getGroup, listMemberCards, listTasks, listParticipantsByTasks, listCommentCounts,
   completeTask, deleteTask, cancelAppointment, revertToAppointment, listReviewCounts, isCoupleGroup,
   regenerateInviteCode, isFriendGroup, getGroupDecoMap, coupleRingClaimedAt, touchGroupVisit, updateTask,
-  getGroupBoard,
+  getGroupBoard, listBlockedFeatures,
 } from '../lib/api'
 import { isAnnivToday, parseYMD } from '../lib/anniv'
 import { formatBirthDot } from '../lib/birthday'
@@ -165,6 +165,7 @@ export default function GroupDetail() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [coupleMenu, setCoupleMenu] = useState({}) // 커플/우정 우측 패널: 멍냥꽁냥(커뮤니티)/미니게임 펼침 상태
   const [boardName, setBoardName] = useState(null) // 개설된 익명 게시판 이름(없으면 null)
+  const [blockedFeatures, setBlockedFeatures] = useState([]) // 관리자가 차단한 기능 키(우심뽀까/낙서장/게임)
   // PC 비밀 게시판 임베드 현재 화면: null | { view:'list'|'search'|'settings' } | { view:'compose'|'post', postId?, seed? } | { view:'comments', postId, focusId? }
   const [boardView, setBoardView] = useState(null)
   // PC: 카드 클릭 시 가운데 영역만 상세로 전환(모바일은 기존대로 상세 페이지 이동)
@@ -406,6 +407,7 @@ export default function GroupDetail() {
       getGroupDecoMap(groupId).then(setDecoMap).catch(() => {})
       listReviewCounts(groupId).then(setReviewCounts).catch(() => {})
       getGroupBoard(groupId).then((bn) => setBoardName(bn || null)).catch(() => {})
+      listBlockedFeatures(groupId).then(setBlockedFeatures).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
 
@@ -505,6 +507,7 @@ export default function GroupDetail() {
   const coupleDays = isCouple ? daysSince(coupleAnniv) : null
   const toggleCoupleMenu = (k) => setCoupleMenu((m) => ({ ...m, [k]: !m[k] }))
   const goCouple = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
+  const isBlocked = (feature) => blockedFeatures.includes(feature) // 관리자의 그룹별 사용량 제어로 막힌 기능
   const matchesCat = (t) => !catOff.includes(t.category)
   const visibleTasks = tasks.filter((t) => t.status === filter && matchesCat(t))
 
@@ -800,8 +803,8 @@ export default function GroupDetail() {
                 {coupleMenu.play && (
                   <div className="gd-couple-sub">
                     {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
-                    <button type="button" onClick={() => goCouple('touch')}>우심뽀까</button>
-                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
+                    <button type="button" disabled={isBlocked('touch')} onClick={() => goCouple('touch')}>우심뽀까</button>
+                    <button type="button" disabled={isBlocked('draw')} onClick={() => goCouple('draw')}>낙서장</button>
                     <button type="button" onClick={() => goCouple('praise')}>칭찬 스티커</button>
                   </div>
                 )}
@@ -811,11 +814,11 @@ export default function GroupDetail() {
                 </button>
                 {coupleMenu.game && (
                   <div className="gd-couple-sub">
-                    <button type="button" onClick={() => goCouple('catchmind')}>캐치 마인드</button>
-                    <button type="button" onClick={() => goCouple('davinci')}>다빈치 코드</button>
-                    <button type="button" onClick={() => goCouple('puzzle')}>퍼즐</button>
-                    <button type="button" onClick={() => goCouple('rps')}>가위바위보</button>
-                    <button type="button" onClick={() => goCouple('omok')}>오목</button>
+                    <button type="button" disabled={isBlocked('catchmind')} onClick={() => goCouple('catchmind')}>캐치 마인드</button>
+                    <button type="button" disabled={isBlocked('davinci')} onClick={() => goCouple('davinci')}>다빈치 코드</button>
+                    <button type="button" disabled={isBlocked('puzzle')} onClick={() => goCouple('puzzle')}>퍼즐</button>
+                    <button type="button" disabled={isBlocked('rps')} onClick={() => goCouple('rps')}>가위바위보</button>
+                    <button type="button" disabled={isBlocked('omok')} onClick={() => goCouple('omok')}>오목</button>
                   </div>
                 )}
               </div>
@@ -858,7 +861,7 @@ export default function GroupDetail() {
                 {coupleMenu.play && (
                   <div className="gd-couple-sub">
                     {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
-                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
+                    <button type="button" disabled={isBlocked('draw')} onClick={() => goCouple('draw')}>낙서장</button>
                   </div>
                 )}
                 <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>
@@ -867,11 +870,11 @@ export default function GroupDetail() {
                 </button>
                 {coupleMenu.game && (
                   <div className="gd-couple-sub">
-                    <button type="button" onClick={() => goCouple('catchmind')}>캐치 마인드</button>
-                    <button type="button" onClick={() => goCouple('davinci')}>다빈치 코드</button>
-                    <button type="button" onClick={() => goCouple('puzzle')}>퍼즐</button>
-                    <button type="button" onClick={() => goCouple('rps')}>가위바위보</button>
-                    <button type="button" onClick={() => goCouple('omok')}>오목</button>
+                    <button type="button" disabled={isBlocked('catchmind')} onClick={() => goCouple('catchmind')}>캐치 마인드</button>
+                    <button type="button" disabled={isBlocked('davinci')} onClick={() => goCouple('davinci')}>다빈치 코드</button>
+                    <button type="button" disabled={isBlocked('puzzle')} onClick={() => goCouple('puzzle')}>퍼즐</button>
+                    <button type="button" disabled={isBlocked('rps')} onClick={() => goCouple('rps')}>가위바위보</button>
+                    <button type="button" disabled={isBlocked('omok')} onClick={() => goCouple('omok')}>오목</button>
                   </div>
                 )}
               </div>

@@ -43,3 +43,19 @@ export const CATEGORY_OPTIONS = [
 ]
 // adminOnly 기본값 true: 새 아이템은 "판매" 토글을 켜기 전까지 관리자에게만 보임(테스트 후 노출)
 export const EMPTY_ITEM = { id: '', name: '', price: '', emoji: '', description: '', sortOrder: '', kind: 'general', giftOnly: false, isActive: true, adminOnly: true, imageSvg: '', imageBg: '', category: '', decoSlot: '' }
+
+// 그룹별 사용량 제어: 차단 가능한 기능(우심뽀까/낙서장) — key 는 GroupDetail 의 goCouple(path) 값과 동일
+export const GROUP_FEATURES = [
+  { key: 'touch', label: '우심뽀까', desc: '커플 그룹 전용 터치 기능' },
+  { key: 'draw', label: '낙서장', desc: '함께 그리는 캔버스' },
+]
+// 그룹별 사용량 제어: 차단 가능한 미니 게임
+export const GROUP_GAMES = [
+  { key: 'catchmind', label: '캐치 마인드' },
+  { key: 'davinci', label: '다빈치 코드' },
+  { key: 'puzzle', label: '퍼즐' },
+  { key: 'rps', label: '가위바위보' },
+  { key: 'omok', label: '오목' },
+]
+// 기능을 Off 했을 때 카드 설명에 표시되는 문구
+export const BLOCKED_DESC = '사용량 제어로 차단'

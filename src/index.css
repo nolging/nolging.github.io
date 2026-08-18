@@ -501,6 +501,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   .gd-couple-sub { display: flex; flex-direction: column; gap: 1px; padding: 0 4px 6px; }
   .gd-couple-sub button { text-align: left; padding: 9px 14px; background: none; border: none; border-radius: 8px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted); }
   .gd-couple-sub button:hover { background: var(--canvas); color: var(--text); }
+  /* 관리자가 그룹별 사용량 제어로 차단한 기능 */
+  .gd-couple-sub button:disabled { opacity: .4; cursor: not-allowed; }
+  .gd-couple-sub button:disabled:hover { background: none; color: var(--muted); }
 
   /* 하트 테마: 좌우 섹션도 콘텐츠처럼 하트 위로 */
   .gd-themed .gd-aside { position: relative; z-index: 1; }
@@ -1443,6 +1446,9 @@ button.mention-chip:active { opacity: .6; }
 
 /* 필드(라벨 + 입력) */
 .cg-label { font-size: 13px; font-weight: 700; color: #191722; margin-bottom: 8px; }
+/* cg-label 옆에 토글 등 컨트롤을 나란히 둘 때 */
+.cg-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cg-label-row .cg-label { margin-bottom: 0; }
 .cg-req { color: #7363e8; font-weight: 800; }
 .cg-opt { font-size: 11px; font-weight: 600; color: #b0b0b8; margin-left: 2px; }
 .cg-input-wrap { position: relative; }
@@ -1610,6 +1616,9 @@ button.mention-chip:active { opacity: .6; }
 /* 아래 두 색은 관리자 페이지의 사용자 상태(승인 대기/활성)에 재사용됨 */
 .badge-open { background: #fef3c7; color: #b45309; }
 .badge-done { background: #d1fae5; color: #047857; }
+.badge-couple { background: #fdeef6; color: #c94f86; }
+.badge-friend { background: #eaf6ee; color: #3f9a63; }
+.badge-normal { background: #eceef3; color: var(--muted); }
 
 /* ---- 초대 / 멤버 ---- */
 .invite-box { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
@@ -6103,6 +6112,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-row-side { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .admin-row-price { font-weight: 800; }
 .admin-row-caret { color: var(--muted); font-size: 18px; line-height: 1; }
+/* 그룹별 사용량 제어 목록: 그룹명 + 배지 (배지가 말줄임에 안 잘리도록 이름만 별도로 감쌈) */
+.admin-gname-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.admin-gname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 제어할 게 없는 일반 그룹: 클릭 불가, 흐리게 표시 */
+.admin-row.admin-row-disabled { cursor: default; opacity: .45; }
 /* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
 /* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
 /* 상점 관리: 콘텐츠 상단 패딩 제거 → sticky 탭이 상단바 바로 아래(top:0)에 흔들림 없이 고정 */

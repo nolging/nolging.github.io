@@ -1000,6 +1000,28 @@ export async function adminGrantReportReward(reportId, { items, coin, reason } =
   return data || {}
 }
 
+// ---- 관리자: 기타 관리 — 그룹별 사용량 제어 --------------------
+// 전체 그룹 개요(이름/이모지/커플·우정 여부/멤버) — 목록 카드용
+export async function adminGroupOverview() {
+  const { data, error } = await supabase.rpc('admin_group_overview')
+  if (error) throw error
+  return data ?? []
+}
+
+// 특정 그룹에서 차단된 기능 키 목록(빈 배열=전부 허용). 그룹 멤버 누구나 조회 가능
+// (해당 그룹 화면에서 버튼 비활성화 여부를 판단하는 데 씀).
+export async function listBlockedFeatures(groupId) {
+  const { data, error } = await supabase.from('group_feature_blocks').select('feature').eq('group_id', groupId)
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return (data ?? []).map((r) => r.feature)
+}
+
+// 관리자: 그룹의 특정 기능 차단/해제
+export async function adminSetGroupFeature(groupId, feature, blocked) {
+  const { error } = await supabase.rpc('admin_set_group_feature', { p_group_id: groupId, p_feature: feature, p_blocked: blocked })
+  if (error) throw error
+}
+
 export async function sendNote({ groupId, recipientId, body, anonymous = false, timerSeconds = null }) {
   // p_anonymous 는 익명일 때만 전달(구버전 RPC 와 호환 유지)
   const params = { p_group_id: groupId, p_recipient_id: recipientId, p_body: body }
