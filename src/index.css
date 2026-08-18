@@ -1511,7 +1511,7 @@ button.mention-chip:active { opacity: .6; }
   display: flex; align-items: center; gap: 10px; padding: 12px 2px;
   border-bottom: 1px solid var(--border); cursor: pointer;
 }
-.cg-list .member-pick-item:last-child { border-bottom: none; }
+.member-pick-item:last-child { border-bottom: none; }
 .member-pick-item.fixed { cursor: default; }
 .member-pick-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .mp-badge { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
