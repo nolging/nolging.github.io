@@ -804,7 +804,7 @@ export default function GroupDetail() {
                   <div className="gd-couple-sub">
                     {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
                     <button type="button" disabled={isBlocked('touch')} onClick={() => goCouple('touch')}>우심뽀까</button>
-                    <button type="button" disabled={isBlocked('draw')} onClick={() => goCouple('draw')}>낙서장</button>
+                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
                     <button type="button" onClick={() => goCouple('praise')}>칭찬 스티커</button>
                   </div>
                 )}
@@ -861,7 +861,7 @@ export default function GroupDetail() {
                 {coupleMenu.play && (
                   <div className="gd-couple-sub">
                     {boardName && <button type="button" onClick={openBoard}>비밀 게시판</button>}
-                    <button type="button" disabled={isBlocked('draw')} onClick={() => goCouple('draw')}>낙서장</button>
+                    <button type="button" onClick={() => goCouple('draw')}>낙서장</button>
                   </div>
                 )}
                 <button type="button" className="gd-couple-menu-row" onClick={() => toggleCoupleMenu('game')} aria-expanded={!!coupleMenu.game}>

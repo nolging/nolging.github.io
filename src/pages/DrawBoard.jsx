@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDrawing, getMyGroupMember } from '../lib/api'
+import { listDrawingStrokes, addDrawingStroke, deleteDrawingStroke, clearGroupDrawing, getMyGroupMember, listBlockedFeatures } from '../lib/api'
 import Avatar from '../components/Avatar'
 
 // 펜 색상(각자 선택). 흰색은 지우개(배경색으로 덧칠)
@@ -83,6 +83,7 @@ export default function DrawBoard() {
   const [busy, setBusy] = useState(false)
   const [isMember, setIsMember] = useState(false) // 이 그룹의 멤버인지(확정 전엔 false → 미가입이 잠깐도 낙서/track 되지 않게). 관전만.
   const isMemberRef = useRef(isMember); isMemberRef.current = isMember
+  const [drawBlocked, setDrawBlocked] = useState(false) // 관리자가 그룹별 사용량 제어로 낙서장 실시간 반영을 차단했는지
 
   // ---- 렌더 ----
   const redrawAll = useCallback(() => {
@@ -122,62 +123,84 @@ export default function DrawBoard() {
     return () => ro.disconnect()
   }, [resize])
 
+  // 저장된 획을 불러와 반영(최초 진입 + 차단 상태에서의 수동 새로고침 공용)
+  const loadStrokes = useCallback(async () => {
+    try {
+      const rows = await listDrawingStrokes(groupId)
+      for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, b: r.stroke.b, p: r.stroke.p })
+      redrawAll()
+    } catch { /* noop */ }
+  }, [groupId, addCommitted, redrawAll])
+
   // ---- 실시간 채널 + 저장분 로드 ----
+  // 관리자가 그룹별 사용량 제어로 낙서장을 차단했으면 실시간 채널 자체를 만들지 않는다
+  // (그림은 로컬에서 그리고 그대로 저장은 되지만, 다른 접속자의 낙서가 실시간으로는 안 보임 —
+  // 새로고침/재진입 시 listDrawingStrokes 로 다시 불러오면 보인다). Realtime Messages 사용량도 0.
   useEffect(() => {
     if (!groupId || !uid) return
-    const ch = supabase.channel(`draw:${groupId}`, {
-      config: { broadcast: { self: false }, presence: { key: uid } },
-    })
-    chanRef.current = ch
+    let alive = true
+    let ch = null
 
-    ch.on('broadcast', { event: 'seg' }, ({ payload: pl }) => {
-      if (idsRef.current.has(pl.id)) return
-      let s = liveRef.current.get(pl.id)
-      const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
-      if (!s) { s = { id: pl.id, c: pl.c, w: pl.w, b: pl.b, p: [] }; liveRef.current.set(pl.id, s) }
-      const from = s.p.length
-      if (pl.p && pl.p.length) {
-        for (const q of pl.p) s.p.push(q)
-        if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else paintStroke(ctx, s, W, H, from) }
-      }
-      if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
-    })
-    ch.on('broadcast', { event: 'remove' }, ({ payload: pl }) => {
-      const i = committedRef.current.findIndex((x) => x.id === pl.id)
-      if (i >= 0) { committedRef.current.splice(i, 1); idsRef.current.delete(pl.id) }
-      liveRef.current.delete(pl.id)
-      redrawAll()
-    })
-    ch.on('broadcast', { event: 'clear' }, () => {
-      committedRef.current = []; idsRef.current = new Set(); liveRef.current.clear(); redrawAll()
-    })
-    ch.on('presence', { event: 'sync' }, () => {
-      const st = ch.presenceState()
-      const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
-      membersRef.current = list
-      setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
-    })
+    ;(async () => {
+      let blocked = false
+      try { blocked = (await listBlockedFeatures(groupId)).includes('draw') } catch { /* noop */ }
+      if (!alive) return
+      setDrawBlocked(blocked)
 
-    ch.subscribe(async (status) => {
-      if (status !== 'SUBSCRIBED') return
       // 아이디(login_id)는 절대 브로드캐스트하지 않음 — 그룹 표시명/아바타만 track
       let meta = { uid, name: '', avatar: null }, mem = false
       try {
         const m = await getMyGroupMember(groupId, uid)
         if (m) { meta = { uid, name: m.display_nickname || '', avatar: m.avatar_url || null }; mem = true }
       } catch { /* noop */ }
+      if (!alive) return
       setIsMember(mem); isMemberRef.current = mem
-      // 미가입(관리자 미리보기)이면 track 하지 않아 다른 멤버의 접속표시에 뜨지 않는다.
-      if (mem) { try { await ch.track(meta) } catch { /* noop */ } }
-      try {
-        const rows = await listDrawingStrokes(groupId)
-        for (const r of rows) addCommitted({ id: r.id, author: r.author, c: r.stroke.c, w: r.stroke.w, b: r.stroke.b, p: r.stroke.p })
-        redrawAll()
-      } catch { /* noop */ }
-    })
 
-    return () => { supabase.removeChannel(ch); chanRef.current = null }
-  }, [groupId, uid, addCommitted, redrawAll])
+      await loadStrokes()
+      if (!alive || blocked) return   // 차단 시 여기서 종료 — 채널 연결 없음
+
+      ch = supabase.channel(`draw:${groupId}`, {
+        config: { broadcast: { self: false }, presence: { key: uid } },
+      })
+      chanRef.current = ch
+
+      ch.on('broadcast', { event: 'seg' }, ({ payload: pl }) => {
+        if (idsRef.current.has(pl.id)) return
+        let s = liveRef.current.get(pl.id)
+        const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
+        if (!s) { s = { id: pl.id, c: pl.c, w: pl.w, b: pl.b, p: [] }; liveRef.current.set(pl.id, s) }
+        const from = s.p.length
+        if (pl.p && pl.p.length) {
+          for (const q of pl.p) s.p.push(q)
+          if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else paintStroke(ctx, s, W, H, from) }
+        }
+        if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
+      })
+      ch.on('broadcast', { event: 'remove' }, ({ payload: pl }) => {
+        const i = committedRef.current.findIndex((x) => x.id === pl.id)
+        if (i >= 0) { committedRef.current.splice(i, 1); idsRef.current.delete(pl.id) }
+        liveRef.current.delete(pl.id)
+        redrawAll()
+      })
+      ch.on('broadcast', { event: 'clear' }, () => {
+        committedRef.current = []; idsRef.current = new Set(); liveRef.current.clear(); redrawAll()
+      })
+      ch.on('presence', { event: 'sync' }, () => {
+        const st = ch.presenceState()
+        const list = Object.values(st).map((arr) => arr[0]).filter(Boolean)
+        membersRef.current = list
+        setMembers(list.map((m) => ({ uid: m.uid, name: m.name, avatar: m.avatar })))
+      })
+
+      ch.subscribe(async (status) => {
+        if (status !== 'SUBSCRIBED') return
+        // 미가입(관리자 미리보기)이면 track 하지 않아 다른 멤버의 접속표시에 뜨지 않는다.
+        if (mem) { try { await ch.track(meta) } catch { /* noop */ } }
+      })
+    })()
+
+    return () => { alive = false; if (ch) { supabase.removeChannel(ch); chanRef.current = null } }
+  }, [groupId, uid, loadStrokes])
 
   // ---- 전송 버퍼 flush ----
   const flush = useCallback((end) => {
@@ -289,14 +312,26 @@ export default function DrawBoard() {
         <div className="draw-spring" aria-hidden="true">
           {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
         </div>
-        <div className="draw-members">
-          {/* 접속자가 없을 때의 "나" 자리표시 아바타는 실제 멤버에게만 — 미가입 관리자는
-              접속 중인 사람이 없으면 아바타 자체를 표시하지 않는다(관전자는 자리에 없다). */}
-          {(members.length ? members : (isMember ? [{ uid: 'me', name: '', avatar: null }] : [])).slice(0, 5).map((m) => (
-            <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
-          ))}
-          {members.length > 5 && <span className="draw-more">+{members.length - 5}</span>}
-        </div>
+        {drawBlocked ? (
+          <div className="draw-blocked-row">
+            <span className="draw-blocked-text">사용량 제어로 실시간 반영이 차단됐어요(새로고침 시 상대방 낙서 확인 가능)</span>
+            <button type="button" className="draw-refresh-btn" onClick={loadStrokes} aria-label="새로고침">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <polyline points="21 3 21 9 15 9" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div className="draw-members">
+            {/* 접속자가 없을 때의 "나" 자리표시 아바타는 실제 멤버에게만 — 미가입 관리자는
+                접속 중인 사람이 없으면 아바타 자체를 표시하지 않는다(관전자는 자리에 없다). */}
+            {(members.length ? members : (isMember ? [{ uid: 'me', name: '', avatar: null }] : [])).slice(0, 5).map((m) => (
+              <Avatar key={m.uid} src={m.avatar} name={m.name} size={30} />
+            ))}
+            {members.length > 5 && <span className="draw-more">+{members.length - 5}</span>}
+          </div>
+        )}
       </div>
 
       {isMember ? (
