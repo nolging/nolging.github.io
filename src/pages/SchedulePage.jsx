@@ -484,14 +484,13 @@ export default function SchedulePage() {
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)}>
         <div className="filter-head">
           <h3 className="sheet-title filter-title">필터 설정</h3>
-          <button type="button" className="btn btn-ghost btn-sm"
-            onClick={() => {
-              if (filterActive) { setCatOff([]); setGroupFilter(myGroups.map((g) => g.id)) }
-              else { setCatOff([...catNames]); setGroupFilter([]) }
-            }}>전체</button>
         </div>
 
-        <div className="filter-section-label">유형</div>
+        <div className="filter-section-label filter-section-row">
+          <span>유형</span>
+          <button type="button" className={`filter-all-btn ${catActive ? '' : 'active'}`}
+            onClick={() => setCatOff(catActive ? [] : [...catNames])}>전체</button>
+        </div>
         <div className="chip-row filter-chips">
           {catNames.map((c) => {
             const on = !catOff.includes(c)
@@ -502,15 +501,29 @@ export default function SchedulePage() {
           })}
         </div>
 
-        <div className="filter-section-label">그룹</div>
+        <div className="filter-section-label filter-section-row">
+          <span>그룹</span>
+          <button type="button" className={`filter-all-btn ${groupActive ? '' : 'active'}`}
+            onClick={() => setGroupFilter(groupActive ? myGroups.map((g) => g.id) : [])}>전체</button>
+        </div>
         <div className="filter-groups">
           {myGroups.length === 0 ? (
             <p className="muted sm">가입된 그룹이 없어요.</p>
           ) : myGroups.map((g) => {
             const on = groupFilter.includes(g.id)
+            const members = g.group_members || []
+            const extra = members.length - 3
             return (
               <button key={g.id} type="button" className="filter-group-row" onClick={() => toggleGroup(g.id)}>
                 <span className="filter-group-name">{g.name}</span>
+                {members.length > 0 && (
+                  <span className="filter-group-avs task-parts multi">
+                    {members.slice(0, 3).map((m, i) => (
+                      <Avatar key={i} src={m.avatar_url} name={m.display_nickname} size={24} deco={decosByGroup[g.id]?.[m.user_id]} />
+                    ))}
+                    {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+                  </span>
+                )}
                 <span className={`filter-check ${on ? 'on' : ''}`} aria-hidden="true">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
