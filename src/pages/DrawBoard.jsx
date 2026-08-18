@@ -250,7 +250,10 @@ export default function DrawBoard() {
   }
   function onMove(e) {
     const cur = drawing.current; if (!cur) return
-    const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]
+    // e 는 React SyntheticEvent 라 getCoalescedEvents 가 없음(화이트리스트에 없는 네이티브 전용 메서드) →
+    // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
+    const ne = e.nativeEvent
+    const events = ne?.getCoalescedEvents ? ne.getCoalescedEvents() : [e]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
     const smooth = SMOOTH.has(cur.b)
     let added = false
