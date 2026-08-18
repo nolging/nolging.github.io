@@ -219,16 +219,19 @@ export default function SchedulePage() {
     (!query || (a.title || '').toLowerCase().includes(query))
   ), [appts, catOff, groupFilter, myGroupIds, query])
 
-  // 이번 달에 약속이 있는 날짜 집합 (반복 전개 포함)
+  // 이번 달에 약속이 있는 날짜 → 그 날 약속들의 유형 색상(최대 3개, 반복 전개 포함)
   const daysWithAppt = useMemo(() => {
-    const set = new Set()
+    const map = new Map()
     const daysIn = new Date(view.y, view.m + 1, 0).getDate()
     for (let day = 1; day <= daysIn; day++) {
       const d = new Date(view.y, view.m, day)
-      if (shown.some((a) => occursOn(a, d))) set.add(ymd(d))
+      const list = shown.filter((a) => occursOn(a, d))
+      if (list.length) {
+        map.set(ymd(d), list.slice(0, 3).map((a) => catMeta(groupCatsMap[a.group_id], a.category).fg))
+      }
     }
-    return set
-  }, [shown, view])
+    return map
+  }, [shown, view, groupCatsMap])
 
   // 달력 셀 (앞뒤 빈칸 포함)
   const cells = useMemo(() => {
@@ -247,6 +250,31 @@ export default function SchedulePage() {
       const total = v.y * 12 + v.m + delta
       return { y: Math.floor(total / 12), m: ((total % 12) + 12) % 12 }
     })
+  }
+
+  // 캘린더 영역 좌우 스와이프 → 월 이동. 스와이프로 판정되면 그 터치의 클릭(날짜 선택)은 무시.
+  const swipeRef = useRef({ x: 0, y: 0, active: false, moved: false })
+  function onCalTouchStart(e) {
+    const t = e.touches[0]
+    swipeRef.current = { x: t.clientX, y: t.clientY, active: true, moved: false }
+  }
+  function onCalTouchMove(e) {
+    const s = swipeRef.current
+    if (!s.active) return
+    const t = e.touches[0]
+    const dx = t.clientX - s.x, dy = t.clientY - s.y
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) s.moved = true
+  }
+  function onCalTouchEnd(e) {
+    const s = swipeRef.current
+    s.active = false
+    if (!s.moved) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - s.x, dy = t.clientY - s.y
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1)
+  }
+  function onCalClickCapture(e) {
+    if (swipeRef.current.moved) { e.preventDefault(); e.stopPropagation() }
   }
 
   const fmtDay = (d) => `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${WD[d.getDay()]}요일`
@@ -356,14 +384,14 @@ export default function SchedulePage() {
 
   return (
     <div className="page sched-page">
-      <div className="cal">
+      <div className="cal" onTouchStart={onCalTouchStart} onTouchMove={onCalTouchMove} onTouchEnd={onCalTouchEnd} onClickCapture={onCalClickCapture}>
         <div className="cal-head">
-          <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
+          <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
           <div className="cal-head-mid">
             <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
             <button type="button" className="sched-today sched-today-sm" onClick={goToday}>오늘</button>
           </div>
-          <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
+          <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
         </div>
         <div className="cal-grid cal-wd">
           {WD.map((w, i) => (
@@ -381,7 +409,11 @@ export default function SchedulePage() {
                 className={`cal-cell ${key === selected ? 'sel' : ''} ${key === todayKey ? 'today' : ''}`}
                 onClick={() => selectDay(key)} title={holiday || undefined}>
                 <span className={`cal-day ${dow === 0 || holiday ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
-                <span className={`cal-dot ${daysWithAppt.has(key) ? 'on' : ''}`} />
+                <span className="cal-dots">
+                  {(daysWithAppt.get(key) || []).map((c, i) => (
+                    <span key={i} className="cal-dot" style={{ background: c }} />
+                  ))}
+                </span>
               </button>
             )
           })}
