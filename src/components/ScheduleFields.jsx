@@ -116,8 +116,9 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
 
   return (
     <>
-      {/* 일정 */}
-      {showTitle && <div className="cg-label cg-mt-24">일정</div>}
+      {/* 일정 — boxed(전체 페이지)일 땐 위 섹션과 간격을 두고, 모달(boxed=false)에선
+          이 라벨이 맨 위 요소라 여백을 더하지 않는다 */}
+      {showTitle && <div className={`cg-label ${boxed ? 'cg-mt-24' : ''}`}>일정</div>}
       <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
