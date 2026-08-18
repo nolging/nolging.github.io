@@ -226,7 +226,7 @@ export default function Layout() {
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
   // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
-  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs', '/admin/reports'].includes(location.pathname)
+  const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs', '/admin/misc'].includes(location.pathname)
   const adminSub = location.pathname.startsWith('/admin/') && !adminSection
   const adminSubTitle = (p) =>
     p.startsWith('/admin/members') ? (p.endsWith('/new') ? '계정 생성' : '회원 상세')
@@ -234,8 +234,10 @@ export default function Layout() {
         : p.startsWith('/admin/quests/daily') ? '퀘스트 수정'
           : p.startsWith('/admin/quests') ? (p.endsWith('/new') ? '퀘스트 추가' : '퀘스트 수정')
           : p.startsWith('/admin/notifs') ? (p.endsWith('/new') ? '알림 메시지 추가' : '알림 메시지 수정')
-            : p.startsWith('/admin/reports') ? '오류 리포트'
-            : '관리자'
+            : p.startsWith('/admin/misc/groups/') ? '그룹 사용량 제어'
+              : p.startsWith('/admin/misc/groups') ? '그룹별 사용량 제어'
+                : p.startsWith('/admin/reports') ? '오류 리포트'
+                : '관리자'
   // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
   const adminTabsRef = useRef(null)
   const [adminIndicator, setAdminIndicator] = useState({ left: 0, width: 0 })
@@ -967,8 +969,8 @@ export default function Layout() {
           <NavLink to="/admin/store">상점 관리</NavLink>
           <NavLink to="/admin/quests">퀘스트 관리</NavLink>
           <NavLink to="/admin/notifs">알림 관리</NavLink>
-          <NavLink to="/admin/reports">오류 관리</NavLink>
           <NavLink to="/admin/members">회원 관리</NavLink>
+          <NavLink to="/admin/misc">기타 관리</NavLink>
           <span className="admin-tabs-indicator" aria-hidden="true"
             style={{ transform: `translateX(${adminIndicator.left}px)`, width: adminIndicator.width }} />
         </nav>
