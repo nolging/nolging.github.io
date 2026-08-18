@@ -70,7 +70,6 @@ export default function AdminGroupFeatures() {
                   ))}
                   {extra > 0 && <span className="task-parts-more">+{extra}</span>}
                 </span>
-                {premium && <span className="aq-card-chevron always" aria-hidden="true">›</span>}
               </button>
             )
           })}
