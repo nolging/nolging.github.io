@@ -567,7 +567,7 @@ function scheduleArgs({ taskId, scheduledAt, timeSet, repeat, repeatUntil, remin
   }
 }
 
-function appointmentArgs({ scheduledAt, timeSet, repeat, repeatUntil, remind }) {
+function appointmentArgs({ scheduledAt, timeSet, repeat, repeatUntil, remind, participantIds }) {
   const r = remind === '' || remind === null || remind === undefined ? null : Number(remind)
   return {
     p_scheduled_at: scheduledAt ?? null,
@@ -575,50 +575,47 @@ function appointmentArgs({ scheduledAt, timeSet, repeat, repeatUntil, remind }) 
     p_repeat: repeat || null,
     p_repeat_until: repeatUntil || null,
     p_remind: r,
+    p_participants: participantIds ?? [],
   }
 }
 
-// 놀기 신청 확정: 첫 약속(일정/반복/반복종료/미리알림) + 참여자 저장 + 상태 accepted
+// 놀기 신청 확정: 첫 약속(일정/반복/반복종료/미리알림) + 참여자 풀 저장 + 상태 accepted
+// (참여자 풀은 이때 정해지고, 그 안에서 약속별 참여자를 따로 고를 수 있다)
 export async function scheduleTask(opts) {
   const { data, error } = await supabase.rpc('schedule_task', scheduleArgs(opts))
   if (error) throw error
   return Array.isArray(data) ? data[0] : data
 }
 
-// 이미 잡힌 약속 중 하나(appointmentId)를 수정 + 참여자(위시 공용) 갱신
-export async function rescheduleTask({ appointmentId, taskId, participantIds, ...schedule }) {
-  const appt = await updateAppointment(appointmentId, schedule)
-  await setTaskParticipants(taskId, participantIds)
-  return appt
+// 이미 잡힌 약속 중 하나(appointmentId)를 수정 + 그 약속의 참여자(풀의 부분집합) 갱신
+export async function rescheduleTask({ appointmentId, ...schedule }) {
+  return updateAppointment(appointmentId, schedule)
 }
 
-// 위시 하나의 모든 약속(날짜순)
+// 위시 하나의 모든 약속(날짜순) + 약속별 참여자(participant_ids)
 export async function listTaskAppointments(taskId) {
   const { data, error } = await supabase
-    .from('appointments').select('*').eq('task_id', taskId)
+    .from('appointments').select('*, appointment_participants(user_id)').eq('task_id', taskId)
     .order('scheduled_at', { ascending: true, nullsFirst: false })
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map((a) => {
+    const { appointment_participants, ...rest } = a
+    return { ...rest, participant_ids: (appointment_participants || []).map((p) => p.user_id) }
+  })
 }
 
-// 이미 약속/추억 상태인 위시에 약속을 하나 더 추가
+// 이미 약속/추억 상태인 위시에 약속을 하나 더 추가(참여자는 풀의 부분집합)
 export async function addAppointment(taskId, opts) {
   const { data, error } = await supabase.rpc('add_appointment', { p_task_id: taskId, ...appointmentArgs(opts) })
   if (error) throw error
   return data
 }
 
-// 여러 약속 중 특정 하나만 수정
+// 여러 약속 중 특정 하나만 수정(참여자는 풀의 부분집합)
 export async function updateAppointment(appointmentId, opts) {
   const { data, error } = await supabase.rpc('update_appointment', { p_appointment_id: appointmentId, ...appointmentArgs(opts) })
   if (error) throw error
   return data
-}
-
-// 위시 참여자(약속 전체 공용) 갱신
-export async function setTaskParticipants(taskId, participantIds) {
-  const { error } = await supabase.rpc('set_task_participants', { p_task_id: taskId, p_participants: participantIds ?? [] })
-  if (error) throw error
 }
 
 // 여러 약속 중 하나만 삭제(위시 자체는 그대로, 날짜 드롭다운의 개별 삭제용)
@@ -627,14 +624,22 @@ export async function deleteAppointment(appointmentId) {
   if (error) throw error
 }
 
-// 내가 속한 모든 그룹의 약속(accepted + 일정 지정) — 캘린더용. 위시 하나에 약속이
-// 여러 개면 그 개수만큼 행이 나온다(일정 페이지가 날짜마다 표시해야 하므로).
+// 내가 속한 모든 그룹의 약속(accepted + 일정 지정) 중, 내가 그 약속의 참여자인 것만 — 캘린더용.
+// 위시 하나에 약속이 여러 개면 그 개수만큼 행이 나온다(일정 페이지가 날짜마다 표시해야 하므로).
 export async function listMyAppointments() {
+  const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: null }))
+  const uid = sess?.session?.user?.id || null
   const { data, error } = await supabase
     .from('appointments')
-    .select('id, task_id, scheduled_at, scheduled_time_set, repeat_rule, repeat_until, remind_min, tasks!inner(title, category, status, group_id, groups(name), task_participants(user_id))')
+    .select(`
+      id, task_id, scheduled_at, scheduled_time_set, repeat_rule, repeat_until, remind_min,
+      mine:appointment_participants!inner(user_id),
+      participants:appointment_participants(user_id),
+      tasks!inner(title, category, status, group_id, groups(name))
+    `)
     .in('tasks.status', ['accepted', 'done'])
     .not('scheduled_at', 'is', null)
+    .eq('mine.user_id', uid)
     .order('scheduled_at', { ascending: true })
   if (error) throw error
   return (data ?? []).map((row) => ({
@@ -643,7 +648,7 @@ export async function listMyAppointments() {
     repeat_rule: row.repeat_rule, repeat_until: row.repeat_until, remind_min: row.remind_min,
     title: row.tasks?.title, category: row.tasks?.category, status: row.tasks?.status,
     group_id: row.tasks?.group_id, groups: row.tasks?.groups,
-    task_participants: row.tasks?.task_participants,
+    task_participants: row.participants,
   }))
 }
 

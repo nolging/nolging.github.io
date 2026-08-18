@@ -20,7 +20,8 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   // embedded: GroupDetail 가운데에 임베드 렌더(라우트 이동 없음) → 저장 후 onSaved 콜백.
   // embed(state): 풀페이지 진입이지만 PC 임베드 상세로 복귀해야 하는 경우.
   const embed = locState?.embed
-  // 약속이 여러 개인 위시를 수정할 때, 어떤 약속을 수정하는지(TaskDetail 의 선택 모달에서 결정).
+  // 약속이 여러 개인 위시를 수정할 때 처음에 어떤 약속을 열지(TaskDetail 에서 전달). 이후엔
+  // 아래 "약속 선택" 셀렉트로 이 안에서 바꿀 수 있다.
   const appointmentIdParam = aidProp ?? locState?.appointmentId ?? null
   const [appointmentId, setAppointmentId] = useState(appointmentIdParam)
 
@@ -33,6 +34,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
 
   const [sched, setSched] = useState(defaultSchedule)
   const [appointments, setAppointments] = useState([]) // 이 위시의 약속들(2개 이상이면 선택 UI 노출)
+  const [participantPool, setParticipantPool] = useState([]) // 위시를 약속으로 넘길 때 정한 참여자 풀(userId[])
   // 위시 정보(작성자=유형·제목·작품, 참여자=작품 카드) 편집
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
@@ -49,42 +51,43 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       setTitle(t.title || ''); setCategory(t.category || ''); setMediaInfo(t.media_info || null)
       setComment(t.category && !MEDIA_LOOKUP_CATS.includes(t.category) ? (t.description || '') : '')
 
-      // 여러 약속 중 수정할 대상 하나를 정한다: 지정된 appointmentId 가 있으면 그것,
-      // 없으면(레거시 경로·약속이 1개뿐) 가장 가까운 것을 사용.
-      let appt = null
+      let schedPatch
       if (t.status !== 'open') {
-        const appts = await listTaskAppointments(taskId)
+        // 여러 약속 중 수정할 대상 하나를 정한다: 지정된 appointmentId 가 있으면 그것,
+        // 없으면(레거시 경로·약속이 1개뿐) 가장 가까운 것을 사용. 참여자는 그 약속의
+        // 참여자(풀의 부분집합)로 채운다.
+        const [appts, pool] = await Promise.all([listTaskAppointments(taskId), listTaskParticipants(taskId)])
         setAppointments(appts)
-        appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam)) || appts[0] || null
+        setParticipantPool(pool)
+        const appt = (appointmentIdParam && appts.find((a) => a.id === appointmentIdParam)) || appts[0] || null
         setAppointmentId(appt?.id || null)
+        schedPatch = scheduleFromAppointment(appt)
+      } else {
+        // 처음 약속으로 넘길 때: 참여자 풀을 새로 정한다(2인 그룹은 기본으로 둘 다, 그 외엔 위시 작성자·나).
+        schedPatch = scheduleFromAppointment(null)
+        schedPatch.participants = m.length === 2 ? m.map((x) => x.user_id) : [t.created_by, profile.id].filter(Boolean)
       }
-      const { participants: _p, ...schedPatch } = scheduleFromAppointment(appt) // eslint-disable-line no-unused-vars
-
-      const existing = t.status !== 'open' ? await listTaskParticipants(taskId) : []
-      // 2인 그룹은 기본으로 두 명 다 체크. 그 외엔 위시 작성자·나 + 기존 참여자.
-      const base = m.length === 2 ? m.map((x) => x.user_id) : [t.created_by, profile.id]
-      const participants = [...new Set([...base, ...existing].filter(Boolean))]
-      setSched((s) => ({ ...s, ...schedPatch, participants }))
+      setSched((s) => ({ ...s, ...schedPatch }))
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId, taskId, profile.id, appointmentIdParam])
   useEffect(() => { load() }, [load])
 
-  // 약속 선택 셀렉트에서 다른 약속으로 바꾸면, 그 약속의 일정 값으로 폼을 다시 채운다
-  // (참여자는 위시 공용이라 건드리지 않음).
+  // 약속 선택 셀렉트에서 다른 약속으로 바꾸면, 그 약속의 일정·참여자 값으로 폼을 다시 채운다.
   function pickAppointment(id) {
     const appt = appointments.find((a) => a.id === id)
     if (!appt) return
     setAppointmentId(id)
-    const { participants: _p, ...schedPatch } = scheduleFromAppointment(appt) // eslint-disable-line no-unused-vars
-    setSched((s) => ({ ...s, ...schedPatch }))
+    setSched((s) => ({ ...s, ...scheduleFromAppointment(appt) }))
   }
 
   const isReschedule = task && task.status !== 'open'
   const isCreator = task?.created_by === profile.id
   const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
   const noun = workNoun(category)
+  // 수정 중이면 참여자 풀 안에서만, 처음 약속으로 넘길 때는 그룹 멤버 전체에서 고른다.
+  const pickerMembers = isReschedule ? members.filter((mm) => participantPool.includes(mm.user_id)) : members
   // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
-  const needChoose = members.length >= 2
+  const needChoose = pickerMembers.length >= 2
 
   function pickCategory(c) {
     const next = category === c ? '' : c
@@ -99,7 +102,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
       if (!category) { setWishErr('위시 유형을 선택해 주세요.'); return }
       if (!title.trim()) { setWishErr('제목을 입력해 주세요.'); return }
     }
-    const ids = needChoose ? sched.participants : members.map((m) => m.user_id)
+    const ids = needChoose ? sched.participants : pickerMembers.map((m) => m.user_id)
     if (needChoose && ids.length === 0) { setError('참여자를 한 명 이상 선택해 주세요.'); return }
     setSaving(true); setError('')
     try {
@@ -115,7 +118,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
         await updateTaskMedia(taskId, mediaInfo)
       }
       const schedule = buildSchedulePayload(sched)
-      if (isReschedule) await rescheduleTask({ appointmentId, taskId, participantIds: ids, ...schedule })
+      if (isReschedule) await rescheduleTask({ appointmentId, participantIds: ids, ...schedule })
       else await scheduleTask({ taskId, participantIds: ids, ...schedule })
       if (embedded) { onSaved?.(); return }
       if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
@@ -201,19 +204,18 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
           </div>
         )}
 
+        {appointments.length > 1 && (
+          <div className="cg-mt-24">
+            <SelectPill className="sc-select-full" value={appointmentId} onChange={pickAppointment}
+              options={appointments.map((a) => ({
+                value: a.id,
+                label: a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정',
+              }))} />
+          </div>
+        )}
+
         <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))}
-          members={members} meId={profile.id} authorId={task.created_by}
-          topRow={appointments.length > 1 && (
-            <div className="cg-row">
-              <span className="cg-row-icon" style={{ background: '#eeebfe' }}>🗓️</span>
-              <div className="cg-row-main"><div className="cg-row-title">약속 선택</div></div>
-              <SelectPill value={appointmentId} onChange={pickAppointment}
-                options={appointments.map((a) => ({
-                  value: a.id,
-                  label: a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정',
-                }))} />
-            </div>
-          )} />
+          members={pickerMembers} meId={profile.id} authorId={task.created_by} />
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">

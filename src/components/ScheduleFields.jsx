@@ -76,6 +76,7 @@ export function scheduleFromAppointment(appt) {
   }
   if (appt.repeat_until) { s.untilOn = true; s.until = appt.repeat_until }
   if (appt.remind_min !== null && appt.remind_min !== undefined) s.remind = String(appt.remind_min)
+  if (appt.participant_ids) s.participants = appt.participant_ids
   return s
 }
 
@@ -90,9 +91,9 @@ function PickField({ type, value, onChange, format }) {
     </label>
   )
 }
-export function SelectPill({ value, onChange, options }) {
+export function SelectPill({ value, onChange, options, className = '' }) {
   return (
-    <span className="sc-select">
+    <span className={`sc-select ${className}`.trim()}>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -101,7 +102,7 @@ export function SelectPill({ value, onChange, options }) {
   )
 }
 
-export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true, topRow = null }) {
+export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true }) {
   const v = value
   const set = (patch) => onChange(patch)
   const toggleWeekday = (i) => {
@@ -116,9 +117,8 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
   return (
     <>
       {/* 일정 */}
-      {showTitle && <div className="cg-section-title cg-mt-24">일정</div>}
+      {showTitle && <div className="cg-label cg-mt-24">일정</div>}
       <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
-        {topRow}
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>
           <div className="cg-row-main">
@@ -186,7 +186,7 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
 
       {needChoose && (
         <>
-          <div className="cg-section-title cg-mt-24">참여자</div>
+          {showTitle && <div className="cg-label cg-mt-24">참여자</div>}
           <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
             <ul className="member-pick">
               {members.map((m) => {
