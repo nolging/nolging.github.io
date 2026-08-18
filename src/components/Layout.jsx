@@ -909,30 +909,29 @@ export default function Layout() {
       </header>
     )
   } else if (scheduleMatch) {
-    // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유) + 검색(돋보기 → 상단바 전체가 검색창으로)
-    topbar = schedSearchOpen ? (
-      <header className="topbar sb-search-topbar">
-        <div className="sb-topbar-searchwrap">
-          <input className="sb-topbar-search" autoFocus placeholder="제목 검색" enterKeyHint="search"
+    // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유) + 검색(돋보기 버튼이
+    // 알약 검색창으로 자연스럽게 늘어남 — 원형 버튼은 그대로 왼쪽에 남고 뒤에서 입력창이 펼쳐지는 트릭)
+    topbar = (
+      <header className="topbar">
+        {!schedSearchOpen && <span className="topbar-heading topbar-title-lg">일정</span>}
+        {!schedSearchOpen && (
+          <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
+            aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
+            <FilterIcon />
+            {headerFilter?.active && <span className="filter-dot" />}
+          </button>
+        )}
+        <div className={`sched-search ${schedSearchOpen ? 'open' : ''}`}>
+          <button type="button" className="sched-search-btn" aria-label="일정 검색" title="일정 검색"
+            onClick={() => setSchedSearchOpen(true)}><SearchIcon /></button>
+          <input className="sched-search-input" autoFocus={schedSearchOpen} placeholder="제목 검색" enterKeyHint="search"
             value={schedSearchQuery} onChange={(e) => setSchedSearchQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setSchedSearchTerm(schedSearchQuery.trim()) } }} />
-          {schedSearchQuery && (
-            <button type="button" className="sb-topbar-clear" aria-label="지우기"
-              onClick={() => { setSchedSearchQuery(''); setSchedSearchTerm('') }}>✕</button>
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setSchedSearchTerm(schedSearchQuery.trim()) } }}
+            tabIndex={schedSearchOpen ? 0 : -1} />
+          {schedSearchOpen && (
+            <button type="button" className="sched-search-clear" aria-label="검색 닫기" onClick={resetSchedSearch}>✕</button>
           )}
         </div>
-        <button type="button" className="sb-topbar-close" onClick={resetSchedSearch}>닫기</button>
-      </header>
-    ) : (
-      <header className="topbar">
-        <span className="topbar-heading topbar-title-lg">일정</span>
-        <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
-          aria-label="유형 필터" title="유형 필터" onClick={() => headerFilter?.onClick?.()}>
-          <FilterIcon />
-          {headerFilter?.active && <span className="filter-dot" />}
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="일정 검색" title="일정 검색"
-          onClick={() => setSchedSearchOpen(true)}><SearchIcon /></button>
       </header>
     )
   } else if (storeMatch) {
