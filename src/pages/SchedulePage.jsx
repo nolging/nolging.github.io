@@ -298,6 +298,12 @@ export default function SchedulePage() {
     return out
   }, [shown, selected, datePicked, monthAll, view, today])
 
+  // 검색 중(제목 검색어 있음): 캘린더는 생략하고 검색어가 포함된 약속 카드만 시간순으로.
+  const searchResults = useMemo(() => {
+    if (!query) return null
+    return [...shown].sort((x, y) => new Date(x.scheduled_at) - new Date(y.scheduled_at))
+  }, [shown, query])
+
   // 카드가 sticky 날짜 헤더 아래로 (거의) 가려지면 그림자까지 완전히 숨김
   // (그림자는 카드 박스 밖 투명 간격으로 번져 CSS만으론 헤더가 다 못 가림)
   useEffect(() => {
@@ -384,41 +390,43 @@ export default function SchedulePage() {
 
   return (
     <div className="page sched-page">
-      <div className="cal" onTouchStart={onCalTouchStart} onTouchMove={onCalTouchMove} onTouchEnd={onCalTouchEnd} onClickCapture={onCalClickCapture}>
-        <div className="cal-head">
-          <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
-          <div className="cal-head-mid">
-            <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
-            <button type="button" className="sched-today sched-today-sm" onClick={goToday}>오늘</button>
+      {!query && (
+        <div className="cal" onTouchStart={onCalTouchStart} onTouchMove={onCalTouchMove} onTouchEnd={onCalTouchEnd} onClickCapture={onCalClickCapture}>
+          <div className="cal-head">
+            <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
+            <div className="cal-head-mid">
+              <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
+              <button type="button" className="sched-today sched-today-sm" onClick={goToday}>오늘</button>
+            </div>
+            <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
           </div>
-          <button className="btn btn-ghost btn-sm icon-btn cal-nav-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
+          <div className="cal-grid cal-wd">
+            {WD.map((w, i) => (
+              <div key={w} className={`cal-wdc ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{w}</div>
+            ))}
+          </div>
+          <div className="cal-grid">
+            {cells.map((d, i) => {
+              if (!d) return <div key={i} className="cal-cell empty" />
+              const key = ymd(d)
+              const dow = d.getDay()
+              const holiday = holidayName(key)
+              return (
+                <button key={i} type="button"
+                  className={`cal-cell ${key === selected ? 'sel' : ''} ${key === todayKey ? 'today' : ''}`}
+                  onClick={() => selectDay(key)} title={holiday || undefined}>
+                  <span className={`cal-day ${dow === 0 || holiday ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
+                  <span className="cal-dots">
+                    {(daysWithAppt.get(key) || []).map((c, i) => (
+                      <span key={i} className="cal-dot" style={{ background: c }} />
+                    ))}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-        <div className="cal-grid cal-wd">
-          {WD.map((w, i) => (
-            <div key={w} className={`cal-wdc ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{w}</div>
-          ))}
-        </div>
-        <div className="cal-grid">
-          {cells.map((d, i) => {
-            if (!d) return <div key={i} className="cal-cell empty" />
-            const key = ymd(d)
-            const dow = d.getDay()
-            const holiday = holidayName(key)
-            return (
-              <button key={i} type="button"
-                className={`cal-cell ${key === selected ? 'sel' : ''} ${key === todayKey ? 'today' : ''}`}
-                onClick={() => selectDay(key)} title={holiday || undefined}>
-                <span className={`cal-day ${dow === 0 || holiday ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
-                <span className="cal-dots">
-                  {(daysWithAppt.get(key) || []).map((c, i) => (
-                    <span key={i} className="cal-dot" style={{ background: c }} />
-                  ))}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -426,6 +434,17 @@ export default function SchedulePage() {
       <div className="cal-scroll" ref={scrollRef}>
         {loading ? (
           <div className="spinner" />
+        ) : query ? (
+          <div className="cal-list">
+            {searchResults.length === 0 ? (
+              <p className="muted sm cal-empty">검색 결과가 없어요.</p>
+            ) : (
+              <div className="cal-day-group">
+                <div className="cal-list-title">검색 결과 {searchResults.length} 건</div>
+                {searchResults.map(renderAppt)}
+              </div>
+            )}
+          </div>
         ) : datePicked ? (
           <div className="cal-list">
             <div className="cal-day-group">
