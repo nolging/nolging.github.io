@@ -425,7 +425,10 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   // 그 안의 "일정" 섹션에 약속 선택 셀렉트가 있어 거기서 바꿀 수 있다.
   function goEditAppointment() {
     setHeadMenu(false)
-    const appointmentId = appointments[0]?.id || null
+    // 기본 선택값은 이 페이지 상단에 표시 중인 날짜(가장 가까운 미래 약속, task.scheduled_at 캐시)와
+    // 일치하는 약속으로 — 여러 개 중 아무거나(배열 순서상 첫 번째)가 아니라.
+    const appointmentId = appointments.find((a) => a.scheduled_at === task.scheduled_at)?.id
+      ?? appointments[0]?.id ?? null
     if (embedded && onEdit) { onEdit('appointment', taskId, appointmentId); return } // PC 임베드: 가운데에서 편집
     navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded, appointmentId } })
   }
