@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, listBlockedFeatures } from '../lib/api'
 import { formatBirthDot } from '../lib/birthday'
 import { useAuth } from '../context/AuthContext'
 import { openMember } from '../lib/memberModal'
@@ -29,16 +29,16 @@ function annivLabel(s) {
   return `${y}.${Number(mo)}.${Number(d)}`
 }
 
-// 멍냥꽁냥 / 미니 게임 존의 가로 스크롤 카드
-function PlayCard({ emoji, img, bg, title, sub, onClick }) {
+// 멍냥꽁냥 / 미니 게임 존의 가로 스크롤 카드. blocked: 관리자가 그룹별 사용량 제어로 막은 기능(흐리게 + 차단 문구)
+function PlayCard({ emoji, img, bg, title, sub, onClick, blocked }) {
   return (
-    <button type="button" className={`csx-card ${onClick ? '' : 'csx-card-soft'}`}
+    <button type="button" className={`csx-card ${onClick ? '' : 'csx-card-soft'}${blocked ? ' csx-card-blocked' : ''}`}
       onClick={onClick} aria-disabled={!onClick}>
       <span className="csx-card-ico" style={{ background: bg }}>
         {img ? <img className="csx-card-img" src={img} alt="" /> : emoji}
       </span>
       <span className="csx-card-t">{title}</span>
-      <span className="csx-card-s">{sub}</span>
+      <span className="csx-card-s">{blocked ? '사용량 제어로 차단' : sub}</span>
     </button>
   )
 }
@@ -84,24 +84,29 @@ export default function GroupMembers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [boardName, setBoardName] = useState(null)   // 개설된 익명 게시판 이름(없으면 null)
+  const [blockedFeatures, setBlockedFeatures] = useState([]) // 관리자가 그룹별 사용량 제어로 차단한 기능 키
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, c, f, d, bn] = await Promise.all([
+      const [cards, g, c, f, d, bn, bf] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
         getGroupBoard(groupId).catch(() => null),
+        listBlockedFeatures(groupId).catch(() => []),
       ])
       setBoardName(bn || null)
       setMembers((cards || []).filter((m) => !m.is_left)); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
+      setBlockedFeatures(bf || [])
       if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [groupId])
   useEffect(() => { load() }, [load])
+  // 관리자의 그룹별 사용량 제어로 막힌 기능
+  const isBlocked = (feature) => blockedFeatures.includes(feature)
 
   // 상단바 제목: 커플=데이트, 우정=놀이터, 그 외 기본("멤버")
   useEffect(() => {
@@ -246,8 +251,8 @@ export default function GroupMembers() {
           <div className="csx-scroll">
             {/* 익명 게시판: 개설되면 전원 노출(미개설이면 관리자에게만) → 제일 앞. 카드 이름은 '비밀 게시판' 고정 */}
             {boardName && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
-            <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={() => go('touch')} />
-            <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
+            <PlayCard emoji="💘" bg="#fde8ee" title="우심뽀까" sub="뽀뽀나 함 하까" onClick={isBlocked('touch') ? undefined : () => go('touch')} blocked={isBlocked('touch')} />
+            <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={isBlocked('draw') ? undefined : () => go('draw')} blocked={isBlocked('draw')} />
             <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="착한 애인 챌린지" onClick={() => go('praise')} />
             {/* 타로 카페: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
             {isAdmin && <PlayCard emoji="🔮" bg="#eeebfe" title="타로 카페" sub="오늘의 카드" onClick={() => go('tarot')} />}
@@ -259,11 +264,11 @@ export default function GroupMembers() {
         <div className="csx-zone">
           <div className="csx-zone-title">미니 게임</div>
           <div className="csx-scroll">
-            <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={() => go('catchmind')} />
-            <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={() => go('davinci')} />
-            <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={() => go('puzzle')} />
-            <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={() => go('rps')} />
-            <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={() => go('omok')} />
+            <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={isBlocked('catchmind') ? undefined : () => go('catchmind')} blocked={isBlocked('catchmind')} />
+            <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={isBlocked('davinci') ? undefined : () => go('davinci')} blocked={isBlocked('davinci')} />
+            <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={isBlocked('puzzle') ? undefined : () => go('puzzle')} blocked={isBlocked('puzzle')} />
+            <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={isBlocked('rps') ? undefined : () => go('rps')} blocked={isBlocked('rps')} />
+            <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={isBlocked('omok') ? undefined : () => go('omok')} blocked={isBlocked('omok')} />
           </div>
         </div>
 
@@ -352,18 +357,18 @@ export default function GroupMembers() {
             <div className="csx-zone-title">커뮤니티</div>
             <div className="csx-scroll">
               {boardName && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
-              <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
+              <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={isBlocked('draw') ? undefined : () => go('draw')} blocked={isBlocked('draw')} />
               {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
             </div>
           </div>
           <div className="csx-zone">
             <div className="csx-zone-title">미니 게임</div>
             <div className="csx-scroll">
-              <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={() => go('catchmind')} />
-              <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={() => go('davinci')} />
-              <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={() => go('puzzle')} />
-              <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={() => go('rps')} />
-              <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={() => go('omok')} />
+              <PlayCard emoji="🎨" bg="#e6eefd" title="캐치 마인드" sub="내가그린기린그림" onClick={isBlocked('catchmind') ? undefined : () => go('catchmind')} blocked={isBlocked('catchmind')} />
+              <PlayCard emoji="🃏" bg="#fbf1d3" title="다빈치 코드" sub="힝거 거믕거" onClick={isBlocked('davinci') ? undefined : () => go('davinci')} blocked={isBlocked('davinci')} />
+              <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={isBlocked('puzzle') ? undefined : () => go('puzzle')} blocked={isBlocked('puzzle')} />
+              <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={isBlocked('rps') ? undefined : () => go('rps')} blocked={isBlocked('rps')} />
+              <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={isBlocked('omok') ? undefined : () => go('omok')} blocked={isBlocked('omok')} />
             </div>
           </div>
         </div>

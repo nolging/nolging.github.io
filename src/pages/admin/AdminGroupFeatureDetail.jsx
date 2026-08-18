@@ -82,8 +82,8 @@ export default function AdminGroupFeatureDetail() {
         </span>
       </div>
 
-      <div className="cg-label cg-mt-16">{zoneLabel}</div>
-      <div className="cg-list cg-mt-12">
+      <div className="cg-label cg-mb-0">{zoneLabel}</div>
+      <div className="cg-list">
         {zoneFeatures.map((f) => (
           <div className="cg-row" key={f.key}>
             <span className="cg-row-icon" style={{ background: f.emojiBg }} aria-hidden="true">{f.emoji}</span>
@@ -96,11 +96,11 @@ export default function AdminGroupFeatureDetail() {
         ))}
       </div>
 
-      <div className="cg-label-row cg-mt-16">
+      <div className="cg-label-row cg-mb-0">
         <span className="cg-label">미니 게임</span>
         <CgToggle on={allGamesOn} onClick={toggleAllGames} />
       </div>
-      <div className="cg-list cg-mt-12">
+      <div className="cg-list">
         {GROUP_GAMES.map((g) => (
           <div className="cg-row" key={g.key}>
             <span className="cg-row-icon" style={{ background: g.emojiBg }} aria-hidden="true">{g.emoji}</span>

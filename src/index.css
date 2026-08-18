@@ -5181,6 +5181,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   text-align: left; box-shadow: 0 4px 16px rgba(25,23,34,.05); }
 .csx-card:active { transform: scale(.97); }
 .csx-card-soft, .csx-card-soft:active { cursor: default; transform: none; }
+/* 관리자가 그룹별 사용량 제어로 차단한 기능: 흐리게 표시 */
+.csx-card-blocked { opacity: .45; }
 .csx-card-ico { width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; }
 .csx-card-img { width: 84%; height: 84%; object-fit: contain; display: block; }
 .csx-card-t { margin-top: auto; font-size: 14px; font-weight: 700; color: #191722; max-width: 100%;
@@ -6121,6 +6123,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .agf-head-card { display: flex; align-items: center; gap: 8px; }
 .agf-head-name { font-size: 16px; font-weight: 800; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agf-head-avatars { margin-left: auto; }
+/* cg-label(-row) 의 기본 하단 여백을 완전히 없앨 때 (예: 그룹 사용량 제어의 구역 라벨 → 바로 붙는 리스트) */
+.cg-mb-0 { margin-bottom: 0; }
 /* 카테고리 섹션 헤더 + ▲▼ 정렬 버튼 */
 /* 상점 관리: 탭은 스크롤 시에도 상단 고정, 카테고리별로 흰 박스 분리 */
 /* 상점 관리: 콘텐츠 상단 패딩 제거 → sticky 탭이 상단바 바로 아래(top:0)에 흔들림 없이 고정 */
