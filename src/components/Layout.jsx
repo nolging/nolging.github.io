@@ -929,7 +929,7 @@ export default function Layout() {
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setSchedSearchTerm(schedSearchQuery.trim()) } }}
             tabIndex={schedSearchOpen ? 0 : -1} />
           {schedSearchOpen && (
-            <button type="button" className="sched-search-clear" aria-label="검색 닫기" onClick={resetSchedSearch}>✕</button>
+            <button type="button" className="sched-search-clear" aria-label="검색 닫기" onClick={resetSchedSearch}><CloseIcon /></button>
           )}
         </div>
       </header>
