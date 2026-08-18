@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
 import { listMyAppointments, listGroupMembersBrief, listMyGroups, getGroupDecoMap, touchQuest } from '../lib/api'
 import { repeatLabel, resolveCategories, catMeta, catChipStyle, DEFAULT_WISH_CATEGORIES } from '../lib/constants'
+import { holidayName } from '../lib/holidays'
 import CategoryChip from '../components/CategoryChip'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -374,11 +375,12 @@ export default function SchedulePage() {
             if (!d) return <div key={i} className="cal-cell empty" />
             const key = ymd(d)
             const dow = d.getDay()
+            const holiday = holidayName(key)
             return (
               <button key={i} type="button"
                 className={`cal-cell ${key === selected ? 'sel' : ''} ${key === todayKey ? 'today' : ''}`}
-                onClick={() => selectDay(key)}>
-                <span className={`cal-day ${dow === 0 ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
+                onClick={() => selectDay(key)} title={holiday || undefined}>
+                <span className={`cal-day ${dow === 0 || holiday ? 'sun' : ''} ${dow === 6 ? 'sat' : ''}`}>{d.getDate()}</span>
                 <span className={`cal-dot ${daysWithAppt.has(key) ? 'on' : ''}`} />
               </button>
             )
