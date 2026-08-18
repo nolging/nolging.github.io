@@ -308,7 +308,12 @@ export default function Layout() {
   const [commentSearchTerm, setCommentSearchTerm] = useState('')
   const [commentMineOnly, setCommentMineOnly] = useState(false)
   const resetCommentSearch = () => { setCommentSearchOpen(false); setCommentSearchQuery(''); setCommentSearchTerm(''); setCommentMineOnly(false) }
-  useEffect(() => { resetCommentSearch(); setHeaderCommentCount(null) }, [location.pathname])
+  // 일정 페이지: 상단바 필터 버튼 우측 돋보기 → 상단바 한 줄이 검색창으로(댓글 검색과 동일한 패턴)
+  const [schedSearchOpen, setSchedSearchOpen] = useState(false)
+  const [schedSearchQuery, setSchedSearchQuery] = useState('')
+  const [schedSearchTerm, setSchedSearchTerm] = useState('')
+  const resetSchedSearch = () => { setSchedSearchOpen(false); setSchedSearchQuery(''); setSchedSearchTerm('') }
+  useEffect(() => { resetCommentSearch(); resetSchedSearch(); setHeaderCommentCount(null) }, [location.pathname])
   // 비밀 게시판 상단바 명칭: 그룹이 개설 시 지정한 이름(없으면 '비밀 게시판')
   const [boardTitle, setBoardTitle] = useState(null)
   const boardGroupId = boardMatch?.params.groupId || boardPostMatch?.params.groupId
@@ -904,8 +909,21 @@ export default function Layout() {
       </header>
     )
   } else if (scheduleMatch) {
-    // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유)
-    topbar = (
+    // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유) + 검색(돋보기 → 상단바 전체가 검색창으로)
+    topbar = schedSearchOpen ? (
+      <header className="topbar sb-search-topbar">
+        <div className="sb-topbar-searchwrap">
+          <input className="sb-topbar-search" autoFocus placeholder="제목 검색" enterKeyHint="search"
+            value={schedSearchQuery} onChange={(e) => setSchedSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setSchedSearchTerm(schedSearchQuery.trim()) } }} />
+          {schedSearchQuery && (
+            <button type="button" className="sb-topbar-clear" aria-label="지우기"
+              onClick={() => { setSchedSearchQuery(''); setSchedSearchTerm('') }}>✕</button>
+          )}
+        </div>
+        <button type="button" className="sb-topbar-close" onClick={resetSchedSearch}>닫기</button>
+      </header>
+    ) : (
       <header className="topbar">
         <span className="topbar-heading topbar-title-lg">일정</span>
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
@@ -913,6 +931,8 @@ export default function Layout() {
           <FilterIcon />
           {headerFilter?.active && <span className="filter-dot" />}
         </button>
+        <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="일정 검색" title="일정 검색"
+          onClick={() => setSchedSearchOpen(true)}><SearchIcon /></button>
       </header>
     )
   } else if (storeMatch) {
@@ -1058,7 +1078,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
