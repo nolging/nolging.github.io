@@ -37,9 +37,9 @@ export default function AdminGroupFeatures() {
   return (
     <div className="page admin-page aq-page">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="aq-head">
-        <h2 className="aq-title">그룹</h2>
-        <p className="aq-sub">그룹별로 사용 중인 기능을 확인하고 제어할 수 있어요.</p>
+      <div className="aq-section-head">
+        <span className="aq-section-title">그룹</span>
+        <span className="aq-count">{groups.length}</span>
       </div>
       {loading ? <div className="spinner" /> : groups.length === 0 ? (
         <p className="muted sm">그룹이 없습니다.</p>
@@ -58,7 +58,6 @@ export default function AdminGroupFeatures() {
                 disabled={!premium}
                 onClick={premium ? () => nav(`/admin/misc/groups/${g.group_id}`) : undefined}
               >
-                <span className="aq-card-icon" style={{ background: g.emoji_bg || '#f4f3f7' }} aria-hidden="true">{g.emoji || '👥'}</span>
                 <span className="aq-card-body">
                   <span className="aq-card-title-row">
                     <span className="aq-card-name">{g.name}</span>

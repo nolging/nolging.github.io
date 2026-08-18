@@ -82,7 +82,7 @@ export default function AdminGroupFeatureDetail() {
         </span>
       </div>
 
-      <div className="cg-label cg-mt-24">{zoneLabel}</div>
+      <div className="cg-label cg-mt-16">{zoneLabel}</div>
       <div className="cg-list cg-mt-12">
         {zoneFeatures.map((f) => (
           <div className="cg-row" key={f.key}>
@@ -96,7 +96,7 @@ export default function AdminGroupFeatureDetail() {
         ))}
       </div>
 
-      <div className="cg-label-row cg-mt-24">
+      <div className="cg-label-row cg-mt-16">
         <span className="cg-label">미니 게임</span>
         <CgToggle on={allGamesOn} onClick={toggleAllGames} />
       </div>
