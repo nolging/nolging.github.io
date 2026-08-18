@@ -314,7 +314,7 @@ export default function DrawBoard() {
         </div>
         {drawBlocked ? (
           <div className="draw-blocked-row">
-            <span className="draw-blocked-text">사용량 제어로 실시간 반영이 차단됐어요(새로고침 시 상대방 낙서 확인 가능)</span>
+            <span className="draw-blocked-text">사용량 제어로 실시간 낙서 반영이 차단됐어요.<br />새로고침 시 상대방의 낙서를 확인할 수 있어요.</span>
             <button type="button" className="draw-refresh-btn" onClick={loadStrokes} aria-label="새로고침">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 12a9 9 0 1 1-2.64-6.36" />
