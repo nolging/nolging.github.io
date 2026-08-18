@@ -852,9 +852,9 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
         </div>
       </Modal>
 
-      <AppointmentAddModal open={apptAddOpen} taskId={taskId}
+      <AppointmentAddModal open={apptAddOpen} taskId={taskId} groupId={groupId} meId={profile.id} authorId={task.created_by}
         onClose={() => setApptAddOpen(false)} onAdded={onAppointmentAdded} />
-      <AppointmentEditModal open={!!dateEditTarget} appointment={dateEditTarget}
+      <AppointmentEditModal open={!!dateEditTarget} appointment={dateEditTarget} groupId={groupId} meId={profile.id} authorId={task.created_by}
         onClose={() => setDateEditTarget(null)} onSaved={onDateEdited} />
 
       {(() => {
