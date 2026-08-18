@@ -724,39 +724,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   box-shadow: 0 0 0 2px var(--bg);
 }
 
-.group-search { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; min-height: 44px; }
-.gs-spacer { flex: 1; }
-.gs-btn, .gs-act {
-  flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--canvas); color: var(--muted); border: none; cursor: pointer;
-}
-.gs-btn:hover, .gs-act:hover { text-decoration: none; background: #e9e9ee; }
-.gs-btn { position: relative; z-index: 2; }
-.group-search.open .gs-btn { box-shadow: none; }
-.gs-actions { flex-shrink: 0; display: flex; gap: 8px; }
-.gs-input {
-  position: absolute; left: 0; top: 0; right: 100%; height: 46px;
-  padding: 0 16px 0 54px; border: none; background: var(--canvas);
-  border-radius: 999px; font-size: 14px; color: var(--text);
-  opacity: 0; pointer-events: none; z-index: 1;
-  transition: right .28s ease, opacity .18s ease;
-}
-.group-search.open .gs-input { right: 0; opacity: 1; pointer-events: auto; }
-.gs-input:focus { outline: none; }
-.gs-clear {
-  position: absolute; right: 8px; top: 7px; width: 30px; height: 30px; z-index: 2;
-  border: none; background: transparent; color: var(--muted);
-  font-size: 22px; line-height: 1; cursor: pointer;
-}
-
-/* 일정 페이지 툴바(캘린더 위): 검색(좌) + "오늘"(우) */
-.sched-toolbar { margin-bottom: 0; }
 .sched-today {
   flex-shrink: 0; height: 40px; padding: 0 18px; border-radius: 20px;
   background: var(--surface); color: var(--text); border: none; box-shadow: var(--card-shadow);
   font-weight: 600; font-size: 14px; cursor: pointer;
 }
+/* 달력 헤더: 월 제목 + "오늘"(작게) 를 한 그룹으로 묶어 가운데(prev/next 사이)에 배치 */
+.cal-head-mid { display: flex; align-items: center; gap: 8px; }
+.sched-today-sm { height: 26px; padding: 0 11px; border-radius: 13px; font-size: 11.5px; }
 .cal-empty { text-align: center; }
 /* 상단바 유형 필터 버튼 뱃지 */
 .sched-filter-btn { position: relative; }
@@ -899,7 +874,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 /* ---- 일정(캘린더) ---- */
 .cal { background: var(--surface); border: none; box-shadow: var(--card-shadow); border-radius: 14px; padding: 10px 8px; margin-bottom: 16px; }
-.cal-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 8px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 6px 14px; }
 .cal-title { font-weight: 700; font-size: 1rem; }
 .cal-title-btn { background: none; border: none; cursor: pointer; color: var(--text); padding: 4px 8px; border-radius: 8px; }
 .cal-title-btn:hover { background: rgba(0, 0, 0, .04); }

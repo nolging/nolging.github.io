@@ -134,13 +134,10 @@ export default function SchedulePage() {
     selectDay(ymd(today))
   }
 
-  // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크), 제목 검색(본문 돋보기)
+  // 필터(상단바 버튼 → 하단 시트): 유형 + 그룹(기본=전체 체크). 제목 검색은 상단바 돋보기(Layout 소유)
   const [catOff, setCatOff] = useState([]) // 해제(제외)된 유형. 기본=전체 표시(빈 배열)
   const [groupFilter, setGroupFilter] = useState([]) // 그룹 로드 후 전체로 채움
   const [filterOpen, setFilterOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [q, setQ] = useState('')
-  const inputRef = useRef(null)
   const scrollRef = useRef(null)
   const toggleCat = (c) => setCatOff((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
   const toggleGroup = (id) => setGroupFilter((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
@@ -164,21 +161,12 @@ export default function SchedulePage() {
   const filterActive = catActive || groupActive
 
   // 상단바 필터 버튼 동작/적용여부(점) 등록. 임베드 상세/편집 중엔 필터 버튼 숨김.
-  const { setHeaderFilter } = useOutletContext()
+  const { setHeaderFilter, schedSearch } = useOutletContext()
   useEffect(() => {
     if (detail || editView) { setHeaderFilter?.(null); return () => setHeaderFilter?.(null) }
     setHeaderFilter?.({ onClick: () => setFilterOpen(true), active: filterActive })
     return () => setHeaderFilter?.(null)
   }, [filterActive, setHeaderFilter, detail, editView])
-
-  useEffect(() => { if (searchOpen) inputRef.current?.focus() }, [searchOpen])
-  function openSearch() { setSearchOpen(true) }
-  function closeSearch() {
-    if (document.activeElement === inputRef.current) return
-    setSearchOpen(false); setQ('')
-  }
-  function onSearchBlur() { setTimeout(closeSearch, 120) }
-  function clearSearch() { setQ(''); inputRef.current?.focus() }
 
   useEffect(() => {
     (async () => {
@@ -222,7 +210,7 @@ export default function SchedulePage() {
     }).filter(Boolean)
 
   // 유형 필터 + 제목 검색 적용 (달력 점·목록에 공통)
-  const query = q.trim().toLowerCase()
+  const query = (schedSearch?.term || '').trim().toLowerCase()
   const myGroupIds = useMemo(() => new Set(myGroups.map((g) => g.id)), [myGroups])
   const shown = useMemo(() => appts.filter((a) =>
     !catOff.includes(a.category) &&
@@ -367,38 +355,13 @@ export default function SchedulePage() {
 
   return (
     <div className="page sched-page">
-      {/* 캘린더 위 툴바: 좌측 검색(돋보기, 내 그룹과 동일), 우측 "오늘" */}
-      <div className={`group-search sched-toolbar ${searchOpen ? 'open' : ''}`}>
-        <button type="button" className="gs-btn"
-          onMouseDown={(e) => e.preventDefault()} onClick={openSearch}
-          aria-label="검색" aria-expanded={searchOpen}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
-        <span className="gs-spacer" aria-hidden="true" />
-        <div className="gs-actions">
-          <button type="button" className="sched-today" onClick={goToday}>오늘</button>
-        </div>
-        <input ref={inputRef} className="gs-input" type="text" value={q}
-          onChange={(e) => setQ(e.target.value)} placeholder={searchOpen ? '제목 검색' : ''}
-          aria-label="약속 검색" enterKeyHint="search"
-          autoComplete="off" autoCorrect="off" autoCapitalize="none"
-          tabIndex={searchOpen ? 0 : -1}
-          onBlur={onSearchBlur}
-          onKeyDown={(e) => e.key === 'Escape' && inputRef.current?.blur()} />
-        {searchOpen && q && (
-          <button type="button" className="gs-clear"
-            onMouseDown={(e) => e.preventDefault()} onClick={clearSearch}
-            aria-label="검색어 지우기">×</button>
-        )}
-      </div>
-
       <div className="cal">
         <div className="cal-head">
           <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(-1)} aria-label="이전 달">‹</button>
-          <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
+          <div className="cal-head-mid">
+            <button type="button" className="cal-title cal-title-btn" onClick={showMonth} title="이 달 전체 일정 보기">{view.y} 년 {view.m + 1} 월</button>
+            <button type="button" className="sched-today sched-today-sm" onClick={goToday}>오늘</button>
+          </div>
           <button className="btn btn-ghost btn-sm icon-btn" onClick={() => move(1)} aria-label="다음 달">›</button>
         </div>
         <div className="cal-grid cal-wd">
