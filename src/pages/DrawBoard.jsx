@@ -18,6 +18,8 @@ const BRUSHES = [
 ]
 // 반투명/발광 브러쉬는 획을 한 번에 그려야 이음매(끊김)가 안 생김 → 증분 대신 전체 리드로우
 const SMOOTH = new Set(['highlighter', 'neon'])
+// 차단 상태의 새로고침 버튼 연타 방지 최소 간격(DB 부하/전송량 보호)
+const REFRESH_COOLDOWN_MS = 3000
 const BG = '#ffffff'
 
 // 정규화 좌표 폴리라인을 한 번에 stroke
@@ -84,6 +86,8 @@ export default function DrawBoard() {
   const [isMember, setIsMember] = useState(false) // 이 그룹의 멤버인지(확정 전엔 false → 미가입이 잠깐도 낙서/track 되지 않게). 관전만.
   const isMemberRef = useRef(isMember); isMemberRef.current = isMember
   const [drawBlocked, setDrawBlocked] = useState(false) // 관리자가 그룹별 사용량 제어로 낙서장 실시간 반영을 차단했는지
+  const [refreshBusy, setRefreshBusy] = useState(false)  // 새로고침 버튼 연타 방지(중복 요청/DB 부하 방지)
+  const refreshBusyRef = useRef(false)
 
   // ---- 렌더 ----
   const redrawAll = useCallback(() => {
@@ -131,6 +135,18 @@ export default function DrawBoard() {
       redrawAll()
     } catch { /* noop */ }
   }, [groupId, addCommitted, redrawAll])
+
+  // 새로고침 버튼: 전체 획을 다시 select 해오는 요청이라 연타 시 DB 전송량/부하가 늘 수 있음 →
+  // 요청 중엔 버튼을 잠그고, 끝난 뒤에도 쿨다운 동안 계속 잠가 둔다(연타 방지 신뢰도를 위해
+  // "요청 완료 즉시 재활성화"가 아니라 버튼 비활성 상태 = 클릭 가능 여부를 그대로 보여준다).
+  const handleRefresh = useCallback(() => {
+    if (refreshBusyRef.current) return
+    refreshBusyRef.current = true
+    setRefreshBusy(true)
+    loadStrokes().finally(() => {
+      setTimeout(() => { refreshBusyRef.current = false; setRefreshBusy(false) }, REFRESH_COOLDOWN_MS)
+    })
+  }, [loadStrokes])
 
   // ---- 실시간 채널 + 저장분 로드 ----
   // 관리자가 그룹별 사용량 제어로 낙서장을 차단했으면 실시간 채널 자체를 만들지 않는다
@@ -315,7 +331,7 @@ export default function DrawBoard() {
         {drawBlocked ? (
           <div className="draw-blocked-row">
             <span className="draw-blocked-text">사용량 제어로 실시간 낙서 반영이 차단됐어요.<br />새로고침 시 상대방의 낙서를 확인할 수 있어요.</span>
-            <button type="button" className="draw-refresh-btn" onClick={loadStrokes} aria-label="새로고침">
+            <button type="button" className="draw-refresh-btn" onClick={handleRefresh} disabled={refreshBusy} aria-label="새로고침">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 12a9 9 0 1 1-2.64-6.36" />
                 <polyline points="21 3 21 9 15 9" />
