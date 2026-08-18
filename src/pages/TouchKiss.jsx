@@ -44,6 +44,7 @@ export default function TouchKiss() {
   const [peers, setPeers] = useState({})      // uid -> {x,y,name}
   const [bursts, setBursts] = useState([])    // 충돌 이펙트
   const [present, setPresent] = useState({})  // 나 외 접속자 uid -> { name, avatar, t }
+  const presentRef = useRef(present); presentRef.current = present
   const [myMeta, setMyMeta] = useState({ name: profile?.login_id || '', avatar: null })
   const myMetaRef = useRef(myMeta); myMetaRef.current = myMeta
   const [excited, setExcited] = useState(false) // 닿는 중(고양이 눈 빠르게 깜빡)
@@ -69,6 +70,7 @@ export default function TouchKiss() {
   const sendFinger = useCallback((p) => {
     const { uid: u, name } = idRef.current || {}
     if (!u) return
+    if (!Object.keys(presentRef.current).length) return   // 혼자면 브로드캐스트 생략(내 화면은 이미 그려짐)
     chanRef.current?.send({
       type: 'broadcast', event: 'finger',
       payload: { uid: u, name, x: p.x, y: p.y, down: !!p.down },
@@ -203,7 +205,7 @@ export default function TouchKiss() {
       if (!ch) return
       // 나가면서 누르고 있었다면 "놓음" 을 먼저 알려, 상대 화면에 입술이 남지 않게
       if (pendRef.current?.down) { try { sendFinger({ ...pendRef.current, down: false }) } catch { /* noop */ } }
-      if (isMemberRef.current) { try { ch.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ } }
+      if (isMemberRef.current && Object.keys(presentRef.current).length) { try { ch.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ } }
       supabase.removeChannel(ch); chanRef.current = null
     }
   }, [groupId, uid, profile?.login_id, sendFinger, sayHello])
@@ -211,7 +213,9 @@ export default function TouchKiss() {
   // ---- 내 존재를 주기적으로 갱신(hello 하트비트) ----
   // 상대가 내 t 를 계속 새로 받아, 내가 갑자기 사라지면(백그라운드/종료) TTL 로 정리할 수 있다.
   useEffect(() => {
-    const iv = setInterval(() => { sayHello() }, PRES_BEAT_MS)
+    // 혼자면(아무도 나를 몰라서 present 가 비어있으면) 갱신할 상대가 없으니 생략.
+    // 나중에 상대가 들어오면 그쪽의 ask 에 곧바로 hello 로 응답하므로 발견에는 영향 없다.
+    const iv = setInterval(() => { if (Object.keys(presentRef.current).length) sayHello() }, PRES_BEAT_MS)
     return () => clearInterval(iv)
   }, [sayHello])
 
@@ -270,7 +274,7 @@ export default function TouchKiss() {
   // 돌아오는 정도로도 pagehide 가 뜰 수 있어 순간적으로 "나감"이 깜빡일 수 있지만,
   // 화면에 돌아오면 즉시 hello 를 다시 보내 금방 재등록되므로 실질적 영향은 적다.
   const sayByeNow = useCallback(() => {
-    if (!isMemberRef.current) return
+    if (!isMemberRef.current || !Object.keys(presentRef.current).length) return
     try { chanRef.current?.send({ type: 'broadcast', event: 'bye', payload: { uid } }) } catch { /* noop */ }
   }, [uid])
   useEffect(() => {

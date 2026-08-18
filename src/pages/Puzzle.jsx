@@ -140,6 +140,16 @@ export default function Puzzle() {
 
   const setBase = useCallback((ms) => { baseRef.current = Math.max(0, ms || 0); sinceRef.current = Date.now(); setElapsed(baseRef.current) }, [])
 
+  // 채널에 나 혼자면(접속자 1명=나뿐) 브로드캐스트를 보내도 받을 사람이 없으니 생략
+  const bsend = useCallback((event, payload) => {
+    if (peerCountRef.current <= 1) return undefined
+    try {
+      const p = chanRef.current?.send({ type: 'broadcast', event, payload })
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+      return p
+    } catch { return undefined }
+  }, [])
+
   useEffect(() => {
     if (!groupId || !uid) return
     let alive = true
@@ -208,7 +218,7 @@ export default function Puzzle() {
       alive = false; clearTimeout(toastT.current)
       Object.values(tipTimers.current).forEach(clearTimeout); tipTimers.current = {}
       clearInterval(grabKeep.current); grabKeep.current = 0
-      if (drag.current) ch.send({ type: 'broadcast', event: 'drop', payload: { uid } })   // 잡은 채로 나가도 풀어 준다
+      if (drag.current && peerCountRef.current > 1) ch.send({ type: 'broadcast', event: 'drop', payload: { uid } })   // 잡은 채로 나가도 풀어 준다
       locks.current = {}
       supabase.removeChannel(ch); chanRef.current = null
     }
@@ -242,6 +252,7 @@ export default function Puzzle() {
     return [...s]
   }, [peers, uid])
   const peerCount = peerUids.length
+  const peerCountRef = useRef(peerCount); peerCountRef.current = peerCount
   const peerNames = peerUids.map((u) => (u === uid ? `${myName.current}(나)` : (peers[u]?.name || members[u]?.name || '멤버'))).join(' · ')
   // 저장 담당(대표): 접속자 중 uid 사전순 첫 번째 — 중복 저장 방지
   const isLeader = peerUids.length > 0 && [...peerUids].sort()[0] === uid
@@ -265,7 +276,7 @@ export default function Puzzle() {
     const iv = setInterval(() => {
       const ms = baseRef.current + (Date.now() - sinceRef.current)
       updatePuzzleElapsed(groupId, ms).catch(() => {})
-      chanRef.current?.send({ type: 'broadcast', event: 'time', payload: { ms } })
+      bsend('time', { ms })
     }, 5000)
     return () => clearInterval(iv)
   }, [puzzle, done, isLeader, peerCount, groupId])
@@ -297,7 +308,7 @@ export default function Puzzle() {
       const pz = { image: url, cols, rows, seed }
       await saveGroupPuzzle(groupId, { ...pz, positions })
       setAspect(asp); setPuzzle(pz); setPos(positions); setBase(0); doneRef.current = false
-      chanRef.current?.send({ type: 'broadcast', event: 'start', payload: { ...pz, positions } })
+      bsend('start', { ...pz, positions })
     } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
   async function resetPuzzle() {
@@ -306,7 +317,7 @@ export default function Puzzle() {
     try { await deleteGroupPuzzle(groupId) } catch { /* noop */ }
     if (oldImage) deletePuzzleImageByUrl(oldImage)
     setPuzzle(null); setPos({}); setAspect(0); setFile(null); setPreview(''); setBase(0); doneRef.current = false
-    chanRef.current?.send({ type: 'broadcast', event: 'reset' })
+    bsend('reset')
   }
 
   function sendChat(e) {
@@ -315,10 +326,7 @@ export default function Puzzle() {
     const m = { id: uuid(), uid, name: myName.current, text }
     // 내 화면에는 먼저 반영하고(전송 실패와 무관하게 보이도록), 전송은 실패해도 삼킨다.
     setChat((c) => [...c.slice(-80), m]); setDraft('')
-    try {
-      const p = chanRef.current?.send({ type: 'broadcast', event: 'chat', payload: m })
-      if (p && typeof p.catch === 'function') p.catch(() => {})
-    } catch { /* 채널이 아직 준비되지 않았거나 전송 실패 — 내 화면에는 이미 표시됨 */ }
+    bsend('chat', m)
   }
 
   // ---- 조각 정렬: '아무도 옮기지 않은' 조각만 빈 공간에 겹치지 않게 정리 ----
@@ -332,7 +340,7 @@ export default function Puzzle() {
     const { pos: p, placed, loose } = arrangeLoosePieces(src, L)
     if (!loose) { showToast('정리할 조각이 없어요'); return }
     setPos(p)
-    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(p).map((id) => ({ id, ...p[id] })) } })
+    bsend('upd', { pieces: Object.keys(p).map((id) => ({ id, ...p[id] })) })
     persistSoon()
     showToast(placed < loose ? `조각 ${placed}개를 정렬했어요` : '조각을 정렬했어요')
   }
@@ -350,7 +358,7 @@ export default function Puzzle() {
     }
     return null
   }
-  function sendGrab(g) { chanRef.current?.send({ type: 'broadcast', event: 'grab', payload: { uid, name: myName.current, g } }) }
+  function sendGrab(g) { bsend('grab', { uid, name: myName.current, g }) }
   function onPointerDown(e, id) {
     if (done) return
     const g = pos[id].g
@@ -365,7 +373,7 @@ export default function Puzzle() {
     setActiveG(g)
     // 움직이지 않고 탭만 해도 z-order 가 올라가도록 즉시 반영 + 상대에게도 알림
     setPos((p) => { const n = { ...p }; for (const m in start) n[m] = { ...n[m], t }; return n })
-    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(start).map((m) => ({ id: m, ...pos[m], t })), by: uid, name: myName.current, g } })
+    bsend('upd', { pieces: Object.keys(start).map((m) => ({ id: m, ...pos[m], t })), by: uid, name: myName.current, g })
     sendGrab(g)   // 움직이지 않고 잡고만 있어도 다른 사람 화면에서 잠기도록
     clearInterval(grabKeep.current)
     grabKeep.current = setInterval(() => { if (drag.current) sendGrab(drag.current.g); else { clearInterval(grabKeep.current); grabKeep.current = 0 } }, 5000)
@@ -375,12 +383,12 @@ export default function Puzzle() {
     const dx = (e.clientX - d.ox) / playW, dy = (e.clientY - d.oy) / playW
     setPos((p) => { const n = { ...p }; for (const m in d.start) n[m] = { ...n[m], x: d.start[m].x + dx, y: d.start[m].y + dy, m: 1 }; return n })
     movePend.current = Object.keys(d.start).map((m) => ({ id: m, x: d.start[m].x + dx, y: d.start[m].y + dy, g: d.g, m: 1, t: d.t }))
-    if (!moveRaf.current) moveRaf.current = requestAnimationFrame(() => { moveRaf.current = 0; const m = movePend.current; if (m) chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: m, by: uid, name: myName.current, g: d.g } }) })
+    if (!moveRaf.current) moveRaf.current = requestAnimationFrame(() => { moveRaf.current = 0; const m = movePend.current; if (m) bsend('upd', { pieces: m, by: uid, name: myName.current, g: d.g }) })
   }
   function onPointerUp() {
     const d = drag.current; drag.current = null; setActiveG(null)
     clearInterval(grabKeep.current); grabKeep.current = 0
-    if (d) chanRef.current?.send({ type: 'broadcast', event: 'drop', payload: { uid } })   // 잠금 해제
+    if (d) bsend('drop', { uid })   // 잠금 해제
     if (!d || !L || !puzzle) return
     const { cols, rows } = puzzle
     const p = { ...posRef.current }
@@ -427,14 +435,14 @@ export default function Puzzle() {
     }
     const np = normalizeGroups(p, L)   // 합쳐진 그룹 내부 좌표를 격자 정위치로 확정(유격 0)
     setPos(np)
-    chanRef.current?.send({ type: 'broadcast', event: 'upd', payload: { pieces: Object.keys(np).map((id) => ({ id, ...np[id] })) } })
+    bsend('upd', { pieces: Object.keys(np).map((id) => ({ id, ...np[id] })) })
     // 맞물렸으면 '누가 맞췄는지' 라벨을 그 자리에 잠깐 띄우고 상대에게도 알린다
     if (snapped) {
       const anchor = np[snapAt || mem[0]]
       if (anchor) {
         const tip = { x: anchor.x, y: anchor.y, name: myName.current }
         showSnapTip(tip)
-        chanRef.current?.send({ type: 'broadcast', event: 'snap', payload: tip })
+        bsend('snap', tip)
       }
     }
     persistSoon()
