@@ -54,7 +54,7 @@ export default function AdminGroupFeatures() {
               <button
                 key={g.group_id}
                 type="button"
-                className={`aq-card${premium ? '' : ' inactive'}`}
+                className={`aq-card${premium ? '' : ' inactive'}${g.has_blocked_features ? ' agf-controlled' : ''}`}
                 disabled={!premium}
                 onClick={premium ? () => nav(`/admin/misc/groups/${g.group_id}`) : undefined}
               >
