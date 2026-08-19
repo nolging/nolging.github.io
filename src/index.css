@@ -6117,11 +6117,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-swatch { width: 24px; height: 24px; border-radius: 50%; border: none; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); box-sizing: border-box; flex-shrink: 0; }
 .aq-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #191722; }
 .aq-hex { width: 88px !important; flex: none !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px !important; padding: 8px 10px !important; }
-.aq-reward-row { flex: 1; display: flex; align-items: center; gap: 8px; }
-.aq-reward-row input { flex: none; width: 120px; }
 .aq-unit { font-size: 13.5px; font-weight: 700; color: #8b8798; }
-/* 퀘스트 추가/수정: 보상 입력창은 한 줄 전체 차지, "츄르" 단위는 입력창 안쪽 우측에 겹쳐 표시 */
-.aq-reward-wrap { position: relative; flex: 1; display: flex; align-items: center; }
+/* 보상/가격 등 입력창을 한 줄 전체(제목·내용과 동일)로, "츄르" 단위는 입력창 안쪽 우측에 겹쳐 표시.
+   width:100% 을 명시해야 모바일 폭(.aq-frow 가 column 으로 바뀌며 align-items:flex-start 라
+   flex:1 만으로는 안 늘어남)에서도 항상 꽉 찬다. */
+.aq-reward-wrap { position: relative; flex: 1; width: 100%; box-sizing: border-box; display: flex; align-items: center; }
 .aq-reward-wrap input { width: 100%; padding-right: 52px; box-sizing: border-box; }
 .aq-reward-wrap .aq-unit { position: absolute; right: 16px; pointer-events: none; }
 .aq-note { margin-top: 4px; background: #f6f5f2; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; color: #8b8798; line-height: 1.5; }
