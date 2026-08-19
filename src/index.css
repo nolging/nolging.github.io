@@ -6164,8 +6164,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card.inactive { cursor: default; }
 /* 그룹별 사용량 제어 목록: 하나라도 Off(제어 중)인 그룹 카드 — 받은함 SYSTEM 카드와 동일한
    얇은 보라/민트 그라데이션 테두리가 빙빙 도는 효과(@property --sysang 는 index.css 상단에서 이미 선언됨) */
-.aq-card.agf-controlled { position: relative; }
-.aq-card.agf-controlled::before {
+.aq-card.agf-controlled, .aq-card.am-pending { position: relative; }
+.aq-card.agf-controlled::before, .aq-card.am-pending::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px; pointer-events: none; z-index: 0;
   background: conic-gradient(from var(--sysang), #a78bfa, #5eead4, #a78bfa, #5eead4, #a78bfa);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -6173,8 +6173,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   -webkit-mask-composite: xor; mask-composite: exclude;
   animation: note-sysborder 4s linear infinite;
 }
-.aq-card.agf-controlled > * { position: relative; z-index: 1; }
-@media (prefers-reduced-motion: reduce) { .aq-card.agf-controlled::before { animation: none; } }
+.aq-card.agf-controlled > *, .aq-card.am-pending > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .aq-card.agf-controlled::before, .aq-card.am-pending::before { animation: none; }
+}
+/* 회원 관리: 가입 요청 배지(연보라) */
+.badge-pending-req { background: var(--primary-soft); color: var(--primary); }
 /* 그룹별 사용량 제어 상세: 그룹명 + 배지 + 아바타를 한 줄 카드로 */
 .agf-head-card { display: flex; align-items: center; gap: 8px; }
 .agf-head-name { font-size: 16px; font-weight: 800; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
