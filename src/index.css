@@ -774,6 +774,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
 }
 .sched-search-clear:hover { background: rgba(0, 0, 0, .14); }
+/* 회원 관리: "회원 N" 라벨 줄 우측 끝에서 같은 검색 컴포넌트 재사용(닫힘 상태일 때 오른쪽으로 밀착) */
+.aq-section-head .sched-search { margin-left: auto; }
 
 .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 700px) {
