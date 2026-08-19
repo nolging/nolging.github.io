@@ -76,10 +76,12 @@ $$;
 grant execute on function public.submit_error_report(text, text) to authenticated;
 
 -- 6) 관리자: 리포트 목록 -----------------------------------------
-create or replace function public.admin_list_error_reports()
-returns table(id uuid, title text, reporter_login text, resolved boolean, created_at timestamptz)
+-- body 포함(목록 카드에 내용 미리보기 표시) → 기존 함수(반환 컬럼 다름) 먼저 drop 필요
+drop function if exists public.admin_list_error_reports();
+create function public.admin_list_error_reports()
+returns table(id uuid, title text, body text, reporter_login text, resolved boolean, created_at timestamptz)
 language sql security definer set search_path = public stable as $$
-  select r.id, r.title, p.nickname, r.resolved, r.created_at
+  select r.id, r.title, r.body, p.nickname, r.resolved, r.created_at
     from public.error_reports r
     join public.profiles p on p.id = r.reporter_id
    where public.is_admin(auth.uid())
