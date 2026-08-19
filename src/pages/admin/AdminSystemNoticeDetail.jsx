@@ -14,6 +14,8 @@ const BG_PRESETS = [
   '#fff0d6', '#eaf3fb', '#fdecec', '#332c52',
 ]
 const sameColor = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
+const DEFAULT_EMOJI = '📢'
+const DEFAULT_BG = BG_PRESETS[BG_PRESETS.length - 1] // 팔레트 마지막 색 — 아이콘 미입력 시 기본값
 
 const TARGET_TYPES = [
   { key: 'all', label: '전체' },
@@ -40,7 +42,7 @@ function PickerModal({ open, onClose, title, rows, selected, onToggle, renderNam
   const t = q.trim().toLowerCase()
   const filtered = t ? rows.filter((r) => r.name.toLowerCase().includes(t)) : rows
   return (
-    <Modal open={open} onClose={onClose} title={title}>
+    <Modal open={open} onClose={onClose} title={title} cardClassName="sn-picker-modal">
       <input className="sn-picker-search" placeholder="검색" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
       <div className="filter-groups sn-picker-list">
         {filtered.length === 0 ? <p className="muted sm">결과가 없어요.</p> : filtered.map((r) => {
@@ -83,6 +85,7 @@ export default function AdminSystemNoticeDetail() {
   const [error, setError] = useState('')
   const [userPickOpen, setUserPickOpen] = useState(false)
   const [groupPickOpen, setGroupPickOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false) // 확인을 한 번 눌러본 뒤부터 필수값 경고를 실시간으로 보여준다
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -119,11 +122,18 @@ export default function AdminSystemNoticeDetail() {
     else if (v === 'groups') setGroupPickOpen(true)
   }
 
+  const titleOk = !!form.title.trim()
+  const bodyOk = !!form.body.trim()
+  const targetOk = form.targetType === 'users' ? form.targetUserIds.length > 0
+    : form.targetType === 'groups' ? form.targetGroupIds.length > 0
+    : true
+  const titleError = submitted && !titleOk ? '제목을 입력해 주세요' : ''
+  const bodyError = submitted && !bodyOk ? '본문을 입력해 주세요' : ''
+  const targetError = submitted && !targetOk ? '대상을 선택해 주세요' : ''
+
   async function save(e) {
-    e.preventDefault(); setError('')
-    if (!form.title.trim() || !form.body.trim()) { setError('제목과 본문을 입력해 주세요.'); return }
-    if (form.targetType === 'users' && form.targetUserIds.length === 0) { setError('대상 회원을 선택해 주세요.'); return }
-    if (form.targetType === 'groups' && form.targetGroupIds.length === 0) { setError('대상 그룹을 선택해 주세요.'); return }
+    e.preventDefault(); setError(''); setSubmitted(true)
+    if (!titleOk || !bodyOk || !targetOk) return
     if (form.scheduleOn && (!form.date || !form.time)) { setError('예약 날짜와 시간을 입력해 주세요.'); return }
     const scheduledAt = form.scheduleOn ? new Date(`${form.date}T${form.time}`).toISOString() : null
     if (form.scheduleOn && new Date(scheduledAt) <= new Date()) { setError('예약 시간은 현재 이후로 설정해 주세요.'); return }
@@ -132,7 +142,8 @@ export default function AdminSystemNoticeDetail() {
     setBusy(true)
     try {
       const payload = {
-        title: form.title.trim(), body: form.body.trim(), emoji: form.emoji.trim(), emojiBg: form.emojiBg.trim(),
+        title: form.title.trim(), body: form.body.trim(),
+        emoji: form.emoji.trim() || DEFAULT_EMOJI, emojiBg: form.emojiBg.trim() || DEFAULT_BG,
         targetType: form.targetType, targetUserIds: form.targetUserIds, targetGroupIds: form.targetGroupIds, scheduledAt,
       }
       if (editing) await adminUpdateSystemNotice(id, payload)
@@ -149,35 +160,44 @@ export default function AdminSystemNoticeDetail() {
       <div className="aq-form-wrap">
         <form onSubmit={save} className="aq-form" key={id || 'new'}>
           <div className="aq-frow">
-            <label className="aq-flabel" htmlFor="sn-title">제목</label>
-            <input id="sn-title" defaultValue={form.title} onChange={setField('title')} placeholder="공지 제목" />
+            <label className="aq-flabel" htmlFor="sn-title">제목 <span className="aq-required">*</span></label>
+            <div className="aq-field-col">
+              <input id="sn-title" defaultValue={form.title} onChange={setField('title')} placeholder="공지 제목" />
+              {titleError && <p className="field-error">{titleError}</p>}
+            </div>
           </div>
           <div className="aq-frow aq-frow-top">
-            <label className="aq-flabel" htmlFor="sn-body">본문</label>
-            <textarea id="sn-body" rows={3} defaultValue={form.body} onChange={setField('body')} placeholder="공지 본문" />
+            <label className="aq-flabel" htmlFor="sn-body">본문 <span className="aq-required">*</span></label>
+            <div className="aq-field-col">
+              <textarea id="sn-body" rows={3} defaultValue={form.body} onChange={setField('body')} placeholder="공지 본문" />
+              {bodyError && <p className="field-error">{bodyError}</p>}
+            </div>
           </div>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="sn-emoji">아이콘</label>
             <div className="aq-icon-row">
               <input id="sn-emoji" className="aq-icon-input" defaultValue={form.emoji} onChange={setField('emoji')}
-                placeholder="📢" maxLength={16} autoCapitalize="none"
-                style={form.emojiBg ? { background: form.emojiBg } : undefined} />
+                placeholder={DEFAULT_EMOJI} maxLength={16} autoCapitalize="none"
+                style={{ background: form.emojiBg || DEFAULT_BG }} />
               <div className="an-bg-row" style={{ margin: 0 }}>
                 {BG_PRESETS.map((c) => (
-                  <button key={c} type="button" className={`aq-swatch ${sameColor(form.emojiBg, c) ? 'active' : ''}`}
+                  <button key={c} type="button" className={`aq-swatch ${sameColor(form.emojiBg || DEFAULT_BG, c) ? 'active' : ''}`}
                     style={{ background: c }} onClick={() => pickBg(c)} aria-label={c} title={c} />
                 ))}
               </div>
               <input ref={bgRef} className="an-bg-hex aq-hex" defaultValue={form.emojiBg} onChange={setField('emojiBg')}
-                placeholder="#RRGGBB (비우면 기본)" maxLength={7} autoCapitalize="none" spellCheck={false} />
+                placeholder={`비우면 기본(${DEFAULT_BG})`} maxLength={7} autoCapitalize="none" spellCheck={false} />
             </div>
           </div>
 
           <div className="aq-frow">
-            <label className="aq-flabel" htmlFor="sn-target">수신 대상</label>
-            <select id="sn-target" value={form.targetType} onChange={onTargetTypeChange}>
-              {TARGET_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-            </select>
+            <label className="aq-flabel" htmlFor="sn-target">수신 대상 <span className="aq-required">*</span></label>
+            <div className="aq-field-col">
+              <select id="sn-target" value={form.targetType} onChange={onTargetTypeChange}>
+                {TARGET_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              </select>
+              {targetError && <p className="field-error">{targetError}</p>}
+            </div>
           </div>
 
           {form.targetType === 'users' && (
@@ -234,7 +254,7 @@ export default function AdminSystemNoticeDetail() {
           )}
 
           <div className="admin-notif-preview sn-preview">
-            <span className="admin-notif-preview-ico" style={form.emojiBg ? { background: form.emojiBg } : undefined} aria-hidden="true">{form.emoji || '📢'}</span>
+            <span className="admin-notif-preview-ico" style={{ background: form.emojiBg || DEFAULT_BG }} aria-hidden="true">{form.emoji || DEFAULT_EMOJI}</span>
             <div>
               <div className="admin-notif-preview-t">{form.title || '제목'}</div>
               <div className="admin-notif-preview-b">{form.body || '본문'}</div>
