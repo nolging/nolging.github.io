@@ -137,7 +137,7 @@ export default function AdminStoreItem() {
           </div>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="si-price">가격 <span className="aq-required">*</span></label>
-            <div className="aq-reward-row">
+            <div className="aq-reward-wrap">
               <input id="si-price" type="number" inputMode="numeric" min="0" defaultValue={form.price} onChange={setField('price')} placeholder="예: 300" />
               <span className="aq-unit">츄르</span>
             </div>
