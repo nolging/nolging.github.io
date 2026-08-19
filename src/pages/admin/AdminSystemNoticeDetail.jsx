@@ -33,7 +33,8 @@ function splitDateTime(iso) {
 }
 
 // 회원/그룹 선택 모달 — 검색 + 다중 선택(체크). SchedulePage 필터 시트의 .filter-group-row 재사용.
-function PickerModal({ open, onClose, title, rows, selected, onToggle, renderAvatar }) {
+// renderNameExtra: 이름 바로 오른쪽에 붙는 요소(회원 역할 배지). renderRight: 행 우측 끝, 체크 앞에 붙는 요소(그룹 멤버 아바타).
+function PickerModal({ open, onClose, title, rows, selected, onToggle, renderNameExtra, renderRight }) {
   const [q, setQ] = useState('')
   useEffect(() => { if (open) setQ('') }, [open])
   const t = q.trim().toLowerCase()
@@ -46,8 +47,11 @@ function PickerModal({ open, onClose, title, rows, selected, onToggle, renderAva
           const on = selected.includes(r.id)
           return (
             <button key={r.id} type="button" className="filter-group-row" onClick={() => onToggle(r.id)}>
-              {renderAvatar(r)}
-              <span className="filter-group-name">{r.name}</span>
+              <span className="filter-group-name-wrap">
+                <span className="filter-group-name">{r.name}</span>
+                {renderNameExtra && renderNameExtra(r)}
+              </span>
+              {renderRight && renderRight(r)}
               <span className={`filter-check ${on ? 'on' : ''}`} aria-hidden="true">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -102,10 +106,18 @@ export default function AdminSystemNoticeDetail() {
   }, [editing, id])
   useEffect(() => { load() }, [load])
 
-  const userRows = useMemo(() => users.map((u) => ({ id: u.id, name: u.nickname, avatar_url: u.avatar_url })), [users])
-  const groupRows = useMemo(() => groups.map((g) => ({ id: g.group_id, name: g.name, emoji: g.emoji, emoji_bg: g.emoji_bg })), [groups])
+  const userRows = useMemo(() => users.map((u) => ({ id: u.id, name: u.nickname, role: u.role })), [users])
+  const groupRows = useMemo(() => groups.map((g) => ({ id: g.group_id, name: g.name, members: g.members || [] })), [groups])
   const toggleUser = (uid) => setForm((f) => ({ ...f, targetUserIds: f.targetUserIds.includes(uid) ? f.targetUserIds.filter((x) => x !== uid) : [...f.targetUserIds, uid] }))
   const toggleGroup = (gid) => setForm((f) => ({ ...f, targetGroupIds: f.targetGroupIds.includes(gid) ? f.targetGroupIds.filter((x) => x !== gid) : [...f.targetGroupIds, gid] }))
+
+  // 수신 대상을 회원/그룹 선택으로 바꾸면 곧바로 해당 선택 모달을 띄운다.
+  function onTargetTypeChange(e) {
+    const v = e.target.value
+    setForm((f) => ({ ...f, targetType: v }))
+    if (v === 'users') setUserPickOpen(true)
+    else if (v === 'groups') setGroupPickOpen(true)
+  }
 
   async function save(e) {
     e.preventDefault(); setError('')
@@ -115,6 +127,7 @@ export default function AdminSystemNoticeDetail() {
     if (form.scheduleOn && (!form.date || !form.time)) { setError('예약 날짜와 시간을 입력해 주세요.'); return }
     const scheduledAt = form.scheduleOn ? new Date(`${form.date}T${form.time}`).toISOString() : null
     if (form.scheduleOn && new Date(scheduledAt) <= new Date()) { setError('예약 시간은 현재 이후로 설정해 주세요.'); return }
+    if (!form.scheduleOn && !confirm('시스템 공지가 즉시 발송됩니다. 발송할까요?')) return
 
     setBusy(true)
     try {
@@ -162,7 +175,7 @@ export default function AdminSystemNoticeDetail() {
 
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="sn-target">수신 대상</label>
-            <select id="sn-target" value={form.targetType} onChange={setField('targetType')}>
+            <select id="sn-target" value={form.targetType} onChange={onTargetTypeChange}>
               {TARGET_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
           </div>
@@ -177,7 +190,6 @@ export default function AdminSystemNoticeDetail() {
                     if (!u) return null
                     return (
                       <span key={uid} className="sn-chip">
-                        <Avatar src={u.avatar_url} name={u.name} size={20} />
                         <span>{u.name}</span>
                         <button type="button" onClick={() => toggleUser(uid)} aria-label="제거">×</button>
                       </span>
@@ -197,7 +209,6 @@ export default function AdminSystemNoticeDetail() {
                     if (!g) return null
                     return (
                       <span key={gid} className="sn-chip">
-                        <span className="sn-chip-emoji" style={g.emoji_bg ? { background: g.emoji_bg } : undefined}>{g.emoji || '👥'}</span>
                         <span>{g.name}</span>
                         <button type="button" onClick={() => toggleGroup(gid)} aria-label="제거">×</button>
                       </span>
@@ -216,16 +227,13 @@ export default function AdminSystemNoticeDetail() {
             <CgToggle on={form.scheduleOn} onClick={() => setForm((f) => ({ ...f, scheduleOn: !f.scheduleOn }))} />
           </div>
           {form.scheduleOn && (
-            <div className="aq-frow sn-schedule-row">
-              <label className="aq-flabel">발송 시각</label>
-              <div className="sn-schedule-inputs">
-                <input type="date" value={form.date} onChange={setField('date')} />
-                <input type="time" value={form.time} onChange={setField('time')} />
-              </div>
+            <div className="sn-schedule-inputs">
+              <input type="date" value={form.date} onChange={setField('date')} />
+              <input type="time" value={form.time} onChange={setField('time')} />
             </div>
           )}
 
-          <div className="admin-notif-preview">
+          <div className="admin-notif-preview sn-preview">
             <span className="admin-notif-preview-ico" style={form.emojiBg ? { background: form.emojiBg } : undefined} aria-hidden="true">{form.emoji || '📢'}</span>
             <div>
               <div className="admin-notif-preview-t">{form.title || '제목'}</div>
@@ -233,16 +241,24 @@ export default function AdminSystemNoticeDetail() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? '처리 중…' : '확인'}</button>
+          <button type="submit" className="btn btn-primary btn-block sn-submit" disabled={busy}>{busy ? '처리 중…' : '확인'}</button>
         </form>
       </div>
 
       <PickerModal open={userPickOpen} onClose={() => setUserPickOpen(false)} title="회원 선택"
         rows={userRows} selected={form.targetUserIds} onToggle={toggleUser}
-        renderAvatar={(r) => <Avatar src={r.avatar_url} name={r.name} size={32} />} />
+        renderNameExtra={(r) => <span className={`badge ${r.role === 'admin' ? 'badge-admin' : 'badge'}`}>{r.role === 'admin' ? '관리자' : '멤버'}</span>} />
       <PickerModal open={groupPickOpen} onClose={() => setGroupPickOpen(false)} title="그룹 선택"
         rows={groupRows} selected={form.targetGroupIds} onToggle={toggleGroup}
-        renderAvatar={(r) => <span className="sn-chip-emoji sn-chip-emoji-lg" style={r.emoji_bg ? { background: r.emoji_bg } : undefined}>{r.emoji || '👥'}</span>} />
+        renderRight={(r) => {
+          const extra = r.members.length - 3
+          return r.members.length > 0 ? (
+            <span className="filter-group-avs task-parts multi">
+              {r.members.slice(0, 3).map((m) => <Avatar key={m.user_id} src={m.avatar_url} name={m.nickname} size={24} />)}
+              {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+            </span>
+          ) : null
+        }} />
     </div>
   )
 }
