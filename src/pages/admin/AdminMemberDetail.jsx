@@ -3,10 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin, adminSetPassword } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
 import { formatBirthDot } from '../../lib/birthday'
+import Modal from '../../components/Modal'
 import { STATUS } from './adminMeta'
 import { useScrollToTop } from '../../lib/useScrollRestore'
 
-// 회원 상세 — 정보 나열 + 역할 수정(관리자 부여) + 츄르 지급/차감 + 삭제
+const DEFAULT_PW = 'nolging!'
+
+// 회원 상세 — 정보 조회 영역에서 역할/상태를 셀렉트로 즉시 변경, 보유 츄르 클릭 시 지급/차감 모달,
+// 비밀번호 초기화·계정 삭제도 같은 영역에 모아둔다.
 export default function AdminMemberDetail() {
   useScrollToTop() // 목록 스크롤 위치가 이어지지 않게 항상 맨 위에서 시작
   const { userId } = useParams()
@@ -18,9 +22,10 @@ export default function AdminMemberDetail() {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const [role, setRole] = useState('member')
+  const [grantOpen, setGrantOpen] = useState(false)
   const [grant, setGrant] = useState({ sign: 1, amount: '', reason: '' })
-  const [pw, setPw] = useState('')
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pw, setPw] = useState(DEFAULT_PW)
   // 비제어 입력(defaultValue)은 state 를 비워도 화면이 안 비므로, 성공 후 key 를 올려 리마운트
   const [formKey, setFormKey] = useState(0)
 
@@ -29,21 +34,24 @@ export default function AdminMemberDetail() {
     try {
       const [us, bal] = await Promise.all([adminListUsers(), adminCoinBalances()])
       const u = us.find((x) => x.id === userId) || null
-      setUser(u); setRole(u?.role || 'member'); setBalance(bal[userId] || 0)
+      setUser(u); setBalance(bal[userId] || 0)
       if (!u) setError('회원을 찾을 수 없어요.')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [userId])
   useEffect(() => { load() }, [load])
 
-  async function saveRole() {
-    if (!user || role === user.role) return
+  async function changeRole(newRole) {
+    if (!user || newRole === user.role) return
+    if (newRole === 'admin' && !confirm(`'${user.nickname}' 님을 관리자로 지정할까요?`)) return
     setError(''); setNotice(''); setBusy(true)
-    try { await adminSetRole(userId, role); setNotice('역할을 변경했어요.'); await load() }
+    try { await adminSetRole(userId, newRole); setNotice('역할을 변경했어요.'); await load() }
     catch (err) { setError(err.message) } finally { setBusy(false) }
   }
-  async function toggleStatus() {
+  async function changeStatus(newStatus) {
+    if (!user || newStatus === user.status) return
+    if (newStatus === 'disabled' && !confirm(`'${user.nickname}' 계정을 비활성화할까요?`)) return
     setError(''); setNotice(''); setBusy(true)
-    try { await adminSetStatus(userId, user.status === 'active' ? 'disabled' : 'active'); await load() }
+    try { await adminSetStatus(userId, newStatus); setNotice('상태를 변경했어요.'); await load() }
     catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   function remove() {
@@ -58,7 +66,11 @@ export default function AdminMemberDetail() {
     if (pw.trim().length < 6) { setError('비밀번호는 6자 이상이어야 해요.'); return }
     if (!confirm(`'${user.nickname}' 님의 비밀번호를 초기화할까요?`)) return
     setBusy(true)
-    try { await adminSetPassword(userId, pw.trim()); setNotice('비밀번호를 초기화했어요.'); setPw(''); setFormKey((k) => k + 1) }
+    try {
+      await adminSetPassword(userId, pw.trim())
+      setNotice('비밀번호를 초기화했어요.')
+      setPw(DEFAULT_PW); setFormKey((k) => k + 1); setPwOpen(false)
+    }
     catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   async function submitGrant(e) {
@@ -70,21 +82,12 @@ export default function AdminMemberDetail() {
     try {
       const bal = await adminGrantCoin({ userId, amount, reason: grant.reason })
       setNotice(`${amount > 0 ? `+${amount}` : amount} 츄르 → 잔액 ${formatCoin(bal)}`)
-      setGrant({ sign: 1, amount: '', reason: '' }); setBalance(bal); setFormKey((k) => k + 1)
+      setGrant({ sign: 1, amount: '', reason: '' }); setBalance(bal); setFormKey((k) => k + 1); setGrantOpen(false)
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
 
   if (loading) return <div className="page admin-page"><div className="spinner" /></div>
   if (!user) return <div className="page admin-page"><div className="alert alert-error">{error || '회원을 찾을 수 없어요.'}</div></div>
-
-  const rows = [
-    ['아이디', user.nickname],
-    ['역할', user.role === 'admin' ? '관리자' : '멤버'],
-    ['상태', STATUS[user.status]?.label || user.status],
-    ['보유 츄르', formatCoin(balance)],
-    ['연락처', user.contact || '—'],
-    ['생년월일', formatBirthDot(user.birthdate) || '—'],
-  ]
 
   return (
     <div className="page admin-page">
@@ -94,68 +97,67 @@ export default function AdminMemberDetail() {
       <div className="card">
         <h3 className="card-title">{user.nickname}</h3>
         <dl className="admin-detail">
-          {rows.map(([k, v]) => (
-            <div key={k} className="admin-detail-row"><dt>{k}</dt><dd>{v}</dd></div>
-          ))}
+          <div className="admin-detail-row"><dt>아이디</dt><dd>{user.nickname}</dd></div>
+          <div className="admin-detail-row">
+            <dt>역할</dt>
+            <dd>
+              <select className="admin-detail-select" value={user.role} disabled={busy}
+                onChange={(e) => changeRole(e.target.value)}>
+                <option value="member">멤버</option>
+                <option value="admin">관리자</option>
+              </select>
+            </dd>
+          </div>
+          <div className="admin-detail-row">
+            <dt>상태</dt>
+            <dd>
+              <select className="admin-detail-select" value={user.status} disabled={busy}
+                onChange={(e) => changeStatus(e.target.value)}>
+                <option value="pending">{STATUS.pending.label}</option>
+                <option value="active">{STATUS.active.label}</option>
+                <option value="disabled">{STATUS.disabled.label}</option>
+              </select>
+            </dd>
+          </div>
+          <div className="admin-detail-row">
+            <dt>보유 츄르</dt>
+            <dd><button type="button" className="admin-detail-linkval" onClick={() => setGrantOpen(true)}>{formatCoin(balance)}</button></dd>
+          </div>
+          <div className="admin-detail-row"><dt>연락처</dt><dd>{user.contact || '—'}</dd></div>
+          <div className="admin-detail-row"><dt>생년월일</dt><dd>{formatBirthDot(user.birthdate) || '—'}</dd></div>
         </dl>
-      </div>
 
-      {/* 역할 수정 */}
-      <div className="card">
-        <h3 className="card-title">역할</h3>
-        <div className="row-gap" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className="field" style={{ flex: 1, minWidth: 140 }}><label htmlFor="md-role">역할</label>
-            <select id="md-role" value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="member">멤버</option>
-              <option value="admin">관리자</option>
-            </select></div>
-          <button type="button" className="btn btn-primary" disabled={busy || role === user.role} onClick={saveRole}>변경 저장</button>
+        <button type="button" className="btn btn-primary btn-block admin-detail-pwbtn" onClick={() => setPwOpen(true)}>비밀번호 초기화</button>
+        <div className="admin-detail-delete-wrap">
+          <button type="button" className="admin-detail-delete" disabled={busy} onClick={remove}>계정 삭제</button>
         </div>
       </div>
 
       {/* 츄르 지급/차감 */}
-      <div className="card">
-        <h3 className="card-title">츄르 지급</h3>
-        {/* label 은 htmlFor 로만 연결하고 텍스트 입력은 defaultValue (관리자 폼 공통 규칙) */}
+      <Modal open={grantOpen} onClose={() => setGrantOpen(false)} title="츄르 지급">
         <form onSubmit={submitGrant} className="form" key={`grant-${formKey}`}>
-          <div className="field-row">
-            <div className="field"><span>구분 *</span>
-              <div className="toggle-group">
-                <button type="button" className={`toggle ${grant.sign === 1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
-                <button type="button" className={`toggle ${grant.sign === -1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
-              </div>
-            </div>
-            <div className="field field-narrow"><label htmlFor="md-amount">수량 *</label>
-              <input id="md-amount" type="number" inputMode="numeric" min="1" defaultValue={grant.amount}
-                onChange={(e) => setGrant((g) => ({ ...g, amount: e.target.value }))} placeholder="예: 10" /></div>
+          <div className="seg-tabs">
+            <button type="button" className={`seg-tab ${grant.sign === 1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
+            <button type="button" className={`seg-tab ${grant.sign === -1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
           </div>
+          <div className="field"><label htmlFor="md-amount">수량</label>
+            <input id="md-amount" type="number" inputMode="numeric" min="1" defaultValue={grant.amount}
+              onChange={(e) => setGrant((g) => ({ ...g, amount: e.target.value }))} placeholder="예: 10" /></div>
           <div className="field"><label htmlFor="md-reason">사유 (선택)</label>
             <input id="md-reason" defaultValue={grant.reason} onChange={(e) => setGrant((g) => ({ ...g, reason: e.target.value }))} placeholder="예: 이벤트 보상" /></div>
-          <button className="btn btn-primary" disabled={busy}>{busy ? '처리 중…' : '지급/차감'}</button>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? '처리 중…' : '확인'}</button>
         </form>
-      </div>
+      </Modal>
 
       {/* 비밀번호 초기화 */}
-      <div className="card">
-        <h3 className="card-title">비밀번호 초기화</h3>
+      <Modal open={pwOpen} onClose={() => setPwOpen(false)} title="비밀번호 초기화">
         <form onSubmit={resetPassword} className="form" key={`pw-${formKey}`}>
-          <div className="field"><label htmlFor="md-pw">새 비밀번호 *</label>
+          <div className="field"><label htmlFor="md-pw">새 비밀번호</label>
             <input id="md-pw" type="text" defaultValue={pw} autoCapitalize="none" autoCorrect="off"
               onChange={(e) => setPw(e.target.value)} placeholder="6자 이상" /></div>
-          <button className="btn btn-primary" disabled={busy || pw.trim().length < 6}>{busy ? '처리 중…' : '비밀번호 변경'}</button>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy || pw.trim().length < 6}>{busy ? '처리 중…' : '확인'}</button>
         </form>
-      </div>
-
-      {/* 상태 / 삭제 */}
-      <div className="card">
-        <h3 className="card-title">계정 관리</h3>
-        <div className="row-gap" style={{ flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-ghost" disabled={busy} onClick={toggleStatus}>
-            {user.status === 'active' ? '비활성화' : '활성화'}
-          </button>
-          <button type="button" className="btn btn-danger" disabled={busy} onClick={remove}>계정 삭제</button>
-        </div>
-      </div>
+      </Modal>
     </div>
   )
 }
