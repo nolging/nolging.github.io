@@ -1601,16 +1601,21 @@ button.mention-chip:active { opacity: .6; }
 .notif {
   display: flex; gap: 12px; align-items: flex-start; position: relative; z-index: 1;
   padding: 14px 14px 14px 12px; border-radius: 18px;
-  background: #eaeef7; border: none; box-shadow: none;
+  background: var(--bg); border: none; box-shadow: none;
   touch-action: pan-y; transition: transform .18s cubic-bezier(.2, .8, .2, 1); will-change: transform;
 }
 .notif.unread { background: #f7f7fa; }
 .notif.clickable { cursor: pointer; }
-.notif.clickable:hover { background: #e2e7f3; }
+.notif.clickable:hover { background: #fafafb; }
 .notif.unread.clickable:hover { background: #f2f2f7; }
-/* 안 읽음: 점 대신 받은함 SYSTEM 카드와 동일한 보라/민트 그라데이션 테두리가 빙빙 돈다
+/* 시스템 공지 카드만: 안 읽음은 점 대신 받은함 SYSTEM 쪽지와 동일한 보라/민트 그라데이션
+   테두리가 빙빙 돌고, 읽음은 종료된 리포트 쪽지 카드와 동일한 옅은 남색 배경으로 표시한다.
    (@property --sysang / @keyframes note-sysborder 는 index.css 상단에서 이미 선언됨) */
-.notif.unread::before {
+.notif.notif-sysnotice { background: #eaeef7; }
+.notif.notif-sysnotice.clickable:hover { background: #e2e7f3; }
+.notif.notif-sysnotice.unread { background: #f7f7fa; }
+.notif.notif-sysnotice.unread.clickable:hover { background: #f2f2f7; }
+.notif.notif-sysnotice.unread::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px; pointer-events: none; z-index: 0;
   background: conic-gradient(from var(--sysang), #a78bfa, #5eead4, #a78bfa, #5eead4, #a78bfa);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -1618,8 +1623,8 @@ button.mention-chip:active { opacity: .6; }
   -webkit-mask-composite: xor; mask-composite: exclude;
   animation: note-sysborder 4s linear infinite;
 }
-.notif.unread > * { position: relative; z-index: 1; }
-@media (prefers-reduced-motion: reduce) { .notif.unread::before { animation: none; } }
+.notif.notif-sysnotice.unread > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .notif.notif-sysnotice.unread::before { animation: none; } }
 .notif-icon {
   width: 38px; height: 38px; border-radius: 14px; background: var(--primary-soft);
   display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; flex-shrink: 0;
