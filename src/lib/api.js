@@ -2177,6 +2177,22 @@ export async function adminCoinBalances() {
   return map
 }
 
+// 관리자: 특정 회원의 츄르 적립/사용 내역. 최신순.
+// (coin_ledger RLS 는 관리자에게 전체 조회를 허용 — getMyCoinHistory 와 달리 대상 회원을 명시해 조회)
+export async function adminCoinHistory(userId, limit = 200) {
+  const { data, error } = await supabase
+    .from('coin_ledger')
+    .select('id, delta, reason, ref_type, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) {
+    if (error.code === '42P01') return [] // 테이블 미생성 시 빈 배열
+    throw error
+  }
+  return data ?? []
+}
+
 // 관리자: 츄르 수동 지급(+)/차감(-). 반환=대상의 새 잔액.
 export async function adminGrantCoin({ userId, amount, reason }) {
   const { data, error } = await supabase.rpc('admin_grant_coin', {

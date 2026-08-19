@@ -1,13 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { adminListUsers, adminCoinBalances, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin, adminSetPassword } from '../../lib/api'
+import { adminListUsers, adminCoinBalances, adminCoinHistory, adminSetRole, adminSetStatus, adminDeleteUser, adminGrantCoin, adminSetPassword } from '../../lib/api'
 import { formatCoin } from '../../lib/constants'
 import { formatBirthDot } from '../../lib/birthday'
+import { resolveItemText } from '../../lib/storeMeta'
 import Modal from '../../components/Modal'
 import { STATUS } from './adminMeta'
 import { useScrollToTop } from '../../lib/useScrollRestore'
 
 const DEFAULT_PW = 'nolging!'
+
+const fmtHistDate = (iso) => {
+  try {
+    return new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  } catch { return '' }
+}
 
 function SelectArrow() {
   return (
@@ -35,6 +42,9 @@ export default function AdminMemberDetail() {
   const [grant, setGrant] = useState({ sign: 1, amount: '', reason: '' })
   const [pwOpen, setPwOpen] = useState(false)
   const [pw, setPw] = useState(DEFAULT_PW)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [history, setHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
   // 비제어 입력(defaultValue)은 state 를 비워도 화면이 안 비므로, 성공 후 key 를 올려 리마운트
   const [formKey, setFormKey] = useState(0)
 
@@ -81,6 +91,11 @@ export default function AdminMemberDetail() {
       setPw(DEFAULT_PW); setFormKey((k) => k + 1); setPwOpen(false)
     }
     catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+  async function openHistory() {
+    setHistoryOpen(true); setHistoryLoading(true)
+    try { setHistory(await adminCoinHistory(userId)) }
+    catch (err) { setError(err.message) } finally { setHistoryLoading(false) }
   }
   async function submitGrant(e) {
     e.preventDefault(); setError(''); setNotice('')
@@ -145,6 +160,7 @@ export default function AdminMemberDetail() {
       </div>
 
       <div className="admin-detail-actions">
+        <button type="button" className="btn btn-primary btn-block" onClick={openHistory}>츄르 적립·사용 내역</button>
         <button type="button" className="btn btn-primary btn-block" onClick={() => setPwOpen(true)}>비밀번호 초기화</button>
         <button type="button" className="admin-detail-delete" disabled={busy} onClick={remove}>계정 삭제</button>
       </div>
@@ -171,6 +187,27 @@ export default function AdminMemberDetail() {
           </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={busy || !grantAmountOk}>{busy ? '처리 중…' : '확인'}</button>
         </form>
+      </Modal>
+
+      {/* 츄르 적립/사용 내역 */}
+      <Modal open={historyOpen} onClose={() => setHistoryOpen(false)} title="츄르 적립·사용 내역">
+        {historyLoading ? <div className="spinner" /> : history.length === 0 ? (
+          <p className="muted sm">내역이 없어요.</p>
+        ) : (
+          <div className="admin-coinhist-list">
+            {history.map((r) => (
+              <div key={r.id} className="coin-hist-row">
+                <div className="chr-main">
+                  <span className="chr-reason">{resolveItemText(r.reason) || '츄르 변동'}</span>
+                  <span className="chr-date">{fmtHistDate(r.created_at)}</span>
+                </div>
+                <span className={`chr-delta ${r.delta >= 0 ? 'plus' : 'minus'}`}>
+                  {r.delta >= 0 ? '+' : '−'}{Math.abs(r.delta)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {/* 비밀번호 초기화 */}
