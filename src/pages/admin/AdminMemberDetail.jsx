@@ -156,12 +156,19 @@ export default function AdminMemberDetail() {
             <button type="button" className={`seg-tab ${grant.sign === 1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
             <button type="button" className={`seg-tab ${grant.sign === -1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
           </div>
-          <div className="field"><label htmlFor="md-amount">수량<span className="field-req">*</span></label>
-            <input id="md-amount" type="number" inputMode="numeric" min="1" defaultValue={grant.amount}
-              onChange={(e) => setGrant((g) => ({ ...g, amount: e.target.value }))} placeholder="예: 10" /></div>
-          <div className="field"><label htmlFor="md-reason">사유</label>
+          <div className="admin-grant-row">
+            <label htmlFor="md-amount">수량<span className="field-req">*</span></label>
+            <div className="admin-grant-amount-wrap">
+              <input id="md-amount" type="number" inputMode="numeric" min="1" defaultValue={grant.amount}
+                onChange={(e) => setGrant((g) => ({ ...g, amount: e.target.value }))} placeholder="숫자 입력" />
+              <span className="admin-grant-unit">츄르</span>
+            </div>
+          </div>
+          <div className="admin-grant-row">
+            <label htmlFor="md-reason">사유</label>
             <input id="md-reason" defaultValue={grant.reason} onChange={(e) => setGrant((g) => ({ ...g, reason: e.target.value }))}
-              placeholder={grant.sign === 1 ? '관리자 지급' : '관리자 차감'} /></div>
+              placeholder={grant.sign === 1 ? '관리자 지급' : '관리자 차감'} />
+          </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={busy || !grantAmountOk}>{busy ? '처리 중…' : '확인'}</button>
         </form>
       </Modal>

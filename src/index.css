@@ -6253,6 +6253,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-detail-linkval { font: inherit; font-weight: 700; color: var(--primary); background: none; border: none; padding: 0; cursor: pointer; }
 /* 츄르 지급 모달: 필수 항목 표시 */
 .field-req { color: var(--primary); margin-left: 2px; }
+/* 츄르 지급 모달: 라벨 + 입력창을 한 줄로, 수량 입력창 안쪽 우측에 "츄르" 단위 표시 */
+.admin-grant-row { display: flex; align-items: center; gap: 12px; }
+.admin-grant-row > label { flex-shrink: 0; width: 40px; font-size: 13px; font-weight: 700; color: var(--text); }
+.admin-grant-row > input { flex: 1; min-width: 0; }
+.admin-grant-amount-wrap { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
+.admin-grant-amount-wrap input { width: 100%; padding-right: 48px; box-sizing: border-box; }
+.admin-grant-unit { position: absolute; right: 16px; font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }
 /* 비밀번호 초기화 / 계정 삭제: 흰 카드 바깥, 페이지 배경 위에 한 쌍으로 배치 */
 .admin-detail-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .admin-detail-delete { background: none; border: none; font: inherit; font-weight: 700; font-size: 13px; color: var(--danger); cursor: pointer; padding: 8px; }
