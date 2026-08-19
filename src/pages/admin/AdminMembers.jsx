@@ -31,7 +31,7 @@ export default function AdminMembers() {
   const others = users.filter((u) => u.status !== 'pending')
 
   return (
-    <div className="page admin-page">
+    <div className="page admin-page aq-page admin-members-page">
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 
@@ -61,31 +61,36 @@ export default function AdminMembers() {
         )}
       </div>
 
-      {/* 회원 목록 */}
-      <div className="card">
-        <div className="admin-list-head">
-          <h3 className="card-title" style={{ margin: 0 }}>회원 목록 <span className="muted">({others.length})</span></h3>
-          <Link to="/admin/members/new" className="btn btn-sm btn-primary">계정 생성</Link>
+      {/* 회원 목록(퀘스트 관리와 동일한 카드 스타일) */}
+      <section>
+        <div className="aq-section-head">
+          <span className="aq-section-title">회원</span>
+          <span className="aq-count">{others.length}</span>
         </div>
         {loading ? <div className="spinner" /> : others.length === 0 ? (
           <p className="muted sm">회원이 없습니다.</p>
         ) : (
-          <ul className="admin-rows">
+          <div className="aq-cards">
             {others.map((u) => (
-              <li key={u.id}>
-                <button type="button" className="admin-row" onClick={() => nav(`/admin/members/${u.id}`)}>
-                  <span className="admin-row-main">{u.nickname}</span>
-                  <span className="admin-row-side">
-                    <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge'}`}>{u.role === 'admin' ? '관리자' : '멤버'}</span>
-                    <span className={`badge ${STATUS[u.status]?.cls}`}>{STATUS[u.status]?.label}</span>
-                    <span className="admin-row-caret" aria-hidden="true">›</span>
-                  </span>
-                </button>
-              </li>
+              <button key={u.id} type="button" className="aq-card" onClick={() => nav(`/admin/members/${u.id}`)}>
+                <span className="aq-card-body">
+                  <span className="aq-card-name">{u.nickname}</span>
+                </span>
+                <span className="aq-card-badges">
+                  <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge'}`}>{u.role === 'admin' ? '관리자' : '멤버'}</span>
+                  <span className={`badge ${STATUS[u.status]?.cls}`}>{STATUS[u.status]?.label}</span>
+                </span>
+              </button>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
+      </section>
+
+      <Link to="/admin/members/new" className="aq-fab" aria-label="계정 생성">
+        <svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </Link>
     </div>
   )
 }
