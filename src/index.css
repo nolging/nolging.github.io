@@ -6414,23 +6414,25 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .sn-target-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .sn-chip {
   display: inline-flex; align-items: center; gap: 6px; background: #f4f3f7; border-radius: 999px;
-  padding: 4px 6px 4px 4px; font-size: 12.5px; font-weight: 600; color: #191722;
+  padding: 5px 6px 5px 12px; font-size: 12.5px; font-weight: 600; color: #191722;
 }
 .sn-chip button {
   border: none; background: transparent; color: #8b8798; font-size: 15px; line-height: 1; cursor: pointer;
   padding: 0 2px; font-family: inherit;
 }
 .sn-chip button:hover { color: #191722; }
-.sn-chip-emoji {
-  width: 20px; height: 20px; border-radius: 6px; background: #f4f3f7; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 12px;
-}
-.sn-chip-emoji-lg { width: 32px; height: 32px; border-radius: 9px; font-size: 16px; }
-.sn-schedule-inputs { flex: 1; display: flex; gap: 8px; }
+/* 예약 발송 날짜/시간(라벨 없이 인풋만) — 토글 바로 아래 */
+.sn-schedule-inputs { display: flex; gap: 8px; margin-top: 14px; }
 .sn-schedule-inputs input { flex: 1; min-width: 0; }
+/* 예약 발송 영역과 미리보기/확인 버튼 사이 여백 */
+.sn-preview { margin-top: 24px; }
+.sn-submit { margin-top: 20px; }
 /* 모달 안 회원/그룹 선택 목록: 검색창 + 스크롤 목록(.filter-groups 재사용, 모달에서는 살짝 더 높게) */
 .sn-picker-search { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
 .sn-picker-list.filter-groups { max-height: 320px; }
+/* 회원/그룹 선택 모달 행: 이름 옆에 배지(회원) 또는 이름 뒤 우측 끝에 아바타(그룹)를 붙일 때 이름 셀을 감싼다 */
+.filter-group-name-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.filter-group-name-wrap .filter-group-name { flex: 0 1 auto; }
 
 /* ===== 명찰(닉네임 변경) 모달 ===== */
 .nametag-modal { display: flex; flex-direction: column; gap: 16px; }
