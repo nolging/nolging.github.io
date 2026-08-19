@@ -95,28 +95,30 @@ export default function AdminMemberDetail() {
       {notice && <div className="alert alert-success">{notice}</div>}
 
       <div className="card">
-        <h3 className="card-title">{user.nickname}</h3>
         <dl className="admin-detail">
           <div className="admin-detail-row"><dt>아이디</dt><dd>{user.nickname}</dd></div>
           <div className="admin-detail-row">
             <dt>역할</dt>
             <dd>
-              <select className="admin-detail-select" value={user.role} disabled={busy}
-                onChange={(e) => changeRole(e.target.value)}>
-                <option value="member">멤버</option>
-                <option value="admin">관리자</option>
-              </select>
+              <span className="admin-detail-select-wrap">
+                <select className="admin-detail-select" value={user.role} disabled={busy}
+                  onChange={(e) => changeRole(e.target.value)}>
+                  <option value="member">멤버</option>
+                  <option value="admin">관리자</option>
+                </select>
+              </span>
             </dd>
           </div>
           <div className="admin-detail-row">
             <dt>상태</dt>
             <dd>
-              <select className="admin-detail-select" value={user.status} disabled={busy}
-                onChange={(e) => changeStatus(e.target.value)}>
-                <option value="pending">{STATUS.pending.label}</option>
-                <option value="active">{STATUS.active.label}</option>
-                <option value="disabled">{STATUS.disabled.label}</option>
-              </select>
+              <span className="admin-detail-select-wrap">
+                <select className="admin-detail-select" value={user.status === 'active' ? 'active' : 'disabled'} disabled={busy}
+                  onChange={(e) => changeStatus(e.target.value)}>
+                  <option value="active">{STATUS.active.label}</option>
+                  <option value="disabled">{STATUS.disabled.label}</option>
+                </select>
+              </span>
             </dd>
           </div>
           <div className="admin-detail-row">
@@ -126,11 +128,11 @@ export default function AdminMemberDetail() {
           <div className="admin-detail-row"><dt>연락처</dt><dd>{user.contact || '—'}</dd></div>
           <div className="admin-detail-row"><dt>생년월일</dt><dd>{formatBirthDot(user.birthdate) || '—'}</dd></div>
         </dl>
+      </div>
 
-        <button type="button" className="btn btn-primary btn-block admin-detail-pwbtn" onClick={() => setPwOpen(true)}>비밀번호 초기화</button>
-        <div className="admin-detail-delete-wrap">
-          <button type="button" className="admin-detail-delete" disabled={busy} onClick={remove}>계정 삭제</button>
-        </div>
+      <div className="admin-detail-actions">
+        <button type="button" className="btn btn-primary btn-block" onClick={() => setPwOpen(true)}>비밀번호 초기화</button>
+        <button type="button" className="admin-detail-delete" disabled={busy} onClick={remove}>계정 삭제</button>
       </div>
 
       {/* 츄르 지급/차감 */}
