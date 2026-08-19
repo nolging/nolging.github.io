@@ -6084,7 +6084,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-badge-status.on { background: #eafaf0; color: #1f9d55; }
 .aq-card-reward { font-size: 13px; font-weight: 700; color: #191722; flex-shrink: 0; white-space: nowrap; align-self: center; }
 /* 시스템 공지 목록 카드 우측: 발송 시각 또는 예약된 날짜·시간 */
-.aq-card-time { font-size: 11.5px; color: #8b8798; flex-shrink: 0; white-space: nowrap; align-self: center; }
+/* 알림 메시지 카드처럼 제목 줄 우측 끝(같은 라인)에 표시 — .aq-card-title-row 안에 위치 */
+.aq-card-time { font-size: 11.5px; color: #8b8798; flex-shrink: 0; white-space: nowrap; margin-left: auto; }
 .aq-card-badges-desktop { display: none; }
 .aq-card-chevron { display: none; }
 /* 오류 리포트 카드: 제목 줄 우측에 아이디(일반 텍스트), 내용 줄 우측에 상태 배지 */

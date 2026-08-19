@@ -4,9 +4,12 @@ import { adminListSystemNotices } from '../../lib/api'
 import { timeAgo } from '../../lib/notifNav'
 import useScrollRestore from '../../lib/useScrollRestore'
 
+const pad = (n) => String(n).padStart(2, '0')
+// 월/일 은 의존명사라 숫자와 띄어 쓰고, 시각은 오전/오후 없이 24시간제(HH:MI)로 표기
 const fmtSchedule = (iso) => {
   try {
-    return new Date(iso).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const d = new Date(iso)
+    return `${d.getMonth() + 1} 월 ${d.getDate()} 일 ${pad(d.getHours())}:${pad(d.getMinutes())}`
   } catch { return '' }
 }
 
@@ -53,10 +56,12 @@ export default function AdminSystemNotices() {
                 >
                   <span className="aq-card-icon" style={r.emoji_bg ? { background: r.emoji_bg } : undefined} aria-hidden="true">{r.emoji || '📢'}</span>
                   <span className="aq-card-body">
-                    <span className="aq-card-name">{r.title}</span>
+                    <span className="aq-card-title-row">
+                      <span className="aq-card-name">{r.title}</span>
+                      <span className="aq-card-time">{timeText}</span>
+                    </span>
                     <span className="aq-card-desc">{r.body}</span>
                   </span>
-                  <span className="aq-card-time">{timeText}</span>
                 </Tag>
               )
             })}
