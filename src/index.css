@@ -6189,6 +6189,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-store-page { padding-bottom: 88px; }
 .admin-quests-page { padding-bottom: 88px; }
 .admin-notifs-page { padding-bottom: 88px; }
+.admin-members-page { padding-bottom: 88px; }
 .admin-store-tabbar {
   position: sticky; top: 0; z-index: 6; background: var(--bg);
   margin: 0 calc(-1 * var(--pad-x));
