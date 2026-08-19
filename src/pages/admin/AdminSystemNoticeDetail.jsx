@@ -263,7 +263,7 @@ export default function AdminSystemNoticeDetail() {
           )}
 
           {/* 알림 센터에 실제로 뜨는 안 읽음 카드와 동일한 클래스를 그대로 재사용한 미리보기 */}
-          <div className="notif unread sn-preview">
+          <div className="notif unread notif-sysnotice sn-preview">
             <span className="notif-icon" style={{ background: form.emojiBg || DEFAULT_BG }} aria-hidden="true">{form.emoji || DEFAULT_EMOJI}</span>
             <div className="notif-body">
               <div className="notif-top">
