@@ -1894,14 +1894,22 @@ export async function rerollSlotQuest(slot) {
 // ---- 관리자: 랜덤 퀘스트 정의(quest_defs) CRUD (RLS 상 쓰기는 관리자만) ----
 export async function adminListQuestDefs() {
   const { data, error } = await supabase.from('quest_defs')
-    .select('id, title, body, emoji, emoji_bg, reward, grade, active, sort_order').order('sort_order', { ascending: true })
+    .select('id, title, body, emoji, emoji_bg, reward, grade, active, sort_order, reward_reason').order('sort_order', { ascending: true })
   if (error) {
     if (error.code === '42P01') return []
-    // emoji/emoji_bg 컬럼 미배포(42703) 시 → 해당 컬럼 없이 재조회
+    // reward_reason(또는 emoji/emoji_bg) 컬럼 미배포 시 → 해당 컬럼 없이 재조회
     if (isMissingColumn(error)) {
       const { data: d1, error: e1 } = await supabase.from('quest_defs')
-        .select('id, title, body, reward, grade, active, sort_order').order('sort_order', { ascending: true })
-      if (e1) throw e1
+        .select('id, title, body, emoji, emoji_bg, reward, grade, active, sort_order').order('sort_order', { ascending: true })
+      if (e1) {
+        if (isMissingColumn(e1)) {
+          const { data: d2, error: e2 } = await supabase.from('quest_defs')
+            .select('id, title, body, reward, grade, active, sort_order').order('sort_order', { ascending: true })
+          if (e2) throw e2
+          return d2 ?? []
+        }
+        throw e1
+      }
       return d1 ?? []
     }
     throw error
@@ -1912,12 +1920,18 @@ export async function adminUpsertQuestDef(def) {
   const row = {
     id: def.id, title: def.title, body: def.body ?? '', emoji: def.emoji ?? '', emoji_bg: def.emoji_bg ?? '',
     reward: Number(def.reward) || 0, grade: def.grade || 'all', active: !!def.active,
+    reward_reason: def.reward_reason ?? '',
   }
   let { error } = await supabase.from('quest_defs').upsert(row)
-  // emoji/emoji_bg 컬럼 미배포 시 → 해당 컬럼 제외하고 재시도
-  if (error && error.code === '42703') {
-    const { emoji, emoji_bg, ...rest } = row // eslint-disable-line no-unused-vars
+  // reward_reason 컬럼 미배포 시 → 해당 컬럼 제외하고 재시도
+  if (error && isMissingColumn(error)) {
+    const { reward_reason, ...rest } = row // eslint-disable-line no-unused-vars
     ;({ error } = await supabase.from('quest_defs').upsert(rest))
+    // emoji/emoji_bg 도 미배포된 구버전이면 한 번 더 제외하고 재시도
+    if (error && isMissingColumn(error)) {
+      const { emoji, emoji_bg, ...rest2 } = rest // eslint-disable-line no-unused-vars
+      ;({ error } = await supabase.from('quest_defs').upsert(rest2))
+    }
   }
   if (error) throw error
 }
@@ -1937,16 +1951,32 @@ export async function adminReorderQuestDefs(items) {
 // 이모지·배경색·명칭·보상만 수정. RLS 상 쓰기는 관리자만 ----
 export async function adminListDailyQuestDefs() {
   const { data, error } = await supabase.from('quest_daily_defs')
-    .select('key, title, emoji, emoji_bg, reward, sort_order, active').order('sort_order', { ascending: true })
-  if (error) { if (error.code === '42P01') return []; throw error }
+    .select('key, title, emoji, emoji_bg, reward, sort_order, active, reward_reason').order('sort_order', { ascending: true })
+  if (error) {
+    if (error.code === '42P01') return []
+    // reward_reason 컬럼 미배포 시 → 해당 컬럼 없이 재조회
+    if (isMissingColumn(error)) {
+      const { data: d1, error: e1 } = await supabase.from('quest_daily_defs')
+        .select('key, title, emoji, emoji_bg, reward, sort_order, active').order('sort_order', { ascending: true })
+      if (e1) throw e1
+      return d1 ?? []
+    }
+    throw error
+  }
   return data ?? []
 }
 export async function adminUpsertDailyQuestDef(def) {
   const row = {
     key: def.key, title: def.title, emoji: def.emoji ?? '',
     emoji_bg: def.emoji_bg ?? '', reward: Number(def.reward) || 0,
+    reward_reason: def.reward_reason ?? '',
   }
-  const { error } = await supabase.from('quest_daily_defs').update(row).eq('key', def.key)
+  let { error } = await supabase.from('quest_daily_defs').update(row).eq('key', def.key)
+  // reward_reason 컬럼 미배포 시 → 해당 컬럼 제외하고 재시도
+  if (error && isMissingColumn(error)) {
+    const { reward_reason, ...rest } = row // eslint-disable-line no-unused-vars
+    ;({ error } = await supabase.from('quest_daily_defs').update(rest).eq('key', def.key))
+  }
   if (error) throw error
 }
 // 그룹 방문 기록(데일리 '그룹 방문' 퀘스트). 실패는 조용히 무시.

@@ -16,6 +16,8 @@ create table if not exists public.quest_daily_defs (
   active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
+-- 츄르 내역에 표시될 적립 사유(비워두면 퀘스트 제목으로 대체)
+alter table public.quest_daily_defs add column if not exists reward_reason text;
 alter table public.quest_daily_defs enable row level security;
 drop policy if exists quest_daily_defs_select on public.quest_daily_defs;
 create policy quest_daily_defs_select on public.quest_daily_defs for select to authenticated using (true);
@@ -85,23 +87,25 @@ begin
 end $$;
 grant execute on function public.get_quests() to authenticated;
 
--- claim_quest(): 보상액을 하드코딩 CASE 대신 quest_daily_defs 에서 조회
+-- claim_quest(): 보상액을 하드코딩 CASE 대신 quest_daily_defs 에서 조회.
+-- 츄르 내역 사유는 "데일리 퀘스트 - {reward_reason 또는 title}" 형식으로 남긴다.
 create or replace function public.claim_quest(p_key text)
 returns int language plpgsql security definer set search_path = public as $$
 declare
   v_uid uuid := auth.uid();
   v_day date := (now() at time zone 'Asia/Seoul')::date;
   v_day_start timestamptz := (v_day::timestamp at time zone 'Asia/Seoul');
-  v_reward int;
+  v_reward int; v_title text; v_reason text;
 begin
   if p_key not in ('attend','visit','note') then raise exception '알 수 없는 퀘스트예요.'; end if;
   if exists(select 1 from public.quest_daily_claims where user_id=v_uid and quest_key=p_key and day=v_day) then
     raise exception '이미 수령한 퀘스트예요.'; end if;
   if not public._quest_done(p_key, v_day_start) then raise exception '아직 완료하지 않았어요.'; end if;
-  select reward into v_reward from public.quest_daily_defs where key = p_key;
+  select reward, title, reward_reason into v_reward, v_title, v_reason from public.quest_daily_defs where key = p_key;
   v_reward := coalesce(v_reward, 0);
   insert into public.quest_daily_claims(user_id, quest_key, day) values (v_uid, p_key, v_day);
-  insert into public.coin_ledger(user_id, delta, reason, ref_type) values (v_uid, v_reward, '퀘스트 보상', 'quest');
+  insert into public.coin_ledger(user_id, delta, reason, ref_type)
+    values (v_uid, v_reward, '데일리 퀘스트 - ' || coalesce(nullif(btrim(v_reason), ''), v_title), 'quest');
   return (select coalesce(sum(delta),0) from public.coin_ledger where user_id = v_uid);
 end $$;
 grant execute on function public.claim_quest(text) to authenticated;

@@ -6120,6 +6120,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-reward-row { flex: 1; display: flex; align-items: center; gap: 8px; }
 .aq-reward-row input { flex: none; width: 120px; }
 .aq-unit { font-size: 13.5px; font-weight: 700; color: #8b8798; }
+/* 퀘스트 추가/수정: 보상 입력창은 한 줄 전체 차지, "츄르" 단위는 입력창 안쪽 우측에 겹쳐 표시 */
+.aq-reward-wrap { position: relative; flex: 1; display: flex; align-items: center; }
+.aq-reward-wrap input { width: 100%; padding-right: 52px; box-sizing: border-box; }
+.aq-reward-wrap .aq-unit { position: absolute; right: 16px; pointer-events: none; }
 .aq-note { margin-top: 4px; background: #f6f5f2; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; color: #8b8798; line-height: 1.5; }
 .aq-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, .06); }
 .aq-toggle-title { font-size: 14px; font-weight: 700; color: #191722; }
@@ -6262,6 +6266,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-grant-unit { position: absolute; right: 16px; font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }
 /* 회원 상세: 츄르 적립·사용 내역 모달 — 목록만 스크롤(제목은 고정) */
 .admin-coinhist-list { max-height: 50vh; overflow-y: auto; }
+/* 츄르 지급 모달: 인풋 포커스 시 테두리를 기본보다 얇게 */
+.admin-grant-form input:focus { outline-width: 1px; }
+/* 츄르 적립·사용 내역 버튼: 다른 두 버튼(먹색)과 구분되는 짙은 회색 */
+.admin-detail-histbtn, .admin-detail-histbtn:hover { background: #55515f; border-color: #55515f; }
 /* 비밀번호 초기화 / 계정 삭제: 흰 카드 바깥, 페이지 배경 위에 한 쌍으로 배치 */
 .admin-detail-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .admin-detail-delete { background: none; border: none; font: inherit; font-weight: 700; font-size: 13px; color: var(--danger); cursor: pointer; padding: 8px; }
