@@ -9,6 +9,15 @@ import { useScrollToTop } from '../../lib/useScrollRestore'
 
 const DEFAULT_PW = 'nolging!'
 
+function SelectArrow() {
+  return (
+    <svg className="admin-detail-select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
 // 회원 상세 — 정보 조회 영역에서 역할/상태를 셀렉트로 즉시 변경, 보유 츄르 클릭 시 지급/차감 모달,
 // 비밀번호 초기화·계정 삭제도 같은 영역에 모아둔다.
 export default function AdminMemberDetail() {
@@ -89,6 +98,9 @@ export default function AdminMemberDetail() {
   if (loading) return <div className="page admin-page"><div className="spinner" /></div>
   if (!user) return <div className="page admin-page"><div className="alert alert-error">{error || '회원을 찾을 수 없어요.'}</div></div>
 
+  const grantMag = parseInt(grant.amount, 10)
+  const grantAmountOk = Number.isInteger(grantMag) && grantMag > 0
+
   return (
     <div className="page admin-page">
       {error && <div className="alert alert-error">{error}</div>}
@@ -106,6 +118,7 @@ export default function AdminMemberDetail() {
                   <option value="member">멤버</option>
                   <option value="admin">관리자</option>
                 </select>
+                <SelectArrow />
               </span>
             </dd>
           </div>
@@ -118,6 +131,7 @@ export default function AdminMemberDetail() {
                   <option value="active">{STATUS.active.label}</option>
                   <option value="disabled">{STATUS.disabled.label}</option>
                 </select>
+                <SelectArrow />
               </span>
             </dd>
           </div>
@@ -136,18 +150,19 @@ export default function AdminMemberDetail() {
       </div>
 
       {/* 츄르 지급/차감 */}
-      <Modal open={grantOpen} onClose={() => setGrantOpen(false)} title="츄르 지급">
+      <Modal open={grantOpen} onClose={() => setGrantOpen(false)}>
         <form onSubmit={submitGrant} className="form" key={`grant-${formKey}`}>
           <div className="seg-tabs">
             <button type="button" className={`seg-tab ${grant.sign === 1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
             <button type="button" className={`seg-tab ${grant.sign === -1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
           </div>
-          <div className="field"><label htmlFor="md-amount">수량</label>
+          <div className="field"><label htmlFor="md-amount">수량<span className="field-req">*</span></label>
             <input id="md-amount" type="number" inputMode="numeric" min="1" defaultValue={grant.amount}
               onChange={(e) => setGrant((g) => ({ ...g, amount: e.target.value }))} placeholder="예: 10" /></div>
-          <div className="field"><label htmlFor="md-reason">사유 (선택)</label>
-            <input id="md-reason" defaultValue={grant.reason} onChange={(e) => setGrant((g) => ({ ...g, reason: e.target.value }))} placeholder="예: 이벤트 보상" /></div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? '처리 중…' : '확인'}</button>
+          <div className="field"><label htmlFor="md-reason">사유</label>
+            <input id="md-reason" defaultValue={grant.reason} onChange={(e) => setGrant((g) => ({ ...g, reason: e.target.value }))}
+              placeholder={grant.sign === 1 ? '관리자 지급' : '관리자 차감'} /></div>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy || !grantAmountOk}>{busy ? '처리 중…' : '확인'}</button>
         </form>
       </Modal>
 

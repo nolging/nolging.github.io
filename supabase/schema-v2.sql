@@ -1342,7 +1342,9 @@ begin
     raise exception '존재하지 않는 사용자입니다.'; end if;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type, created_by)
-    values (p_user_id, p_amount, coalesce(nullif(btrim(p_reason), ''), '관리자 지급'), 'admin_grant', auth.uid());
+    values (p_user_id, p_amount,
+      coalesce(nullif(btrim(p_reason), ''), case when p_amount > 0 then '관리자 지급' else '관리자 차감' end),
+      'admin_grant', auth.uid());
 
   select coalesce(sum(delta), 0)::integer into v_balance
     from public.coin_ledger where user_id = p_user_id;
