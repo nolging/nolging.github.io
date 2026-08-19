@@ -53,6 +53,14 @@ export default function Store() {
   useEffect(() => {
     try { sessionStorage.setItem('storePremiumView', premiumView ? '1' : '0') } catch { /* noop */ }
   }, [premiumView])
+  // 일반/프리미엄 탭 전환 시 직전 탭의 스크롤 위치가 그대로 남아있지 않게 맨 위로.
+  // 최초 마운트(퀘스트 등에서 프리미엄으로 바로 진입/인벤토리에서 복원된 경우 포함)는 건드리지 않음.
+  const premiumViewMounted = useRef(false)
+  useEffect(() => {
+    if (!premiumViewMounted.current) { premiumViewMounted.current = true; return }
+    const el = document.querySelector('.content')
+    if (el) el.scrollTop = 0
+  }, [premiumView])
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
