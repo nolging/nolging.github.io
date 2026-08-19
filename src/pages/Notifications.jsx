@@ -78,7 +78,6 @@ function NotifRow({ n, icon, iconBg, clickable, timeText, onOpen, onDelete }) {
             </div>
             <span className="notif-right">
               <span className="notif-time">{timeText}</span>
-              {!n.is_read && <span className="notif-dot" aria-label="안 읽음" />}
             </span>
           </div>
           {n.body && <p className="notif-text">{resolveItemText(n.body)}</p>}

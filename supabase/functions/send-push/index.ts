@@ -67,6 +67,8 @@ Deno.serve(async (req) => {
       url = `/admin/reports/${record.report_id}` // 관리자: 오류 리포트 상세
     } else if (NOTE_TYPES.has(record.type as string)) {
       url = '/notes' // 쪽지 유형 → 받은 쪽지함
+    } else if (record.type === 'system_notice') {
+      url = '/notifications' // 시스템 공지 → 알림 센터
     } else if (record.type === 'touch_call' && record.group_id) {
       url = `/groups/${record.group_id}/touch` // 우심뽀까 알림 → 우심뽀까 페이지
     } else if ((record.type === 'praise' || record.type === 'praise_new') && record.group_id) {
