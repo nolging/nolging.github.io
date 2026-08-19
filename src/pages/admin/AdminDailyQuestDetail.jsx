@@ -19,6 +19,7 @@ export default function AdminDailyQuestDetail() {
   const bgRef = useRef(null)
   const pickBg = (c) => { setBg(c); if (bgRef.current) bgRef.current.value = c }
   const [reward, setReward] = useState('')
+  const [rewardReason, setRewardReason] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -29,7 +30,7 @@ export default function AdminDailyQuestDetail() {
       const rows = await adminListDailyQuestDefs()
       const found = rows.find((x) => x.key === key)
       if (!found) { setError('데일리 퀘스트를 찾을 수 없어요.'); return }
-      setQ(found); setTitle(found.title || ''); setEmoji(found.emoji || ''); setBg(found.emoji_bg || ''); setReward(String(found.reward ?? ''))
+      setQ(found); setTitle(found.title || ''); setEmoji(found.emoji || ''); setBg(found.emoji_bg || ''); setReward(String(found.reward ?? '')); setRewardReason(found.reward_reason || '')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [key])
   useEffect(() => { load() }, [load])
@@ -41,7 +42,7 @@ export default function AdminDailyQuestDetail() {
     if (hex && !/^#[0-9a-fA-F]{6}$/.test(hex)) { setError('배경색은 #RRGGBB 형식으로 입력해 주세요.'); return }
     setBusy(true)
     try {
-      await adminUpsertDailyQuestDef({ key, title: title.trim(), emoji: emoji.trim(), emoji_bg: hex, reward })
+      await adminUpsertDailyQuestDef({ key, title: title.trim(), emoji: emoji.trim(), emoji_bg: hex, reward, reward_reason: rewardReason.trim() })
       nav('/admin/quests', { replace: true })
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
@@ -75,10 +76,15 @@ export default function AdminDailyQuestDetail() {
             </div>
             <div className="aq-frow">
               <label className="aq-flabel" htmlFor="dq-reward">보상</label>
-              <div className="aq-reward-row">
+              <div className="aq-reward-wrap">
                 <input id="dq-reward" type="number" inputMode="numeric" min="0" defaultValue={reward} onChange={(e) => setReward(e.target.value)} placeholder="예: 10" />
                 <span className="aq-unit">츄르</span>
               </div>
+            </div>
+            <div className="aq-frow">
+              <label className="aq-flabel" htmlFor="dq-reward-reason">적립 사유</label>
+              <input id="dq-reward-reason" defaultValue={rewardReason} onChange={(e) => setRewardReason(e.target.value)}
+                placeholder="비워두면 퀘스트 제목으로 표시돼요" />
             </div>
             <div className="aq-actions">
               <div className="aq-actions-right">

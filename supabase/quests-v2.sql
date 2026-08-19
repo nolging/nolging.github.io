@@ -18,6 +18,8 @@ create table if not exists public.quest_defs (
 );
 -- 기존 배포에 emoji 컬럼 추가(이미 있으면 무시)
 alter table public.quest_defs add column if not exists emoji text not null default '✨';
+-- 츄르 내역에 표시될 적립 사유(비워두면 퀘스트 제목으로 대체)
+alter table public.quest_defs add column if not exists reward_reason text;
 alter table public.quest_defs enable row level security;
 drop policy if exists quest_defs_select on public.quest_defs;
 create policy quest_defs_select on public.quest_defs for select to authenticated using (true);
@@ -163,17 +165,19 @@ end $$;
 grant execute on function public.claim_quest(text) to authenticated;
 
 -- 랜덤 슬롯 보상 수령 → 30분 후 다음 퀘스트. 반환=새 잔액.
+-- 츄르 내역 사유는 "랜덤 퀘스트 - {reward_reason 또는 title}" 형식으로 남긴다.
 create or replace function public.claim_slot_quest(p_slot int)
 returns int language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_slot public.quest_slots; v_reward int;
+declare v_uid uuid := auth.uid(); v_slot public.quest_slots; v_reward int; v_title text; v_reason text;
 begin
   select * into v_slot from public.quest_slots where user_id=v_uid and slot=p_slot;
   if v_slot.user_id is null then raise exception '슬롯이 없어요.'; end if;
   if v_slot.available_at > now() then raise exception '아직 쿨다운 중이에요.'; end if;
   if not public._quest_done(v_slot.quest_key, v_slot.assigned_at) then raise exception '아직 완료하지 않았어요.'; end if;
-  select reward into v_reward from public.quest_defs where id=v_slot.quest_key and active;
+  select reward, title, reward_reason into v_reward, v_title, v_reason from public.quest_defs where id=v_slot.quest_key and active;
   if coalesce(v_reward,0) <= 0 then raise exception '보상을 확인할 수 없어요.'; end if;
-  insert into public.coin_ledger(user_id, delta, reason, ref_type) values (v_uid, v_reward, '퀘스트 보상', 'quest');
+  insert into public.coin_ledger(user_id, delta, reason, ref_type)
+    values (v_uid, v_reward, '랜덤 퀘스트 - ' || coalesce(nullif(btrim(v_reason), ''), v_title), 'quest');
   update public.quest_slots set
     quest_key = public._quest_pick(array(select quest_key from public.quest_slots where user_id=v_uid and slot<>p_slot)),
     assigned_at = now() + interval '30 minutes',

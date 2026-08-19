@@ -30,7 +30,7 @@ export default function AdminQuestDetail() {
       const defs = await adminListQuestDefs()
       const q = defs.find((x) => x.id === id)
       if (!q) { setError('퀘스트를 찾을 수 없어요.'); return }
-      setForm({ id: q.id, title: q.title, body: q.body || '', emoji: q.emoji || '', emoji_bg: q.emoji_bg || '', reward: String(q.reward), grade: q.grade, active: q.active })
+      setForm({ id: q.id, title: q.title, body: q.body || '', emoji: q.emoji || '', emoji_bg: q.emoji_bg || '', reward: String(q.reward), grade: q.grade, active: q.active, reward_reason: q.reward_reason || '' })
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [editing, id])
   useEffect(() => { load() }, [load])
@@ -86,7 +86,7 @@ export default function AdminQuestDetail() {
           </div>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="q-reward">보상</label>
-            <div className="aq-reward-row">
+            <div className="aq-reward-wrap">
               <input id="q-reward" type="number" inputMode="numeric" min="0" defaultValue={form.reward} onChange={setField('reward')} placeholder="예: 20" />
               <span className="aq-unit">츄르</span>
             </div>
@@ -96,6 +96,11 @@ export default function AdminQuestDetail() {
             <select id="q-grade" value={form.grade} onChange={setField('grade')}>
               {QUEST_GRADES.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
             </select>
+          </div>
+          <div className="aq-frow">
+            <label className="aq-flabel" htmlFor="q-reward-reason">적립 사유</label>
+            <input id="q-reward-reason" defaultValue={form.reward_reason} onChange={setField('reward_reason')}
+              placeholder="비워두면 퀘스트 제목으로 표시돼요" />
           </div>
           <div className="aq-toggle-row">
             <div>

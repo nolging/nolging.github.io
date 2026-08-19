@@ -160,14 +160,14 @@ export default function AdminMemberDetail() {
       </div>
 
       <div className="admin-detail-actions">
-        <button type="button" className="btn btn-primary btn-block" onClick={openHistory}>츄르 적립·사용 내역</button>
+        <button type="button" className="btn btn-primary btn-block admin-detail-histbtn" onClick={openHistory}>츄르 적립·사용 내역</button>
         <button type="button" className="btn btn-primary btn-block" onClick={() => setPwOpen(true)}>비밀번호 초기화</button>
         <button type="button" className="admin-detail-delete" disabled={busy} onClick={remove}>계정 삭제</button>
       </div>
 
       {/* 츄르 지급/차감 */}
       <Modal open={grantOpen} onClose={() => setGrantOpen(false)}>
-        <form onSubmit={submitGrant} className="form" key={`grant-${formKey}`}>
+        <form onSubmit={submitGrant} className="form admin-grant-form" key={`grant-${formKey}`}>
           <div className="seg-tabs">
             <button type="button" className={`seg-tab ${grant.sign === 1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: 1 }))}>지급 +</button>
             <button type="button" className={`seg-tab ${grant.sign === -1 ? 'active' : ''}`} onClick={() => setGrant((g) => ({ ...g, sign: -1 }))}>차감 −</button>
