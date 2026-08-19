@@ -1825,17 +1825,22 @@ button.mention-chip:active { opacity: .6; }
 .tr-tab:disabled { opacity: .45; cursor: default; }
 .tr-tab-lock { font-size: 9.5px; font-weight: 700; background: rgba(255, 255, 255, .14); border-radius: 999px; padding: 1px 5px; }
 
-/* 카드 전체를 펼쳐 놓는 그리드. 카드 수가 많아 한 줄에 안 들어가면 다음 줄로 넘어간다(래핑). */
+/* 카드 전체(22장)를 한 줄의 부채꼴로 펼친다: 가운데가 높고 양옆이 낮게, 카드끼리 많이 겹쳐서
+   어느 폭에서도 한 줄에 들어간다. 폭을 %로 잡아 뷰포트가 아니라 "부채가 놓인 칸" 기준으로 맞춘다.
+   총 너비 = 22*15% - 44*5.25% = 99% → 회전으로 조금 삐져나와도 페이지 안. */
+/* 좌우 padding = 맨 끝 카드가 기울면서 넓어지는 만큼의 여유(없으면 화면 밖으로 나간다) */
 .tr-fan { margin: 20px auto 0; max-width: 420px; padding-inline: 15px; box-sizing: border-box;
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 12px 7px; }
+  display: flex; justify-content: center; align-items: flex-end; }
 .tr-fan.shuffling { animation: tr-shuffle .5s ease; }
 @keyframes tr-shuffle { 0% { opacity: .2; transform: scale(.96); } 100% { opacity: 1; transform: none; } }
 .tr-slot { border: none; background: none; padding: 0; cursor: pointer; line-height: 0; position: relative;
-  flex: 0 0 42px; width: 42px;
+  flex: 0 0 15%; margin-inline: -5.25%; margin-bottom: 22px;   /* 아래 여백 = 양옆 카드가 내려갈 자리 */
+  transform: rotate(var(--rot)) translateY(var(--lift)); transform-origin: bottom center;
   transition: transform .18s ease, filter .18s ease; }
-.tr-slot:not(:disabled):hover { filter: brightness(1.15); }
-/* 클릭하면 바로 확정되지 않고, 카드가 살짝 위로 들려서 "고르는 중"임을 보여 준다 */
-.tr-slot.selected { transform: translateY(-16px); filter: brightness(1.2); }
+.tr-slot:not(:disabled):not(.selected):hover, .tr-slot:not(:disabled):not(.selected):active {
+  transform: rotate(var(--rot)) translateY(calc(var(--lift) - 14px)); filter: brightness(1.2); }
+/* 클릭하면 바로 확정되지 않고, 카드가 부채 곡선 위치에서 한 번 더 살짝 들려서 "고르는 중"임을 보여 준다 */
+.tr-slot.selected { transform: rotate(var(--rot)) translateY(calc(var(--lift) - 16px)); filter: brightness(1.2); }
 .tr-slot.used { visibility: hidden; }
 .tr-card { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .35)); }
 /* 여러 장을 고르는 스프레드(세 장 등)에서, 들어 올린 카드에 클릭한 순서를 숫자로 표시 */
@@ -1844,6 +1849,7 @@ button.mention-chip:active { opacity: .6; }
   width: 19px; height: 19px; border-radius: 50%; background: #b79a5b; color: #241f45;
   font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  transform: rotate(calc(var(--rot) * -1)); /* 카드가 기울어도 숫자는 항상 똑바로 보이게 */
 }
 .tr-count { margin: 18px 0 0; text-align: center; font-size: 12.5px; font-weight: 700; color: #b8b0d6; }
 .tr-peer-state { color: #8f86b4; font-weight: 600; }

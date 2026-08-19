@@ -223,9 +223,10 @@ export default function TarotCafe() {
             {deck.map((_, k) => {
               const used = taken.includes(k)
               const sel = selected.includes(k)
+              const mid = (deck.length - 1) / 2
               return (
                 <button key={k} type="button" className={`tr-slot${used ? ' used' : ''}${sel ? ' selected' : ''}`}
-                  style={{ zIndex: sel ? 30 : k }}
+                  style={{ '--rot': `${(k - mid) * 3}deg`, '--lift': `${Math.abs(k - mid) * 3}px`, zIndex: sel ? 30 : k }}
                   onClick={() => toggleSelect(k)} disabled={used || shuffling} aria-pressed={sel}
                   aria-label={`카드 ${k + 1}번${sel ? ' 선택 해제' : ' 선택'}`}>
                   <CardBack />
