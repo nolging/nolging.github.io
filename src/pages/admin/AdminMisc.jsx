@@ -22,6 +22,14 @@ export default function AdminMisc() {
           </span>
           <span className="aq-card-chevron always" aria-hidden="true">›</span>
         </button>
+        <button type="button" className="aq-card" onClick={() => nav('/admin/misc/notices')}>
+          <span className="aq-card-icon" style={{ background: '#e6eefd' }} aria-hidden="true">📢</span>
+          <span className="aq-card-body">
+            <span className="aq-card-name">시스템 공지</span>
+            <span className="aq-card-desc aq-card-desc-desktop">유저에게 푸시 알림으로 공지를 보내요.</span>
+          </span>
+          <span className="aq-card-chevron always" aria-hidden="true">›</span>
+        </button>
       </div>
     </div>
   )

@@ -152,7 +152,7 @@ export default function Notifications() {
       ) : (
         <ul className="notif-list">
           {items.map((n) => (
-            <NotifRow key={n.id} n={n} icon={styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'} iconBg={styleMap[n.type]?.bg} clickable={!!targetOf(n)}
+            <NotifRow key={n.id} n={n} icon={n.emoji || styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'} iconBg={n.emoji_bg || styleMap[n.type]?.bg} clickable={!!targetOf(n)}
               timeText={timeAgo(n.created_at)} onOpen={() => open(n)} onDelete={() => remove(n.id)} />
           ))}
         </ul>

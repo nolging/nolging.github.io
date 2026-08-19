@@ -63,7 +63,7 @@ export default function NotifDropdown({ onClose, onChange }) {
                 <li key={n.id}
                   className={`notif-dd-row ${n.is_read ? '' : 'unread'} ${clickable ? 'clickable' : ''}`}
                   onClick={() => clickable && open(n)}>
-                  <span className={`notif-icon notif-ic-${n.type}`} style={styleMap[n.type]?.bg ? { background: styleMap[n.type].bg } : undefined} aria-hidden="true">{styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'}</span>
+                  <span className={`notif-icon notif-ic-${n.type}`} style={(n.emoji_bg || styleMap[n.type]?.bg) ? { background: n.emoji_bg || styleMap[n.type]?.bg } : undefined} aria-hidden="true">{n.emoji || styleMap[n.type]?.emoji || ICONS[n.type] || '🔔'}</span>
                   <div className="notif-body">
                     <div className="notif-top">
                       <div className="notif-line">

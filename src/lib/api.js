@@ -2176,6 +2176,31 @@ export async function adminReorderNotifTemplates(items) {
   })
   if (error) throw error
 }
+// ---- 관리자: 시스템 공지(전체/등급/회원/그룹 대상 푸시) ----
+export async function adminListSystemNotices() {
+  const { data, error } = await supabase.rpc('admin_list_system_notices')
+  if (error) { if (error.code === 'PGRST202') return []; throw error }
+  return data ?? []
+}
+export async function adminCreateSystemNotice({ title, body, emoji, emojiBg, targetType, targetUserIds, targetGroupIds, scheduledAt }) {
+  const { data, error } = await supabase.rpc('admin_create_system_notice', {
+    p_title: title, p_body: body, p_emoji: emoji || '', p_emoji_bg: emojiBg || '',
+    p_target_type: targetType, p_target_user_ids: targetUserIds || [], p_target_group_ids: targetGroupIds || [],
+    p_scheduled_at: scheduledAt || null,
+  })
+  if (error) throw error
+  return data
+}
+export async function adminUpdateSystemNotice(id, { title, body, emoji, emojiBg, targetType, targetUserIds, targetGroupIds, scheduledAt }) {
+  const { data, error } = await supabase.rpc('admin_update_system_notice', {
+    p_id: id, p_title: title, p_body: body, p_emoji: emoji || '', p_emoji_bg: emojiBg || '',
+    p_target_type: targetType, p_target_user_ids: targetUserIds || [], p_target_group_ids: targetGroupIds || [],
+    p_scheduled_at: scheduledAt || null,
+  })
+  if (error) throw error
+  return data
+}
+
 // 알림센터 아이콘 맵 (type/key → { emoji, bg }). 미배포 시 emoji 만 있는 구버전으로 폴백.
 export async function getNotifStyles() {
   const { data, error } = await supabase.rpc('notif_styles')
