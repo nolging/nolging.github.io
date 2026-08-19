@@ -6066,6 +6066,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-badge-status { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: #f4f3f7; color: #8b8798; white-space: nowrap; }
 .aq-badge-status.on { background: #eafaf0; color: #1f9d55; }
 .aq-card-reward { font-size: 13px; font-weight: 700; color: #191722; flex-shrink: 0; white-space: nowrap; align-self: center; }
+/* 시스템 공지 목록 카드 우측: 발송 시각 또는 예약된 날짜·시간 */
+.aq-card-time { font-size: 11.5px; color: #8b8798; flex-shrink: 0; white-space: nowrap; align-self: center; }
 .aq-card-badges-desktop { display: none; }
 .aq-card-chevron { display: none; }
 /* 오류 리포트 카드: 제목 줄 우측에 아이디(일반 텍스트), 내용 줄 우측에 상태 배지 */
@@ -6079,6 +6081,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card.inactive .aq-card-name { color: #8b8798; }
 .aq-card.inactive .aq-card-desc { color: #b3afbb; }
 .aq-card.inactive .aq-card-reward { color: #a9a6b3; }
+.aq-card.inactive .aq-card-time { color: #b3afbb; }
 @media (min-width: 700px) {
   .aq-card { padding: 14px 20px; }
   .aq-card-badges-mobile { display: none; }
@@ -6405,6 +6408,29 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 알림센터 이모지 배경색 선택 — 색상 스와치는 퀘스트 관리와 동일한 원형(.aq-swatch) */
 .an-bg-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 6px 0 8px; }
 .an-bg-hex { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* 시스템 공지 발송/수정 폼: 회원·그룹 선택 + 선택된 대상 칩 + 예약 발송 날짜/시간 */
+.sn-target-pick { margin-top: -6px; display: flex; flex-direction: column; gap: 10px; }
+.sn-target-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sn-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: #f4f3f7; border-radius: 999px;
+  padding: 4px 6px 4px 4px; font-size: 12.5px; font-weight: 600; color: #191722;
+}
+.sn-chip button {
+  border: none; background: transparent; color: #8b8798; font-size: 15px; line-height: 1; cursor: pointer;
+  padding: 0 2px; font-family: inherit;
+}
+.sn-chip button:hover { color: #191722; }
+.sn-chip-emoji {
+  width: 20px; height: 20px; border-radius: 6px; background: #f4f3f7; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.sn-chip-emoji-lg { width: 32px; height: 32px; border-radius: 9px; font-size: 16px; }
+.sn-schedule-inputs { flex: 1; display: flex; gap: 8px; }
+.sn-schedule-inputs input { flex: 1; min-width: 0; }
+/* 모달 안 회원/그룹 선택 목록: 검색창 + 스크롤 목록(.filter-groups 재사용, 모달에서는 살짝 더 높게) */
+.sn-picker-search { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+.sn-picker-list.filter-groups { max-height: 320px; }
 
 /* ===== 명찰(닉네임 변경) 모달 ===== */
 .nametag-modal { display: flex; flex-direction: column; gap: 16px; }

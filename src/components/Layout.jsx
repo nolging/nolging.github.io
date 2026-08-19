@@ -236,8 +236,9 @@ export default function Layout() {
           : p.startsWith('/admin/notifs') ? (p.endsWith('/new') ? '알림 메시지 추가' : '알림 메시지 수정')
             : p.startsWith('/admin/misc/groups/') ? '그룹 사용량 제어'
               : p.startsWith('/admin/misc/groups') ? '그룹별 사용량 제어'
-                : p.startsWith('/admin/reports') ? '오류 리포트 관리'
-                : '관리자'
+                : p.startsWith('/admin/misc/notices') ? (p.endsWith('/new') ? '시스템 공지 발송' : p === '/admin/misc/notices' ? '시스템 공지' : '시스템 공지 수정')
+                  : p.startsWith('/admin/reports') ? '오류 리포트 관리'
+                  : '관리자'
   // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
   const adminTabsRef = useRef(null)
   const [adminIndicator, setAdminIndicator] = useState({ left: 0, width: 0 })

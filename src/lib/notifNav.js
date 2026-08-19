@@ -29,6 +29,7 @@ export const NOTIF_ICONS = {
   error_report: '🐞',
   system_note: '🐱',
   polaroid: '📷',
+  system_notice: '📢',
 }
 
 export function timeAgo(iso) {
