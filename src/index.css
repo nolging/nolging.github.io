@@ -6238,6 +6238,18 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-detail-row:last-child { border-bottom: none; }
 .admin-detail dt { color: var(--muted); font-size: 13px; }
 .admin-detail dd { margin: 0; font-weight: 700; text-align: right; word-break: break-all; }
+/* 회원 상세: 역할/상태를 그 자리에서 바로 바꾸는 셀렉트 */
+.admin-detail-select {
+  font: inherit; font-weight: 700; font-size: 13.5px; color: var(--text); text-align: right;
+  border: none; background: var(--canvas); border-radius: 8px; padding: 5px 8px; cursor: pointer;
+}
+.admin-detail-select:disabled { opacity: .6; cursor: default; }
+/* 보유 츄르: 클릭하면 지급/차감 모달 */
+.admin-detail-linkval { font: inherit; font-weight: 700; color: var(--primary); background: none; border: none; padding: 0; cursor: pointer; }
+.admin-detail-pwbtn { margin-top: 14px; }
+.admin-detail-delete-wrap { text-align: center; margin-top: 8px; }
+.admin-detail-delete { background: none; border: none; font: inherit; font-weight: 700; font-size: 13px; color: var(--danger); cursor: pointer; padding: 8px; }
+.admin-detail-delete:disabled { opacity: .6; cursor: default; }
 /* 세그먼트 탭(일반/프리미엄) — 알약 형태 */
 .seg-tabs { display: flex; background: rgba(0, 0, 0, .05); border-radius: 999px; padding: 4px; margin-bottom: 14px; }
 .seg-tab { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 999px; font: inherit; font-weight: 700; color: var(--muted); cursor: pointer; }
