@@ -6427,12 +6427,27 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 예약 발송 영역과 미리보기/확인 버튼 사이 여백 */
 .sn-preview { margin-top: 24px; }
 .sn-submit { margin-top: 20px; }
+/* 제목/본문/수신 대상처럼 인풋 하단에 .field-error 가 붙을 수 있는 aq-frow 칸.
+   width:100% 을 명시해야 모바일(.aq-frow 가 column 으로 바뀜)에서도 항상 꽉 찬다(.aq-reward-wrap 과 동일 이유). */
+.aq-field-col { flex: 1; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+.aq-field-col .field-error { margin-top: 6px; }
 /* 모달 안 회원/그룹 선택 목록: 검색창 + 스크롤 목록(.filter-groups 재사용, 모달에서는 살짝 더 높게) */
 .sn-picker-search { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
 .sn-picker-list.filter-groups { max-height: 320px; }
 /* 회원/그룹 선택 모달 행: 이름 옆에 배지(회원) 또는 이름 뒤 우측 끝에 아바타(그룹)를 붙일 때 이름 셀을 감싼다 */
 .filter-group-name-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .filter-group-name-wrap .filter-group-name { flex: 0 1 auto; }
+/* 회원/그룹 선택 모달: 모바일 키보드가 올라와도(Modal.jsx 가 계산하는 --vvh) 모달이 화면 안에
+   들어오도록 카드 자체 높이를 남은 화면에 맞추고, 제목/검색창은 고정한 채 목록만 스크롤한다. */
+.modal-card.sn-picker-modal {
+  display: flex; flex-direction: column;
+  height: min(560px, calc(var(--vvh, 90vh) - 40px));
+  overflow: hidden;
+}
+.modal-card.sn-picker-modal .modal-title,
+.modal-card.sn-picker-modal .sn-picker-search { flex: none; }
+.modal-card.sn-picker-modal .sn-picker-list.filter-groups { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
+.modal-card.sn-picker-modal .btn-primary.btn-block { flex: none; margin-top: 10px; }
 
 /* ===== 명찰(닉네임 변경) 모달 ===== */
 .nametag-modal { display: flex; flex-direction: column; gap: 16px; }
