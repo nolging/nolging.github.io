@@ -37,14 +37,15 @@ export default function AdminGroupFeatures() {
   return (
     <div className="page admin-page aq-page">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="aq-section-head">
-        <span className="aq-section-title">그룹</span>
-        <span className="aq-count">{groups.length}</span>
-      </div>
-      {loading ? <div className="spinner" /> : groups.length === 0 ? (
-        <p className="muted sm">그룹이 없습니다.</p>
-      ) : (
-        <div className="aq-cards">
+      <section>
+        <div className="aq-section-head">
+          <span className="aq-section-title">그룹</span>
+          <span className="aq-count">{groups.length}</span>
+        </div>
+        {loading ? <div className="spinner" /> : groups.length === 0 ? (
+          <p className="muted sm">그룹이 없습니다.</p>
+        ) : (
+          <div className="aq-cards">
           {groups.map((g) => {
             const premium = g.is_couple || g.is_friend
             const badge = groupBadge(g)
@@ -73,8 +74,9 @@ export default function AdminGroupFeatures() {
               </button>
             )
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

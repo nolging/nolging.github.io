@@ -22,28 +22,32 @@ export default function AdminReports() {
   return (
     <div className="page admin-page aq-page">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="aq-section-head">
-        <span className="aq-section-title">리포트</span>
-        <span className="aq-count">{reports.length}</span>
-      </div>
-      {loading ? <div className="spinner" /> : reports.length === 0 ? (
-        <p className="muted sm">접수된 리포트가 없습니다.</p>
-      ) : (
-        <div className="aq-cards">
-          {reports.map((r) => (
-            <button key={r.id} type="button" className="aq-card" onClick={() => nav(`/admin/reports/${r.id}`)}>
-              <span className="aq-card-body">
-                <span className="aq-card-name">{r.title}</span>
-                {r.body && <span className="aq-card-desc">{r.body}</span>}
-              </span>
-              <span className="aq-card-badges">
-                <span className="aq-badge-target">{r.reporter_login}</span>
-                <span className={`aq-badge-status ${r.resolved ? 'on' : ''}`}>{r.resolved ? '해결 완료' : '미해결'}</span>
-              </span>
-            </button>
-          ))}
+      <section>
+        <div className="aq-section-head">
+          <span className="aq-section-title">리포트</span>
+          <span className="aq-count">{reports.length}</span>
         </div>
-      )}
+        {loading ? <div className="spinner" /> : reports.length === 0 ? (
+          <p className="muted sm">접수된 리포트가 없습니다.</p>
+        ) : (
+          <div className="aq-cards">
+            {reports.map((r) => (
+              <button key={r.id} type="button" className="aq-card" onClick={() => nav(`/admin/reports/${r.id}`)}>
+                <span className="aq-card-body">
+                  <span className="ar-row">
+                    <span className="aq-card-name">{r.title}</span>
+                    <span className="ar-reporter">{r.reporter_login}</span>
+                  </span>
+                  <span className="ar-row">
+                    {r.body && <span className="aq-card-desc">{r.body}</span>}
+                    <span className={`aq-badge-status ${r.resolved ? 'on' : ''}`}>{r.resolved ? '해결 완료' : '미해결'}</span>
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
