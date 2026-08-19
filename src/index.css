@@ -6239,21 +6239,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .admin-detail dt { color: var(--muted); font-size: 13px; }
 .admin-detail dd { margin: 0; font-weight: 700; text-align: right; word-break: break-all; }
 /* 회원 상세: 역할/상태를 그 자리에서 바로 바꾸는 셀렉트 — 배경 없이 텍스트 + 화살표만,
-   다른 항목과 높이가 같도록 네이티브 크롬을 지우고 화살표만 얇게 직접 그린다 */
+   다른 항목과 높이가 같도록 네이티브 크롬을 지우고, 화살표는 SVG 로 그려 진짜 가운데 정렬되게 한다 */
 .admin-detail-select-wrap { position: relative; display: inline-flex; align-items: center; }
 .admin-detail-select {
   font: inherit; font-weight: 700; font-size: 14px; color: var(--text); text-align: right;
   border: none; background: none; appearance: none; -webkit-appearance: none;
-  padding: 0 15px 0 0; margin: 0; cursor: pointer; min-height: 0;
+  padding: 0 19px 0 0; margin: 0; cursor: pointer; min-height: 0;
 }
 .admin-detail-select:disabled { opacity: .6; cursor: default; }
-.admin-detail-select-wrap::after {
-  content: ''; position: absolute; right: 1px; top: 50%; width: 7px; height: 7px;
-  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
-  transform: translateY(-65%) rotate(45deg); pointer-events: none;
-}
+.admin-detail-select:focus { outline: none; border: none; }
+.admin-detail-select-arrow { position: absolute; right: 1px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 /* 보유 츄르: 클릭하면 지급/차감 모달 */
 .admin-detail-linkval { font: inherit; font-weight: 700; color: var(--primary); background: none; border: none; padding: 0; cursor: pointer; }
+/* 츄르 지급 모달: 필수 항목 표시 */
+.field-req { color: var(--primary); margin-left: 2px; }
 /* 비밀번호 초기화 / 계정 삭제: 흰 카드 바깥, 페이지 배경 위에 한 쌍으로 배치 */
 .admin-detail-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .admin-detail-delete { background: none; border: none; font: inherit; font-weight: 700; font-size: 13px; color: var(--danger); cursor: pointer; padding: 8px; }
