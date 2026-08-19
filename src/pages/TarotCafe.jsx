@@ -13,8 +13,6 @@ import { MAJOR, SPREADS, compat, shuffleDeck, todayKey } from '../lib/tarot'
 // 들고 있다가 sync 로 다시 내려 주므로, 늦게 들어와도 상대가 뽑은 카드가 보인다.
 // 궁합 점수는 두 장의 카드만으로 정해지는 순수 함수라 양쪽에서 같은 값이 나온다.
 
-const FAN = 9                  // 부채에 펼쳐 놓는 카드 수
-
 export default function TarotCafe() {
   const { groupId } = useParams()
   const { profile, isAdmin } = useAuth()
@@ -24,8 +22,9 @@ export default function TarotCafe() {
 
   const [mode, setMode] = useState('one')       // one | three | duo
   const [deck, setDeck] = useState(() => shuffleDeck())
-  const [picks, setPicks] = useState([])        // 내가 고른 카드 [{i,rev}]
-  const [taken, setTaken] = useState([])        // 부채에서 집은 자리(빈 자리 표시용)
+  const [picks, setPicks] = useState([])        // 확정된 카드 [{i,rev}]
+  const [taken, setTaken] = useState([])        // 부채에서 빠진(확정된) 자리 — 빈 자리 표시용
+  const [selected, setSelected] = useState([])  // 확정 전, 위로 들어 올려 고르는 중인 자리(클릭한 순서)
   const [peers, setPeers] = useState({})        // uid -> { name, avatar, pick, mode }
   const [me, setMe] = useState({ name: profile?.login_id || '나', avatar: null })
   const [flipping, setFlipping] = useState(false)
@@ -40,7 +39,7 @@ export default function TarotCafe() {
     listTarotCards().then((list) => {
       if (!on || !list.length) return
       setCards(list)
-      if (list.length !== MAJOR.length) { setDeck(shuffleDeck(list.length)); setPicks([]); setTaken([]) }
+      if (list.length !== MAJOR.length) { setDeck(shuffleDeck(list.length)); setPicks([]); setTaken([]); setSelected([]) }
     }).catch(() => { })
     return () => { on = false }
   }, [])
@@ -131,14 +130,14 @@ export default function TarotCafe() {
   // (고른 카드를 남겨 두면 궁합을 기다리던 화면이 갑자기 혼자 결과로 바뀐다)
   useEffect(() => {
     if (mode !== 'duo' || duoReady) return
-    setMode('one'); setDeck(shuffleDeck()); setPicks([]); setTaken([])
+    setMode('one'); setDeck(shuffleDeck()); setPicks([]); setTaken([]); setSelected([])
     publish({ mode: 'one', pick: null })
   }, [mode, duoReady, publish])
 
   // 새 판: 덱을 다시 섞고 고른 카드를 비운다(상대에게도 초기화를 알린다)
   function reset(nextMode = mode) {
     setShuffling(true)
-    setDeck(shuffleDeck()); setPicks([]); setTaken([])
+    setDeck(shuffleDeck()); setPicks([]); setTaken([]); setSelected([])
     publish({ mode: nextMode, pick: null })
     setTimeout(() => setShuffling(false), 520)
   }
@@ -147,19 +146,28 @@ export default function TarotCafe() {
     setMode(m)
     // 오늘의 카드는 하루 고정 → 다시 섞지 않고 이미 뽑은 카드를 그대로 보여 준다
     if (m === 'one' && dailyCard) {
-      setPicks([dailyCard]); setTaken([]); publish({ mode: m, pick: null })
+      setPicks([dailyCard]); setTaken([]); setSelected([]); publish({ mode: m, pick: null })
     } else {
       reset(m)
     }
   }
-  function pick(slot) {
+  // 클릭 = 바로 확정이 아니라 카드를 위로 들어 올려 고르는/내리는 토글(다시 누르면 취소).
+  // 필요한 장수만큼 들어 올린 뒤 아래 "선택" 버튼을 눌러야 확정된다(들어 올린 순서 = picks 순서).
+  function toggleSelect(slot) {
     if (done || taken.includes(slot) || shuffling) return
-    const card = deck[slot]
-    const next = [...picks, card]
-    setPicks(next); setTaken((t) => [...t, slot])
+    setSelected((s) => {
+      if (s.includes(slot)) return s.filter((x) => x !== slot)
+      if (s.length >= need) return s
+      return [...s, slot]
+    })
+  }
+  function confirmPicks() {
+    if (selected.length < need || shuffling) return
+    const chosen = selected.map((slot) => deck[slot])
+    setPicks(chosen); setTaken((t) => [...t, ...selected]); setSelected([])
     setFlipping(true); setTimeout(() => setFlipping(false), 620)
-    if (mode === 'one') { saveDaily(card); setDailyCard(card) }  // 오늘의 카드 고정
-    if (mode === 'duo') publish({ mode, pick: card })
+    if (mode === 'one') { saveDaily(chosen[0]); setDailyCard(chosen[0]) }  // 오늘의 카드 고정
+    if (mode === 'duo') publish({ mode, pick: chosen[0] })
   }
 
   const pair = mode === 'duo' && picks[0] && partner?.pick ? compat(picks[0], partner.pick, cards) : null
@@ -212,26 +220,31 @@ export default function TarotCafe() {
       {!done && (
         <>
           <div className={`tr-fan${shuffling ? ' shuffling' : ''}`}>
-            {deck.slice(0, FAN).map((_, k) => {
+            {deck.map((_, k) => {
               const used = taken.includes(k)
-              const mid = (FAN - 1) / 2
+              const sel = selected.includes(k)
               return (
-                <button key={k} type="button" className={`tr-slot${used ? ' used' : ''}`}
-                  style={{ '--rot': `${(k - mid) * 4}deg`, '--lift': `${Math.abs(k - mid) * 5}px`, zIndex: k }}
-                  onClick={() => pick(k)} disabled={used} aria-label={`카드 ${k + 1}번 뽑기`}>
+                <button key={k} type="button" className={`tr-slot${used ? ' used' : ''}${sel ? ' selected' : ''}`}
+                  style={{ zIndex: sel ? 30 : k }}
+                  onClick={() => toggleSelect(k)} disabled={used || shuffling} aria-pressed={sel}
+                  aria-label={`카드 ${k + 1}번${sel ? ' 선택 해제' : ' 선택'}`}>
                   <CardBack />
+                  {sel && need > 1 && <span className="tr-slot-order">{selected.indexOf(k) + 1}</span>}
                 </button>
               )
             })}
           </div>
           <p className="tr-count">
-            {need - picks.length}장 더 고르세요
+            {selected.length >= need ? '카드를 다 골랐어요' : `${need - selected.length}장 더 고르세요`}
             {mode === 'duo' && partner && (
               <span className="tr-peer-state">
                 {' · '}{partner.pick ? `${partner.name} 님은 다 골랐어요` : `${partner.name} 님도 고르는 중`}
               </span>
             )}
           </p>
+          <button type="button" className="tr-confirm" disabled={selected.length < need || shuffling} onClick={confirmPicks}>
+            선택
+          </button>
         </>
       )}
 
