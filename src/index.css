@@ -6066,6 +6066,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .aq-card-reward { font-size: 13px; font-weight: 700; color: #191722; flex-shrink: 0; white-space: nowrap; align-self: center; }
 .aq-card-badges-desktop { display: none; }
 .aq-card-chevron { display: none; }
+/* 오류 리포트 카드: 제목 줄 우측에 아이디(일반 텍스트), 내용 줄 우측에 상태 배지 */
+.ar-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ar-row > .aq-card-name, .ar-row > .aq-card-desc { flex: 1; min-width: 0; }
+.ar-reporter { flex-shrink: 0; margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.ar-row > .aq-badge-status { flex-shrink: 0; margin-left: auto; }
 /* 비활성(숨김) 아이템/퀘스트: 카드 배경을 살짝 어둡게, 내부 텍스트·아이콘은 흐릿하게 */
 .aq-card.inactive { background: #f4f2f5; }
 .aq-card.inactive .aq-card-icon { opacity: .55; }
