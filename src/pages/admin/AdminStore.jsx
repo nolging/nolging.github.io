@@ -40,6 +40,15 @@ export default function AdminStore() {
   useEffect(() => { load() }, [load])
   useScrollRestore(!loading) // 상세 → 뒤로가기 시 목록 스크롤 위치 복원
 
+  // 탭(일반/프리미엄) 전환 시 직전 탭의 스크롤 위치가 그대로 남아있지 않게 맨 위로.
+  // 최초 마운트(상세→뒤로가기로 복원된 직후 포함) 때는 건드리지 않도록 첫 실행은 건너뜀.
+  const tabMounted = useRef(false)
+  useEffect(() => {
+    if (!tabMounted.current) { tabMounted.current = true; return }
+    const el = document.querySelector('.content')
+    if (el) el.scrollTop = 0
+  }, [tab])
+
   const flushSave = useCallback(async () => {
     const ups = [...pendingRef.current.entries()].map(([id, sortOrder]) => ({ id, sortOrder }))
     pendingRef.current.clear()
