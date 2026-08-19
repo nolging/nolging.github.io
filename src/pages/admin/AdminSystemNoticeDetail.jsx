@@ -38,12 +38,21 @@ function splitDateTime(iso) {
 // renderNameExtra: 이름 바로 오른쪽에 붙는 요소(회원 역할 배지). renderRight: 행 우측 끝, 체크 앞에 붙는 요소(그룹 멤버 아바타).
 function PickerModal({ open, onClose, title, rows, selected, onToggle, renderNameExtra, renderRight }) {
   const [q, setQ] = useState('')
+  const searchRef = useRef(null)
   useEffect(() => { if (open) setQ('') }, [open])
+  // 모달이 뜨는 애니메이션과 동시에 키보드가 올라오면 visualViewport 가 계속 흔들리며
+  // 리사이즈되어(Modal.jsx 의 --vvh/--kb-shift 재계산과 겹침) 화면이 떨리고 스크롤도 먹통이 된다.
+  // 모달 오픈 트랜지션(~200ms)이 끝난 뒤에 포커스를 줘서 두 애니메이션이 겹치지 않게 한다.
+  useEffect(() => {
+    if (!open) return
+    const t = setTimeout(() => searchRef.current?.focus(), 260)
+    return () => clearTimeout(t)
+  }, [open])
   const t = q.trim().toLowerCase()
   const filtered = t ? rows.filter((r) => r.name.toLowerCase().includes(t)) : rows
   return (
     <Modal open={open} onClose={onClose} title={title} cardClassName="sn-picker-modal">
-      <input className="sn-picker-search" placeholder="검색" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+      <input ref={searchRef} className="sn-picker-search" placeholder="검색" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="filter-groups sn-picker-list">
         {filtered.length === 0 ? <p className="muted sm">결과가 없어요.</p> : filtered.map((r) => {
           const on = selected.includes(r.id)
@@ -253,11 +262,16 @@ export default function AdminSystemNoticeDetail() {
             </div>
           )}
 
-          <div className="admin-notif-preview sn-preview">
-            <span className="admin-notif-preview-ico" style={{ background: form.emojiBg || DEFAULT_BG }} aria-hidden="true">{form.emoji || DEFAULT_EMOJI}</span>
-            <div>
-              <div className="admin-notif-preview-t">{form.title || '제목'}</div>
-              <div className="admin-notif-preview-b">{form.body || '본문'}</div>
+          {/* 알림 센터에 실제로 뜨는 안 읽음 카드와 동일한 클래스를 그대로 재사용한 미리보기 */}
+          <div className="notif unread sn-preview">
+            <span className="notif-icon" style={{ background: form.emojiBg || DEFAULT_BG }} aria-hidden="true">{form.emoji || DEFAULT_EMOJI}</span>
+            <div className="notif-body">
+              <div className="notif-top">
+                <div className="notif-line">
+                  <span className="notif-title-text">{form.title || '제목'}</span>
+                </div>
+              </div>
+              <p className="notif-text">{form.body || '본문'}</p>
             </div>
           </div>
 
