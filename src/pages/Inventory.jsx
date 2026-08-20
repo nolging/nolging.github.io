@@ -185,7 +185,7 @@ export default function Inventory() {
       else setLottoOpen(true)
     }
     else if (g.id === 'secret-board') { setBoardItemName(g.name); setBoardOpen(true) }
-    else if (g.id === 'question-workshop') { setQworkshopItemName(g.name); setQworkshopOpen(true) }
+    else if (g.id === 'question-board') { setQworkshopItemName(g.name); setQworkshopOpen(true) }
     else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
@@ -784,7 +784,7 @@ function QworkshopApplyModal({ open, onClose, onDone, itemName }) {
   return (
     <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
       <div className="couple-modal">
-        <ItemHead id="question-workshop" name={itemName || '물음표 공방'} sub="프리미엄 그룹에 만들어요" emoji="❓" />
+        <ItemHead id="question-board" name={itemName || '물음표 공방'} sub="프리미엄 그룹에 만들어요" emoji="❓" />
         {error && <div className="alert alert-error">{error}</div>}
         <label className="field">
           <span>추가할 그룹</span>
