@@ -239,6 +239,19 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
     catch (e) { setErr(e.message) } finally { setSubmitting(false) }
   }
 
+  const voterModalEl = (
+    <Modal open={!!voterModal} onClose={() => setVoterModal(null)} title={voterModal?.label}>
+      <ul className="qw-voter-list">
+        {(voterModal?.voters || []).map((v) => (
+          <li key={v.author_id} className="qw-voter-list-item">
+            <Avatar src={v.avatar_url} name={v.nickname} size={32} />
+            <span>{v.nickname}</span>
+          </li>
+        ))}
+      </ul>
+    </Modal>
+  )
+
   if (post.type === 'vs') {
     const opts = post.options || []
     const answered = av.has_answered
@@ -260,16 +273,7 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
           ))}
           <span className="qw-vs-mid">VS</span>
         </div>
-        <Modal open={!!voterModal} onClose={() => setVoterModal(null)} title={voterModal?.label}>
-          <ul className="qw-voter-list">
-            {(voterModal?.voters || []).map((v) => (
-              <li key={v.author_id} className="qw-voter-list-item">
-                <Avatar src={v.avatar_url} name={v.nickname} size={32} />
-                <span>{v.nickname}</span>
-              </li>
-            ))}
-          </ul>
-        </Modal>
+        {voterModalEl}
       </div>
     )
   }
@@ -277,23 +281,22 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
   if (post.type === 'poll') {
     const opts = post.options || []
     const answered = av.has_answered
-    const counts = av.counts || opts.map(() => 0)
-    const total = counts.reduce((a, b) => a + b, 0) || 1
     const myIdx = av.my_answer?.option_idx
+    const byOption = answered ? opts.map((_, i) => (av.answers || []).filter((a) => a.option_idx === i)) : opts.map(() => [])
     return (
       <div className="qw-poll">
-        {opts.map((label, i) => {
-          const pct = Math.round((counts[i] / total) * 100)
-          return (
-            <button type="button" key={i} disabled={submitting}
-              className={`qw-poll-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}`}
-              onClick={() => pick(i)}>
-              {answered && <span className="qw-poll-fill" style={{ width: `${pct}%` }} />}
-              <span className="qw-poll-label">{label}</span>
-              {answered && <span className="qw-poll-pct">{counts[i]} · {pct}%</span>}
-            </button>
-          )
-        })}
+        {opts.map((label, i) => (
+          <div key={i} role="button" tabIndex={0}
+            className={`qw-poll-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}${submitting ? ' disabled' : ''}`}
+            onClick={() => pick(i)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i) } }}>
+            <span className="qw-poll-label">{label}</span>
+            {byOption[i].length > 0 && (
+              <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
+            )}
+          </div>
+        ))}
+        {voterModalEl}
       </div>
     )
   }
