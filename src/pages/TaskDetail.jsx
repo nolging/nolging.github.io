@@ -23,6 +23,21 @@ import AppointmentEditModal from '../components/AppointmentEditModal'
 
 const REVIEW_MAX = 150 // 리뷰 코멘트 최대 글자 수
 
+// 약속 날짜 드롭다운의 수정/삭제 원형 버튼 아이콘
+const EditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+)
+const TrashIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+)
+
 // 0.5 단위 별점 셀 (회색 별 위에 금색 별을 width% 만큼 덮어 반 개 표현)
 function starCells(value) {
   return [1, 2, 3, 4, 5].map((i) => {
@@ -433,7 +448,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
     if (embedded && onEdit) { onEdit('appointment', taskId, appointmentId); return } // PC 임베드: 가운데에서 편집
     navigate(`/groups/${groupId}/tasks/${taskId}/schedule`, { state: { embed: embedded, appointmentId } })
   }
-  function openAddAppointment() { setHeadMenu(false); setApptAddOpen(true) }
+  function openAddAppointment() { setDateDdOpen(false); setApptAddOpen(true) }
   async function onAppointmentAdded() { setApptAddOpen(false); await load() }
   function openDateEdit(a) { setDateDdOpen(false); setDateEditTarget(a) }
   async function onDateEdited() { setDateEditTarget(null); await load() }
@@ -707,7 +722,6 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
                     <button type="button" onClick={goEditAppointment}>수정</button>
-                    {!isDone && <button type="button" onClick={openAddAppointment}>일정 추가</button>}
                     {!isDone && <button type="button" onClick={doCancelAppointment}>약속 취소</button>}
                     {isDone && reviews.length === 0 && <button type="button" onClick={doRevertAppointment}>약속으로 되돌리기</button>}
                     {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
@@ -749,18 +763,23 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
       <div className="td-actions">
         {task.scheduled_at && (
           <div className="td-appt appt-when">
-            <CalendarIcon className="appt-cal" size={15} />
-            <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
-            {appointments.length > 1 && (
-              <button type="button" className="appt-dates-toggle" aria-label="약속 날짜 목록"
+            {appointments.length > 0 ? (
+              <button type="button" className="appt-when-btn" aria-label="약속 날짜 목록" aria-expanded={dateDdOpen}
                 onClick={() => setDateDdOpen((v) => !v)}>
+                <CalendarIcon className="appt-cal" size={15} />
+                <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
+            ) : (
+              <>
+                <CalendarIcon className="appt-cal" size={15} />
+                <span>{formatWhen(task.scheduled_at, task.scheduled_time_set)}</span>
+              </>
             )}
-            {appointments.length > 1 && dateDdOpen && (
+            {appointments.length > 0 && dateDdOpen && (
               <>
                 <div className="menu-backdrop" onClick={() => setDateDdOpen(false)} />
                 <ul className="appt-dates-dd" role="menu">
@@ -768,11 +787,17 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
                     <li key={a.id} className="appt-dates-dd-row">
                       <span className="appt-dates-dd-when">{a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정'}</span>
                       <span className="appt-dates-dd-actions">
-                        <button type="button" className="appt-dd-pill" onClick={() => openDateEdit(a)}>수정</button>
-                        <button type="button" className="appt-dd-pill appt-dd-pill-danger" onClick={() => deleteOneAppointment(a)}>삭제</button>
+                        {a.participant_ids?.length > 0 && (
+                          <MemberStack groupId={groupId} userIds={a.participant_ids} nameOf={nameOf} avatarOf={avatarOf} decoOf={decoOf} size={20} max={3} />
+                        )}
+                        <button type="button" className="appt-dd-icon-btn" aria-label="수정" onClick={() => openDateEdit(a)}><EditIcon /></button>
+                        <button type="button" className="appt-dd-icon-btn appt-dd-icon-btn-danger" aria-label="삭제" onClick={() => deleteOneAppointment(a)}><TrashIcon /></button>
                       </span>
                     </li>
                   ))}
+                  <li className="appt-dates-dd-row appt-dates-dd-add">
+                    <button type="button" className="appt-dates-dd-addbtn" onClick={openAddAppointment}>+ 새 일정 추가</button>
+                  </li>
                 </ul>
               </>
             )}
