@@ -3,7 +3,7 @@ import Modal from './Modal'
 import LedBanner, { LED_COLORS } from './LedBanner'
 import StoreItemImage from './StoreItemImage'
 import { imgBgOf } from '../lib/storeMeta'
-import { useLedboard, editLedBanner, stopLedBanner, getMyLedBanner, takeoverLedboard } from '../lib/api'
+import { useLedboard, editLedBanner, stopLedBanner, getMyLedBanner, takeoverLedboard, touchQuest } from '../lib/api'
 
 export const MAX_LED_TEXT = 60
 
@@ -49,7 +49,7 @@ export function LedboardModal({ open, onClose, onDone, refreshCoin }) {
       // 이미 게재 중인(상대) 전광판이 있으면 권한 가져오기 확인
       const b = await getMyLedBanner()
       if (b && !b.is_owner) { setTakeover(b); setSending(false); return }
-      await useLedboard({ text: text.trim(), color }); await onDone(); onClose()
+      await useLedboard({ text: text.trim(), color }); touchQuest('r_ledboard'); await onDone(); onClose()
     } catch (e) { setError(e.message); setSending(false) }
   }
   async function doTakeover() {

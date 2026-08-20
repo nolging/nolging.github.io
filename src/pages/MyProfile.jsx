@@ -8,10 +8,11 @@ import { GRADE_LABEL } from '../lib/membership'
 // 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
 const QUEST_TARGET = {
   visit: '/', note: '/notes/new',
-  r_wish: '/', r_item_note: '/notes/new', r_nyangpito: '/inventory',
+  r_wish: '/notes/new', r_item_note: '/notes/new', r_nyangpito: '/inventory',
   r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
   r_waterbomb: '/notes/new', r_deco: '/inventory', r_schedule: '/schedule',
   r_premium_shop: '/store',
+  r_nametag: '/inventory', r_ledboard: '/inventory', r_eraser: '/notes/new',
 }
 
 // 퀘스트 키 → 아이콘/파스텔 (데일리 + 랜덤 시드). 랜덤 이모지는 DB(quest_defs.emoji) 우선, bg 는 이 표 사용.
@@ -36,6 +37,10 @@ const QUEST_ICON = {
   r_review: { emoji: '⭐', bg: '#fbf1d3' },
   r_first_comment: { emoji: '💬', bg: '#e8f4ec' },
   r_schedule: { emoji: '🗓', bg: '#eef1fb' },
+  r_nametag: { emoji: '🏷️', bg: '#fde8ee' },
+  r_sticker: { emoji: '⭐', bg: '#eeebfe' },
+  r_ledboard: { emoji: '📟', bg: '#e6eefd' },
+  r_eraser: { emoji: '🧽', bg: '#e6f4fb' },
 }
 const questIcon = (key) => QUEST_ICON[key] || { emoji: '✨', bg: '#eef0f2' }
 
@@ -211,6 +216,7 @@ export default function MyProfile() {
   function questRoute(key) {
     switch (key) {
       case 'r_date': return coupleGid ? `/groups/${coupleGid}/members` : '/'
+      case 'r_sticker': return coupleGid ? `/groups/${coupleGid}/praise` : '/'
       case 'r_doodle': return grade === 'vvip'
         ? (coupleGid ? `/groups/${coupleGid}/draw` : '/')
         : (friendGid ? `/groups/${friendGid}/draw` : '/')

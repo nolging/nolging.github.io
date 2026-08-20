@@ -3,7 +3,7 @@ import { useParams, useNavigate, useOutletContext, useSearchParams } from 'react
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import { Sticker, fruitBg } from '../components/StickerFruit'
-import { praiseGet, praisePlace, praiseEdit, praiseClaim, praiseBoardGet } from '../lib/api'
+import { praiseGet, praisePlace, praiseEdit, praiseClaim, praiseBoardGet, touchQuest } from '../lib/api'
 
 // 소원권 티켓(자체 반짝이 제거 버전) — 수령 오버레이 전용. viewBox 를 티켓에 딱 맞춰 크게 보이게.
 function WishTicket() {
@@ -193,7 +193,7 @@ export default function PraiseStickers() {
     if (!text) return
     setBusy(true); setError('')
     try {
-      if (modal.mode === 'write') await praisePlace(groupId, modal.ownerId, modal.slot, text)
+      if (modal.mode === 'write') { await praisePlace(groupId, modal.ownerId, modal.slot, text); touchQuest('r_sticker') }
       else await praiseEdit(modal.sticker.id, text)
       setModal(null); await load()
     } catch (err) { setError(err.message) } finally { setBusy(false) }

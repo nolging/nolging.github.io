@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap, touchQuest } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -1422,7 +1422,7 @@ function NameTagModal({ open, coupleGroupId, myId, onClose, onDone }) {
     if (!nick.trim()) { setError('변경할 이름을 입력해 주세요.'); return }
     if (inFlight.current) return
     setBusy(true); setError(''); inFlight.current = true
-    try { await useNameTag(coupleGroupId, nick.trim()); await onDone?.(); onClose() }
+    try { await useNameTag(coupleGroupId, nick.trim()); touchQuest('r_nametag'); await onDone?.(); onClose() }
     catch (e) { setError(e.message) }
     finally { inFlight.current = false; setBusy(false) }   // 성공 시에도 반드시 해제
   }
