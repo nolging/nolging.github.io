@@ -198,6 +198,9 @@ export default function Layout() {
   const rpsMatch = useMatch('/groups/:groupId/rps')
   const tarotMatch = useMatch('/groups/:groupId/tarot')
   const qworkshopMatch = useMatch('/groups/:groupId/qworkshop')
+  const qworkshopNewMatch = useMatch('/groups/:groupId/qworkshop/new')
+  const qworkshopEditMatch = useMatch('/groups/:groupId/qworkshop/:postId/edit')
+  const qworkshopPostMatch = useMatch('/groups/:groupId/qworkshop/:postId')
   const boardMatch = useMatch('/groups/:groupId/board')
   const boardNewMatch = useMatch('/groups/:groupId/board/new')
   const boardSearchMatch = useMatch('/groups/:groupId/board/search')
@@ -584,8 +587,23 @@ export default function Layout() {
         <span className="topbar-heading">타로 카페</span>
       </header>
     )
+  } else if (qworkshopNewMatch || qworkshopEditMatch) {
+    // 물음표 작성/수정: 좌측 ✕(닫기) · 우측 등록/수정(페이지가 등록한 제출 핸들러 호출)
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="닫기" title="닫기"><CloseIcon /></button>
+        <button type="button" onClick={() => headerSubmit?.()} className="sb-post-btn push-right">{qworkshopEditMatch ? '수정' : '등록'}</button>
+      </header>
+    )
+  } else if (qworkshopPostMatch) {
+    // 물음표 상세: 제목 없이 좌측 뒤로 화살표만(수정/삭제는 본문 안 인페이지 메뉴로)
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+      </header>
+    )
   } else if (qworkshopMatch) {
-    // 물음표 공방: 좌측 뒤로, 제목
+    // 물음표 공방 목록: 좌측 뒤로, 제목
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>

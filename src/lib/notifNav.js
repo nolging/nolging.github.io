@@ -24,6 +24,8 @@ export const NOTIF_ICONS = {
   board_post: '🤫',
   board_comment: '💬',
   board_reply: '↩︎',
+  qworkshop_comment: '💬',
+  qworkshop_reply: '↩︎',
   praise_new: '🌟',
   megaphone: '📣',
   error_report: '🐞',
@@ -57,6 +59,8 @@ export function notifTarget(n) {
   if (n.type === 'board_post' && n.group_id && n.post_id) return `/groups/${n.group_id}/board/${n.post_id}`   // 새 글 → 글 상세
   if ((n.type === 'board_comment' || n.type === 'board_reply') && n.group_id && n.post_id)
     return `/groups/${n.group_id}/board/${n.post_id}/comments${n.board_comment_id ? `?c=${n.board_comment_id}` : ''}`   // 댓글/답글 → 댓글 상세 + 포커스
+  if ((n.type === 'qworkshop_comment' || n.type === 'qworkshop_reply' || n.type === 'mention') && n.group_id && n.qworkshop_post_id)
+    return `/groups/${n.group_id}/qworkshop/${n.qworkshop_post_id}`   // 물음표 댓글/답글/멘션 → 물음표 상세(댓글은 인라인)
   if (n.type === 'nametag' && n.group_id) return `/groups/${n.group_id}/members`   // 명찰 → 데이트 페이지
   if (n.type === 'purin_mic' && n.group_id) return `/groups/${n.group_id}/members` // 푸린 마이크 → 데이트 페이지
   if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
