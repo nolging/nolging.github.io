@@ -1420,6 +1420,66 @@ export async function setupQworkshop(groupId) {
   return data
 }
 
+// ---- 물음표 공방 콘텐츠(글/답변/댓글) ----
+const qworkshopNotReady = (error, fn) =>
+  error && (error.code === 'PGRST202' || error.code === '42883' || new RegExp(fn).test(error.message || ''))
+
+export async function listQworkshopPosts(groupId) {
+  const { data, error } = await supabase.rpc('qworkshop_posts', { p_group: groupId })
+  if (error) { if (qworkshopNotReady(error, 'qworkshop_posts')) return []; throw error }
+  return data ?? []
+}
+export async function createQworkshopPost(groupId, type, question, body, options) {
+  const { data, error } = await supabase.rpc('qworkshop_create_post', {
+    p_group: groupId, p_type: type, p_question: question, p_body: body ?? '', p_options: options ?? [],
+  })
+  if (error) { if (qworkshopNotReady(error, 'qworkshop_create_post')) throw new Error('물음표 공방이 아직 DB에 설정되지 않았습니다. (qworkshop-content.sql 을 먼저 적용해 주세요)'); throw error }
+  return data
+}
+export async function updateQworkshopPost(id, question, body, options) {
+  const { error } = await supabase.rpc('qworkshop_update_post', { p_id: id, p_question: question, p_body: body ?? '', p_options: options ?? [] })
+  if (error) throw error
+}
+export async function deleteQworkshopPost(id) {
+  const { error } = await supabase.rpc('qworkshop_delete_post', { p_id: id })
+  if (error) throw error
+}
+
+// 답/선택 열람(게이팅): { has_answered, my_answer, answers:[...], counts } — 내가 답하기 전엔 남의 답이 null.
+export async function getQworkshopAnswers(postId) {
+  const { data, error } = await supabase.rpc('qworkshop_answers_view', { p_post: postId })
+  if (error) { if (qworkshopNotReady(error, 'qworkshop_answers_view')) return { has_answered: false, my_answer: null, answers: [], counts: null }; throw error }
+  return data || { has_answered: false, my_answer: null, answers: [], counts: null }
+}
+export async function submitQworkshopAnswer(postId, optionIdx, answerText) {
+  const { data, error } = await supabase.rpc('qworkshop_answer_submit', {
+    p_post: postId, p_option_idx: optionIdx ?? null, p_answer_text: answerText ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function listQworkshopComments(postId) {
+  const { data, error } = await supabase.rpc('qworkshop_comments', { p_post: postId })
+  if (error) { if (qworkshopNotReady(error, 'qworkshop_comments')) return []; throw error }
+  return data ?? []
+}
+export async function addQworkshopComment(postId, parentId, body, mentionedIds) {
+  const { data, error } = await supabase.rpc('qworkshop_add_comment', {
+    p_post: postId, p_parent: parentId || null, p_body: body, p_mentioned_ids: mentionedIds && mentionedIds.length ? mentionedIds : null,
+  })
+  if (error) throw error
+  return data
+}
+export async function updateQworkshopComment(id, body) {
+  const { error } = await supabase.rpc('qworkshop_update_comment', { p_id: id, p_body: body })
+  if (error) throw error
+}
+export async function deleteQworkshopComment(id) {
+  const { error } = await supabase.rpc('qworkshop_delete_comment', { p_id: id })
+  if (error) throw error
+}
+
 // ---- 확성기(그룹 전체 알림) ----
 export async function sendMegaphone(groupId, body) {
   const { data, error } = await supabase.rpc('megaphone_send', { p_group: groupId, p_body: body })

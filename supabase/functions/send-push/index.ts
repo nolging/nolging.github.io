@@ -78,6 +78,8 @@ Deno.serve(async (req) => {
     } else if ((record.type === 'board_comment' || record.type === 'board_reply') && record.group_id && record.post_id) {
       url = `/groups/${record.group_id}/board/${record.post_id}/comments` // 내 글 댓글 / 내 댓글 답글 → 댓글 상세
       if (record.board_comment_id) url += `?c=${record.board_comment_id}` // 해당 댓글/답글로 포커스
+    } else if ((record.type === 'qworkshop_comment' || record.type === 'qworkshop_reply' || record.type === 'mention') && record.group_id && record.qworkshop_post_id) {
+      url = `/groups/${record.group_id}/qworkshop/${record.qworkshop_post_id}` // 물음표 댓글/답글/멘션 → 물음표 상세
     } else if (record.type === 'nametag' && record.group_id) {
       url = `/groups/${record.group_id}/members` // 연인이 내 이름 변경 → 데이트 페이지
     } else if (record.type === 'purin_mic' && record.group_id) {
