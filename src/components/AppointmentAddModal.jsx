@@ -52,7 +52,7 @@ export default function AppointmentAddModal({ open, onClose, taskId, groupId, me
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
           <button type="submit" className="cg-btn-primary appt-add-submit" disabled={saving}>
-            {saving ? '추가 중…' : '약속 추가'}
+            {saving ? '추가 중…' : '일정 추가'}
           </button>
         </div>
       </form>

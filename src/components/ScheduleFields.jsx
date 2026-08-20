@@ -102,7 +102,7 @@ export function SelectPill({ value, onChange, options, className = '' }) {
   )
 }
 
-export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true }) {
+export default function ScheduleFields({ value, onChange, members = [], meId, authorId, showTitle = true, boxed = true, labelExtra = null }) {
   const v = value
   const set = (patch) => onChange(patch)
   const toggleWeekday = (i) => {
@@ -117,8 +117,16 @@ export default function ScheduleFields({ value, onChange, members = [], meId, au
   return (
     <>
       {/* 일정 — boxed(전체 페이지)일 땐 위 섹션과 간격을 두고, 모달(boxed=false)에선
-          이 라벨이 맨 위 요소라 여백을 더하지 않는다 */}
-      {showTitle && <div className={`cg-label ${boxed ? 'cg-mt-24' : ''}`}>일정</div>}
+          이 라벨이 맨 위 요소라 여백을 더하지 않는다. labelExtra 가 있으면 라벨과 같은
+          줄 우측 끝에 나란히 놓는다("+ 새 일정 추가" 등). */}
+      {showTitle && (labelExtra ? (
+        <div className={`cg-label-row ${boxed ? 'cg-mt-24' : ''}`}>
+          <div className="cg-label">일정</div>
+          {labelExtra}
+        </div>
+      ) : (
+        <div className={`cg-label ${boxed ? 'cg-mt-24' : ''}`}>일정</div>
+      ))}
       <div className={boxed ? 'cg-list cg-mt-12' : 'cg-mt-12'}>
         <div className="cg-row">
           <span className="cg-row-icon" style={{ background: '#e6eefd' }}>📅</span>

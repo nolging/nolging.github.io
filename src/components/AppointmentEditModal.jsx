@@ -50,7 +50,7 @@ export default function AppointmentEditModal({ open, appointment, groupId, meId,
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
           <button type="submit" className="cg-btn-primary appt-add-submit" disabled={saving}>
-            {saving ? '저장 중…' : '약속 수정'}
+            {saving ? '저장 중…' : '일정 수정'}
           </button>
         </div>
       </form>

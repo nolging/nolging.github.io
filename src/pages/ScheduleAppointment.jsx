@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, listTaskAppointments, scheduleTask, rescheduleTask,
-  updateTask, updateTaskMedia,
+  addAppointment, updateTask, updateTaskMedia,
 } from '../lib/api'
 import { resolveCategories, catMeta, catChipEmoji, MEDIA_LOOKUP_CATS, workNoun, workSearchHint, formatWhen } from '../lib/constants'
 import ScheduleFields, { defaultSchedule, buildSchedulePayload, scheduleFromAppointment, SelectPill } from '../components/ScheduleFields'
@@ -42,6 +42,13 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const [mediaInfo, setMediaInfo] = useState(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [wishErr, setWishErr] = useState('')
+
+  // "+ 새 일정 추가" — 이 위시에 일정을 하나 더 붙인다(위 폼은 기존 약속 하나를 고쳐
+  // 쓰는 용도라 별개). 참여자 풀은 위에서 이미 로드한 participantPool 을 그대로 쓴다.
+  const [addOpen, setAddOpen] = useState(false)
+  const [addSched, setAddSched] = useState(defaultSchedule)
+  const [addSaving, setAddSaving] = useState(false)
+  const [addError, setAddError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -89,6 +96,24 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const pickerMembers = isReschedule ? members.filter((mm) => participantPool.includes(mm.user_id)) : members
   // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
   const needChoose = pickerMembers.length >= 2
+
+  function toggleAdd() {
+    if (addOpen) { setAddOpen(false); return }
+    setAddError('')
+    setAddSched({ ...defaultSchedule(), dateOn: true, participants: participantPool })
+    setAddOpen(true)
+  }
+
+  async function submitAdd() {
+    if (addSaving) return
+    setAddSaving(true); setAddError('')
+    try {
+      const participantIds = pickerMembers.length >= 2 ? addSched.participants : pickerMembers.map((m) => m.user_id)
+      await addAppointment(taskId, { ...buildSchedulePayload(addSched), participantIds })
+      setAddOpen(false)
+      await load()
+    } catch (err) { setAddError(err.message) } finally { setAddSaving(false) }
+  }
 
   function pickCategory(c) {
     const next = category === c ? '' : c
@@ -216,7 +241,21 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
         )}
 
         <ScheduleFields value={sched} onChange={(patch) => setSched((s) => ({ ...s, ...patch }))}
-          members={pickerMembers} meId={profile.id} authorId={task.created_by} />
+          members={pickerMembers} meId={profile.id} authorId={task.created_by}
+          labelExtra={isReschedule && (
+            <button type="button" className="cg-add-link" onClick={toggleAdd}>{addOpen ? '취소' : '+ 새 일정 추가'}</button>
+          )} />
+
+        {isReschedule && addOpen && (
+          <div className="cg-mt-24">
+            <ScheduleFields value={addSched} onChange={(patch) => setAddSched((s) => ({ ...s, ...patch }))}
+              members={pickerMembers} meId={profile.id} authorId={task.created_by} showTitle={false} />
+            {addError && <div className="alert alert-error cg-mt-16">{addError}</div>}
+            <button type="button" className="cg-btn-primary cg-mt-16" disabled={addSaving} onClick={submitAdd}>
+              {addSaving ? '추가 중…' : '일정 추가'}
+            </button>
+          </div>
+        )}
 
         {error && <div className="alert alert-error cg-mt-16">{error}</div>}
         <div className="cg-footer">
