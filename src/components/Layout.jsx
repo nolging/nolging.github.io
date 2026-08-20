@@ -184,7 +184,13 @@ export default function Layout() {
   const navigate = useNavigate()
   // 항상 지정된 상위 페이지로 replace 이동. 실제 브라우저 히스토리(navigate(-1))에 기대지
   // 않으므로, 콜드스타트로 곧장 진입한 경우든 아니든 뒤로가기 결과가 항상 예측 가능하다.
-  const backOr = (fallbackPath) => navigate(fallbackPath, { replace: true })
+  // state 를 함께 넘기면(예: 멤버 페이지 자신의 뒤로가기 목적지) 그 목적지 페이지의 뒤로가기도
+  // 이어서 올바르게 계산된다 — replace 이동은 실제 back 과 달리 이전 엔트리의 state 를 이어받지 않기 때문.
+  const backOr = (fallbackPath, state) => navigate(fallbackPath, { replace: true, state })
+  // 멤버 페이지(하위 기능의 "뒤로") 로 돌아갈 때 넘길 state: 그 하위 기능에 들어올 때
+  // GroupMembers.jsx 가 함께 넘겨준 membersBackTo 가 '/'(그룹 홈)였다면, 멤버 페이지 자신의
+  // 뒤로가기도 그룹 홈으로 가도록 from:'home' 을 이어서 전달한다.
+  const membersReturnState = location.state?.membersBackTo === '/' ? { from: 'home' } : undefined
   const groupConfigMatch = useMatch('/groups/:groupId/settings/group')
   const settingsMatch = useMatch('/groups/:groupId/settings')
   const membersMatch = useMatch('/groups/:groupId/members')
@@ -575,7 +581,7 @@ export default function Layout() {
     // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로, 직전 히스토리 없으면(푸시 콜드스타트) 데이트 페이지로
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${touchMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${touchMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
@@ -596,10 +602,13 @@ export default function Layout() {
       </header>
     )
   } else if (qworkshopPostMatch) {
-    // 물음표 상세: 제목 없이 좌측 뒤로 화살표만(수정/삭제는 본문 안 인페이지 메뉴로)
+    // 물음표 상세: 제목 없이 좌측 뒤로 화살표만(수정/삭제는 본문 안 인페이지 메뉴로).
+    // 목록에서 받은 membersBackTo 를 그대로 이어서 넘겨, 목록에서 또 뒤로 갈 때도 안 끊기게 한다.
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button"
+          onClick={() => backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`, location.state?.membersBackTo ? { membersBackTo: location.state.membersBackTo } : undefined)}
+          className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
       </header>
     )
   } else if (qworkshopMatch) {
@@ -607,7 +616,7 @@ export default function Layout() {
     // 고정 목적지), 제목
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${qworkshopMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${qworkshopMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">물음표 공방</span>
       </header>
     )
@@ -695,7 +704,7 @@ export default function Layout() {
     // 다른 커플 공간 하위 페이지들처럼 고정 목적지로 고정한다), 제목, (관리 권한 시) 우측 톱니바퀴 → 설정 페이지
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${boardMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${boardMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {headerGear && (
           <button type="button" onClick={() => headerGear()} className="btn btn-ghost btn-sm icon-btn push-right"
@@ -725,7 +734,7 @@ export default function Layout() {
     const hasMenu = headerMenu?.items?.length > 0
     topbar = (
       <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
-        <button type="button" onClick={() => backOr(`/groups/${praiseMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${praiseMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
         {hasMenu && (
           <div className="praise-menu-wrap">
