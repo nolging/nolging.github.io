@@ -26,6 +26,8 @@ export const NOTIF_ICONS = {
   board_reply: '↩︎',
   qworkshop_comment: '💬',
   qworkshop_reply: '↩︎',
+  new_memory: '📔',
+  new_review: '⭐',
   praise_new: '🌟',
   megaphone: '📣',
   error_report: '🐞',
@@ -65,6 +67,8 @@ export function notifTarget(n) {
   if (n.type === 'purin_mic' && n.group_id) return `/groups/${n.group_id}/members` // 푸린 마이크 → 데이트 페이지
   if (n.type === 'ledboard' && n.group_id) return `/groups/${n.group_id}`          // 전광판 → 그룹 홈
   if (n.type === 'megaphone' && n.group_id) return `/groups/${n.group_id}`         // 확성기 → 그룹 홈
+  if ((n.type === 'new_memory' || n.type === 'new_review') && n.task_id && n.group_id)
+    return `/groups/${n.group_id}/tasks/${n.task_id}?tab=reviews`   // 새 추억/새 리뷰 → 추억 상세(리뷰 탭)
   if (n.task_id && n.group_id) {
     const base = `/groups/${n.group_id}/tasks/${n.task_id}`
     return n.comment_id ? `${base}?c=${n.comment_id}` : base
