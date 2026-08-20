@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getGroup, getTask, listMemberCards, listTaskParticipants, listTaskAppointments, scheduleTask, rescheduleTask,
@@ -17,6 +17,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const { profile } = useAuth()
   const navigate = useNavigate()
   const locState = useLocation().state
+  const { setHeaderTitle } = useOutletContext() ?? {}
   // embedded: GroupDetail 가운데에 임베드 렌더(라우트 이동 없음) → 저장 후 onSaved 콜백.
   // embed(state): 풀페이지 진입이지만 PC 임베드 상세로 복귀해야 하는 경우.
   const embed = locState?.embed
@@ -80,6 +81,14 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   }, [groupId, taskId, profile.id, appointmentIdParam])
   useEffect(() => { load() }, [load])
 
+  // 상단바 제목: 놀기 신청(위시→약속) 은 그대로 "약속 잡기"(Layout 기본값), 약속 수정은
+  // "약속 변경", 추억 수정은 "추억 수정".
+  useEffect(() => {
+    if (!setHeaderTitle) return
+    setHeaderTitle(task?.status === 'done' ? '추억 수정' : task?.status === 'accepted' ? '약속 변경' : null)
+    return () => setHeaderTitle(null)
+  }, [task?.status, setHeaderTitle])
+
   // 약속 선택 셀렉트에서 다른 약속으로 바꾸면, 그 약속의 일정·참여자 값으로 폼을 다시 채운다.
   function pickAppointment(id) {
     const appt = appointments.find((a) => a.id === id)
@@ -92,10 +101,13 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const isCreator = task?.created_by === profile.id
   const mediaCat = MEDIA_LOOKUP_CATS.includes(category)
   const noun = workNoun(category)
-  // 수정 중이면 참여자 풀 안에서만, 처음 약속으로 넘길 때는 그룹 멤버 전체에서 고른다.
-  const pickerMembers = isReschedule ? members.filter((mm) => participantPool.includes(mm.user_id)) : members
+  // 참여자는 그룹 멤버 전체에서 자유롭게 고른다(수정 화면에서도 새로 추가/제외 가능 —
+  // 원래 풀에 없던 멤버를 새로 체크해도 저장 시 풀이 함께 넓혀진다).
+  const pickerMembers = members
   // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
   const needChoose = pickerMembers.length >= 2
+  // "+ 새 일정 추가" 는 기존 설계대로 이 위시의 참여자 풀(task_participants) 안에서만 고른다.
+  const addPickerMembers = members.filter((mm) => participantPool.includes(mm.user_id))
 
   function toggleAdd() {
     if (addOpen) { setAddOpen(false); return }
@@ -108,7 +120,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
     if (addSaving) return
     setAddSaving(true); setAddError('')
     try {
-      const participantIds = pickerMembers.length >= 2 ? addSched.participants : pickerMembers.map((m) => m.user_id)
+      const participantIds = addPickerMembers.length >= 2 ? addSched.participants : addPickerMembers.map((m) => m.user_id)
       await addAppointment(taskId, { ...buildSchedulePayload(addSched), participantIds })
       setAddOpen(false)
       await load()
@@ -144,8 +156,13 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
         await updateTaskMedia(taskId, mediaInfo)
       }
       const schedule = buildSchedulePayload(sched)
-      if (isReschedule) await rescheduleTask({ appointmentId, participantIds: ids, ...schedule })
-      else await scheduleTask({ taskId, participantIds: ids, ...schedule })
+      if (isReschedule) {
+        // appointmentId 가 없으면(예: 이 기능 도입 전에 만들어진 약속처럼 실제 약속
+        // 레코드가 없는 경우) 수정 대신 새로 만든다 — "존재하지 않는 약속입니다" 오류
+        // 대신 정상적으로 저장되게.
+        if (appointmentId) await rescheduleTask({ appointmentId, participantIds: ids, ...schedule })
+        else await addAppointment(taskId, { participantIds: ids, ...schedule })
+      } else await scheduleTask({ taskId, participantIds: ids, ...schedule })
       if (embedded) { onSaved?.(); return }
       if (embed) navigate(`/groups/${groupId}`, { state: { openTaskId: taskId } })
       else navigate(`/groups/${groupId}/tasks/${taskId}`, { state: { groupType: group.group_type } })
@@ -249,7 +266,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
         {isReschedule && addOpen && (
           <div className="cg-mt-24">
             <ScheduleFields value={addSched} onChange={(patch) => setAddSched((s) => ({ ...s, ...patch }))}
-              members={pickerMembers} meId={profile.id} authorId={task.created_by} showTitle={false} />
+              members={addPickerMembers} meId={profile.id} authorId={task.created_by} showTitle={false} />
             {addError && <div className="alert alert-error cg-mt-16">{addError}</div>}
             <button type="button" className="cg-btn-primary cg-mt-16" disabled={addSaving} onClick={submitAdd}>
               {addSaving ? '추가 중…' : '일정 추가'}
