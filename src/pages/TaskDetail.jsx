@@ -123,7 +123,8 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const mentionRange = useRef(null) // 본문에서 @토큰 위치 { start, end }
 
   // ---- 추억 리뷰 서브탭(댓글/리뷰) ----
-  const [subTab, setSubTab] = useState(location.state?.openReview || openReviewProp ? 'reviews' : 'comments')
+  // 인앱 이동은 location.state.openReview 로, 알림 클릭(푸시·알림센터)은 state 가 안 이어지므로 ?tab=reviews 로 연다.
+  const [subTab, setSubTab] = useState(location.state?.openReview || openReviewProp || searchParams.get('tab') === 'reviews' ? 'reviews' : 'comments')
   const [subDir, setSubDir] = useState('next')
   const [reviews, setReviews] = useState([])
   const [reviewMeta, setReviewMeta] = useState({ is_participant: false, has_reviewed: false, revealed: false })
