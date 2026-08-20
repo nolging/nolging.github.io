@@ -110,7 +110,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
   const [menuPos, setMenuPos] = useState(null)         // 댓글 ⋮ 메뉴 고정 위치(임베드 스크롤 클리핑 회피)
   const [headMenu, setHeadMenu] = useState(false)      // 상단 약속 ⋮ 메뉴
   const [appointments, setAppointments] = useState([]) // 이 위시의 약속들(2개 이상 가능)
-  const [apptAddOpen, setApptAddOpen] = useState(false) // "약속 추가" 모달
+  const [apptAddOpen, setApptAddOpen] = useState(false) // "일정 추가" 모달
   const [dateDdOpen, setDateDdOpen] = useState(false)   // 날짜 옆 화살표 → 전체 약속 날짜 드롭다운
   const [dateEditTarget, setDateEditTarget] = useState(null) // 드롭다운의 "수정" → 편집할 약속
   const [highlightId, setHighlightId] = useState(null) // 방금 작성/수정한 댓글(강조)
@@ -707,7 +707,7 @@ export default function TaskDetail({ taskId: taskIdProp, groupId: groupIdProp, o
                   <div className="menu-backdrop" onClick={() => setHeadMenu(false)} />
                   <div className="menu-pop" role="menu">
                     <button type="button" onClick={goEditAppointment}>수정</button>
-                    {!isDone && <button type="button" onClick={openAddAppointment}>약속 추가</button>}
+                    {!isDone && <button type="button" onClick={openAddAppointment}>일정 추가</button>}
                     {!isDone && <button type="button" onClick={doCancelAppointment}>약속 취소</button>}
                     {isDone && reviews.length === 0 && <button type="button" onClick={doRevertAppointment}>약속으로 되돌리기</button>}
                     {(isCreator || isAdmin) && <button type="button" className="menu-danger" onClick={doDeleteTask}>삭제</button>}
