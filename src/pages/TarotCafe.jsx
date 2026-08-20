@@ -157,7 +157,8 @@ export default function TarotCafe() {
     if (done || taken.includes(slot) || shuffling) return
     setSelected((s) => {
       if (s.includes(slot)) return s.filter((x) => x !== slot)
-      if (s.length >= need) return s
+      if (need === 1) return [slot]   // 한 장만 고르는 모드: 새로 클릭하면 기존 선택은 내려가고 새 카드로 바뀐다
+      if (s.length >= need) return s  // 여러 장 모드: 다 고른 뒤엔 하나를 취소하기 전까진 더 고를 수 없다
       return [...s, slot]
     })
   }
