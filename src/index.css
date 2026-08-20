@@ -1873,25 +1873,24 @@ button.mention-chip:active { opacity: .6; }
 .qw-post-author { font-weight: 700; color: #6a6875; }
 .qw-post-body { margin: 14px 0 0; font-size: 15px; line-height: 1.7; color: #26232f; white-space: pre-wrap; word-break: break-word; }
 
-/* VS: 좌우 두 선택지, 가운데 원형 배지. 응답 후엔 라벨 아래 얇은 게이지 막대로 득표율 표시
-   (텍스트 배경에 득표율만큼 색을 채우면 득표율이 낮을 때 글자가 묻혀 보이므로, 항상 읽히도록
-   라벨과 채움 막대를 분리한다). */
+/* VS: 좌우 두 선택지, 가운데 원형 배지. 득표율(%)은 보여주지 않고, 카드 우측 상단에
+   이 선택지를 고른 사람 아바타를 겹쳐 보여준다(최대 3명+N, 클릭 시 모달로 전체 목록). */
 .qw-vs { margin-top: 22px; }
 .qw-vs-row { position: relative; display: flex; gap: 10px; }
 .qw-vs-opt { position: relative; flex: 1; min-height: 100px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 9px; border: 2px solid #ececf1; border-radius: 16px;
   background: #f8f7fb; cursor: pointer; padding: 14px 10px; }
-.qw-vs-opt:disabled { cursor: default; }
+.qw-vs-opt.disabled { cursor: default; opacity: .7; }
 .qw-vs-opt.answered.mine { border-color: #7363e8; background: #f5f1fe; }
 .qw-vs-label { font-size: 15px; font-weight: 800; color: #191722; text-align: center; }
-.qw-vs-meter { width: 100%; height: 7px; border-radius: 999px; background: #ececf1; overflow: hidden; }
-.qw-vs-fill { display: block; height: 100%; background: linear-gradient(90deg, #cabdfa, #7363e8); }
-.qw-vs-pct { font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .qw-vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 34px; height: 34px; border-radius: 50%; background: #191722; color: #fff; font-size: 11px; font-weight: 800;
   display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 3px 8px rgba(0, 0, 0, .2); pointer-events: none; }
-.qw-vs-voters { display: flex; gap: 10px; margin-top: 10px; }
-.qw-vs-voters-col { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.qw-voter-stack { position: absolute; top: 8px; right: 8px; border: none; background: none; padding: 0; cursor: pointer; }
+.qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f8f7fb; }
+.qw-vs-opt.answered.mine .qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f5f1fe; }
+.qw-voter-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow-y: auto; }
+.qw-voter-list-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; font-size: 14.5px; font-weight: 600; color: #191722; }
 
 /* 고르기(투표): 세로 나열, 응답 후 좌→우 채움 막대로 득표율 표시 */
 .qw-poll { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
