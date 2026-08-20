@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createTask, createTaskScheduled, listMemberCards, getGroup } from '../lib/api'
+import { createTask, createTaskScheduled, listMemberCards, getGroup, touchQuest } from '../lib/api'
 import { resolveCategories } from '../lib/constants'
 import TaskForm from '../components/TaskForm'
 
@@ -35,6 +35,7 @@ export default function CreateTask() {
           // 약속·추억으로 바로 올림 → 알림 없이 생성 + 일정/참여자 저장(한 번에)
           task = await createTaskScheduled({ groupId, ...values, done: status === 'done', schedule })
         }
+        touchQuest('r_write_wish')   // 랜덤 퀘스트 '위시 작성하기'(약속/추억 상태로 바로 등록해도 인정)
         // 작성 후 해당 항목 상세로 이동. 상세의 '<' 는 상태에 맞는 그룹 탭으로 되돌아감
         // (from 미지정 → /groups/:id?tab=<status>).
         navigate(`/groups/${groupId}/tasks/${task.id}`, { state: { groupType } })

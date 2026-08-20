@@ -777,6 +777,15 @@ export async function ownsTelescope(userId) {
   return (data?.length || 0) > 0
 }
 
+// 특정 아이템 보유(미사용) 여부 — 랜덤 퀘스트 '도전' 이동 경로 분기 등에 사용.
+export async function ownsItem(userId, itemId) {
+  const { data, error } = await supabase
+    .from('user_items').select('id')
+    .eq('user_id', userId).eq('item_id', itemId).eq('status', 'active').limit(1)
+  if (error) return false
+  return (data?.length || 0) > 0
+}
+
 export async function submitReview({ taskId, rating, comment }) {
   const { data, error } = await supabase.rpc('submit_review', {
     p_task_id: taskId, p_rating: rating, p_comment: comment ?? '',

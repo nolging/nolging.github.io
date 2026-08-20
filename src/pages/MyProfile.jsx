@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups } from '../lib/api'
+import { getQuests, claimQuest, claimSlotQuest, rerollSlotQuest, getMyCoinBalance, listCoupleGroups, listFriendGroups, ownsItem } from '../lib/api'
 import { openCompose } from '../lib/composeWindow'
 import { GRADE_LABEL } from '../lib/membership'
 
 // 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
 const QUEST_TARGET = {
   visit: '/', note: '/notes/new',
-  r_wish_ticket_present: '/notes/new', r_item_note: '/notes/new', r_nyangpito: '/inventory',
+  r_wish_ticket_present: '/store', r_item_note: '/notes/new', r_nyangpito: '/inventory',
   r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
   r_waterbomb: '/notes/new', r_deco: '/inventory', r_schedule: '/schedule',
   r_premium_shop: '/store',
-  r_nametag: '/inventory', r_ledboard: '/inventory', r_eraser: '/notes/new',
+  r_write_wish: '/', r_eraser: '/notes/new',
+  // r_nametag/r_ledboard: 아이템 보유 여부에 따라 인벤토리/프리미엄 상점으로 갈리므로
+  // challenge() 에서 따로 분기(여기 값은 보유 시 기본값).
+  r_nametag: '/inventory', r_ledboard: '/inventory',
 }
 
 // 퀘스트 키 → 아이콘/파스텔 (데일리 + 랜덤 시드). 랜덤 이모지는 DB(quest_defs.emoji) 우선, bg 는 이 표 사용.
@@ -21,6 +24,7 @@ const QUEST_ICON = {
   visit: { emoji: '🚪', bg: '#e8f4ec' },
   note: { emoji: '💌', bg: '#fde8ee' },
   r_wish_ticket_present: { emoji: '⭐', bg: '#fbf1d3' },
+  r_write_wish: { emoji: '⭐', bg: '#fbf1d3' },
   r_item_note: { emoji: '💌', bg: '#fde8ee' },
   r_nyangpito: { emoji: '🐾', bg: '#e8f4ec' },
   r_buy: { emoji: '🛍️', bg: '#fdeee2' },
@@ -151,6 +155,8 @@ export default function MyProfile() {
   const [now, setNow] = useState(() => Date.now())
   const [coupleGroups, setCoupleGroups] = useState([])
   const [friendGroups, setFriendGroups] = useState([])
+  const [ownedNametag, setOwnedNametag] = useState(false)
+  const [ownedLedboard, setOwnedLedboard] = useState(false)
 
   // '도전' 이동 경로 계산용 커플/우정 그룹
   useEffect(() => {
@@ -158,6 +164,14 @@ export default function MyProfile() {
     if (!uid) return
     listCoupleGroups(uid).then((g) => setCoupleGroups(g || [])).catch(() => {})
     listFriendGroups().then((g) => setFriendGroups(g || [])).catch(() => {})
+  }, [profile?.id])
+
+  // '도전' 이동 경로 계산용: 명찰/전광판 아이템 보유 여부(있으면 인벤토리, 없으면 프리미엄 상점)
+  useEffect(() => {
+    const uid = profile?.id
+    if (!uid) return
+    ownsItem(uid, 'name-tag').then(setOwnedNametag).catch(() => {})
+    ownsItem(uid, 'ledboard').then(setOwnedLedboard).catch(() => {})
   }, [profile?.id])
 
   // 쿨다운 표시용 1초 틱
@@ -230,6 +244,9 @@ export default function MyProfile() {
   const challenge = (key) => {
     // 프리미엄 상점은 프리미엄 탭으로 진입
     if (key === 'r_premium_shop') { navigate('/store', { state: { from: '/me', premium: true } }); return }
+    // 명찰/전광판: 아이템이 있으면 인벤토리에서 바로 쓰게, 없으면 살 수 있는 프리미엄 상점으로
+    if (key === 'r_nametag' && !ownedNametag) { navigate('/store', { state: { from: '/me', premium: true } }); return }
+    if (key === 'r_ledboard' && !ownedLedboard) { navigate('/store', { state: { from: '/me', premium: true } }); return }
     const route = questRoute(key) || '/'
     // 쪽지 쓰기 도전은 PC 에서 팝업 창으로
     if (route === '/notes/new') { openCompose(navigate, null); return }
