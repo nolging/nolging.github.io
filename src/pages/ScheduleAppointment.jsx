@@ -110,6 +110,8 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const pickerMembers = members
   // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
   const needChoose = pickerMembers.length >= 2
+  // 날짜가 있는 약속만 "약속 선택" 셀렉트의 대상 — 날짜 미정은 일정으로 치지 않는다.
+  const datedAppointments = appointments.filter((a) => a.scheduled_at)
 
   function pickCategory(c) {
     const next = category === c ? '' : c
@@ -234,13 +236,15 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
           </div>
         )}
 
-        {appointments.length > 0 && (
+        {/* 날짜가 없는 약속은 "일정" 으로 치지 않는다 — 선택지에서 빼고, 날짜 있는
+            약속이 하나도 없으면 셀렉트 자체를 띄우지 않는다. */}
+        {datedAppointments.length > 0 && (
           <div className="cg-mt-24">
             <SelectPill className="sc-select-full" value={appointmentId} onChange={pickAppointment}
               options={[
-                ...appointments.map((a) => ({
+                ...datedAppointments.map((a) => ({
                   value: a.id,
-                  label: a.scheduled_at ? formatWhen(a.scheduled_at, a.scheduled_time_set) : '날짜 미정',
+                  label: formatWhen(a.scheduled_at, a.scheduled_time_set),
                 })),
                 { value: NEW_APPT, label: '새 일정 추가' },
               ]} />
