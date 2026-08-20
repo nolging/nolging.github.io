@@ -3,14 +3,16 @@ import { addAppointment, listTaskParticipants, listMemberCards } from '../lib/ap
 import ScheduleFields, { defaultSchedule, buildSchedulePayload } from './ScheduleFields'
 import Modal from './Modal'
 
-// 이미 약속인 위시에 일정을 하나 더 추가하는 모달. 참여자는 위시를 처음 약속으로
-// 넘길 때 정한 풀(task_participants) 안에서만 고를 수 있다.
+// 이미 약속인 위시에 일정을 하나 더 추가하는 모달. 참여자는 그룹 멤버 전체에서
+// 고를 수 있고(원래 참여자가 아니던 멤버를 골라도 add_appointment 가 참여자 풀을
+// 함께 넓혀 카드/상세에도 반영된다), 기본 체크값은 위시의 기존 참여자 풀로 시작한다.
 // 날짜 토글은 기본으로 켜둔 채 시작(약속을 추가하는 목적상 날짜를 바로 입력하도록)
 const initialSchedule = (participants = []) => ({ ...defaultSchedule(), dateOn: true, participants })
 
 export default function AppointmentAddModal({ open, onClose, taskId, groupId, meId, authorId, onAdded }) {
   const [sched, setSched] = useState(defaultSchedule)
   const [poolMembers, setPoolMembers] = useState([])
+  const [poolIds, setPoolIds] = useState([]) // 기존 참여자 풀(체크 초기값 복원용)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -22,9 +24,10 @@ export default function AppointmentAddModal({ open, onClose, taskId, groupId, me
       try {
         const [pool, cards] = await Promise.all([listTaskParticipants(taskId), listMemberCards(groupId)])
         if (cancelled) return
-        const members = cards.filter((m) => pool.includes(m.user_id))
+        const members = cards.filter((m) => !m.is_left)
         setPoolMembers(members)
-        setSched(initialSchedule(pool)) // 기본값: 풀 전체 참여
+        setPoolIds(pool)
+        setSched(initialSchedule(pool)) // 기본값: 기존 참여자 풀
       } catch (err) { if (!cancelled) setError(err.message) }
     })()
     return () => { cancelled = true }
@@ -39,7 +42,7 @@ export default function AppointmentAddModal({ open, onClose, taskId, groupId, me
     try {
       const participantIds = poolMembers.length >= 2 ? sched.participants : poolMembers.map((m) => m.user_id)
       await addAppointment(taskId, { ...buildSchedulePayload(sched), participantIds })
-      setSched(initialSchedule(poolMembers.map((m) => m.user_id)))
+      setSched(initialSchedule(poolIds))
       onAdded?.()
     } catch (err) { setError(err.message) } finally { setSaving(false) }
   }
