@@ -8,7 +8,7 @@ import { GRADE_LABEL } from '../lib/membership'
 // 등급/그룹과 무관하게 고정된 '도전' 이동 경로. (그룹·등급 의존 키는 questRoute 에서 처리)
 const QUEST_TARGET = {
   visit: '/', note: '/notes/new',
-  r_wish: '/notes/new', r_item_note: '/notes/new', r_nyangpito: '/inventory',
+  r_wish_ticket_present: '/notes/new', r_item_note: '/notes/new', r_nyangpito: '/inventory',
   r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
   r_waterbomb: '/notes/new', r_deco: '/inventory', r_schedule: '/schedule',
   r_premium_shop: '/store',
@@ -20,7 +20,7 @@ const QUEST_ICON = {
   attend: { emoji: '🗓️', bg: '#eef1fb' },
   visit: { emoji: '🚪', bg: '#e8f4ec' },
   note: { emoji: '💌', bg: '#fde8ee' },
-  r_wish: { emoji: '⭐', bg: '#fbf1d3' },
+  r_wish_ticket_present: { emoji: '⭐', bg: '#fbf1d3' },
   r_item_note: { emoji: '💌', bg: '#fde8ee' },
   r_nyangpito: { emoji: '🐾', bg: '#e8f4ec' },
   r_buy: { emoji: '🛍️', bg: '#fdeee2' },

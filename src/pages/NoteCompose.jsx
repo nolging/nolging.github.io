@@ -291,7 +291,7 @@ export default function NoteCompose() {
         body: body.trim(), anonymous, useItem, gifts, photos,
       })
       if (anonymous) touchQuest('r_eraser')          // 랜덤 퀘스트 '익명 쪽지 보내기'(지우개 사용)
-      if (gifts.some((g) => g.id === 'wish')) touchQuest('r_wish')   // 랜덤 퀘스트 '소원권 선물하기'
+      if (gifts.some((g) => g.id === 'wish')) touchQuest('r_wish_ticket_present')   // 랜덤 퀘스트 '소원권 선물하기'
       if (isPopup) {
         // 여는 쪽(쪽지함)에 전송 완료를 알리고 팝업 창을 닫는다
         try { const bc = new BroadcastChannel(NOTE_CHANNEL); bc.postMessage({ type: 'note-sent' }); bc.close() } catch { /* noop */ }
