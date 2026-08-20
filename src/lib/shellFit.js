@@ -48,11 +48,15 @@ export function attachShellFit(getEl) {
   const apply = () => {
     const el = getEl()
     if (!el) return
+    // 포커스가 모달(.modal-root) 안에 있으면 셸은 그대로 두고 Modal.jsx 자체의
+    // visualViewport 대응(--kb-shift)만으로 모달을 재배치한다 — 배경 화면이
+    // 함께 줄어드는 이중 반응을 막기 위함.
+    const inModal = !!document.activeElement?.closest?.('.modal-root')
     // 기준 전체 높이는 innerHeight/clientHeight 중 큰 값(키보드에 따라 한쪽이 줄 수 있음)
     const m = shellMetrics({
       vvHeight: vv.height, vvOffsetTop: vv.offsetTop,
       innerHeight: window.innerHeight, clientHeight: document.documentElement.clientHeight,
-      editing: !justResumed && isEditing(document.activeElement),
+      editing: !justResumed && !inModal && isEditing(document.activeElement),
     })
     el.style.height = m.height   // 키보드 없으면 '' → CSS(height:100%) 복귀
     el.style.top = m.top

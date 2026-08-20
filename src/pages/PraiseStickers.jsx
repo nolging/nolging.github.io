@@ -76,18 +76,6 @@ export default function PraiseStickers() {
   const [histSel, setHistSel] = useState(null)   // 선택된 과거 board_id
   const [histData, setHistData] = useState(null) // 과거 판 조회 결과
   const taRef = useRef(null)
-  const primeRef = useRef(null)
-
-  // 탭 제스처 안에서 임시 input 을 포커스해 키보드를 미리 띄운다(iOS 대응).
-  function primeKeyboard() {
-    const inp = document.createElement('input')
-    inp.type = 'text'
-    inp.setAttribute('aria-hidden', 'true')
-    inp.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;z-index:-1;'
-    document.body.appendChild(inp)
-    inp.focus()
-    primeRef.current = inp
-  }
 
   const load = useCallback(async () => {
     try {
@@ -111,17 +99,6 @@ export default function PraiseStickers() {
     praiseBoardGet(histSel).then((d) => { if (on) setHistData(d) }).catch((e) => { if (on) setError(e.message) })
     return () => { on = false }
   }, [histSel])
-
-  // 칭찬 입력/수정 모달이 열리면 입력창 자동 포커스(키보드 유지)
-  useEffect(() => {
-    if (modal && modal.mode !== 'view') {
-      const t = setTimeout(() => {
-        taRef.current?.focus()
-        if (primeRef.current) { primeRef.current.remove(); primeRef.current = null }
-      }, 80)
-      return () => clearTimeout(t)
-    }
-  }, [modal?.slot, modal?.mode])
 
   // ── 렌더에 쓰일 파생값(훅 순서 유지 위해 early-return 이전에 계산) ──
   const viewer = data?.viewer
@@ -178,10 +155,9 @@ export default function PraiseStickers() {
   function slotClick(slot) {
     const s = slots[slot]
     if (s) {
-      if (canAdd) { primeKeyboard(); setModal({ ownerId: owner.user_id, slot, mode: 'edit', text: s.reason, sticker: s }) }
+      if (canAdd) setModal({ ownerId: owner.user_id, slot, mode: 'edit', text: s.reason, sticker: s })
       else setModal({ ownerId: owner.user_id, slot, mode: 'view', sticker: s })
     } else if (canAdd) {
-      primeKeyboard()
       setModal({ ownerId: owner.user_id, slot, mode: 'write', text: '' })
     } else if (isMine && !viewingHist) {
       showToast('내 칭찬 스티커는 스스로 붙일 수 없어요')
