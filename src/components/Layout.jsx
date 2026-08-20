@@ -825,7 +825,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <Link to={backTo} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
-        <span className="topbar-heading">약속 잡기</span>
+        <span className="topbar-heading">{headerTitle || '약속 잡기'}</span>
       </header>
     )
   } else if (taskDetailMatch) {
