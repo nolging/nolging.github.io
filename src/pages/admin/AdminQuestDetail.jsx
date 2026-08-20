@@ -21,23 +21,32 @@ export default function AdminQuestDetail() {
   const [loading, setLoading] = useState(editing)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // 신규 등록 시 이미 쓰이고 있는 ID 목록(upsert 라 같은 ID로 저장하면 기존 퀘스트를 덮어써 버림 → 사전 차단).
+  // 수정 화면은 ID 입력이 막혀 있어(disabled) 필요 없다.
+  const [existingIds, setExistingIds] = useState(null)
   const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const load = useCallback(async () => {
-    if (!editing) return
-    setLoading(true)
-    try {
-      const defs = await adminListQuestDefs()
-      const q = defs.find((x) => x.id === id)
-      if (!q) { setError('퀘스트를 찾을 수 없어요.'); return }
-      setForm({ id: q.id, title: q.title, body: q.body || '', emoji: q.emoji || '', emoji_bg: q.emoji_bg || '', reward: String(q.reward), grade: q.grade, active: q.active, reward_reason: q.reward_reason || '' })
-    } catch (err) { setError(err.message) } finally { setLoading(false) }
+    if (editing) {
+      setLoading(true)
+      try {
+        const defs = await adminListQuestDefs()
+        const q = defs.find((x) => x.id === id)
+        if (!q) { setError('퀘스트를 찾을 수 없어요.'); return }
+        setForm({ id: q.id, title: q.title, body: q.body || '', emoji: q.emoji || '', emoji_bg: q.emoji_bg || '', reward: String(q.reward), grade: q.grade, active: q.active, reward_reason: q.reward_reason || '' })
+      } catch (err) { setError(err.message) } finally { setLoading(false) }
+    } else {
+      adminListQuestDefs().then((defs) => setExistingIds(defs.map((d) => d.id))).catch(() => setExistingIds([]))
+    }
   }, [editing, id])
   useEffect(() => { load() }, [load])
+
+  const idDup = !editing && !!form.id.trim() && !!existingIds?.includes(form.id.trim())
 
   async function save(e) {
     e.preventDefault(); setError('')
     if (!form.id.trim() || !form.title.trim()) { setError('ID와 제목은 필수예요.'); return }
+    if (idDup) { setError('이미 존재하는 ID예요.'); return }
     if (form.emoji_bg && !/^#[0-9a-fA-F]{6}$/.test(form.emoji_bg.trim())) { setError('배경색은 #RRGGBB 형식으로 입력해 주세요.'); return }
     setBusy(true)
     try { await adminUpsertQuestDef(form); nav('/admin/quests', { replace: true }) }
@@ -59,7 +68,10 @@ export default function AdminQuestDetail() {
         <form onSubmit={save} className="aq-form" key={id || 'new'}>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="q-id">ID <span className="aq-required">*</span></label>
-            <input id="q-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: quest_random_006" disabled={editing} autoCapitalize="none" />
+            <div className="aq-field-col">
+              <input id="q-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: quest_random_006" disabled={editing} autoCapitalize="none" />
+              {idDup && <p className="field-error">이미 존재하는 ID예요.</p>}
+            </div>
           </div>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="q-title">제목 <span className="aq-required">*</span></label>
@@ -113,7 +125,7 @@ export default function AdminQuestDetail() {
             {editing && <button type="button" className="aq-btn-delete" disabled={busy} onClick={remove}>삭제</button>}
             <div className="aq-actions-right">
               <button type="button" className="aq-btn-cancel" onClick={() => nav('/admin/quests')}>취소</button>
-              <button type="submit" className="aq-btn-save" disabled={busy}>{busy ? '저장 중…' : '저장'}</button>
+              <button type="submit" className="aq-btn-save" disabled={busy || idDup}>{busy ? '저장 중…' : '저장'}</button>
             </div>
           </div>
         </form>
