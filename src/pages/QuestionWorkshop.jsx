@@ -59,6 +59,7 @@ const DotsIcon = () => (
 export default function QuestionWorkshop() {
   const { groupId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { setRefreshHandler } = useOutletContext()
   const { state: access } = useQworkshopAccess(groupId)
   const [posts, setPosts] = useState([])
@@ -86,7 +87,8 @@ export default function QuestionWorkshop() {
           <ul className="qw-rows">
             {posts.map((p) => (
               <li key={p.id} className={`qw-row${p.is_mine ? ' mine' : ''}`}>
-                <button type="button" className="qw-row-btn" onClick={() => navigate(qwPath(groupId, `/${p.id}`))}>
+                <button type="button" className="qw-row-btn"
+                  onClick={() => navigate(qwPath(groupId, `/${p.id}`), { state: { membersBackTo: location.state?.membersBackTo } })}>
                   <span className={`qw-type-badge qw-type-${p.type}`}>{TYPE_LABEL[p.type]}</span>
                   <span className="qw-row-main">
                     <span className="qw-row-q">{p.question}</span>

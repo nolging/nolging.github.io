@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useOutletContext } from 'react-router-dom'
 import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, setGroupNextAnniv, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, getGroupQworkshop, listBlockedFeatures } from '../lib/api'
 import { formatBirthDot } from '../lib/birthday'
 import { useAuth } from '../context/AuthContext'
@@ -64,6 +64,11 @@ const birthLabel = (s) => formatBirthDot(s)
 export default function GroupMembers() {
   const { groupId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  // 이 멤버 페이지 자체의 상단바 뒤로가기 목적지(Layout.jsx 의 membersBackTo 와 동일 계산).
+  // 하위 기능(물음표 공방 등) 진입 시 함께 넘겨, 그 하위 기능에서 다시 멤버 페이지로 돌아올 때도
+  // 이 멤버 페이지의 뒤로가기가 원래 진입 경로(그룹 홈 등)를 잃지 않게 한다.
+  const membersBackTo = location.state?.from === 'home' ? '/' : `/groups/${groupId}`
   const { isAdmin } = useAuth()
   const { setHeaderTitle } = useOutletContext()
   const [members, setMembers] = useState([])
@@ -206,7 +211,7 @@ export default function GroupMembers() {
       const span = Math.max(1, nextAnniv.dayCount - nextAnniv.prevDayCount)
       pct = Math.max(3, Math.min(100, Math.round(((days - nextAnniv.prevDayCount) / span) * 100)))
     }
-    const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
+    const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members', membersBackTo } })
     const face = (m, sub) => (
       <button type="button" className="csx-face"
         onClick={() => m && openMember(navigate, groupId, m.user_id)} disabled={!m}>
@@ -377,7 +382,7 @@ export default function GroupMembers() {
 
   const q = query.trim().toLowerCase()
   const shown = q ? members.filter((m) => (m.display_nickname || '').toLowerCase().includes(q)) : members
-  const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members' } })
+  const go = (path) => navigate(`/groups/${groupId}/${path}`, { state: { from: 'members', membersBackTo } })
 
   return (
     <div className="page mlist-page">
