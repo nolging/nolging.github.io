@@ -11,6 +11,7 @@ import { resolveMentions, splitMentions } from '../lib/mentions'
 import { openMember } from '../lib/memberModal'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
+import Modal from '../components/Modal'
 
 // 물음표 공방 — 세 유형(VS/고르기/문답)의 질문 게시판. 목록/작성·수정/상세(답변+댓글)로 구성.
 // 접근 제어·댓글 멘션/답글은 비밀 게시판(RPC 전면 잠금)·위시 댓글(실명+멘션) 패턴을 그대로 따른다.
@@ -205,10 +206,24 @@ export function QworkshopCompose() {
   )
 }
 
+// VS 카드 우측 상단: 이 선택지를 고른 사람 아바타 겹침(최대 3명+N) → 클릭 시 모달로 전체 목록
+function VoterStack({ voters, onOpen, max = 3 }) {
+  const shown = voters.slice(0, max)
+  const extra = voters.length - max
+  return (
+    <button type="button" className="qw-voter-stack task-parts multi" aria-label="고른 사람 보기"
+      onClick={(e) => { e.stopPropagation(); onOpen() }}>
+      {shown.map((v) => <Avatar key={v.author_id} src={v.avatar_url} name={v.nickname} size={22} />)}
+      {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+    </button>
+  )
+}
+
 // ---- 답변/선택 영역(유형별) ----
 function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
   const [qnaEditing, setQnaEditing] = useState(!av.has_answered)
   const [qnaText, setQnaText] = useState(av.my_answer?.answer_text || '')
+  const [voterModal, setVoterModal] = useState(null) // { label, voters } | null
   useEffect(() => { setQnaText(av.my_answer?.answer_text || ''); setQnaEditing(!av.has_answered) }, [av.has_answered, av.my_answer])
 
   async function pick(idx) {
@@ -227,44 +242,34 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
   if (post.type === 'vs') {
     const opts = post.options || []
     const answered = av.has_answered
-    const counts = av.counts || [0, 0]
-    const total = counts.reduce((a, b) => a + b, 0) || 1
     const myIdx = av.my_answer?.option_idx
     const byOption = answered ? [0, 1].map((i) => (av.answers || []).filter((a) => a.option_idx === i)) : [[], []]
     return (
       <div className="qw-vs">
         <div className="qw-vs-row">
-          {opts.map((label, i) => {
-            const pct = Math.round((counts[i] / total) * 100)
-            return (
-              <button type="button" key={i} disabled={submitting}
-                className={`qw-vs-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}`}
-                onClick={() => pick(i)}>
-                <span className="qw-vs-label">{label}</span>
-                {answered && (
-                  <>
-                    <span className="qw-vs-meter"><span className="qw-vs-fill" style={{ width: `${pct}%` }} /></span>
-                    <span className="qw-vs-pct">{pct}%</span>
-                  </>
-                )}
-              </button>
-            )
-          })}
+          {opts.map((label, i) => (
+            <div key={i} role="button" tabIndex={0}
+              className={`qw-vs-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}${submitting ? ' disabled' : ''}`}
+              onClick={() => pick(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i) } }}>
+              {byOption[i].length > 0 && (
+                <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
+              )}
+              <span className="qw-vs-label">{label}</span>
+            </div>
+          ))}
           <span className="qw-vs-mid">VS</span>
         </div>
-        {answered && (
-          <div className="qw-vs-voters">
-            {[0, 1].map((i) => (
-              <div className="qw-vs-voters-col" key={i}>
-                {byOption[i].map((a) => (
-                  <span className="qw-voter" key={a.author_id} title={a.nickname}>
-                    <Avatar src={a.avatar_url} name={a.nickname} size={22} />
-                  </span>
-                ))}
-              </div>
+        <Modal open={!!voterModal} onClose={() => setVoterModal(null)} title={voterModal?.label}>
+          <ul className="qw-voter-list">
+            {(voterModal?.voters || []).map((v) => (
+              <li key={v.author_id} className="qw-voter-list-item">
+                <Avatar src={v.avatar_url} name={v.nickname} size={32} />
+                <span>{v.nickname}</span>
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </Modal>
       </div>
     )
   }
