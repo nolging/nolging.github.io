@@ -106,8 +106,9 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
   const pickerMembers = members
   // 멤버 2인 이상이면 참여자 선택 노출(혼자 하는 일정도 가능). 1인 그룹만 숨김.
   const needChoose = pickerMembers.length >= 2
-  // "+ 새 일정 추가" 는 기존 설계대로 이 위시의 참여자 풀(task_participants) 안에서만 고른다.
-  const addPickerMembers = members.filter((mm) => participantPool.includes(mm.user_id))
+  // "+ 새 일정 추가" 도 그룹 멤버 전체에서 고를 수 있다(원래 참여자가 아니던 멤버를
+  // 새로 고르면 add_appointment 가 참여자 풀도 함께 넓혀 카드/상세에도 반영된다).
+  const addPickerMembers = members
 
   function toggleAdd() {
     if (addOpen) { setAddOpen(false); return }
