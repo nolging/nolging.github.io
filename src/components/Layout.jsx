@@ -520,7 +520,7 @@ export default function Layout() {
   // 보이지 않도록, 화면 하단 색과 body 배경을 맞춘다.
   // - 그룹 상세/설정 등(하단이 회색 콘텐츠): body 회색
   // - 그 외(하단이 흰색 탭바): body 흰색
-  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || closetMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || boardMatch || boardNewMatch || boardSearchMatch || boardEditMatch || boardCommentsMatch || boardPostMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
+  const isGroupView = !!(newGroupMatch || joinMatch || notifMatch || notifSettingsMatch || groupConfigMatch || settingsMatch || membersMatch || memberDetailMatch || closetMatch || drawMatch || touchMatch || puzzleMatch || catchMatch || omokMatch || davinciMatch || rpsMatch || tarotMatch || qworkshopMatch || qworkshopNewMatch || qworkshopEditMatch || qworkshopPostMatch || boardMatch || boardNewMatch || boardSearchMatch || boardEditMatch || boardCommentsMatch || boardPostMatch || praiseMatch || taskNewMatch || taskEditMatch || taskScheduleMatch || taskDetailMatch || groupMatch || profileEditMatch || coinHistoryMatch || noteNewMatch || inventoryMatch)
   useEffect(() => {
     // body 배경 = 콘텐츠 캔버스(--bg)와 동일하게. iOS 홈화면 앱에서 콘텐츠가 하단까지
     // 못 미쳐 body 가 비쳐도 흰색(#fff)이 아니라 콘텐츠와 같은 색으로 보이게 하는 안전장치

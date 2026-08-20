@@ -101,9 +101,8 @@ export default function QuestionWorkshop() {
           </ul>
         )}
       </div>
-      <nav className="qw-tabbar">
-        <button type="button" className="qw-tab" onClick={() => navigate(qwPath(groupId, '/new'))}>물음표 쓰기</button>
-      </nav>
+      <button type="button" className="fab" aria-label="물음표 쓰기" title="물음표 쓰기"
+        onClick={() => navigate(qwPath(groupId, '/new'))}>+</button>
     </div>
   )
 }
@@ -180,7 +179,7 @@ export function QworkshopCompose() {
           ))}
         </div>
       )}
-      <textarea className="qw-question-input" placeholder="질문을 입력하세요 (필수)" value={question} maxLength={100} rows={2}
+      <input className="qw-question-input" placeholder="질문을 입력하세요" value={question} maxLength={100}
         onChange={(e) => setQuestion(e.target.value)} />
       <textarea className="qw-body-input" placeholder="내용을 입력하세요 (선택)" value={body} maxLength={2000} rows={4}
         onChange={(e) => setBody(e.target.value)} />
