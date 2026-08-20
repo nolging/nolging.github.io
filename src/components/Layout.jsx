@@ -603,10 +603,11 @@ export default function Layout() {
       </header>
     )
   } else if (qworkshopMatch) {
-    // 물음표 공방 목록: 좌측 뒤로, 제목
+    // 물음표 공방 목록: 좌측 뒤로(데이트/놀이터 페이지인 멤버 목록으로 — 비밀 게시판과 동일하게
+    // 고정 목적지), 제목
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => backOr(`/groups/${qworkshopMatch.params.groupId}/members`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">물음표 공방</span>
       </header>
     )
