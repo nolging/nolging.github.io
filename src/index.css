@@ -1808,6 +1808,9 @@ button.mention-chip:active { opacity: .6; }
 .tarot-page { background: transparent; min-height: 100%; padding: 8px 16px 28px; box-sizing: border-box; color: #ece8f7; }
 .tr-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #b6afd0; }
 .tr-soon-ico { font-size: 40px; }
+/* 물음표 공방: 아직 콘텐츠가 없어 준비 중 안내만 표시(비밀 게시판 .sb-soon 과 동일한 톤) */
+.qw-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #9a92b8; }
+.qw-soon-ico { font-size: 38px; }
 .tr-head { text-align: center; }
 .tr-sign { display: inline-block; font-size: 19px; font-weight: 800; letter-spacing: -.3px; color: #f6f1e2; }
 .tr-sub { margin: 5px 0 0; font-size: 12.5px; color: #b0a8cf; }

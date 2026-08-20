@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, sendMegaphone, getGroupDecoMap } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -83,6 +83,8 @@ export default function Inventory() {
   const [purinMicOpen, setPurinMicOpen] = useState(false) // 푸린 마이크(짝꿍 낙서) 모달
   const [boardOpen, setBoardOpen] = useState(false)     // 비밀 게시판 개설 모달
   const [boardItemName, setBoardItemName] = useState('') // 아이템 이름(관리자에서 변경 가능 → 하드코딩 금지)
+  const [qworkshopOpen, setQworkshopOpen] = useState(false)     // 물음표 공방 개설 모달
+  const [qworkshopItemName, setQworkshopItemName] = useState('') // 아이템 이름(관리자에서 변경 가능 → 하드코딩 금지)
   const [megaphoneOpen, setMegaphoneOpen] = useState(false) // 확성기 모달
   const [notice, setNotice] = useState('') // 준비 중 안내(기타 아이템)
   const [decoSlotFilter, setDecoSlotFilter] = useState('전체') // 프로필 꾸미기 섹션 유형 필터
@@ -183,6 +185,7 @@ export default function Inventory() {
       else setLottoOpen(true)
     }
     else if (g.id === 'secret-board') { setBoardItemName(g.name); setBoardOpen(true) }
+    else if (g.id === 'question-workshop') { setQworkshopItemName(g.name); setQworkshopOpen(true) }
     else if (g.id === 'megaphone') setMegaphoneOpen(true)
     else if (g.id.startsWith('theme-')) {
       const appliedRow = g.rows.find((r) => r.status === 'used')
@@ -345,6 +348,7 @@ export default function Inventory() {
       <NameTagModal open={nameTagOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setNameTagOpen(false)} onDone={reload} />
       <PurinMicModal open={purinMicOpen} coupleGroupId={coupleGroupIds[0]} myId={user?.id} onClose={() => setPurinMicOpen(false)} onDone={reload} />
       <SecretBoardApplyModal open={boardOpen} itemName={boardItemName} onClose={() => setBoardOpen(false)} onDone={reload} />
+      <QworkshopApplyModal open={qworkshopOpen} itemName={qworkshopItemName} onClose={() => setQworkshopOpen(false)} onDone={reload} />
       <MegaphoneModal open={megaphoneOpen} myId={user?.id} onClose={() => setMegaphoneOpen(false)} onDone={reload} />
 
       <GiftItemModal open={!!giftItemId} onClose={() => setGiftItemId(null)}
@@ -747,6 +751,49 @@ function SecretBoardApplyModal({ open, onClose, onDone, itemName }) {
             onChange={(e) => setName(e.target.value)} />
         </label>
         <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId || !name.trim()} onClick={add}>
+          {busy ? '추가 중…' : '추가하기'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ---- 물음표 공방 개설(비밀 게시판과 동일 패턴, 이름 입력 없이 그룹만 선택) ----
+function QworkshopApplyModal({ open, onClose, onDone, itemName }) {
+  const [groups, setGroups] = useState([])
+  const [groupId, setGroupId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setGroupId(''); setError(''); setBusy(false)
+    qworkshopEligibleGroups().then((gs) => setGroups(gs || [])).catch((e) => setError(e.message))
+  }, [open])
+
+  async function add() {
+    if (!groupId) { setError('물음표 공방을 추가할 그룹을 선택해 주세요.'); return }
+    setBusy(true); setError('')
+    try {
+      await setupQworkshop(groupId)
+      await onDone()
+      onClose()
+    } catch (e) { setError(e.message); setBusy(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} cardClassName="nc-link-modal">
+      <div className="couple-modal">
+        <ItemHead id="question-workshop" name={itemName || '물음표 공방'} sub="프리미엄 그룹에 만들어요" emoji="❓" />
+        {error && <div className="alert alert-error">{error}</div>}
+        <label className="field">
+          <span>추가할 그룹</span>
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <option value="">{groups.length ? '그룹 선택' : '추가할 수 있는 프리미엄 그룹이 없어요'}</option>
+            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </label>
+        <button type="button" className="btn btn-primary btn-block" disabled={busy || !groupId} onClick={add}>
           {busy ? '추가 중…' : '추가하기'}
         </button>
       </div>

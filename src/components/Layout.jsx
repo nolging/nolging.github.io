@@ -197,6 +197,7 @@ export default function Layout() {
   const omokMatch = useMatch('/groups/:groupId/omok')
   const rpsMatch = useMatch('/groups/:groupId/rps')
   const tarotMatch = useMatch('/groups/:groupId/tarot')
+  const qworkshopMatch = useMatch('/groups/:groupId/qworkshop')
   const boardMatch = useMatch('/groups/:groupId/board')
   const boardNewMatch = useMatch('/groups/:groupId/board/new')
   const boardSearchMatch = useMatch('/groups/:groupId/board/search')
@@ -581,6 +582,14 @@ export default function Layout() {
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">타로 카페</span>
+      </header>
+    )
+  } else if (qworkshopMatch) {
+    // 물음표 공방: 좌측 뒤로, 제목
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">물음표 공방</span>
       </header>
     )
   } else if (boardNewMatch || boardEditMatch) {

@@ -1392,6 +1392,34 @@ export async function setupSecretBoard(groupId, name) {
   return data
 }
 
+// ---- 물음표 공방 아이템(개설) ----
+// 이 그룹에 물음표 공방이 개설됐는지. 데이트/놀이터 메뉴 노출 여부 판단.
+export async function getGroupQworkshop(groupId) {
+  const { data, error } = await supabase.rpc('group_qworkshop', { p_group: groupId })
+  if (error) return false   // 미배포/권한없음 → 미개설로 간주
+  return !!data
+}
+// 물음표 공방을 개설할 수 있는 내 그룹(프리미엄 + 미개설)
+export async function qworkshopEligibleGroups() {
+  const { data, error } = await supabase.rpc('qworkshop_eligible_groups')
+  if (error) {
+    if (error.code === 'PGRST202' || /qworkshop_eligible_groups/.test(error.message || '')) return []
+    throw error
+  }
+  return data ?? []
+}
+// 물음표 공방 개설(아이템 1개 소모)
+export async function setupQworkshop(groupId) {
+  const { data, error } = await supabase.rpc('qworkshop_setup', { p_group: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || /qworkshop_setup/.test(error.message || '')) {
+      throw new Error('물음표 공방 기능이 아직 DB에 설정되지 않았습니다. (question-workshop.sql 을 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return data
+}
+
 // ---- 확성기(그룹 전체 알림) ----
 export async function sendMegaphone(groupId, body) {
   const { data, error } = await supabase.rpc('megaphone_send', { p_group: groupId, p_body: body })

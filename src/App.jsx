@@ -17,6 +17,7 @@ import Omok from './pages/Omok'
 import Davinci from './pages/Davinci'
 import Rps from './pages/Rps'
 import TarotCafe from './pages/TarotCafe'
+import QuestionWorkshop from './pages/QuestionWorkshop'
 import SecretBoard, { BoardCompose, BoardPost, BoardComments, BoardSearch, BoardSettings } from './pages/SecretBoard'
 import PraiseStickers from './pages/PraiseStickers'
 import MemberDetail from './pages/MemberDetail'
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="/groups/:groupId/davinci" element={<Davinci />} />
         <Route path="/groups/:groupId/rps" element={<Rps />} />
         <Route path="/groups/:groupId/tarot" element={<TarotCafe />} />
+        <Route path="/groups/:groupId/qworkshop" element={<QuestionWorkshop />} />
         <Route path="/groups/:groupId/board" element={<SecretBoard />} />
         <Route path="/groups/:groupId/board/new" element={<BoardCompose />} />
         <Route path="/groups/:groupId/board/search" element={<BoardSearch />} />

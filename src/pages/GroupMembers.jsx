@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
-import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, setGroupNextAnniv, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, listBlockedFeatures } from '../lib/api'
+import { listMemberCards, getGroup, isCoupleGroup, isFriendGroup, regenerateInviteCode, setGroupAnniversary, setGroupNextAnniv, coupleRingClaimedAt, getGroupDecoMap, touchQuest, getGroupBoard, getGroupQworkshop, listBlockedFeatures } from '../lib/api'
 import { formatBirthDot } from '../lib/birthday'
 import { useAuth } from '../context/AuthContext'
 import { openMember } from '../lib/memberModal'
@@ -91,21 +91,24 @@ export default function GroupMembers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [boardName, setBoardName] = useState(null)   // 개설된 익명 게시판 이름(없으면 null)
+  const [qworkshopOn, setQworkshopOn] = useState(false)   // 물음표 공방 개설 여부
   const [blockedFeatures, setBlockedFeatures] = useState([]) // 관리자가 그룹별 사용량 제어로 차단한 기능 키
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [cards, g, c, f, d, bn, bf] = await Promise.all([
+      const [cards, g, c, f, d, bn, qw, bf] = await Promise.all([
         listMemberCards(groupId),
         getGroup(groupId).catch(() => null),
         isCoupleGroup(groupId).catch(() => false),
         isFriendGroup(groupId).catch(() => false),
         getGroupDecoMap(groupId).catch(() => ({})),
         getGroupBoard(groupId).catch(() => null),
+        getGroupQworkshop(groupId).catch(() => false),
         listBlockedFeatures(groupId).catch(() => []),
       ])
       setBoardName(bn || null)
+      setQworkshopOn(!!qw)
       setMembers((cards || []).filter((m) => !m.is_left)); setDecoMap(d || {}); setGroup(g); setCouple(c); setFriend(f); setAnniv(g?.anniversary || '')
       setBlockedFeatures(bf || [])
       if (c) coupleRingClaimedAt(groupId).then((d) => setClaimDate(d || '')).catch(() => {})
@@ -302,7 +305,7 @@ export default function GroupMembers() {
             <PlayCard emoji="⭐" bg="#eeebfe" title="칭찬 스티커" sub="착한 애인 챌린지" onClick={() => go('praise')} />
             {/* 타로 카페: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
             {isAdmin && <PlayCard emoji="🔮" bg="#eeebfe" title="타로 카페" sub="오늘의 카드" onClick={() => go('tarot')} />}
-            {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
+            {qworkshopOn && <PlayCard emoji="❓" bg="#fff0d6" title="물음표 공방" sub="서로에게 물어봐요" onClick={() => go('qworkshop')} />}
           </div>
         </div>
 
@@ -435,7 +438,7 @@ export default function GroupMembers() {
             <div className="csx-scroll">
               {boardName && <PlayCard img="/store/secret-board.svg" bg="#f4ece0" title="비밀 게시판" sub="익명으로 입장" onClick={() => go('board')} />}
               <PlayCard emoji="✏️" bg="#fbf1d3" title="낙서장" sub="같이 그리기" onClick={() => go('draw')} />
-              {isAdmin && <PlayCard emoji="💬" bg="#e8f4ec" title="질문팩" sub="메뉴 준비 중" />}
+              {qworkshopOn && <PlayCard emoji="❓" bg="#fff0d6" title="물음표 공방" sub="서로에게 물어봐요" onClick={() => go('qworkshop')} />}
             </div>
           </div>
           <div className="csx-zone">
