@@ -195,6 +195,26 @@ export default function DrawBoard() {
     }
   }, [])
 
+  // GraffitiPad.jsx(푸린 마이크 낙서)에서 이미 겪었던 문제: React 는 성능을 위해
+  // touchstart/touchmove 리스너를 passive 로 등록해서, JSX onPointerDown/onPointerMove
+  // 안에서 e.preventDefault() 를 불러도 실제 터치 기본 동작(스크롤/텍스트 선택 loupe 등
+  // 제스처 판별)이 안 막히는 경우가 있다(특히 iPadOS Safari + Apple Pencil) — 낙서장엔
+  // 이 우회 코드가 빠져 있었다. CSS touch-action:none 만으로는 브라우저가 여전히 제스처
+  // 판별에 나설 수 있고, 그 판별 과정에서 아주 짧고 빠른 펜 터치가 페이지로 아예 전달이
+  // 안 되는(RAW-pointerdown 조차 안 찍히는) 것으로 보인다 — 캔버스에 직접 passive:false 로
+  // touchstart/touchmove 를 걸어 확실히 막는다.
+  useEffect(() => {
+    const cv = canvasRef.current
+    if (!cv) return
+    const stop = (e) => e.preventDefault()
+    cv.addEventListener('touchstart', stop, { passive: false })
+    cv.addEventListener('touchmove', stop, { passive: false })
+    return () => {
+      cv.removeEventListener('touchstart', stop)
+      cv.removeEventListener('touchmove', stop)
+    }
+  }, [])
+
   // 저장된 획을 불러와 반영(최초 진입 + 차단 상태에서의 수동 새로고침 공용)
   const loadStrokes = useCallback(async () => {
     try {
