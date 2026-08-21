@@ -1,6 +1,7 @@
 import kittyRibbonPng from '../assets/deco/kitty-ribbon.png'
 import partyHatPng from '../assets/deco/party-hat.png'
 import cherryCreamPng from '../assets/deco/cherry-cream.png'
+import bandagePng from '../assets/deco/bandage.png'
 import alienShadesPng from '../assets/deco/alien-shades.png'
 import koreaPng from '../assets/deco/korea.png'
 
@@ -290,17 +291,8 @@ function BubbleGum() {
   )
 }
 
-// 반창고: 샘플 이미지의 외곽선을 그대로 추출해 그린 경로(살짝 곡선진 띠).
-// 띠·패드가 한 그룹으로 같이 회전하므로 안쪽 구성까지 항상 같은 각도로 맞는다.
-const BANDAGE_PATH = 'M 13.59,-0.95 C 13.45,-1.65 13.00,-2.82 12.52,-3.37 C 12.04,-3.91 12.44,-4.20 10.71,-4.23 C 8.98,-4.27 5.21,-3.59 2.14,-3.58 C -0.94,-3.57 -5.41,-4.17 -7.74,-4.18 C -10.07,-4.18 -10.98,-3.82 -11.83,-3.59 C -12.68,-3.37 -12.56,-3.30 -12.85,-2.81 C -13.14,-2.31 -13.66,-1.45 -13.58,-0.62 C -13.50,0.22 -13.05,1.49 -12.38,2.18 C -11.70,2.88 -11.46,3.15 -9.53,3.54 C -7.60,3.94 -3.22,4.40 -0.80,4.55 C 1.61,4.70 3.05,4.70 4.96,4.45 C 6.88,4.20 9.31,3.67 10.71,3.07 C 12.11,2.47 12.88,1.52 13.36,0.85 C 13.84,0.18 13.73,-0.25 13.59,-0.95 Z'
 function Bandage() {
-  const CX = 82.5, CY = 61
-  return (
-    <g transform={`translate(${CX} ${CY}) rotate(-25.6)`}>
-      <path d={BANDAGE_PATH} fill="#eac29a" stroke="#d9a876" strokeWidth="0.6" />
-      <rect x="-4" y="-3" width="8" height="6" rx="1.8" fill="#f5d4b4" />
-    </g>
-  )
+  return <image href={bandagePng} x="68.77" y="52.15" width="26.93" height="17.77" preserveAspectRatio="xMidYMid meet" />
 }
 
 // 픽셀 선글라스: 왼쪽 알(10w) + 상단 브릿지(3) + 오른쪽 알(10w), 5행. F=검정 W=흰 .=빈칸
@@ -528,7 +520,7 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '19 22 62 36',
-  'deco-bandage': '64 49 36 25',
+  'deco-bandage': '68 51 29 20',
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
