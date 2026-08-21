@@ -3560,9 +3560,14 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .ts-status-tabs { margin-top: 2px; }
 .ts-status-pill { left: 4px; }  /* 컨테이너 좌우 패딩(4px) 보정 */
 .ts-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.ts-chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: none;
-  border-radius: 999px; padding: 9px 11px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
-  background: #f4f3f7; color: #9a96a8; font-weight: 600; transition: background .18s, box-shadow .18s, color .18s; }
+/* 선택 시 테두리는 box-shadow:inset 대신 실제 border 로 그린다 — iOS Safari 는
+   pill(border-radius:999px) 모양에 inset 그림자를 그리면 위/아래 굵기가 다르게
+   보이는 렌더링 버그가 있다. 기본 상태에도 투명 테두리를 미리 깔아 둬서(box-sizing:
+   border-box) 선택 시 색만 바뀌고 크기는 그대로 유지되게 한다. */
+.ts-chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  border: 1.5px solid transparent; box-sizing: border-box;
+  border-radius: 999px; padding: 7.5px 9.5px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+  background: #f4f3f7; color: #9a96a8; font-weight: 600; transition: background .18s, border-color .18s, color .18s; }
 .ts-chip.sel { font-weight: 700; }
 .ts-chip-emoji { font-size: 14px; }
 /* 작품 검색 dashed 카드 */
