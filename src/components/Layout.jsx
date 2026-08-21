@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useMatch, useLocation, useNavigate } from 'react
 import { useAuth } from '../context/AuthContext'
 import { taskTerms } from '../lib/constants'
 import { attachShellFit } from '../lib/shellFit'
-import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, hasClaimableQuest, getGroupBoard, listStoreItems } from '../lib/api'
+import { unreadNotificationCount, getMyCoinBalance, unreadNoteCount, hasClaimableQuest, hasNewStoreItems, getGroupBoard, listStoreItems } from '../lib/api'
 import { setStoreCatalog } from '../lib/storeCatalog'
 import Brand from './Brand'
 import PawIcon from './PawIcon'
@@ -509,6 +509,16 @@ export default function Layout() {
     return () => clearInterval(iv)
   }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { refreshQuestClaimable() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 하단 탭 '상점' 점: 일반/프리미엄 중 아직 안 본 신상이 있으면 표시(둘 다 봐야 없어짐)
+  const [storeNew, setStoreNew] = useState(false)
+  const refreshStoreNew = () => hasNewStoreItems().then(setStoreNew).catch(() => {})
+  useEffect(() => {
+    refreshStoreNew()
+    const iv = setInterval(refreshStoreNew, 60000)
+    return () => clearInterval(iv)
+  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refreshStoreNew() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
   const [coin, setCoin] = useState(null)
@@ -1086,7 +1096,7 @@ export default function Layout() {
             <nav className="desknav-left" ref={desknavRef}>
               <NavLink to="/" end>내 그룹</NavLink>
               <NavLink to="/schedule">일정</NavLink>
-              <NavLink to="/store">상점</NavLink>
+              <NavLink to="/store"><span className="nav-ico-wrap">상점{storeNew && <span className="nav-dot" aria-label="신상 입고" />}</span></NavLink>
               <NavLink to="/inventory">인벤토리</NavLink>
               <span className="desknav-indicator" aria-hidden="true"
                 style={{ transform: `translateX(${desknavIndicator.left}px)`, width: desknavIndicator.width }} />
@@ -1115,7 +1125,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, refreshStoreBadge: refreshStoreNew, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
@@ -1123,7 +1133,7 @@ export default function Layout() {
         <nav className="bottomnav">
           <NavLink to="/" end><GroupsIcon /><span>그룹</span></NavLink>
           <NavLink to="/schedule"><CalendarIcon /><span>일정</span></NavLink>
-          <NavLink to="/store"><StoreIcon /><span>상점</span></NavLink>
+          <NavLink to="/store"><span className="nav-ico-wrap"><StoreIcon />{storeNew && <span className="nav-dot" aria-label="신상 입고" />}</span><span>상점</span></NavLink>
           <NavLink to="/notes"><span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span><span>쪽지</span></NavLink>
           <NavLink to="/me"><span className="nav-ico-wrap"><MyIcon />{questClaimable && <span className="nav-dot" aria-label="받을 수 있는 퀘스트" />}</span><span>마이</span></NavLink>
         </nav>

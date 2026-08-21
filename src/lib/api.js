@@ -1969,6 +1969,20 @@ export async function hasClaimableQuest() {
   }
   return !!data
 }
+// 상점에 아직 안 본 신상이 있는지(하단 탭 배지용, 가벼운 조회). RPC 미배포 시 false.
+export async function hasNewStoreItems() {
+  const { data, error } = await supabase.rpc('has_new_store_items')
+  if (error) {
+    if (error.code === 'PGRST202' || /has_new_store_items/.test(error.message || '')) return false
+    throw error
+  }
+  return !!data
+}
+// 일반('general')/프리미엄('premium') 상점 탭에 들어가면 그 탭을 "확인함"으로 기록.
+export async function markStoreSeen(kind) {
+  const { error } = await supabase.rpc('mark_store_seen', { p_kind: kind })
+  if (error && error.code !== 'PGRST202' && !/mark_store_seen/.test(error.message || '')) throw error
+}
 // 퀘스트 보상 수령 → 새 잔액 반환
 export async function claimQuest(key) {
   const { data, error } = await supabase.rpc('claim_quest', { p_key: key })

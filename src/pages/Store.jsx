@@ -6,7 +6,7 @@ import GiftItemModal from '../components/GiftItemModal'
 import StoreItemImage from '../components/StoreItemImage'
 import PawIcon from '../components/PawIcon'
 import { decoSlot } from '../components/AvatarDeco'
-import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest, markStoreSeen } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
@@ -28,7 +28,7 @@ const TOOLBAR_STARS = [
 ]
 
 export default function Store() {
-  const { refreshCoin, setStorePremium } = useOutletContext()
+  const { refreshCoin, setStorePremium, refreshStoreBadge } = useOutletContext()
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -61,6 +61,11 @@ export default function Store() {
     const el = document.querySelector('.content')
     if (el) el.scrollTop = 0
   }, [premiumView])
+  // 지금 보고 있는 탭(일반/프리미엄)을 "확인함"으로 기록 → 하단 탭 신상 점 갱신.
+  // 일반/프리미엄 둘 다 신상이 있으면 두 탭에 다 들어가야 점이 없어진다.
+  useEffect(() => {
+    markStoreSeen(premiumView ? 'premium' : 'general').then(() => refreshStoreBadge?.()).catch(() => {})
+  }, [premiumView]) // eslint-disable-line react-hooks/exhaustive-deps
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
