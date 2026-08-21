@@ -94,6 +94,13 @@ export default function DrawBoard() {
   const [refreshBusy, setRefreshBusy] = useState(false)  // 새로고침 버튼 연타 방지(중복 요청/DB 부하 방지)
   const refreshBusyRef = useRef(false)
 
+  // ---- 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것) ----
+  const [debugLog, setDebugLog] = useState([])
+  const moveCountRef = useRef(0)
+  function dlog(msg) {
+    setDebugLog((prev) => [...prev.slice(-14), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
+  }
+
   // ---- 렌더 ----
   // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
   // 캐시(bgCanvasRef)에도 픽셀 그대로 복사해 둔다 — 실제 캔버스 해상도(dpr 반영된 backing
@@ -143,13 +150,16 @@ export default function DrawBoard() {
     const rect = cv.getBoundingClientRect()
     if (rect.width < 1 || rect.height < 1) return
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    cv.width = Math.round(rect.width * dpr); cv.height = Math.round(rect.height * dpr)
+    const newW = Math.round(rect.width * dpr), newH = Math.round(rect.height * dpr)
+    if (newW !== cv.width || newH !== cv.height) dlog(`RESIZE ${cv.width}x${cv.height}->${newW}x${newH} drawing=${!!drawing.current}`)
+    cv.width = newW; cv.height = newH
     const ctx = cv.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctxRef.current = ctx
     sizeRef.current = { w: rect.width, h: rect.height }
     setCanvasW(rect.width)
     redrawAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [redrawAll])
 
   useEffect(() => {
@@ -275,16 +285,22 @@ export default function DrawBoard() {
     // 해 두고 새 포인터로 넘어간다 — 낙서장은 애초에 손바닥 오탐(pointerType 구분)을 굳이
     // 따지지 않는 편이 더 안전했다(같은 방식으로 만든 GraffitiPad.jsx 는 포인터 종류를
     // 아예 구분하지 않는데도 잘 동작한다). 여러 겹치는 분기를 두는 대신 하나로 단순화했다.
-    if (drawing.current) finishStroke(drawing.current)
+    if (drawing.current) {
+      dlog(`DOWN pid=${e.pointerId} type=${e.pointerType} while prev(pid=${drawing.current.pointerId} n=${drawing.current.p.length} moves=${moveCountRef.current}) unfinished -> finishStroke`)
+      finishStroke(drawing.current)
+    } else {
+      dlog(`DOWN pid=${e.pointerId} type=${e.pointerType} btn=${e.button} pressure=${e.pressure}`)
+    }
+    moveCountRef.current = 0
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     // setPointerCapture 는 그 시점에 이미 비활성화된 pointerId 를 넘기면(좁은 범위에 여러
     // 획을 빠르게 연달아 찍을 때, 펜슬의 pointerId 가 자주 재사용되면서 종종 생김)
     // InvalidPointerId 예외를 던진다. try 로 안 감싸면 이 예외가 그대로 튀어 올라가 onDown
     // 이 여기서 중단돼 획 자체(drawing.current 설정·점 그리기)가 통째로 시작을 못 해
     // "획이 씹힌" 것처럼 보인다(DecoAdjuster.jsx 의 동일 호출도 같은 이유로 try 로 감싸져 있음).
-    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 재사용된 pointerId 등 */ }
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch (err) { dlog(`CAPTURE-ERR ${err?.name || err}`) }
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
-    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
+    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
@@ -293,6 +309,7 @@ export default function DrawBoard() {
   }
   function onMove(e) {
     const cur = drawing.current; if (!cur) return
+    moveCountRef.current++
     // e 는 React SyntheticEvent 라 getCoalescedEvents 가 없음(화이트리스트에 없는 네이티브 전용 메서드) →
     // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
     const ne = e.nativeEvent
@@ -325,11 +342,13 @@ export default function DrawBoard() {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
-    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
+    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
+    catch (err) { dlog(`SAVE-ERR n=${cur.p.length} ${err?.message || err}`) }
   }
-  async function onUp() {
+  async function onUp(e) {
     const cur = drawing.current; if (!cur) return
     drawing.current = null
+    dlog(`${e?.type === 'pointercancel' ? 'CANCEL' : 'UP'} pid=${cur.pointerId} n=${cur.p.length} moves=${moveCountRef.current}`)
     flush(true)
     await finishStroke(cur)
   }
@@ -388,6 +407,17 @@ export default function DrawBoard() {
         <div className="draw-spring" aria-hidden="true">
           {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
         </div>
+        {/* 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것) */}
+        {debugLog.length > 0 && (
+          <div style={{
+            position: 'absolute', left: 4, right: 4, bottom: 4, zIndex: 20,
+            background: 'rgba(0,0,0,.78)', color: '#7CFC7C', fontSize: 9.5, lineHeight: 1.35,
+            fontFamily: 'monospace', padding: '4px 6px', borderRadius: 6, maxHeight: 140,
+            overflowY: 'auto', pointerEvents: 'none', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+          }}>
+            {debugLog.join('\n')}
+          </div>
+        )}
         {drawBlocked ? (
           <div className="draw-blocked-row">
             <span className="draw-blocked-text">사용량 제어로 실시간 낙서 반영이 차단됐어요.<br />새로고침 시 상대방의 낙서를 확인할 수 있어요.</span>
