@@ -211,8 +211,8 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
         <span className="deco-adj-face" style={src ? undefined : { background: c.bg, color: c.fg, fontSize: size * 0.34 }}>
           {src ? <img src={src} alt="" draggable={false} onContextMenu={(e) => e.preventDefault()} /> : initial}
         </span>
-        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" pickable={split} />
-        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" pickable={split} />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="back" pickable={split} size={size} />
+        <AvatarDeco items={[{ id: itemId, tf: cur }]} layer="front" pickable={split} size={size} />
       </div>
 
       {splittable && (
