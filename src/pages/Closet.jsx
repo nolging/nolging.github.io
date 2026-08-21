@@ -213,7 +213,7 @@ export default function Closet() {
 // 그룹은 이미 정해져 있어 그룹 선택 필드가 없고, 실제 서버 반영 없이 로컬 상태만 바꾼다(onStage).
 function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUnstage }) {
   const [tf, setTf] = useState(DECO_TF0)
-  const [replaceId, setReplaceId] = useState('')
+  const [pickReplace, setPickReplace] = useState(null) // { selected } | null — 정원 초과 시 해제할 아이템 선택 대기
 
   const alreadyHere = itemId && worn.has(itemId)
   const slot = itemId ? slotOf(itemId) : null
@@ -231,14 +231,21 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
   useEffect(() => {
     if (!open) return
     setTf(itemId && worn.get(itemId) ? clampTf(worn.get(itemId), itemId) : { ...DECO_TF0 })
-    setReplaceId(others[0] || '')
+    setPickReplace(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, itemId])
 
+  // "적용하기"를 눌렀을 때(위치·크기 조정을 마친 시점) 정원이 찼으면 해제할 아이템을 먼저
+  // 고르게 한다(인벤토리와 동일한 흐름) — 후보가 하나뿐이면 확인창 없이 바로 그걸 교체.
   function apply() {
     if (!itemId) return
-    const toRemove = overCap ? (others.length > 1 ? replaceId : others[0]) : null
-    onStage(itemId, clampTf(tf, itemId), toRemove)
+    if (needPick) { setPickReplace({ selected: others[0] }); return }
+    onStage(itemId, clampTf(tf, itemId), overCap ? others[0] : null)
+  }
+  function confirmReplace() {
+    if (!itemId || !pickReplace) return
+    onStage(itemId, clampTf(tf, itemId), pickReplace.selected)
+    setPickReplace(null)
   }
 
   return (
@@ -260,21 +267,6 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
           </div>
         )}
         {itemId && (
-          <div style={{ fontSize: 10, color: '#e11', background: '#fff3f3', padding: '6px 8px', borderRadius: 6, wordBreak: 'break-all' }}>
-            DEBUG slot=[{slot}] cap={cap} alreadyHere={String(alreadyHere)} overCap={String(overCap)} needPick={String(needPick)}<br />
-            others={JSON.stringify(others.map((id) => ({ id, slot: slotOf(id) })))}<br />
-            worn={JSON.stringify([...worn.keys()].map((id) => ({ id, slot: slotOf(id) })))}
-          </div>
-        )}
-        {needPick && (
-          <label className="field">
-            <span>해제할 아이템</span>
-            <select value={replaceId} onChange={(e) => setReplaceId(e.target.value)}>
-              {others.map((id) => <option key={id} value={id}>{catalogName(id) || id}</option>)}
-            </select>
-          </label>
-        )}
-        {itemId && (
           <DecoAdjuster itemId={itemId} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
             seed={myId} tf={tf} onChange={setTf} />
         )}
@@ -285,6 +277,27 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
           </div>
         )}
       </div>
+
+      <Modal open={!!pickReplace} onClose={() => setPickReplace(null)}
+        title={(slot === 'face' || slot === '얼굴') ? '얼굴 장식 교체' : '머리 장식 교체'}>
+        <div className="confirm-modal">
+          <p className="confirm-text">
+            {(slot === 'face' || slot === '얼굴') ? '얼굴 장식' : '머리 장식'}은 두 개까지만 장착할 수 있어요.<br />어떤 아이템을 해제할까요?
+          </p>
+          {pickReplace && (
+            <label className="field">
+              <span>해제할 아이템</span>
+              <select value={pickReplace.selected} onChange={(e) => setPickReplace({ selected: e.target.value })}>
+                {others.map((id) => <option key={id} value={id}>{catalogName(id) || id}</option>)}
+              </select>
+            </label>
+          )}
+          <div className="confirm-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setPickReplace(null)}>취소</button>
+            <button type="button" className="btn btn-primary" onClick={confirmReplace}>확인</button>
+          </div>
+        </div>
+      </Modal>
     </Modal>
   )
 }
