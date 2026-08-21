@@ -562,16 +562,21 @@ const heartBeamPath = (cx, cy, a) =>
   + ` C${cx + a * 1.15} ${cy - a * 0.98} ${cx + a * 0.15} ${cy - a * 1.08} ${cx} ${cy - a * 0.58} Z`
 const HEART_BEAM_PATH_D = heartBeamPath(50, 54, 34)
 const HEART_BEAM_STROKE = 15.3
-// 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 중간 → 가장 또렷하고 진한 겹(참고 이미지 3장과
-// 동일한 3가지 색·흐림 정도). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작
-// 시점(d)을 줘 항상 크기가 다른 하트 3겹이 겹쳐서 자라는 것처럼 보이게 한다.
+// 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 진한 겹(2가지 색·흐림 정도만 반복 — 가장
+// 진하고 또렷한 겹은 뺐다). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작
+// 시점(d)을 줘 항상 크기가 다른 하트 2겹이 겹쳐서 자라는 것처럼 보이게 한다. d 를
+// 음수(마이너스 딜레이)로 줘서, 페이지에 처음 들어와도 각 겹이 이미 주기 중간 어딘가에
+// 가 있는 상태로 바로 시작한다 — 그래야 "방금 시작한" 게 아니라 "원래부터 계속 반복되고
+// 있었던" 것처럼 보인다(양수 딜레이면 맨 처음엔 딜레이가 지날 때까지 화면에 아무것도
+// 안 보이다가 그제서야 첫 하트가 사진 뒤에서 자라나기 시작해 부자연스럽다).
 const HEART_BEAM_FLAVORS = [
-  { c: '#ffd9ea', blur: 3.2, op: 0.75 },
-  { c: '#ffb0d6', blur: 1.7, op: 0.88 },
-  { c: '#ff6fa8', blur: 0.7, op: 1 },
+  { c: '#ffd9ea', blur: 2.4, op: 0.9 },
+  { c: '#ffb0d6', blur: 1.0, op: 1 },
 ]
 const HEART_BEAM_DUR = 2.8
-const HEART_BEAM_PULSES = HEART_BEAM_FLAVORS.map((f, i) => ({ ...f, d: (i * HEART_BEAM_DUR) / HEART_BEAM_FLAVORS.length }))
+const HEART_BEAM_PULSES = HEART_BEAM_FLAVORS.map((f, i) => ({
+  ...f, d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_FLAVORS.length,
+}))
 function HeartBeam() {
   return (
     <g>
