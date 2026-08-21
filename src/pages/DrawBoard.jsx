@@ -55,7 +55,7 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
 export default function DrawBoard() {
   const { groupId } = useParams()
   const { setHeaderSave } = useOutletContext() || {}
-  const { profile, isAdmin } = useAuth()
+  const { profile } = useAuth()
   const uid = profile?.id
 
   const canvasRef = useRef(null)
@@ -93,13 +93,6 @@ export default function DrawBoard() {
   const [drawBlocked, setDrawBlocked] = useState(false) // 관리자가 그룹별 사용량 제어로 낙서장 실시간 반영을 차단했는지
   const [refreshBusy, setRefreshBusy] = useState(false)  // 새로고침 버튼 연타 방지(중복 요청/DB 부하 방지)
   const refreshBusyRef = useRef(false)
-
-  // ---- 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것) ----
-  const [debugLog, setDebugLog] = useState([])
-  const moveCountRef = useRef(0)
-  function dlog(msg) {
-    setDebugLog((prev) => [...prev.slice(-79), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
-  }
 
   // ---- 렌더 ----
   // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
@@ -157,7 +150,6 @@ export default function DrawBoard() {
     // 는 최종 크기가 그대로여도(레이아웃 미세 흔들림 등으로) 콜백이 다시 불릴 수 있는데, 예전
     // 코드는 이때도 매번 캔버스를 지우고 redrawAll() 로 다시 그렸다(로그에도 안 남는 조용한 지움).
     if (newW === cv.width && newH === cv.height) { setCanvasW(rect.width); return }
-    dlog(`RESIZE ${cv.width}x${cv.height}->${newW}x${newH} drawing=${!!drawing.current}`)
     cv.width = newW; cv.height = newH
     const ctx = cv.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -174,35 +166,14 @@ export default function DrawBoard() {
     return () => ro.disconnect()
   }, [resize])
 
-  // ---- 임시 진단: React 합성 이벤트(onPointerDown)보다 더 이른 시점(capture 단계, 네이티브
-  // 리스너)에서 pointerdown/touchstart 자체가 몇 번 발생하는지 직접 센다. 지난 로그에서
-  // 씹힌 획은 우리 onDown 의 "DOWN" 로그 자체가 아예 안 찍혔다 — 즉 React 로직 문제가
-  // 아니라 브라우저/OS 가 애초에 그 짧은 터치의 이벤트를 안 보냈을 가능성이 있다. 이 로그가
-  // 씹힌 순간에도 RAW-pointerdown 이 정상 개수로 찍히면 문제는 우리 코드/React 레이어에 있는
-  // 것이고, 이마저 안 찍히면 OS/WebKit 레벨에서 그 터치 자체가 페이지로 전달되지 않는다는
-  // 뜻이라 다음 대응 방향이 완전히 달라진다.
-  useEffect(() => {
-    const cv = canvasRef.current
-    if (!cv) return
-    const onRaw = (e) => {
-      dlog(`RAW-${e.type} pid=${e.pointerId ?? '-'}${e.type === 'touchstart' ? ` touches=${e.touches?.length}` : ''}`)
-    }
-    cv.addEventListener('pointerdown', onRaw, { capture: true })
-    cv.addEventListener('touchstart', onRaw, { capture: true, passive: true })
-    return () => {
-      cv.removeEventListener('pointerdown', onRaw, { capture: true })
-      cv.removeEventListener('touchstart', onRaw, { capture: true })
-    }
-  }, [])
-
   // GraffitiPad.jsx(푸린 마이크 낙서)에서 이미 겪었던 문제: React 는 성능을 위해
   // touchstart/touchmove 리스너를 passive 로 등록해서, JSX onPointerDown/onPointerMove
   // 안에서 e.preventDefault() 를 불러도 실제 터치 기본 동작(스크롤/텍스트 선택 loupe 등
   // 제스처 판별)이 안 막히는 경우가 있다(특히 iPadOS Safari + Apple Pencil) — 낙서장엔
   // 이 우회 코드가 빠져 있었다. CSS touch-action:none 만으로는 브라우저가 여전히 제스처
   // 판별에 나설 수 있고, 그 판별 과정에서 아주 짧고 빠른 펜 터치가 페이지로 아예 전달이
-  // 안 되는(RAW-pointerdown 조차 안 찍히는) 것으로 보인다 — 캔버스에 직접 passive:false 로
-  // touchstart/touchmove 를 걸어 확실히 막는다.
+  // 안 되는 것으로 보인다(실제로 이 우회 코드 추가 후 애플펜슬 획 씹힘이 해결됨) — 캔버스에
+  // 직접 passive:false 로 touchstart/touchmove 를 걸어 확실히 막는다.
   useEffect(() => {
     const cv = canvasRef.current
     if (!cv) return
@@ -331,20 +302,14 @@ export default function DrawBoard() {
     // 해 두고 새 포인터로 넘어간다 — 낙서장은 애초에 손바닥 오탐(pointerType 구분)을 굳이
     // 따지지 않는 편이 더 안전했다(같은 방식으로 만든 GraffitiPad.jsx 는 포인터 종류를
     // 아예 구분하지 않는데도 잘 동작한다). 여러 겹치는 분기를 두는 대신 하나로 단순화했다.
-    if (drawing.current) {
-      dlog(`DOWN pid=${e.pointerId} type=${e.pointerType} while prev(pid=${drawing.current.pointerId} n=${drawing.current.p.length} moves=${moveCountRef.current}) unfinished -> finishStroke`)
-      finishStroke(drawing.current)
-    } else {
-      dlog(`DOWN pid=${e.pointerId} type=${e.pointerType} btn=${e.button} pressure=${e.pressure}`)
-    }
-    moveCountRef.current = 0
+    if (drawing.current) finishStroke(drawing.current)
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     // setPointerCapture 는 그 시점에 이미 비활성화된 pointerId 를 넘기면(좁은 범위에 여러
     // 획을 빠르게 연달아 찍을 때, 펜슬의 pointerId 가 자주 재사용되면서 종종 생김)
     // InvalidPointerId 예외를 던진다. try 로 안 감싸면 이 예외가 그대로 튀어 올라가 onDown
     // 이 여기서 중단돼 획 자체(drawing.current 설정·점 그리기)가 통째로 시작을 못 해
     // "획이 씹힌" 것처럼 보인다(DecoAdjuster.jsx 의 동일 호출도 같은 이유로 try 로 감싸져 있음).
-    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch (err) { dlog(`CAPTURE-ERR ${err?.name || err}`) }
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 비활성화된 pointerId 재사용 */ }
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
     const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
@@ -355,7 +320,6 @@ export default function DrawBoard() {
   }
   function onMove(e) {
     const cur = drawing.current; if (!cur) return
-    moveCountRef.current++
     // e 는 React SyntheticEvent 라 getCoalescedEvents 가 없음(화이트리스트에 없는 네이티브 전용 메서드) →
     // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
     const ne = e.nativeEvent
@@ -393,16 +357,14 @@ export default function DrawBoard() {
     // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
     const ctx = ctxRef.current
     if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
-    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length}`)
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
-    catch (err) { dlog(`SAVE-ERR n=${cur.p.length} ${err?.message || err}`) }
+    catch { /* noop */ }
   }
-  async function onUp(e) {
+  async function onUp() {
     const cur = drawing.current; if (!cur) return
     drawing.current = null
-    dlog(`${e?.type === 'pointercancel' ? 'CANCEL' : 'UP'} pid=${cur.pointerId} n=${cur.p.length} moves=${moveCountRef.current}`)
     flush(true)
     await finishStroke(cur)
   }
@@ -461,19 +423,6 @@ export default function DrawBoard() {
         <div className="draw-spring" aria-hidden="true">
           {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
         </div>
-        {/* 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것). 스크롤로 과거 기록을
-            볼 수 있게 pointerEvents 를 열어 뒀다(그만큼 이 영역 위에서는 낙서가 안 그려짐 —
-            진단 끝나면 통째로 제거할 임시 코드라 감수). */}
-        {isAdmin && debugLog.length > 0 && (
-          <div style={{
-            position: 'absolute', left: 4, right: 4, bottom: 4, zIndex: 20,
-            background: 'rgba(0,0,0,.85)', color: '#7CFC7C', fontSize: 9.5, lineHeight: 1.35,
-            fontFamily: 'monospace', padding: '4px 6px', borderRadius: 6, maxHeight: 220,
-            overflowY: 'auto', touchAction: 'pan-y', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-          }}>
-            {debugLog.join('\n')}
-          </div>
-        )}
         {drawBlocked ? (
           <div className="draw-blocked-row">
             <span className="draw-blocked-text">사용량 제어로 실시간 낙서 반영이 차단됐어요.<br />새로고침 시 상대방의 낙서를 확인할 수 있어요.</span>
