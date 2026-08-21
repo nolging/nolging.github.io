@@ -27,9 +27,9 @@ const PURIN_MIC_MS = 24 * 3600 * 1000
 // deco_slot 값이 곧 표시명. 레거시 영문 코드만 한글로 매핑.
 const slotOf = (id) => catalogDecoSlot(id) || decoSlot(id)
 const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경' }[slot] || slot)
-// 얼굴 슬롯은 한 번에 2개까지 동시 장착 가능(나머지는 1개, 백엔드 apply_avatar_deco 와 동일 규칙).
+// 얼굴/머리 슬롯은 한 번에 2개까지 동시 장착 가능(나머지는 1개, 백엔드 apply_avatar_deco 와 동일 규칙).
 // deco_slot 값은 관리자가 자유 문자열로 설정하므로 영문/한글 표기 둘 다 인식한다.
-const slotCapacity = (slot) => (slot === 'face' || slot === '얼굴' ? 2 : 1)
+const slotCapacity = (slot) => (['face', '얼굴', 'head', '머리'].includes(slot) ? 2 : 1)
 // 프로필 꾸미기 섹션 유형 필터 알약 순서(상점과 동일). 실제로 보유한 유형만 노출한다.
 const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
 // 명찰 used 행이 아직 유효(24h 내)한지
@@ -447,8 +447,8 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
 
   // willApply=true 인데 정원이 이미 찬 슬롯이면, 실제 적용 전에 무엇을 해제할지 사용자가
   // 고르게 한다(pickReplace 확인창) → 고르면 doApply(선택한 id) 로 이어진다.
-  // 정원이 1개인 슬롯(얼굴 외 전부)은 후보가 항상 1개뿐이라 고를 필요가 없으므로,
-  // 확인창 없이 그 하나를 바로 해제하고 교체한다(정원 2개인 얼굴 슬롯만 선택창을 띄운다).
+  // 정원이 1개인 슬롯(얼굴/머리 외 전부)은 후보가 항상 1개뿐이라 고를 필요가 없으므로,
+  // 확인창 없이 그 하나를 바로 해제하고 교체한다(정원 2개인 얼굴/머리 슬롯만 선택창을 띄운다).
   function apply() {
     if (!target) { setError('그룹을 선택해 주세요.'); return }
     const willApply = changed || !applied
@@ -486,7 +486,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
         <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨"
           sub={item ? (
             slotOf(item.id) === 'face' || slotOf(item.id) === '얼굴' ? '프로필 사진 얼굴에 장착해요 (최대 2개)'
-              : slotOf(item.id) === 'head' || slotOf(item.id) === '머리' ? '프로필 사진 머리 위에 장착해요'
+              : slotOf(item.id) === 'head' || slotOf(item.id) === '머리' ? '프로필 사진 머리 위에 장착해요 (최대 2개)'
                 : '프로필 사진에 장착해요'
           ) : ''} />
         {error && <div className="alert alert-error">{error}</div>}
@@ -589,7 +589,7 @@ function DecoMultiModal({ open, onClose, myId, item, onPick }) {
         <ItemHead id={item?.id} name={item?.name || '프로필 꾸미기'} emoji="✨"
           sub={item ? (
             slotOf(item.id) === 'face' || slotOf(item.id) === '얼굴' ? '프로필 사진 얼굴에 장착해요 (최대 2개)'
-              : slotOf(item.id) === 'head' || slotOf(item.id) === '머리' ? '프로필 사진 머리 위에 장착해요'
+              : slotOf(item.id) === 'head' || slotOf(item.id) === '머리' ? '프로필 사진 머리 위에 장착해요 (최대 2개)'
                 : '프로필 사진에 장착해요'
           ) : ''} />
 

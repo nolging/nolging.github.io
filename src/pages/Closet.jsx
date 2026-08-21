@@ -14,8 +14,9 @@ const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경', border: 
 const SLOT_RANK = { '머리': 0, head: 0, '얼굴': 1, face: 1, '안경': 2, glasses: 2, '테두리': 3, border: 3 }
 const slotOf = (id) => catalogDecoSlot(id) || (BORDER_IDS.has(id) ? '테두리' : decoSlot(id))
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
-// 얼굴 슬롯은 2개까지, 나머지는 1개까지 — apply_avatar_deco 와 동일 규칙(deco-face-slot-capacity.sql)
-const slotCap = (slot) => (slot === 'face' || slot === '얼굴' ? 2 : 1)
+// 얼굴/머리 슬롯은 2개까지, 나머지는 1개까지 — apply_avatar_deco 와 동일 규칙
+// (deco-face-slot-capacity.sql, deco-head-slot-capacity.sql)
+const slotCap = (slot) => (['face', '얼굴', 'head', '머리'].includes(slot) ? 2 : 1)
 const tfEq = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null)
 
 // 옷장: 이 그룹에서 내 프로필 꾸미기를 갈아입는 페이지. 화면에서 고르는 동안은 로컬 상태만
@@ -246,7 +247,7 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
               <div className="nc-link-name">{catalogName(itemId) || itemId}</div>
               <div className="nc-link-sub">
                 {slot === 'face' || slot === '얼굴' ? '프로필 사진 얼굴에 장착해요 (최대 2개)'
-                  : slot === 'head' || slot === '머리' ? '프로필 사진 머리 위에 장착해요'
+                  : slot === 'head' || slot === '머리' ? '프로필 사진 머리 위에 장착해요 (최대 2개)'
                     : '프로필 사진에 장착해요'}
               </div>
             </div>
