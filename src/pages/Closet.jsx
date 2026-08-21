@@ -219,8 +219,9 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
     return [...worn.keys()].filter((id) => id !== itemId && slotOf(id) === slot)
   }, [itemId, worn, slot])
   const overCap = !alreadyHere && others.length >= cap
-  // 정원이 1개뿐인 슬롯(머리/안경/테두리)은 고를 필요 없이 바로 교체, 얼굴(2개)만 선택창 필요
-  const needPick = overCap && cap > 1
+  // 해제할 후보가 2개 이상이면(정원 2인 슬롯에서 이미 꽉 찬 상태로 하나 더 고를 때)
+  // 어떤 걸 뺄지 직접 고르게 한다. 후보가 1개뿐이면 고를 필요 없이 그걸 바로 교체.
+  const needPick = overCap && others.length > 1
 
   useEffect(() => {
     if (!open) return
@@ -231,7 +232,7 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
 
   function apply() {
     if (!itemId) return
-    const toRemove = overCap ? (cap > 1 ? replaceId : others[0]) : null
+    const toRemove = overCap ? (others.length > 1 ? replaceId : others[0]) : null
     onStage(itemId, clampTf(tf, itemId), toRemove)
   }
 
