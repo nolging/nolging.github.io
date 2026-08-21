@@ -1737,12 +1737,14 @@ button.mention-chip:active { opacity: .6; }
 /* 하트 빔: 중심에서 하트가 일정한 속도로(linear + transform 은 0%/100% 두 지점만 지정해
    구간 내내 같은 속도로 커짐) 프로필 사진 바깥까지 퍼지다 자연스럽게 페이드아웃. 투명도는
    등장(0~10%) 후 한동안 유지되다 뒷부분(65~100%)에서만 옅어져 "갑자기 뚝" 사라지지 않는다.
-   컴포넌트에서 하트 4개를 균등한 딜레이로 겹쳐 그려 핑크·화이트가 번갈아 퍼지는 것처럼 보인다. */
+   전엔 최대 2.6배까지 커진 뒤에야 사라졌는데, 너무 커지기 전에 사라지도록 최대 배율을
+   낮췄다. 컴포넌트에서 하트 2개를 균등한 딜레이로 겹쳐 그려 두 색이 번갈아 퍼지는 것처럼
+   보인다. */
 @keyframes avd-heart-beam {
   0% { transform: scale(.32); opacity: 0; }
   10% { opacity: 1; }
   65% { opacity: .92; }
-  100% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2); opacity: 0; }
 }
 .avd-heart-beam-pulse { transform-box: fill-box; transform-origin: center; animation: avd-heart-beam 2.8s linear infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-beam-pulse { animation: none; opacity: .3; } }
