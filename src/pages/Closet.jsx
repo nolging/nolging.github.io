@@ -182,7 +182,11 @@ export default function Closet() {
                 const isHere = worn.has(id)
                 // 다른 그룹에 적용된 사본이 있어도, 이 그룹에 이미 장착 중이면(다른 사본 얘기이므로)
                 // 카드는 그대로 조작 가능해야 한다 — "다른 그룹에서 장착 중" 처리는 그 반대 경우만.
-                const isElsewhere = !isHere && wornElsewhere.has(id)
+                // 진입 시점에 이 그룹에서 장착 중이던 아이템은, 지금 잠깐 로컬로 해제한 상태라도
+                // 그 사본이 여전히 이 그룹 몫이므로(저장해야 실제로 풀림) 계속 활성 취급한다 —
+                // 그래야 "해제 → 바로 다시 적용"이 저장 없이도 즉시 가능하다.
+                const wasHereInitially = initialWornRef.current.has(id)
+                const isElsewhere = !isHere && !wasHereInitially && wornElsewhere.has(id)
                 // 다른 그룹에 장착 중이라도 여분 사본(active 행)이 있으면 이 그룹에도 바로 적용할
                 // 수 있으니 카드는 활성 상태로 두고 회색 배지만 단다 — 없으면 비활성화.
                 const blocked = isElsewhere && !hasSpare.has(id)
