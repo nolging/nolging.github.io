@@ -1720,19 +1720,19 @@ button.mention-chip:active { opacity: .6; }
 }
 .avd-bubble { transform-box: fill-box; transform-origin: center; animation: avd-bubble-wobble 4.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .avd-bubble { animation: none; } }
-/* 빨간 모자: 머리 위로 작은 하트가 천천히 나타나 둥실 떠오르다 옅어지며 사라짐. 아이템마다
-   딜레이·주기를 달리 줘(컴포넌트에서 style 로 지정) 한꺼번에 튀지 않고 "간간이" 따로따로
-   떠오르게 한다. 시작 위치는 후드 실루엣 안쪽(컴포넌트에서 실측해 배치) — 불투명도가 1에
-   가까워지는 것도 아직 후드에 가려진 구간(8%) 안에서 끝내, 흰 배경 위에서 "뚝뚝 끊기듯"
-   나타나는 대신 후드 뒤에서 이미 온전한 모습으로 스르륵 올라오는 것처럼 보이게 한다.
-   그 뒤로는 계속 떠오르며 넉넉한 구간에 걸쳐 서서히 옅어져 자연스럽게 사라진다. */
+/* 빨간 모자: 머리 위로 작은 하트가 나타나 처음부터 끝까지 같은 속도로 계속 떠오르다 사라짐.
+   아이템마다 딜레이·주기를 달리 줘(컴포넌트에서 style 로 지정) 한꺼번에 튀지 않고 "간간이"
+   따로따로 떠오르게 한다. 시작 위치는 후드 실루엣 안쪽(컴포넌트에서 실측해 배치) — 등장
+   구간(0~6%)은 아직 후드에 가려진 채라 흰 배경 위에서 "뚝뚝 끊기듯" 나타나지 않고 후드 뒤에서
+   이미 온전한 모습으로 올라오는 것처럼 보인다. translateY 값이 매 구간 -8.5%/% 로 일정해
+   (linear 타이밍과 맞물려) 도중에 멈칫거리지 않고 한결같은 속도로 쭉 올라간다. */
 @keyframes avd-heart-pop {
-  0% { opacity: 0; transform: scale(.4) translateY(0); }
-  8% { opacity: 1; transform: scale(1) translateY(-60%); }
-  62% { opacity: .9; transform: scale(.96) translateY(-560%); }
-  90%, 100% { opacity: 0; transform: scale(.72) translateY(-760%); }
+  0% { opacity: 0; transform: scale(.5) translateY(0); }
+  6% { opacity: 1; transform: scale(1) translateY(-51%); }
+  84% { opacity: 1; transform: scale(1) translateY(-714%); }
+  100% { opacity: 0; transform: scale(.8) translateY(-850%); }
 }
-.avd-heart-pop { transform-box: fill-box; transform-origin: center; animation: avd-heart-pop 5.2s ease-in-out infinite; opacity: 0; }
+.avd-heart-pop { transform-box: fill-box; transform-origin: center; animation: avd-heart-pop 5.2s linear infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-pop { animation: none; opacity: 0; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
