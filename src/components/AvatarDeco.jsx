@@ -545,6 +545,37 @@ function Bubble() {
   )
 }
 
+// 하트 빔(테두리 유형·뒤 레이어): 프로필 사진 뒤 중심에서 통통한 하트가 일정한 속도로
+// 커지며 사진 바깥까지 퍼져나가다 자연스럽게 페이드아웃 — 핑크·화이트 두 색이 번갈아
+// 겹쳐 퍼지는 하트 물결(참고 이미지의 하트 리플 효과를 재현). 참고 이미지의 하트보다
+// 더 통통하게(봉우리는 더 넓고 둥글게, 아래 꼭짓점은 더 짧고 뭉툭하게) 그렸다.
+const heartBeamPath = (cx, cy, a) =>
+  `M${cx} ${cy - a * 0.2}`
+  + ` C${cx - a * 0.15} ${cy - a * 1.15} ${cx - a * 1.15} ${cy - a * 1.0} ${cx - a * 1.05} ${cy - a * 0.15}`
+  + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 0.72}`
+  + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.05} ${cy - a * 0.15}`
+  + ` C${cx + a * 1.15} ${cy - a * 1.0} ${cx + a * 0.15} ${cy - a * 1.15} ${cx} ${cy - a * 0.2} Z`
+const HEART_BEAM_PATH_D = heartBeamPath(50, 50, 30)
+// 한 주기(HEART_BEAM_DUR) 안에 하트 4개가 균등한 간격으로 어긋난 시작 시점(d)을 갖게 해,
+// 항상 크기가 다른 하트 여러 겹이 동시에 퍼지는 것처럼 보이게 한다. 짝수 번째는 핑크,
+// 홀수 번째는 화이트로 번갈아 — 밝은 배경 위에서도 흰 하트 테두리가 보이게 옅은 분홍
+// 테를 살짝 둘렀다.
+const HEART_BEAM_DUR = 2.8
+const HEART_BEAM_PULSES = [0, 1, 2, 3].map((i) => ({
+  d: (i * HEART_BEAM_DUR) / 4,
+  c: i % 2 === 0 ? '#ff8fb8' : '#ffffff',
+}))
+function HeartBeam() {
+  return (
+    <g>
+      {HEART_BEAM_PULSES.map((p, i) => (
+        <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s` }}
+          d={HEART_BEAM_PATH_D} fill={p.c} stroke={p.c === '#ffffff' ? '#ffd9e8' : 'none'} strokeWidth="0.8" />
+      ))}
+    </g>
+  )
+}
+
 // 상점/인벤토리 미리보기: 꾸미기 아이템만 크게. 단, 귀(고양이·강아지)는 아바타 원을 앞에 두어
 // 실제 아바타처럼 아랫부분을 가림. 원 색은 귀 색과 동일(까만색/진한 회색).
 const PREVIEW_VB = {
@@ -575,6 +606,7 @@ const PREVIEW_VB = {
   'deco-circle-glasses': '13 29 74 34',
   'deco-korea': '61 46 20 20',
   'deco-red-hood': '-10 -11 120 131',
+  'deco-heart-beam': '-35 -35 170 170',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
@@ -674,6 +706,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
       {id === 'deco-red-hood' && <RedHood />}
+      {id === 'deco-heart-beam' && <HeartBeam />}
     </svg>
   )
 }
@@ -688,15 +721,15 @@ const ART = {
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
   'deco-devil-horn': DevilHorn, 'deco-kitty-ribbon': KittyRibbon, 'deco-bow-tie': BowTie,
   'deco-party-hat': PartyHat, 'deco-chupa-chups': ChupaChups, 'deco-cherry-cream': CherryCream,
-  'deco-red-hood': RedHood,
+  'deco-red-hood': RedHood, 'deco-heart-beam': HeartBeam,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
-export const BORDER_IDS = new Set(['deco-halo', 'deco-bubble', 'deco-red-hood'])
+export const BORDER_IDS = new Set(['deco-halo', 'deco-bubble', 'deco-red-hood', 'deco-heart-beam'])
 export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.has(d.id))
 const FRONTMOST_IDS = new Set(['deco-bubble'])
-// 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광 + 빨간 모자) — 나머지는 앞(front). 아트 종류로 결정.
-const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-red-hood'])
+// 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광 + 빨간 모자 + 하트 빔) — 나머지는 앞(front). 아트 종류로 결정.
+const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-red-hood', 'deco-heart-beam'])
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
 export function decoItems(deco) {
