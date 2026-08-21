@@ -111,6 +111,26 @@ export default function DrawBoard() {
     try { const d = ctx.getImageData(x, y, 1, 1).data; return `${d[0]},${d[1]},${d[2]},${d[3]}` }
     catch { return 'ERR' }
   }
+  // 획 경로 전체(점 배열)를 훑으며, 각 점 위치에 실제로 획 색상 잉크가 찍혀 있는지 확인한다 —
+  // 중간점 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓치므로, 경로를 최대 ~24곳 정도로
+  // 샘플링해 "어느 인덱스 부근이 안 그려졌는지"를 특정한다(흰색 지우개 획은 배경과 구분이
+  // 안 돼 검사에서 제외).
+  function findGaps(cur) {
+    if (cur.c === '#ffffff' || cur.p.length < 2) return []
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(cur.c)
+    if (!m) return []
+    const er = parseInt(m[1], 16), eg = parseInt(m[2], 16), eb = parseInt(m[3], 16)
+    const p = cur.p
+    const step = Math.max(1, Math.floor(p.length / 24))
+    const gaps = []
+    for (let i = 0; i < p.length; i += step) {
+      const px = sampleInk(p[i][0], p[i][1])
+      if (!px || px === 'ERR') continue
+      const [r, g, b] = px.split(',').map(Number)
+      if (Math.abs(r - er) + Math.abs(g - eg) + Math.abs(b - eb) > 150) gaps.push(i)
+    }
+    return gaps
+  }
 
   // ---- 렌더 ----
   // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
@@ -363,16 +383,15 @@ export default function DrawBoard() {
     // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
     const ctx = ctxRef.current
     if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
-    // 방금 그린 획의 한가운데(경로 위의 실제 점)를 찍어서, "그린 직후"와 "한 프레임 뒤"의
-    // 픽셀이 같은지 비교 — 다르면 finishStroke 이후의 무언가(다음 획의 리드로우 등)가 이
-    // 획을 지운다는 뜻이고, 애초에 다르면(mid 위치에 잉크가 없으면) paintStroke/좌표 계산
-    // 자체가 실패한다는 뜻이라 다음 라운드 진단을 위해 남겨 둔다.
-    const mid = cur.p[Math.floor(cur.p.length / 2)] || cur.p[0]
-    const pxNow = sampleInk(mid[0], mid[1])
-    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length} px=${pxNow}`)
+    // 방금 그린 획의 경로 전체(최대 ~24 지점)를 훑어서 실제로 잉크가 찍혔는지 확인 — 중간점
+    // 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓친다. "그린 직후"와 "한 프레임 뒤"를 각각
+    // 검사해서, 애초에 안 그려지는 건지(paintStroke 자체가 그 구간을 놓침) 아니면 그려졌다가
+    // 나중에 뭔가(다음 획의 리드로우 등)에 덮이는 건지 구분한다.
+    const gapsNow = findGaps(cur)
+    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length}${gapsNow.length ? ` GAP@${gapsNow.join(',')}` : ' ok'}`)
     requestAnimationFrame(() => {
-      const pxLater = sampleInk(mid[0], mid[1])
-      if (pxLater !== pxNow) dlog(`PAINT-CHANGED id=${cur.id.slice(-6)} ${pxNow}->${pxLater}`)
+      const gapsLater = findGaps(cur)
+      if (gapsLater.length) dlog(`PAINT-LATER-GAP id=${cur.id.slice(-6)} @${gapsLater.join(',')}`)
     })
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
