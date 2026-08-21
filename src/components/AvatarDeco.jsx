@@ -545,38 +545,47 @@ function Bubble() {
   )
 }
 
-// 하트 빔(테두리 유형·뒤 레이어): 프로필 사진 뒤 중심에서 통통한 하트가 일정한 속도로
-// 커지며 사진 바깥까지 퍼져나가다 자연스럽게 페이드아웃 — 핑크·화이트 두 색이 번갈아
-// 겹쳐 퍼지는 하트 물결(참고 이미지의 하트 리플 효과를 재현). 참고 이미지의 하트보다
-// 세로로 더 길고 위쪽 골(봉우리 사이 패인 부분)은 덜 들어가게 그렸다.
-// 하트를 채운 도형끼리 겹쳐서 "테두리"(링)를 흉내 내면, 뾰족한 아래 꼭짓점 쪽과 둥근
-// 위쪽 봉우리 쪽의 곡률이 달라 굵기가 고르지 않게 보인다(끝쪽은 얇고 옆은 두꺼움) —
-// 대신 채우기 없이 실제 stroke 로 하트 테두리 자체를 그려, 어느 지점이든 폭이 똑같은
-// 링이 되게 한다. vectorEffect="non-scaling-stroke" 로 커지는 애니메이션(scale) 도중에도
-// 테두리 굵기가 늘거나 줄지 않고 항상 일정하게 유지된다.
+// 하트 빔(테두리 유형·뒤 레이어): 프로필 사진 뒤에서 통통한 하트 테두리가 일정한 속도로
+// 커지며 사진 바깥까지 퍼져나가다 자연스럽게 페이드아웃 — 참고 이미지처럼 바깥으로
+// 갈수록 흐릿하고 옅어지는(가장 안쪽은 진하고 또렷, 바깥은 흐릿하고 옅은) 하트 링 3겹이
+// 반복해서 퍼진다. 채운 하트끼리 겹쳐서 "테두리"를 흉내 내면 뾰족한 아래 꼭짓점과 둥근
+// 위쪽 봉우리의 곡률이 달라 굵기가 고르지 않다(끝은 얇고 옆은 두꺼움) — 대신 채우기 없이
+// 실제 stroke 로 하트 테두리 자체를 그려 어느 지점이든 폭이 똑같은 링이 되게 하고,
+// vectorEffect="non-scaling-stroke" 로 커지는 동안에도 테두리 굵기가 그대로 유지된다.
+// 프로필 사진과 정확히 같은 중심이 아니라 살짝 아래로 치우친 중심에서 자라나, 사진
+// 위로는 살짝만 삐져나오고 아래로는 넉넉히 삐져나온다(참고 이미지의 배치와 동일).
 const heartBeamPath = (cx, cy, a) =>
-  `M${cx} ${cy - a * 0.7}`
-  + ` C${cx - a * 0.15} ${cy - a * 1.0} ${cx - a * 1.15} ${cy - a * 0.9} ${cx - a * 0.98} ${cy - a * 0.12}`
-  + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 1.05}`
-  + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 0.98} ${cy - a * 0.12}`
-  + ` C${cx + a * 1.15} ${cy - a * 0.9} ${cx + a * 0.15} ${cy - a * 1.0} ${cx} ${cy - a * 0.7} Z`
-const HEART_BEAM_PATH_D = heartBeamPath(50, 50, 30)
-const HEART_BEAM_STROKE = 9
-// 한 주기(HEART_BEAM_DUR) 안에 하트 4개가 균등한 간격으로 어긋난 시작 시점(d)을 갖게 해,
-// 항상 크기가 다른 하트 여러 겹이 동시에 퍼지는 것처럼 보이게 한다. 짝수 번째는 핑크,
-// 홀수 번째는 화이트로 번갈아.
+  `M${cx} ${cy - a * 0.35}`
+  + ` C${cx - a * 0.15} ${cy - a * 1.08} ${cx - a * 1.15} ${cy - a * 0.98} ${cx - a * 1.02} ${cy - a * 0.15}`
+  + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 1.0}`
+  + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.02} ${cy - a * 0.15}`
+  + ` C${cx + a * 1.15} ${cy - a * 0.98} ${cx + a * 0.15} ${cy - a * 1.08} ${cx} ${cy - a * 0.35} Z`
+const HEART_BEAM_PATH_D = heartBeamPath(50, 54, 34)
+const HEART_BEAM_STROKE = 13
+// 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 중간 → 가장 또렷하고 진한 겹(참고 이미지 3장과
+// 동일한 3가지 색·흐림 정도). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작
+// 시점(d)을 줘 항상 크기가 다른 하트 3겹이 겹쳐서 자라는 것처럼 보이게 한다.
+const HEART_BEAM_FLAVORS = [
+  { c: '#ffd9ea', blur: 3.2, op: 0.75 },
+  { c: '#ffb0d6', blur: 1.7, op: 0.88 },
+  { c: '#ff6fa8', blur: 0.7, op: 1 },
+]
 const HEART_BEAM_DUR = 2.8
-const HEART_BEAM_PULSES = [0, 1, 2, 3].map((i) => ({
-  d: (i * HEART_BEAM_DUR) / 4,
-  c: i % 2 === 0 ? '#ff8fb8' : '#ffffff',
-}))
+const HEART_BEAM_PULSES = HEART_BEAM_FLAVORS.map((f, i) => ({ ...f, d: (i * HEART_BEAM_DUR) / HEART_BEAM_FLAVORS.length }))
 function HeartBeam() {
   return (
     <g>
+      <defs>
+        {HEART_BEAM_FLAVORS.map((f, i) => (
+          <filter key={i} id={`heartBeamBlur${i}`} x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation={f.blur} />
+          </filter>
+        ))}
+      </defs>
       {HEART_BEAM_PULSES.map((p, i) => (
-        <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s` }}
-          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeWidth={HEART_BEAM_STROKE}
-          strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
+          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={HEART_BEAM_STROKE}
+          strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${i})`} />
       ))}
     </g>
   )
@@ -612,7 +621,7 @@ const PREVIEW_VB = {
   'deco-circle-glasses': '13 29 74 34',
   'deco-korea': '61 46 20 20',
   'deco-red-hood': '-10 -11 120 131',
-  'deco-heart-beam': '-35 -35 170 170',
+  'deco-heart-beam': '-40 -36 180 180',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
