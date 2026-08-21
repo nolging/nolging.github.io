@@ -62,6 +62,11 @@ export default function DrawBoard() {
   const wrapRef = useRef(null)
   const ctxRef = useRef(null)
   const sizeRef = useRef({ w: 1, h: 1 })
+  // 오프스크린 캐시: "지금 내가 그리는 획"을 뺀 배경(커밋된 획 + 다른 사람의 진행 중인 획)만
+  // 미리 그려 둔 스냅샷. 형광펜/네온처럼 매 프레임 전체를 다시 그려야 하는 브러쉬가, 매번
+  // 다른 모든 획을 replay하는 대신 이 스냅샷을 그대로 복사(drawImage)해 붙이고 지금 획만
+  // 얹으면 되므로 획이 많이 쌓인 낙서장에서도 빠르게 반응한다.
+  const bgCanvasRef = useRef(null)
 
   const committedRef = useRef([])       // [{id, author, c, w, p}]
   const idsRef = useRef(new Set())       // 커밋된 stroke id (중복 방지)
@@ -90,13 +95,40 @@ export default function DrawBoard() {
   const refreshBusyRef = useRef(false)
 
   // ---- 렌더 ----
+  // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
+  // 캐시(bgCanvasRef)에도 픽셀 그대로 복사해 둔다 — 실제 캔버스 해상도(dpr 반영된 backing
+  // store) 기준 1:1 복사라 transform 을 잠깐 단위행렬로 돌려놓고 그린다.
+  const syncBgCache = useCallback(() => {
+    const cv = canvasRef.current; if (!cv) return
+    let bg = bgCanvasRef.current
+    if (!bg) { bg = document.createElement('canvas'); bgCanvasRef.current = bg }
+    if (bg.width !== cv.width || bg.height !== cv.height) { bg.width = cv.width; bg.height = cv.height }
+    bg.getContext('2d').drawImage(cv, 0, 0)
+  }, [])
   const redrawAll = useCallback(() => {
     const ctx = ctxRef.current; if (!ctx) return
     const { w: W, h: H } = sizeRef.current
     ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H)
     for (const s of committedRef.current) paintStroke(ctx, s, W, H)
     for (const s of liveRef.current.values()) paintStroke(ctx, s, W, H)
+    syncBgCache()  // 지금까지(=내 진행 중 획 제외)를 캐시로 저장
     if (drawing.current) paintStroke(ctx, drawing.current, W, H)  // 내 진행 중 획(전체 리드로우 시)
+  }, [syncBgCache])
+  // 형광펜/네온처럼 한 획을 통째로 다시 그려야 하는 브러쉬용 — redrawAll 처럼 커밋된 획을
+  // 전부 replay하지 않고, 마지막으로 캐시해 둔 배경 위에 지금 획만 다시 그린다.
+  const restoreBgAndDrawCurrent = useCallback(() => {
+    const ctx = ctxRef.current; const bg = bgCanvasRef.current
+    if (!ctx) return
+    const { w: W, h: H } = sizeRef.current
+    if (bg) {
+      ctx.save()
+      ctx.setTransform(1, 0, 0, 1, 0, 0)  // bg 는 이미 backing store 해상도라 dpr 배율 없이 그대로 복사
+      ctx.drawImage(bg, 0, 0)
+      ctx.restore()
+    } else {
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H)
+    }
+    if (drawing.current) paintStroke(ctx, drawing.current, W, H)
   }, [])
 
   const addCommitted = useCallback((s) => {
@@ -229,8 +261,9 @@ export default function DrawBoard() {
   }, [uid])
 
   // ---- 포인터 입력 ----
-  function pos(e) {
-    const rect = canvasRef.current.getBoundingClientRect()
+  // rect 를 매번 다시 재지 않고 밖에서 한 번만 재서 넘기게(포인트마다 getBoundingClientRect
+  // 를 부르면 빠르게 그을 때(포인트가 뭉쳐 옴) 그만큼 반복 호출돼 반응이 느려진다).
+  function posAt(e, rect) {
     const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
     const y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
     return [Math.round(x * 1e4) / 1e4, Math.round(y * 1e4) / 1e4]
@@ -240,7 +273,7 @@ export default function DrawBoard() {
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
-    const p0 = pos(e)
+    const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
     const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
@@ -256,16 +289,21 @@ export default function DrawBoard() {
     const events = ne?.getCoalescedEvents ? ne.getCoalescedEvents() : [e]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
     const smooth = SMOOTH.has(cur.b)
+    const rect = canvasRef.current.getBoundingClientRect()  // 이 프레임의 뭉친 좌표들에 한 번만
+    const fromIdx = cur.p.length
     let added = false
     for (const ev of (events.length ? events : [e])) {
-      const p = pos(ev)
+      const p = posAt(ev, rect)
       const last = cur.p[cur.p.length - 1]
       if (last && last[0] === p[0] && last[1] === p[1]) continue
-      const from = cur.p.length
       cur.p.push(p); bufRef.current.push(p); added = true
-      if (ctx && !smooth) paintStroke(ctx, cur, W, H, from)  // 펜/점선: 증분
     }
-    if (added && smooth) redrawAll()  // 형광펜/네온/크레용: 한 획으로 전체 리드로우(끊김 방지)
+    if (added) {
+      // 펜/점선: 이 프레임에 새로 뭉쳐 들어온 점들을 한 번에 증분(점마다 매번 다시 그리지 않음).
+      // 형광펜/네온: 다른 모든 획을 다시 그리는 대신, 캐시해 둔 배경 위에 지금 획만 다시 그림.
+      if (!smooth) { if (ctx) paintStroke(ctx, cur, W, H, fromIdx) }
+      else restoreBgAndDrawCurrent()
+    }
     if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
   }
   async function onUp() {
