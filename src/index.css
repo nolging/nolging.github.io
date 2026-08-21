@@ -1719,15 +1719,16 @@ button.mention-chip:active { opacity: .6; }
 }
 .avd-bubble { transform-box: fill-box; transform-origin: center; animation: avd-bubble-wobble 4.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .avd-bubble { animation: none; } }
-/* 빨간 모자: 리본 매듭 위로 작은 하트가 뿅 솟았다 옅어지며 사라짐. 아이템마다 딜레이·주기를
-   달리 줘(컴포넌트에서 style 로 지정) 한꺼번에 튀지 않고 "간간이" 따로따로 뿅뿅 솟게 한다. */
+/* 빨간 모자: 머리 위로 작은 하트가 천천히 나타나 둥실 떠오르다 옅어지며 사라짐. 아이템마다
+   딜레이·주기를 달리 줘(컴포넌트에서 style 로 지정) 한꺼번에 튀지 않고 "간간이" 따로따로
+   떠오르게 한다. 등장·소멸 구간을 넉넉히 늘려 "뚝뚝 끊기지" 않고 자연스럽게 스며들게 한다. */
 @keyframes avd-heart-pop {
-  0%, 55%, 100% { opacity: 0; transform: scale(.3) translateY(15%); }
-  10% { opacity: 1; transform: scale(1) translateY(0); }
-  30% { opacity: .95; transform: scale(.92) translateY(-180%); }
-  48% { opacity: 0; transform: scale(.68) translateY(-320%); }
+  0% { opacity: 0; transform: scale(.3) translateY(10%); }
+  22% { opacity: 1; transform: scale(1) translateY(-60%); }
+  55% { opacity: .9; transform: scale(.97) translateY(-320%); }
+  85%, 100% { opacity: 0; transform: scale(.75) translateY(-520%); }
 }
-.avd-heart-pop { transform-box: fill-box; transform-origin: center; animation: avd-heart-pop 3.8s ease-in-out infinite; opacity: 0; }
+.avd-heart-pop { transform-box: fill-box; transform-origin: center; animation: avd-heart-pop 5.2s ease-in-out infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-pop { animation: none; opacity: 0; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
