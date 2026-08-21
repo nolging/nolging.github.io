@@ -1,14 +1,15 @@
 -- =============================================================
---  랜덤 퀘스트 'r_item_note'(쪽지 강화 아이템 사용) 완료 판정 수정
---  - 기존: item_id 가 있거나 kind in (...,'gift') → '아이템 선물(gift_owned_item)'
---    로 쪽지를 보내도 완료되던 문제.
---  - 수정: '아이템 선물'(kind='gift')은 제외하고, 강화 아이템을 '사용'해 쪽지를
---    보냈을 때만 완료:
+--  랜덤 퀘스트 'r_item_note'(쪽지 강화 아이템 사용) 완료 판정 재수정
+--  - 경위: quest-item-note-fix.sql 에서 한 번 고쳤지만(아이템 선물 kind='gift' 제외),
+--    이후 quest-item-present-purin.sql 이 그보다 더 오래된(quests-more.sql 기준)
+--    _quest_done 을 다시 통째로 덮어쓰면서 이 수정이 되돌아갔다. 이 파일이 그 둘을
+--    합쳐 최종본으로 만든다 — 앞으로는 이 파일이 가장 최신이니 이것만 실행하면 된다.
+--  - r_item_note 완료 조건(아이템 선물 kind='gift' 는 제외, 강화 아이템 '사용'만 인정):
 --      선물상자(link)/이어폰(cassette)/비디오(video)/블루레이(bluray)/폴라로이드
 --      필름(polaroid) → kind
 --      지우개 → 익명(anonymous=true)
 --      물풍선 폭탄 → 타이머(timer_seconds is not null)
---  적용: Supabase SQL Editor 에 그대로 실행.
+--  적용: Supabase SQL Editor 에 그대로 실행(quest-item-present-purin.sql 이후 아무 때나).
 -- =============================================================
 
 create or replace function public._quest_done(p_key text, p_since timestamptz)
@@ -43,5 +44,7 @@ begin
     when 'r_first_comment' then exists(select 1 from public.task_comments c where c.author_id = v_uid and c.created_at >= p_since
                                          and not exists(select 1 from public.task_comments c2 where c2.task_id = c.task_id and c2.created_at < c.created_at))
     when 'r_schedule'      then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_schedule' and at >= p_since)
+    when 'r_item_present'  then exists(select 1 from public.notes where sender_id = v_uid and kind = 'gift' and created_at >= p_since)
+    when 'r_purin_mic'     then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'purin-mic' and status = 'used' and used_at >= p_since)
     else false end;
 end $$;
