@@ -4,6 +4,7 @@ import cherryCreamPng from '../assets/deco/cherry-cream.png'
 import bandagePng from '../assets/deco/bandage.png'
 import alienShadesPng from '../assets/deco/alien-shades.png'
 import koreaPng from '../assets/deco/korea.png'
+import redHoodPng from '../assets/deco/red-hood.png'
 
 // 아바타 꾸미기 데코레이션. 아바타 원(지름=size) 위에 SVG viewBox(0~100)로 그려 항상 비율이 맞는다.
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
@@ -18,7 +19,7 @@ import koreaPng from '../assets/deco/korea.png'
 // 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조·뿔·리본·고깔모자·체리 콕·
 // 나비넥타이·막대사탕·동그리 안경은 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream', 'deco-red-hood']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie', 'deco-chupa-chups', 'deco-korea']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -333,6 +334,32 @@ function Korea() {
   return <image href={koreaPng} x="64.8" y="50" width="13.2" height="13" preserveAspectRatio="xMidYMid meet" />
 }
 
+// 작은 하트 path(로컬 원점 중심, -4~4 폭) — 후드 리본 매듭 위로 뿅뿅 솟아오르는 장식용.
+const HOOD_HEART_PATH = 'M0,4 C0,4 -4,1 -4,-1.5 C-4,-3.4 -2.4,-4.5 -1,-3.8 C-0.4,-3.5 0,-3 0,-3 C0,-3 0.4,-3.5 1,-3.8 C2.4,-4.5 4,-3.4 4,-1.5 C4,1 0,4 0,4 Z'
+// 리본 매듭(아바타 원 아래, 턱 밑) 근처에 자리·크기·타이밍을 조금씩 다르게 흩어 놓아
+// 한꺼번에 튀지 않고 "간간이" 따로따로 뿅뿅 솟는 것처럼 보이게 한다.
+const HOOD_HEARTS = [
+  { x: 42, y: 111, s: 0.5, d: 0, dur: 3.6 },
+  { x: 51, y: 116, s: 0.62, d: 1.6, dur: 4.2 },
+  { x: 60, y: 110, s: 0.46, d: 2.8, dur: 3.3 },
+]
+// 빨간 모자(머리 유형·뒤 레이어): 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입해
+// 프로필 사진 뒤에서 후드처럼 감싼다(좌표계는 관리자가 준 적용 샘플을 그대로 재현). 턱 밑
+// 리본 매듭 자리에서 작은 하트가 각자 다른 박자로 솟아올랐다 사라지는 장식을 더했다.
+function RedHood() {
+  return (
+    <>
+      <image href={redHoodPng} x="-9.74" y="-10.6" width="119.77" height="130.09" preserveAspectRatio="xMidYMid meet" />
+      {HOOD_HEARTS.map((h, i) => (
+        <g key={i} transform={`translate(${h.x} ${h.y}) scale(${h.s})`}>
+          <path className="avd-heart-pop" style={{ animationDelay: `${h.d}s`, animationDuration: `${h.dur}s` }}
+            d={HOOD_HEART_PATH} fill="#ff2d55" stroke="#fff" strokeWidth="0.6" />
+        </g>
+      ))}
+    </>
+  )
+}
+
 // 하트 렌즈 path (중심 cx,cy · 반폭 a). 통통한 봉우리 + 짧고 둥근 아래 꼭짓점.
 const heartPath = (cx, cy, a) =>
   `M${cx} ${cy - a * 0.36}`
@@ -539,6 +566,7 @@ const PREVIEW_VB = {
   'deco-cherry-cream': '35 -21 30 36',
   'deco-circle-glasses': '13 29 74 34',
   'deco-korea': '61 46 20 20',
+  'deco-red-hood': '-10 -11 120 131',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
@@ -628,6 +656,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-halo' && <Halo />}
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
+      {id === 'deco-red-hood' && <RedHood />}
     </svg>
   )
 }
@@ -642,14 +671,15 @@ const ART = {
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
   'deco-devil-horn': DevilHorn, 'deco-kitty-ribbon': KittyRibbon, 'deco-bow-tie': BowTie,
   'deco-party-hat': PartyHat, 'deco-chupa-chups': ChupaChups, 'deco-cherry-cream': CherryCream,
+  'deco-red-hood': RedHood,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
 export const BORDER_IDS = new Set(['deco-halo', 'deco-bubble'])
 export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.has(d.id))
 const FRONTMOST_IDS = new Set(['deco-bubble'])
-// 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광) — 나머지는 앞(front). 아트 종류로 결정.
-const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing'])
+// 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광 + 빨간 모자) — 나머지는 앞(front). 아트 종류로 결정.
+const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-red-hood'])
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
 export function decoItems(deco) {
