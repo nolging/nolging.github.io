@@ -1739,9 +1739,9 @@ button.mention-chip:active { opacity: .6; }
    등장(0~10%) 후 한동안 유지되다 뒷부분(65~100%)에서만 옅어져 "갑자기 뚝" 사라지지 않는다.
    컴포넌트에서 하트 4개를 균등한 딜레이로 겹쳐 그려 핑크·화이트가 번갈아 퍼지는 것처럼 보인다. */
 @keyframes avd-heart-beam {
-  0% { transform: scale(.22); opacity: 0; }
-  10% { opacity: .82; }
-  65% { opacity: .78; }
+  0% { transform: scale(.32); opacity: 0; }
+  10% { opacity: 1; }
+  65% { opacity: .92; }
   100% { transform: scale(2.6); opacity: 0; }
 }
 .avd-heart-beam-pulse { transform-box: fill-box; transform-origin: center; animation: avd-heart-beam 2.8s linear infinite; opacity: 0; }
