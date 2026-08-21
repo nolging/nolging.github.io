@@ -271,27 +271,11 @@ export default function DrawBoard() {
   function onDown(e) {
     if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 낙서 불가
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
-    if (drawing.current) {
-      if (drawing.current.pointerType === e.pointerType) {
-        // 같은 종류(펜슬은 한 자루뿐)인데 아직 안 끝난 채로 남아 있다면, 빠르게 이어 쓸 때
-        // 이전 획의 pointerup/pointercancel 을 못 받은 경우다(기기별 이벤트 처리 차이로 드물게
-        // 발생) — 무시하고 새 획을 덮어쓰면 이전 획은 커밋도 배경 캐시 반영도 안 된 채로 남아,
-        // 바로 이어 그리는 다음 형광펜/네온 획이 캔버스를 덮을 때 통째로 사라져 보인다("한 획씩
-        // 씹힘"). 그 전에 먼저 정상적으로 마무리(커밋+배경 캐시 반영+저장)해 두고 새 획을 시작한다.
-        finishStroke(drawing.current)
-      } else if (e.pointerType === 'pen') {
-        // 펜슬은 항상 우선한다 — 또박또박(신중하게) 쓸 때는 펜슬이 닿기 직전/동시에 손목·손
-        // 바닥이 먼저 화면에 닿는 경우가 흔한데, 그 손바닥이 먼저 pointerdown 을 잡아버리면
-        // 정작 펜슬의 pointerdown 은 "이미 다른 포인터가 쓰는 중"으로 막혀 펜슬로 그은 획
-        // 자체가 통째로 무시됐다("한 획씩 씹힘"의 또 다른 경로). 손바닥(등 펜슬이 아닌 포인터)
-        // 쪽 획은 실수로 그려진 것으로 보고 커밋하지 않고 버리며, 화면에 이미 그려진 자국도
-        // 배경 캐시로 되돌려 지운다.
-        drawing.current = null
-        restoreBgAndDrawCurrent()
-      } else {
-        return  // 펜슬이 쓰는 중에 다른 종류(손바닥 등)가 끼어드는 건 무시
-      }
-    }
+    // 이미 획을 긋는 중이면(어떤 포인터든) 먼저 정상적으로 마무리(커밋+배경 캐시 반영+저장)
+    // 해 두고 새 포인터로 넘어간다 — 낙서장은 애초에 손바닥 오탐(pointerType 구분)을 굳이
+    // 따지지 않는 편이 더 안전했다(같은 방식으로 만든 GraffitiPad.jsx 는 포인터 종류를
+    // 아예 구분하지 않는데도 잘 동작한다). 여러 겹치는 분기를 두는 대신 하나로 단순화했다.
+    if (drawing.current) finishStroke(drawing.current)
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     // setPointerCapture 는 그 시점에 이미 비활성화된 pointerId 를 넘기면(좁은 범위에 여러
     // 획을 빠르게 연달아 찍을 때, 펜슬의 pointerId 가 자주 재사용되면서 종종 생김)
@@ -300,7 +284,7 @@ export default function DrawBoard() {
     // "획이 씹힌" 것처럼 보인다(DecoAdjuster.jsx 의 동일 호출도 같은 이유로 try 로 감싸져 있음).
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 재사용된 pointerId 등 */ }
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
-    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, pointerType: e.pointerType, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
+    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
@@ -309,7 +293,6 @@ export default function DrawBoard() {
   }
   function onMove(e) {
     const cur = drawing.current; if (!cur) return
-    if (e.pointerId !== cur.pointerId) return   // 다른 포인터(손바닥 등)는 무시 — 위 onDown 참고
     // e 는 React SyntheticEvent 라 getCoalescedEvents 가 없음(화이트리스트에 없는 네이티브 전용 메서드) →
     // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
     const ne = e.nativeEvent
@@ -344,9 +327,8 @@ export default function DrawBoard() {
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
   }
-  async function onUp(e) {
+  async function onUp() {
     const cur = drawing.current; if (!cur) return
-    if (e && e.pointerId !== cur.pointerId) return   // 다른 포인터(손바닥 등)는 무시 — onDown 참고
     drawing.current = null
     flush(true)
     await finishStroke(cur)
