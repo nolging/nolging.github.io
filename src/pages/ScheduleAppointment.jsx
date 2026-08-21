@@ -178,7 +178,7 @@ export default function ScheduleAppointment({ groupId: gidProp, taskId: tidProp,
                   const sel = category === c.name
                   return (
                     <button type="button" key={c.name} className={`ts-chip ${sel ? 'sel' : ''}`}
-                      style={sel ? { background: c.bg, color: c.fg, boxShadow: `inset 0 0 0 1.5px ${c.fg}` } : undefined}
+                      style={sel ? { background: c.bg, color: c.fg, borderColor: c.fg } : undefined}
                       onClick={() => pickCategory(c.name)}>
                       {sel && <span className="ts-chip-emoji" aria-hidden="true">{c.emoji}</span>}{c.name}
                     </button>
