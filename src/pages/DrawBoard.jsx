@@ -312,6 +312,11 @@ export default function DrawBoard() {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
     flush(true)
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
+    // 방금 그린 획을 배경 캐시에도 반영 — 안 하면, 바로 이어서 형광펜/네온으로 다음 획을
+    // 그리기 시작하는 순간(restoreBgAndDrawCurrent 가 이 캐시로 캔버스를 덮어씀) 방금 그린
+    // 획이 화면에서 사라져 보인다. 이미 캔버스엔 다 그려져 있는 상태라 다시 그릴 필요 없이
+    // 그 결과를 캐시에 복사만 하면 되므로 비용도 거의 없다.
+    syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
   }
 
