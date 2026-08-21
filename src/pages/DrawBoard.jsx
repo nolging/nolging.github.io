@@ -100,39 +100,6 @@ export default function DrawBoard() {
   function dlog(msg) {
     setDebugLog((prev) => [...prev.slice(-79), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
   }
-  // 정규화 좌표(nx,ny) 위치의 실제 캔버스 픽셀을 읽어본다 — 획을 다 그린 "직후"와 "한 프레임
-  // 뒤"를 비교해, 애초에 그 위치에 잉크가 안 찍히는 건지(페인트 자체 실패) 아니면 찍힌 뒤에
-  // 뭔가가 지우는 건지(다른 리드로우가 덮어씀)를 구분하기 위한 임시 진단용.
-  function sampleInk(nx, ny) {
-    const cv = canvasRef.current; const ctx = ctxRef.current
-    if (!cv || !ctx || !cv.width || !cv.height) return null
-    const x = Math.min(cv.width - 1, Math.max(0, Math.round(nx * cv.width)))
-    const y = Math.min(cv.height - 1, Math.max(0, Math.round(ny * cv.height)))
-    try { const d = ctx.getImageData(x, y, 1, 1).data; return `${d[0]},${d[1]},${d[2]},${d[3]}` }
-    catch { return 'ERR' }
-  }
-  // 획 경로 전체(점 배열)를 훑으며, 각 점 위치에 실제로 획 색상 잉크가 찍혀 있는지 확인한다 —
-  // 중간점 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓치므로, 경로를 최대 ~6곳 정도로
-  // 샘플링해 "어느 인덱스 부근이 안 그려졌는지"를 특정한다(흰색 지우개 획은 배경과 구분이
-  // 안 돼 검사에서 제외). getImageData 는 캔버스 2D 연산 중 특히 무거운 축에 속해서(GPU→CPU
-  // 동기화 유발) 표본 수를 최소화했다 — 이 진단 자체가 부하를 더해 입력을 놓치게 만드는
-  // 일이 없도록.
-  function findGaps(cur) {
-    if (cur.c === '#ffffff' || cur.p.length < 2) return []
-    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(cur.c)
-    if (!m) return []
-    const er = parseInt(m[1], 16), eg = parseInt(m[2], 16), eb = parseInt(m[3], 16)
-    const p = cur.p
-    const step = Math.max(1, Math.floor(p.length / 6))
-    const gaps = []
-    for (let i = 0; i < p.length; i += step) {
-      const px = sampleInk(p[i][0], p[i][1])
-      if (!px || px === 'ERR') continue
-      const [r, g, b] = px.split(',').map(Number)
-      if (Math.abs(r - er) + Math.abs(g - eg) + Math.abs(b - eb) > 150) gaps.push(i)
-    }
-    return gaps
-  }
 
   // ---- 렌더 ----
   // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
@@ -406,16 +373,7 @@ export default function DrawBoard() {
     // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
     const ctx = ctxRef.current
     if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
-    // 방금 그린 획의 경로 전체(최대 ~24 지점)를 훑어서 실제로 잉크가 찍혔는지 확인 — 중간점
-    // 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓친다. "그린 직후"와 "한 프레임 뒤"를 각각
-    // 검사해서, 애초에 안 그려지는 건지(paintStroke 자체가 그 구간을 놓침) 아니면 그려졌다가
-    // 나중에 뭔가(다음 획의 리드로우 등)에 덮이는 건지 구분한다.
-    const gapsNow = findGaps(cur)
-    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length}${gapsNow.length ? ` GAP@${gapsNow.join(',')}` : ' ok'}`)
-    requestAnimationFrame(() => {
-      const gapsLater = findGaps(cur)
-      if (gapsLater.length) dlog(`PAINT-LATER-GAP id=${cur.id.slice(-6)} @${gapsLater.join(',')}`)
-    })
+    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length}`)
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
