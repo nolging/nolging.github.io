@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import AvatarDeco, { DECO_TF0, decoAnchor, splitAnchor, SPLIT_IDS } from './AvatarDeco'
+import AvatarDeco, { DECO_TF0, decoAnchor, decoOverflow, splitAnchor, SPLIT_IDS } from './AvatarDeco'
 import { memberColor } from './MemberAvatar'
 import CgToggle from './CgToggle'
 
@@ -197,9 +197,16 @@ export default function DecoAdjuster({ itemId, src, name = '?', seed, tf, onChan
   }
   const resetDisabled = split ? isTf0(curTarget) : isTf0(cur)
 
+  // 아이템이 아바타 원 위아래로 삐져나오는 만큼(빨간 모자 등) 그 자리에 여백을 미리 확보해
+  // 사진이 위/아래 모달 요소(셀렉트박스·컨트롤 바)를 가리지 않게 한다. overflow 는 아바타
+  // 원 지름(=size) 기준 비율(%)이라 size 를 곱해 실제 픽셀 여백으로 바꾼다.
+  const overflow = decoOverflow(itemId)
+  const marginTop = Math.round((overflow.top / 100) * size)
+  const marginBottom = Math.round((overflow.bottom / 100) * size)
+
   return (
     <div className="deco-adj">
-      <div ref={surfRef} className="deco-adj-surf" style={{ width: size, height: size }}
+      <div ref={surfRef} className="deco-adj-surf" style={{ width: size, height: size, marginTop, marginBottom }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <span className="deco-adj-face" style={src ? undefined : { background: c.bg, color: c.fg, fontSize: size * 0.34 }}>
           {src ? <img src={src} alt="" draggable={false} onContextMenu={(e) => e.preventDefault()} /> : initial}
