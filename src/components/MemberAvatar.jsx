@@ -50,9 +50,9 @@ export default function MemberAvatar({ src, name, seed, size = 46, fontScale = 0
   if (!decoOnly.length) return inner
   return (
     <span className="mem-av-wrap" style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0, isolation: 'isolate' }}>
-      <AvatarDeco items={decoOnly} layer="back" />
+      <AvatarDeco items={decoOnly} layer="back" size={size} />
       {inner}
-      <AvatarDeco items={decoOnly} layer="front" />
+      <AvatarDeco items={decoOnly} layer="front" size={size} />
     </span>
   )
 }

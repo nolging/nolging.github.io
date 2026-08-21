@@ -15,12 +15,12 @@ export default function Avatar({ src, name = '?', size = 34, deco }) {
   const hasDeco = decoOnly.length > 0
   return (
     <span className={`avatar${hasBorderDeco(decoOnly) ? ' avatar-border-deco' : ''}`} style={{ width: size, height: size, fontSize: size * 0.42 }}>
-      {hasDeco && <AvatarDeco items={decoOnly} layer="back" />}
+      {hasDeco && <AvatarDeco items={decoOnly} layer="back" size={size} />}
       <span className="avatar-face">
         {src ? <img src={src} alt={name} /> : initial}
         {graffiti && <img className="avatar-graffiti" src={graffiti} alt="" />}
       </span>
-      {hasDeco && <AvatarDeco items={decoOnly} layer="front" />}
+      {hasDeco && <AvatarDeco items={decoOnly} layer="front" size={size} />}
     </span>
   )
 }

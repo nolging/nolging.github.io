@@ -590,14 +590,24 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 // 내부적으로 <g transform="...scale(tf.s)..."> 로 적용되는데, 이 transform 도 non-scaling-stroke
 // 가 똑같이 무시해버려서, 다른 꾸미기는 크기를 키우면 선도 같이 굵어지는데 하트 빔만 사용자가
 // 크기를 조절해도 굵기가 그대로였다 — tf.s 를 굵기 계산에 직접 곱해 반영해 맞춘다.
-function HeartBeam({ tf }) {
+//
+// blur(흐림) 는 굵기와 달리 실측해보니 작은 아바타에서 "저절로" 충분히 얇아지지 않는다 —
+// feGaussianBlur 는 하트 테두리 안쪽의 빈(하얀) 공간까지 양쪽에서 함께 번지는데, 작은
+// 아바타일수록 그 빈 공간 자체가 몇 픽셀로 좁아져서 고정된 흐림 반경이 그 틈을 완전히
+// 메워버려 하트가 (링이 아니라) 통짜 얼룩처럼 보인다 — 그룹 카드·위시 카드처럼 작은
+// 아바타에서 "하트가 너무 굵어 보인다"고 느끼던 원인이 바로 이거였다(직접 여러 크기를
+// 나란히 렌더링해 확인). size(실제 아바타 픽셀 지름)를 받아 흐림 반경도 같은 비율로
+// 줄여서, 작은 아바타에서는 흐림도 함께 옅어지게 한다.
+const HEART_BEAM_BLUR_BASELINE = 130
+function HeartBeam({ tf, size }) {
   const sw = HEART_BEAM_STROKE * (Number(tf?.s) || 1)
+  const blurScale = (Number(size) || 90) / HEART_BEAM_BLUR_BASELINE
   return (
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
           <filter key={i} id={`heartBeamBlur${i}`} x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation={f.blur} />
+            <feGaussianBlur stdDeviation={f.blur * blurScale} />
           </filter>
         ))}
       </defs>
@@ -780,7 +790,7 @@ export function decoItems(deco) {
 // items: [{ id, tf }] — 장착된 데코 목록(여러 유형 동시 렌더). layer: 'back' | 'front'
 // pickable: DecoAdjuster 가 좌우 분리 모드일 때만 true 로 넘긴다 — 그때만 좌/우 그려진
 // 영역을 직접 클릭해서 조정 대상 쪽을 고를 수 있다(다른 화면의 일반 아바타 표시는 그대로 클릭 불가).
-export default function AvatarDeco({ items, layer = 'front', pickable = false }) {
+export default function AvatarDeco({ items, layer = 'front', pickable = false, size }) {
   // 그리는 순서(뒤→앞) = 테두리(후광) → 일반 꾸미기 → FRONTMOST(비눗방울, 항상 맨 위)
   // FRONTMOST_IDS 를 먼저 확인해야 한다 — 비눗방울은 BORDER_IDS 에도 들어 있어서
   // (흰 테두리 대체용) 순서를 반대로 하면 항상 뒤로 가라앉아 버린다.
@@ -792,7 +802,7 @@ export default function AvatarDeco({ items, layer = 'front', pickable = false })
   return (
     <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} /></Tf> })}
+      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} size={size} /></Tf> })}
     </svg>
   )
 }
