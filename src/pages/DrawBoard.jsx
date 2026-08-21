@@ -293,7 +293,12 @@ export default function DrawBoard() {
       }
     }
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
-    e.currentTarget.setPointerCapture?.(e.pointerId)
+    // setPointerCapture 는 그 시점에 이미 비활성화된 pointerId 를 넘기면(좁은 범위에 여러
+    // 획을 빠르게 연달아 찍을 때, 펜슬의 pointerId 가 자주 재사용되면서 종종 생김)
+    // InvalidPointerId 예외를 던진다. try 로 안 감싸면 이 예외가 그대로 튀어 올라가 onDown
+    // 이 여기서 중단돼 획 자체(drawing.current 설정·점 그리기)가 통째로 시작을 못 해
+    // "획이 씹힌" 것처럼 보인다(DecoAdjuster.jsx 의 동일 호출도 같은 이유로 try 로 감싸져 있음).
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 재사용된 pointerId 등 */ }
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
     const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, pointerType: e.pointerType, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
