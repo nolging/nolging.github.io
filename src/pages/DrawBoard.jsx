@@ -112,16 +112,18 @@ export default function DrawBoard() {
     catch { return 'ERR' }
   }
   // 획 경로 전체(점 배열)를 훑으며, 각 점 위치에 실제로 획 색상 잉크가 찍혀 있는지 확인한다 —
-  // 중간점 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓치므로, 경로를 최대 ~24곳 정도로
+  // 중간점 1곳만 보면 씹힌 구간이 하필 그 점이 아닐 때 놓치므로, 경로를 최대 ~6곳 정도로
   // 샘플링해 "어느 인덱스 부근이 안 그려졌는지"를 특정한다(흰색 지우개 획은 배경과 구분이
-  // 안 돼 검사에서 제외).
+  // 안 돼 검사에서 제외). getImageData 는 캔버스 2D 연산 중 특히 무거운 축에 속해서(GPU→CPU
+  // 동기화 유발) 표본 수를 최소화했다 — 이 진단 자체가 부하를 더해 입력을 놓치게 만드는
+  // 일이 없도록.
   function findGaps(cur) {
     if (cur.c === '#ffffff' || cur.p.length < 2) return []
     const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(cur.c)
     if (!m) return []
     const er = parseInt(m[1], 16), eg = parseInt(m[2], 16), eb = parseInt(m[3], 16)
     const p = cur.p
-    const step = Math.max(1, Math.floor(p.length / 24))
+    const step = Math.max(1, Math.floor(p.length / 6))
     const gaps = []
     for (let i = 0; i < p.length; i += step) {
       const px = sampleInk(p[i][0], p[i][1])
@@ -204,6 +206,27 @@ export default function DrawBoard() {
     if (canvasRef.current) ro.observe(canvasRef.current)
     return () => ro.disconnect()
   }, [resize])
+
+  // ---- 임시 진단: React 합성 이벤트(onPointerDown)보다 더 이른 시점(capture 단계, 네이티브
+  // 리스너)에서 pointerdown/touchstart 자체가 몇 번 발생하는지 직접 센다. 지난 로그에서
+  // 씹힌 획은 우리 onDown 의 "DOWN" 로그 자체가 아예 안 찍혔다 — 즉 React 로직 문제가
+  // 아니라 브라우저/OS 가 애초에 그 짧은 터치의 이벤트를 안 보냈을 가능성이 있다. 이 로그가
+  // 씹힌 순간에도 RAW-pointerdown 이 정상 개수로 찍히면 문제는 우리 코드/React 레이어에 있는
+  // 것이고, 이마저 안 찍히면 OS/WebKit 레벨에서 그 터치 자체가 페이지로 전달되지 않는다는
+  // 뜻이라 다음 대응 방향이 완전히 달라진다.
+  useEffect(() => {
+    const cv = canvasRef.current
+    if (!cv) return
+    const onRaw = (e) => {
+      dlog(`RAW-${e.type} pid=${e.pointerId ?? '-'}${e.type === 'touchstart' ? ` touches=${e.touches?.length}` : ''}`)
+    }
+    cv.addEventListener('pointerdown', onRaw, { capture: true })
+    cv.addEventListener('touchstart', onRaw, { capture: true, passive: true })
+    return () => {
+      cv.removeEventListener('pointerdown', onRaw, { capture: true })
+      cv.removeEventListener('touchstart', onRaw, { capture: true })
+    }
+  }, [])
 
   // 저장된 획을 불러와 반영(최초 진입 + 차단 상태에서의 수동 새로고침 공용)
   const loadStrokes = useCallback(async () => {
