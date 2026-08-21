@@ -271,15 +271,23 @@ export default function DrawBoard() {
   function onDown(e) {
     if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 낙서 불가
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
-    // 이미 다른 포인터로 획을 긋는 중이면 무시 — 아이패드에서 애플펜슬로 쓰는 동안 손바닥이
-    // 화면에 닿으면 그 손바닥도 별도의 pointerId 로 pointerdown 을 쏘는데, 이걸 그대로 받아
-    // drawing.current 를 덮어쓰면 펜슬 쪽 획이 진행 중인 상태를 잃어버려 중간에 뚝 끊긴다
-    // ("한 획씩 씹힘"). 한 번에 한 포인터의 획만 인정한다.
-    if (drawing.current) return
+    if (drawing.current) {
+      // 이미 다른 "종류"의 포인터로 획을 긋는 중이면 무시 — 아이패드에서 애플펜슬(pen)로 쓰는
+      // 동안 손바닥이 닿으면 그 손바닥은 pointerType 이 'touch' 로 따로 잡히는데, 이걸 그대로
+      // 받아 drawing.current 를 덮어쓰면 펜슬 쪽 획이 진행 중인 상태를 잃어버려 중간에 뚝
+      // 끊긴다("한 획씩 씹힘").
+      if (drawing.current.pointerType !== e.pointerType) return
+      // 같은 종류(펜슬은 한 자루뿐)인데 아직 안 끝난 채로 남아 있다면, 빠르게 이어 쓸 때
+      // 이전 획의 pointerup/pointercancel 을 못 받은 경우다(기기별 이벤트 처리 차이로 드물게
+      // 발생) — 무시하고 새 획을 덮어쓰면 이전 획은 커밋도 배경 캐시 반영도 안 된 채로 남아,
+      // 바로 이어 그리는 다음 형광펜/네온 획이 캔버스를 덮을 때 통째로 사라져 보인다("한 획씩
+      // 씹힘"). 그 전에 먼저 정상적으로 마무리(커밋+배경 캐시 반영+저장)해 두고 새 획을 시작한다.
+      finishStroke(drawing.current)
+    }
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
-    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
+    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, pointerType: e.pointerType, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
@@ -312,19 +320,23 @@ export default function DrawBoard() {
     }
     if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
   }
+  // 획 하나를 마무리(커밋 + 배경 캐시 반영 + 저장) — 정상적인 pointerup 뿐 아니라, 빠르게
+  // 이어 쓸 때 이전 획의 pointerup 을 못 받고 다음 pointerdown 이 먼저 오는 경우(onDown 의
+  // 자가복구 분기)에도 똑같이 거쳐야 한다. 여기를 안 거치면 캔버스엔 그려져 있어도 배경
+  // 캐시엔 반영이 안 돼, 바로 이어서 형광펜/네온으로 그리기 시작하는 순간 그 획이 지워진
+  // 것처럼 사라져 보인다("한 획씩 씹힘") — 실제로 씹히는 건 대부분 이 경로였다.
+  async function finishStroke(cur) {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
+    addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
+    syncBgCache()
+    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
+  }
   async function onUp(e) {
     const cur = drawing.current; if (!cur) return
     if (e && e.pointerId !== cur.pointerId) return   // 다른 포인터(손바닥 등)는 무시 — onDown 참고
     drawing.current = null
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
     flush(true)
-    addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
-    // 방금 그린 획을 배경 캐시에도 반영 — 안 하면, 바로 이어서 형광펜/네온으로 다음 획을
-    // 그리기 시작하는 순간(restoreBgAndDrawCurrent 가 이 캐시로 캔버스를 덮어씀) 방금 그린
-    // 획이 화면에서 사라져 보인다. 이미 캔버스엔 다 그려져 있는 상태라 다시 그릴 필요 없이
-    // 그 결과를 캐시에 복사만 하면 되므로 비용도 거의 없다.
-    syncBgCache()
-    try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) } catch { /* noop */ }
+    await finishStroke(cur)
   }
 
   // ---- 되돌리기 / 지우기 ----
