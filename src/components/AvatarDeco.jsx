@@ -334,28 +334,33 @@ function Korea() {
   return <image href={koreaPng} x="64.8" y="50" width="13.2" height="13" preserveAspectRatio="xMidYMid meet" />
 }
 
-// 작은 하트 path(로컬 원점 중심, -4~4 폭) — 후드 리본 매듭 위로 뿅뿅 솟아오르는 장식용.
+// 작은 하트 path(로컬 원점 중심, -4~4 폭) — 후드 정수리 위로 뿅뿅 솟아오르는 장식용.
 const HOOD_HEART_PATH = 'M0,4 C0,4 -4,1 -4,-1.5 C-4,-3.4 -2.4,-4.5 -1,-3.8 C-0.4,-3.5 0,-3 0,-3 C0,-3 0.4,-3.5 1,-3.8 C2.4,-4.5 4,-3.4 4,-1.5 C4,1 0,4 0,4 Z'
-// 리본 매듭(아바타 원 아래, 턱 밑) 근처에 자리·크기·타이밍을 조금씩 다르게 흩어 놓아
-// 한꺼번에 튀지 않고 "간간이" 따로따로 뿅뿅 솟는 것처럼 보이게 한다.
+// 후드 정수리(둥근 윗머리, y=-10.6 가 이미지 맨 위 끝) 안쪽에서 시작해 위로 솟는다 —
+// 뜨는 동안 후드 이미지보다 먼저 그려지므로(아래) 처음엔 후드에 가려져 있다가 정수리
+// 위로 올라온 부분만 보여 "후드 뒤에서 솟는" 느낌을 준다. 자리·크기·색·타이밍을 조금씩
+// 달리 흩어 놓아 한꺼번에 튀지 않고 "간간이" 따로따로 뿅뿅 솟는 것처럼 보이게 한다.
 const HOOD_HEARTS = [
-  { x: 42, y: 111, s: 0.5, d: 0, dur: 3.6 },
-  { x: 51, y: 116, s: 0.62, d: 1.6, dur: 4.2 },
-  { x: 60, y: 110, s: 0.46, d: 2.8, dur: 3.3 },
+  { x: 38, y: -6, s: 0.5, d: 0, dur: 3.4, c: '#ff2d55' },
+  { x: 48, y: -8, s: 0.62, d: 0.7, dur: 3.9, c: '#ff7a9c' },
+  { x: 58, y: -5, s: 0.46, d: 1.5, dur: 3.1, c: '#ff4d6d' },
+  { x: 44, y: -4, s: 0.56, d: 2.3, dur: 3.7, c: '#ffb3c6' },
+  { x: 55, y: -7, s: 0.4, d: 3, dur: 3.3, c: '#e0245e' },
 ]
 // 빨간 모자(머리 유형·뒤 레이어): 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입해
-// 프로필 사진 뒤에서 후드처럼 감싼다(좌표계는 관리자가 준 적용 샘플을 그대로 재현). 턱 밑
-// 리본 매듭 자리에서 작은 하트가 각자 다른 박자로 솟아올랐다 사라지는 장식을 더했다.
+// 프로필 사진 뒤에서 후드처럼 감싼다(좌표계는 관리자가 준 적용 샘플을 그대로 재현). 정수리
+// 위에서 작은 하트 여러 개가 각자 다른 박자로 솟아올랐다 사라지는 장식을 더했다 — 하트를
+// <image> 보다 먼저 그려 후드보다 뒤(아래)에서 올라오는 것처럼 보이게 한다.
 function RedHood() {
   return (
     <>
-      <image href={redHoodPng} x="-9.74" y="-10.6" width="119.77" height="130.09" preserveAspectRatio="xMidYMid meet" />
       {HOOD_HEARTS.map((h, i) => (
         <g key={i} transform={`translate(${h.x} ${h.y}) scale(${h.s})`}>
           <path className="avd-heart-pop" style={{ animationDelay: `${h.d}s`, animationDuration: `${h.dur}s` }}
-            d={HOOD_HEART_PATH} fill="#ff2d55" stroke="#fff" strokeWidth="0.6" />
+            d={HOOD_HEART_PATH} fill={h.c} />
         </g>
       ))}
+      <image href={redHoodPng} x="-9.74" y="-10.6" width="119.77" height="130.09" preserveAspectRatio="xMidYMid meet" />
     </>
   )
 }
