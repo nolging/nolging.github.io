@@ -272,17 +272,25 @@ export default function DrawBoard() {
     if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 낙서 불가
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
     if (drawing.current) {
-      // 이미 다른 "종류"의 포인터로 획을 긋는 중이면 무시 — 아이패드에서 애플펜슬(pen)로 쓰는
-      // 동안 손바닥이 닿으면 그 손바닥은 pointerType 이 'touch' 로 따로 잡히는데, 이걸 그대로
-      // 받아 drawing.current 를 덮어쓰면 펜슬 쪽 획이 진행 중인 상태를 잃어버려 중간에 뚝
-      // 끊긴다("한 획씩 씹힘").
-      if (drawing.current.pointerType !== e.pointerType) return
-      // 같은 종류(펜슬은 한 자루뿐)인데 아직 안 끝난 채로 남아 있다면, 빠르게 이어 쓸 때
-      // 이전 획의 pointerup/pointercancel 을 못 받은 경우다(기기별 이벤트 처리 차이로 드물게
-      // 발생) — 무시하고 새 획을 덮어쓰면 이전 획은 커밋도 배경 캐시 반영도 안 된 채로 남아,
-      // 바로 이어 그리는 다음 형광펜/네온 획이 캔버스를 덮을 때 통째로 사라져 보인다("한 획씩
-      // 씹힘"). 그 전에 먼저 정상적으로 마무리(커밋+배경 캐시 반영+저장)해 두고 새 획을 시작한다.
-      finishStroke(drawing.current)
+      if (drawing.current.pointerType === e.pointerType) {
+        // 같은 종류(펜슬은 한 자루뿐)인데 아직 안 끝난 채로 남아 있다면, 빠르게 이어 쓸 때
+        // 이전 획의 pointerup/pointercancel 을 못 받은 경우다(기기별 이벤트 처리 차이로 드물게
+        // 발생) — 무시하고 새 획을 덮어쓰면 이전 획은 커밋도 배경 캐시 반영도 안 된 채로 남아,
+        // 바로 이어 그리는 다음 형광펜/네온 획이 캔버스를 덮을 때 통째로 사라져 보인다("한 획씩
+        // 씹힘"). 그 전에 먼저 정상적으로 마무리(커밋+배경 캐시 반영+저장)해 두고 새 획을 시작한다.
+        finishStroke(drawing.current)
+      } else if (e.pointerType === 'pen') {
+        // 펜슬은 항상 우선한다 — 또박또박(신중하게) 쓸 때는 펜슬이 닿기 직전/동시에 손목·손
+        // 바닥이 먼저 화면에 닿는 경우가 흔한데, 그 손바닥이 먼저 pointerdown 을 잡아버리면
+        // 정작 펜슬의 pointerdown 은 "이미 다른 포인터가 쓰는 중"으로 막혀 펜슬로 그은 획
+        // 자체가 통째로 무시됐다("한 획씩 씹힘"의 또 다른 경로). 손바닥(등 펜슬이 아닌 포인터)
+        // 쪽 획은 실수로 그려진 것으로 보고 커밋하지 않고 버리며, 화면에 이미 그려진 자국도
+        // 배경 캐시로 되돌려 지운다.
+        drawing.current = null
+        restoreBgAndDrawCurrent()
+      } else {
+        return  // 펜슬이 쓰는 중에 다른 종류(손바닥 등)가 끼어드는 건 무시
+      }
     }
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
