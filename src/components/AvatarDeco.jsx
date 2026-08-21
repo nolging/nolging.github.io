@@ -574,8 +574,14 @@ const HEART_BEAM_FLAVORS = [
   { c: '#ffb0d6', blur: 1.0, op: 1 },
 ]
 const HEART_BEAM_DUR = 2.8
-const HEART_BEAM_PULSES = HEART_BEAM_FLAVORS.map((f, i) => ({
-  ...f, d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_FLAVORS.length,
+// 색은 2가지만 반복하되, 하트 "개수"는 색 개수보다 많게(4개) 늘려 다음 하트가 더 빨리
+// 뒤따라오게 한다(간격 = DUR/개수 — 색 수만큼만 만들면 간격이 너무 벌어짐). 각 겹의
+// 자체 성장·페이드 속도(HEART_BEAM_DUR)는 그대로라 간격만 좁아지고 빠르기는 안 바뀐다.
+const HEART_BEAM_PULSE_COUNT = 4
+const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) => ({
+  ...HEART_BEAM_FLAVORS[i % HEART_BEAM_FLAVORS.length],
+  flavorIdx: i % HEART_BEAM_FLAVORS.length,
+  d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_PULSE_COUNT,
 }))
 function HeartBeam() {
   return (
@@ -590,7 +596,7 @@ function HeartBeam() {
       {HEART_BEAM_PULSES.map((p, i) => (
         <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
           d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={HEART_BEAM_STROKE}
-          strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${i})`} />
+          strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
     </g>
   )
