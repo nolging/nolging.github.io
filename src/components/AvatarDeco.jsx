@@ -548,18 +548,23 @@ function Bubble() {
 // 하트 빔(테두리 유형·뒤 레이어): 프로필 사진 뒤 중심에서 통통한 하트가 일정한 속도로
 // 커지며 사진 바깥까지 퍼져나가다 자연스럽게 페이드아웃 — 핑크·화이트 두 색이 번갈아
 // 겹쳐 퍼지는 하트 물결(참고 이미지의 하트 리플 효과를 재현). 참고 이미지의 하트보다
-// 더 통통하게(봉우리는 더 넓고 둥글게, 아래 꼭짓점은 더 짧고 뭉툭하게) 그렸다.
+// 세로로 더 길고 위쪽 골(봉우리 사이 패인 부분)은 덜 들어가게 그렸다.
+// 하트를 채운 도형끼리 겹쳐서 "테두리"(링)를 흉내 내면, 뾰족한 아래 꼭짓점 쪽과 둥근
+// 위쪽 봉우리 쪽의 곡률이 달라 굵기가 고르지 않게 보인다(끝쪽은 얇고 옆은 두꺼움) —
+// 대신 채우기 없이 실제 stroke 로 하트 테두리 자체를 그려, 어느 지점이든 폭이 똑같은
+// 링이 되게 한다. vectorEffect="non-scaling-stroke" 로 커지는 애니메이션(scale) 도중에도
+// 테두리 굵기가 늘거나 줄지 않고 항상 일정하게 유지된다.
 const heartBeamPath = (cx, cy, a) =>
-  `M${cx} ${cy - a * 0.2}`
-  + ` C${cx - a * 0.15} ${cy - a * 1.15} ${cx - a * 1.15} ${cy - a * 1.0} ${cx - a * 1.05} ${cy - a * 0.15}`
-  + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 0.72}`
-  + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.05} ${cy - a * 0.15}`
-  + ` C${cx + a * 1.15} ${cy - a * 1.0} ${cx + a * 0.15} ${cy - a * 1.15} ${cx} ${cy - a * 0.2} Z`
+  `M${cx} ${cy - a * 0.7}`
+  + ` C${cx - a * 0.15} ${cy - a * 1.0} ${cx - a * 1.15} ${cy - a * 0.9} ${cx - a * 0.98} ${cy - a * 0.12}`
+  + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 1.05}`
+  + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 0.98} ${cy - a * 0.12}`
+  + ` C${cx + a * 1.15} ${cy - a * 0.9} ${cx + a * 0.15} ${cy - a * 1.0} ${cx} ${cy - a * 0.7} Z`
 const HEART_BEAM_PATH_D = heartBeamPath(50, 50, 30)
+const HEART_BEAM_STROKE = 9
 // 한 주기(HEART_BEAM_DUR) 안에 하트 4개가 균등한 간격으로 어긋난 시작 시점(d)을 갖게 해,
 // 항상 크기가 다른 하트 여러 겹이 동시에 퍼지는 것처럼 보이게 한다. 짝수 번째는 핑크,
-// 홀수 번째는 화이트로 번갈아 — 밝은 배경 위에서도 흰 하트 테두리가 보이게 옅은 분홍
-// 테를 살짝 둘렀다.
+// 홀수 번째는 화이트로 번갈아.
 const HEART_BEAM_DUR = 2.8
 const HEART_BEAM_PULSES = [0, 1, 2, 3].map((i) => ({
   d: (i * HEART_BEAM_DUR) / 4,
@@ -570,7 +575,8 @@ function HeartBeam() {
     <g>
       {HEART_BEAM_PULSES.map((p, i) => (
         <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s` }}
-          d={HEART_BEAM_PATH_D} fill={p.c} stroke={p.c === '#ffffff' ? '#ffd9e8' : 'none'} strokeWidth="0.8" />
+          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeWidth={HEART_BEAM_STROKE}
+          strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       ))}
     </g>
   )
