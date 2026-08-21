@@ -271,10 +271,15 @@ export default function DrawBoard() {
   function onDown(e) {
     if (!isMemberRef.current) return   // 미가입(관리자 미리보기)은 관전만 — 낙서 불가
     if (e.button != null && e.button !== 0 && e.pointerType === 'mouse') return
+    // 이미 다른 포인터로 획을 긋는 중이면 무시 — 아이패드에서 애플펜슬로 쓰는 동안 손바닥이
+    // 화면에 닿으면 그 손바닥도 별도의 pointerId 로 pointerdown 을 쏘는데, 이걸 그대로 받아
+    // drawing.current 를 덮어쓰면 펜슬 쪽 획이 진행 중인 상태를 잃어버려 중간에 뚝 끊긴다
+    // ("한 획씩 씹힘"). 한 번에 한 포인터의 획만 인정한다.
+    if (drawing.current) return
     e.preventDefault()  // 드래그로 그릴 때 텍스트 블럭 선택 방지
     e.currentTarget.setPointerCapture?.(e.pointerId)
     const p0 = posAt(e, canvasRef.current.getBoundingClientRect())
-    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
+    const cur = { id: (crypto.randomUUID?.() || `${uid}-${Date.now()}-${Math.random()}`), pointerId: e.pointerId, c: colorRef.current, w: widthRef.current, b: brushRef.current, p: [p0] }
     drawing.current = cur
     bufRef.current = [p0]
     const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
@@ -283,6 +288,7 @@ export default function DrawBoard() {
   }
   function onMove(e) {
     const cur = drawing.current; if (!cur) return
+    if (e.pointerId !== cur.pointerId) return   // 다른 포인터(손바닥 등)는 무시 — 위 onDown 참고
     // e 는 React SyntheticEvent 라 getCoalescedEvents 가 없음(화이트리스트에 없는 네이티브 전용 메서드) →
     // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
     const ne = e.nativeEvent
@@ -306,8 +312,9 @@ export default function DrawBoard() {
     }
     if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
   }
-  async function onUp() {
+  async function onUp(e) {
     const cur = drawing.current; if (!cur) return
+    if (e && e.pointerId !== cur.pointerId) return   // 다른 포인터(손바닥 등)는 무시 — onDown 참고
     drawing.current = null
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
     flush(true)
