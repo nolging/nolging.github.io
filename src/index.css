@@ -1476,7 +1476,7 @@ button.mention-chip:active { opacity: .6; }
 .cg-input-wrap { position: relative; }
 .cg-input { width: 100%; box-sizing: border-box; font-size: 15px; color: #191722; background: #f4f3f7;
   border: 1.5px solid transparent; border-radius: 14px; padding: 14px 16px; outline: none; }
-.cg-input:focus { border-color: #7363e8; background: #fff; }
+.cg-input:focus { border-color: #191722; background: #fff; }
 .cg-input.has-count { padding-right: 54px; }
 .cg-textarea { font-size: 14.5px; line-height: 1.5; padding: 13px 16px 26px; resize: none; }
 .cg-count { position: absolute; right: 14px; bottom: 10px; font-size: 11.5px; color: #b0b0b8; pointer-events: none; }
