@@ -55,7 +55,7 @@ function paintStroke(ctx, s, W, H, fromIdx = 0) {
 export default function DrawBoard() {
   const { groupId } = useParams()
   const { setHeaderSave } = useOutletContext() || {}
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const uid = profile?.id
 
   const canvasRef = useRef(null)
@@ -444,7 +444,7 @@ export default function DrawBoard() {
         {/* 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것). 스크롤로 과거 기록을
             볼 수 있게 pointerEvents 를 열어 뒀다(그만큼 이 영역 위에서는 낙서가 안 그려짐 —
             진단 끝나면 통째로 제거할 임시 코드라 감수). */}
-        {debugLog.length > 0 && (
+        {isAdmin && debugLog.length > 0 && (
           <div style={{
             position: 'absolute', left: 4, right: 4, bottom: 4, zIndex: 20,
             background: 'rgba(0,0,0,.85)', color: '#7CFC7C', fontSize: 9.5, lineHeight: 1.35,
