@@ -188,10 +188,9 @@ function ChupaChups() {
 }
 
 // 체리 콕(머리 유형): 앞(front) 레이어, 머리 위에 얹힌 휘핑크림 + 체리. 벡터로 그리면
-// 디테일이 살지 않아 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입 — 좌표계(0~100)는
-// 기존 벡터 버전이 차지하던 자리를 그대로 재현해 다른 꾸미기와 배치가 어긋나지 않는다.
+// 디테일이 살지 않아 관리자가 준 PNG 원본을 그대로 SVG <image> 로 삽입.
 function CherryCream() {
-  return <image href={cherryCreamPng} x="39.5" y="-17.5" width="19" height="24.5" preserveAspectRatio="xMidYMid meet" />
+  return <image href={cherryCreamPng} x="34.7" y="-21.2" width="29.8" height="34.7" preserveAspectRatio="xMidYMid meet" />
 }
 
 function CatEars({ tf, pickable }) {
@@ -291,17 +290,15 @@ function BubbleGum() {
   )
 }
 
-// 반창고: 곧은 띠를 기울여 오른쪽 끝만 살짝 올라가게. 띠·패드·통기공이 한 그룹으로
-// 같이 회전하므로 안쪽 구성까지 항상 같은 각도로 맞는다.
+// 반창고: 곧은 띠를 기울여 오른쪽 끝만 살짝 올라가게. 띠·패드가 한 그룹으로 같이
+// 회전하므로 안쪽 구성까지 항상 같은 각도로 맞는다.
 function Bandage() {
-  const CX = 82, CY = 64, W = 27, H = 9
+  const CX = 82.5, CY = 61, W = 27, H = 8.5
   const x = CX - W / 2, y = CY - H / 2
-  const hole = (dx, dy) => <circle key={`${dx},${dy}`} cx={CX + dx} cy={CY + dy} r="0.8" fill="#d9925f" opacity="0.8" />
   return (
-    <g transform={`rotate(-24 ${CX} ${CY})`}>
-      <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#f8c69e" stroke="#e0a074" strokeWidth="1" />
-      <rect x={CX - 6} y={y + 1.9} width="12" height={H - 3.8} rx="1.5" fill="#fdeada" />
-      {[[-10.6, -1.9], [-10.6, 1.9], [-8, 0], [10.6, -1.9], [10.6, 1.9], [8, 0]].map(([dx, dy]) => hole(dx, dy))}
+    <g transform={`rotate(-26 ${CX} ${CY})`}>
+      <rect x={x} y={y} width={W} height={H} rx={H / 2} fill="#eac29a" stroke="#d9a876" strokeWidth="0.6" />
+      <rect x={CX - 4} y={CY - 3} width="8" height="6" rx="1.8" fill="#f5d4b4" />
     </g>
   )
 }
@@ -531,7 +528,7 @@ const PREVIEW_VB = {
   'deco-anger': '72 9 18 18',
   'deco-pixel-shades': '6 35 88 23',
   'deco-alien-shades': '19 22 62 36',
-  'deco-bandage': '64 51 36 24',
+  'deco-bandage': '64 49 36 25',
   'deco-gum': '36 67 28 28',
   'deco-heart-shades': '11 28 78 37',
   'deco-halo': '-18 -18 136 136',
@@ -547,7 +544,7 @@ const PREVIEW_VB = {
   'deco-bow-tie': '37 95 26 13',
   'deco-party-hat': '38 -20 24 29',
   'deco-chupa-chups': '54 81 25 14',
-  'deco-cherry-cream': '39 -18 21 27',
+  'deco-cherry-cream': '35 -21 30 36',
   'deco-circle-glasses': '13 29 74 34',
   'deco-korea': '61 46 20 20',
 }
