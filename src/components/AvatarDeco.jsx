@@ -583,7 +583,15 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
   flavorIdx: i % HEART_BEAM_FLAVORS.length,
   d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_PULSE_COUNT,
 }))
-function HeartBeam() {
+// non-scaling-stroke 는 획 굵기를 "이 엘리먼트에 걸린 transform"(scale 등)에서만 면제해줄 뿐,
+// 아바타(SVG viewBox)의 실제 픽셀 크기에는 정상적으로 비례한다 — 즉 작은 아바타/미리보기에서는
+// 자동으로 얇게, 큰 아바타에서는 자동으로 굵게 보인다(성장 애니메이션의 scale() 만 무시해
+// 커지는 동안 굵기가 늘어나지 않게 하려던 목적). 다만 DecoAdjuster 의 "크기" 슬라이더(tf.s)도
+// 내부적으로 <g transform="...scale(tf.s)..."> 로 적용되는데, 이 transform 도 non-scaling-stroke
+// 가 똑같이 무시해버려서, 다른 꾸미기는 크기를 키우면 선도 같이 굵어지는데 하트 빔만 사용자가
+// 크기를 조절해도 굵기가 그대로였다 — tf.s 를 굵기 계산에 직접 곱해 반영해 맞춘다.
+function HeartBeam({ tf }) {
+  const sw = HEART_BEAM_STROKE * (Number(tf?.s) || 1)
   return (
     <g>
       <defs>
@@ -595,7 +603,7 @@ function HeartBeam() {
       </defs>
       {HEART_BEAM_PULSES.map((p, i) => (
         <path key={i} className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
-          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={HEART_BEAM_STROKE}
+          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={sw}
           strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
     </g>
