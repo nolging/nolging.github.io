@@ -591,6 +591,15 @@ export function decoAnchor(id) {
   const [x, y, w, h] = vb.split(' ').map(Number)
   return [x + w / 2, y + h / 2]
 }
+// 아이템이 아바타 원(0~100 뷰박스) 위아래로 얼마나 삐져나오는지(%). 빨간 모자처럼 위아래로
+// 키가 큰 아이템을 DecoAdjuster 에 띄울 때, 그만큼 위/아래 여백을 더 확보해 셀렉트박스·
+// 컨트롤 바를 가리지 않게 하는 데 쓴다.
+export function decoOverflow(id) {
+  const vb = PREVIEW_VB[id]
+  if (!vb) return { top: 0, bottom: 0 }
+  const [, y, , h] = vb.split(' ').map(Number)
+  return { top: Math.max(0, -y), bottom: Math.max(0, y + h - 100) }
+}
 
 // 그룹 프로필 사진에 맞춘 조정값 → SVG transform.
 // 기준점에서 회전·확대한 뒤 이동. (translate 를 먼저 쓰면 회전에 끌려 위치가 틀어진다)
