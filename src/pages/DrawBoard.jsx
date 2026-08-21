@@ -98,7 +98,7 @@ export default function DrawBoard() {
   const [debugLog, setDebugLog] = useState([])
   const moveCountRef = useRef(0)
   function dlog(msg) {
-    setDebugLog((prev) => [...prev.slice(-14), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
+    setDebugLog((prev) => [...prev.slice(-79), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
   }
 
   // ---- 렌더 ----
@@ -407,13 +407,15 @@ export default function DrawBoard() {
         <div className="draw-spring" aria-hidden="true">
           {Array.from({ length: 16 }).map((_, i) => <span key={i} className="draw-coil" />)}
         </div>
-        {/* 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것) */}
+        {/* 임시 디버그 로그(획 씹힘 원인 진단용 — 다 고쳐지면 지울 것). 스크롤로 과거 기록을
+            볼 수 있게 pointerEvents 를 열어 뒀다(그만큼 이 영역 위에서는 낙서가 안 그려짐 —
+            진단 끝나면 통째로 제거할 임시 코드라 감수). */}
         {debugLog.length > 0 && (
           <div style={{
             position: 'absolute', left: 4, right: 4, bottom: 4, zIndex: 20,
-            background: 'rgba(0,0,0,.78)', color: '#7CFC7C', fontSize: 9.5, lineHeight: 1.35,
-            fontFamily: 'monospace', padding: '4px 6px', borderRadius: 6, maxHeight: 140,
-            overflowY: 'auto', pointerEvents: 'none', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+            background: 'rgba(0,0,0,.85)', color: '#7CFC7C', fontSize: 9.5, lineHeight: 1.35,
+            fontFamily: 'monospace', padding: '4px 6px', borderRadius: 6, maxHeight: 220,
+            overflowY: 'auto', touchAction: 'pan-y', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
           }}>
             {debugLog.join('\n')}
           </div>
