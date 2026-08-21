@@ -314,10 +314,7 @@ export default function DrawBoard() {
     // nativeEvent 에서 꺼내야 애플펜슬처럼 빠르게 움직일 때 뭉쳐서 오는 세부 좌표들을 놓치지 않는다.
     const ne = e.nativeEvent
     const events = ne?.getCoalescedEvents ? ne.getCoalescedEvents() : [e]
-    const ctx = ctxRef.current; const { w: W, h: H } = sizeRef.current
-    const smooth = SMOOTH.has(cur.b)
     const rect = canvasRef.current.getBoundingClientRect()  // 이 프레임의 뭉친 좌표들에 한 번만
-    const fromIdx = cur.p.length
     let added = false
     for (const ev of (events.length ? events : [e])) {
       const p = posAt(ev, rect)
@@ -325,21 +322,26 @@ export default function DrawBoard() {
       if (last && last[0] === p[0] && last[1] === p[1]) continue
       cur.p.push(p); bufRef.current.push(p); added = true
     }
-    if (added) {
-      // 펜/점선: 이 프레임에 새로 뭉쳐 들어온 점들을 한 번에 증분(점마다 매번 다시 그리지 않음).
-      // 형광펜/네온: 다른 모든 획을 다시 그리는 대신, 캐시해 둔 배경 위에 지금 획만 다시 그림.
-      if (!smooth) { if (ctx) paintStroke(ctx, cur, W, H, fromIdx) }
-      else restoreBgAndDrawCurrent()
-    }
+    // 예전엔 펜/점선만 새로 들어온 점만 증분으로 그렸는데(형광펜/네온만 매번 전체 재생),
+    // 디버그로 확인해 보니 이 증분 방식에서 좁은 범위에 연달아 그을 때 일부 구간이 화면에
+    // 반영이 안 되는 경우가 있었다(입력 데이터 자체는 온전한데도) — 브러쉬 종류와 무관하게
+    // 항상 배경 캐시 위에 지금 획을 통째로 다시 그리는 방식으로 통일해 이 문제를 없앤다.
+    // 캐시된 배경만 복사해 붙이는 거라 커밋된 다른 모든 획을 다시 그리는 것보다 훨씬 싸다.
+    if (added) restoreBgAndDrawCurrent()
     if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
   }
-  // 획 하나를 마무리(커밋 + 배경 캐시 반영 + 저장) — 정상적인 pointerup 뿐 아니라, 빠르게
-  // 이어 쓸 때 이전 획의 pointerup 을 못 받고 다음 pointerdown 이 먼저 오는 경우(onDown 의
-  // 자가복구 분기)에도 똑같이 거쳐야 한다. 여기를 안 거치면 캔버스엔 그려져 있어도 배경
-  // 캐시엔 반영이 안 돼, 바로 이어서 형광펜/네온으로 그리기 시작하는 순간 그 획이 지워진
-  // 것처럼 사라져 보인다("한 획씩 씹힘") — 실제로 씹히는 건 대부분 이 경로였다.
+  // 획 하나를 마무리(전체 다시 그리기 + 커밋 + 배경 캐시 반영 + 저장) — 정상적인 pointerup
+  // 뿐 아니라, 빠르게 이어 쓸 때 이전 획의 pointerup 을 못 받고 다음 pointerdown 이 먼저
+  // 오는 경우(onDown 의 자가복구 분기)에도 똑같이 거쳐야 한다.
   async function finishStroke(cur) {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
+    // 디버그 로그로 확인해 보니, pointerdown~up 이벤트와 점 데이터(cur.p)는 전부 정상인데도
+    // 좁은 범위에 연달아 그을 때 화면엔 일부 구간이 안 그려진 채로 남는 경우가 있었다 —
+    // onMove 의 증분(부분) stroke() 호출 중 일부가 어떤 이유로든(캔버스 합성 관련 기기별
+    // 차이로 추정) 화면에 반영이 안 된 것으로 보인다. 데이터 자체는 온전하니, 획을 마무리할
+    // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
+    const ctx = ctxRef.current
+    if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
