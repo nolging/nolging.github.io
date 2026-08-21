@@ -100,6 +100,17 @@ export default function DrawBoard() {
   function dlog(msg) {
     setDebugLog((prev) => [...prev.slice(-79), `${new Date().toISOString().slice(11, 19)}.${new Date().getMilliseconds().toString().padStart(3, '0')} ${msg}`])
   }
+  // 정규화 좌표(nx,ny) 위치의 실제 캔버스 픽셀을 읽어본다 — 획을 다 그린 "직후"와 "한 프레임
+  // 뒤"를 비교해, 애초에 그 위치에 잉크가 안 찍히는 건지(페인트 자체 실패) 아니면 찍힌 뒤에
+  // 뭔가가 지우는 건지(다른 리드로우가 덮어씀)를 구분하기 위한 임시 진단용.
+  function sampleInk(nx, ny) {
+    const cv = canvasRef.current; const ctx = ctxRef.current
+    if (!cv || !ctx || !cv.width || !cv.height) return null
+    const x = Math.min(cv.width - 1, Math.max(0, Math.round(nx * cv.width)))
+    const y = Math.min(cv.height - 1, Math.max(0, Math.round(ny * cv.height)))
+    try { const d = ctx.getImageData(x, y, 1, 1).data; return `${d[0]},${d[1]},${d[2]},${d[3]}` }
+    catch { return 'ERR' }
+  }
 
   // ---- 렌더 ----
   // 배경(커밋된 획 + 다른 사람의 진행 중인 획)을 캔버스에 그리고, 그 상태 그대로 오프스크린
@@ -151,12 +162,17 @@ export default function DrawBoard() {
     if (rect.width < 1 || rect.height < 1) return
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     const newW = Math.round(rect.width * dpr), newH = Math.round(rect.height * dpr)
-    if (newW !== cv.width || newH !== cv.height) dlog(`RESIZE ${cv.width}x${cv.height}->${newW}x${newH} drawing=${!!drawing.current}`)
+    sizeRef.current = { w: rect.width, h: rect.height }
+    // cv.width/height 는 "같은 값"을 다시 대입해도 캔버스 내용을 통째로 지워 버리는 브라우저
+    // 스펙(백킹 스토어 리셋)이라, 실제로 크기가 안 바뀌었으면 아예 건드리지 않는다 — ResizeObserver
+    // 는 최종 크기가 그대로여도(레이아웃 미세 흔들림 등으로) 콜백이 다시 불릴 수 있는데, 예전
+    // 코드는 이때도 매번 캔버스를 지우고 redrawAll() 로 다시 그렸다(로그에도 안 남는 조용한 지움).
+    if (newW === cv.width && newH === cv.height) { setCanvasW(rect.width); return }
+    dlog(`RESIZE ${cv.width}x${cv.height}->${newW}x${newH} drawing=${!!drawing.current}`)
     cv.width = newW; cv.height = newH
     const ctx = cv.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctxRef.current = ctx
-    sizeRef.current = { w: rect.width, h: rect.height }
     setCanvasW(rect.width)
     redrawAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,20 +331,25 @@ export default function DrawBoard() {
     const ne = e.nativeEvent
     const events = ne?.getCoalescedEvents ? ne.getCoalescedEvents() : [e]
     const rect = canvasRef.current.getBoundingClientRect()  // 이 프레임의 뭉친 좌표들에 한 번만
-    let added = false
     for (const ev of (events.length ? events : [e])) {
       const p = posAt(ev, rect)
       const last = cur.p[cur.p.length - 1]
       if (last && last[0] === p[0] && last[1] === p[1]) continue
-      cur.p.push(p); bufRef.current.push(p); added = true
+      cur.p.push(p); bufRef.current.push(p)
     }
     // 예전엔 펜/점선만 새로 들어온 점만 증분으로 그렸는데(형광펜/네온만 매번 전체 재생),
     // 디버그로 확인해 보니 이 증분 방식에서 좁은 범위에 연달아 그을 때 일부 구간이 화면에
     // 반영이 안 되는 경우가 있었다(입력 데이터 자체는 온전한데도) — 브러쉬 종류와 무관하게
-    // 항상 배경 캐시 위에 지금 획을 통째로 다시 그리는 방식으로 통일해 이 문제를 없앤다.
-    // 캐시된 배경만 복사해 붙이는 거라 커밋된 다른 모든 획을 다시 그리는 것보다 훨씬 싸다.
-    if (added) restoreBgAndDrawCurrent()
-    if (!rafRef.current) rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; flush(false) })
+    // 항상 배경 캐시 위에 지금 획을 통째로 다시 그리는 방식으로 통일했다. 다만 이것도(네온
+    // 브러쉬는 원래부터 이 방식이었는데도) 여전히 씹히는 게 확인돼, 매 pointermove(애플펜슬은
+    // 이벤트가 매우 잦고 getCoalescedEvents 로 뭉쳐 옴)마다 동기적으로 전체 캔버스 크기의
+    // drawImage+stroke 를 반복 호출하던 걸 화면 갱신 주기(rAF)당 한 번으로 묶는다 — 점 데이터
+    // 자체는 이 아래에서 계속 빠짐없이 누적하고, 실제 무거운 다시 그리기만 프레임당 1회로 제한.
+    if (!rafRef.current) rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0
+      if (drawing.current) restoreBgAndDrawCurrent()
+      flush(false)
+    })
   }
   // 획 하나를 마무리(전체 다시 그리기 + 커밋 + 배경 캐시 반영 + 저장) — 정상적인 pointerup
   // 뿐 아니라, 빠르게 이어 쓸 때 이전 획의 pointerup 을 못 받고 다음 pointerdown 이 먼저
@@ -342,6 +363,17 @@ export default function DrawBoard() {
     // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
     const ctx = ctxRef.current
     if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
+    // 방금 그린 획의 한가운데(경로 위의 실제 점)를 찍어서, "그린 직후"와 "한 프레임 뒤"의
+    // 픽셀이 같은지 비교 — 다르면 finishStroke 이후의 무언가(다음 획의 리드로우 등)가 이
+    // 획을 지운다는 뜻이고, 애초에 다르면(mid 위치에 잉크가 없으면) paintStroke/좌표 계산
+    // 자체가 실패한다는 뜻이라 다음 라운드 진단을 위해 남겨 둔다.
+    const mid = cur.p[Math.floor(cur.p.length / 2)] || cur.p[0]
+    const pxNow = sampleInk(mid[0], mid[1])
+    dlog(`PAINT id=${cur.id.slice(-6)} n=${cur.p.length} px=${pxNow}`)
+    requestAnimationFrame(() => {
+      const pxLater = sampleInk(mid[0], mid[1])
+      if (pxLater !== pxNow) dlog(`PAINT-CHANGED id=${cur.id.slice(-6)} ${pxNow}->${pxLater}`)
+    })
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
