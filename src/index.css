@@ -237,6 +237,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
 }
 .desknav-left a:hover { text-decoration: none; }
 .desknav-left a.active { background: transparent; color: var(--text); font-weight: 700; }
+.desknav-left .nav-ico-wrap { position: relative; display: inline-flex; }
+.desknav-left .nav-dot {
+  position: absolute; top: -2px; right: -8px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+}
 .desknav-indicator {
   position: absolute; left: 0; bottom: 5px; height: 2px; background: var(--text); border-radius: 1px;
   transition: transform .25s cubic-bezier(.4, 0, .2, 1), width .25s cubic-bezier(.4, 0, .2, 1);
