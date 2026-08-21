@@ -259,6 +259,13 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
             </div>
           </div>
         )}
+        {itemId && (
+          <div style={{ fontSize: 10, color: '#e11', background: '#fff3f3', padding: '6px 8px', borderRadius: 6, wordBreak: 'break-all' }}>
+            DEBUG slot=[{slot}] cap={cap} alreadyHere={String(alreadyHere)} overCap={String(overCap)} needPick={String(needPick)}<br />
+            others={JSON.stringify(others.map((id) => ({ id, slot: slotOf(id) })))}<br />
+            worn={JSON.stringify([...worn.keys()].map((id) => ({ id, slot: slotOf(id) })))}
+          </div>
+        )}
         {needPick && (
           <label className="field">
             <span>해제할 아이템</span>
