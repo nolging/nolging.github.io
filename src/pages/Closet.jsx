@@ -14,6 +14,11 @@ const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경', border: 
 const SLOT_RANK = { '머리': 0, head: 0, '얼굴': 1, face: 1, '안경': 2, glasses: 2, '테두리': 3, border: 3 }
 const slotOf = (id) => catalogDecoSlot(id) || (BORDER_IDS.has(id) ? '테두리' : decoSlot(id))
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
+// deco_slot 값은 관리자가 자유 문자열로 설정하므로(영문 head/face 로 등록된 것과, 과거
+// deco-slot-labels.sql 마이그레이션으로 한글화된 것이 섞여 있을 수 있음) 정원 계산 시
+// 같은 슬롯인지 비교할 땐 항상 이 정규화를 거쳐야 한다 — 그냥 문자열로 비교하면 영문/한글
+// 표기가 섞인 아이템끼리 "다른 슬롯"으로 오인돼 정원 초과를 못 잡는다.
+const normSlot = (slot) => (['head', '머리'].includes(slot) ? 'head' : ['face', '얼굴'].includes(slot) ? 'face' : slot)
 // 얼굴/머리 슬롯은 2개까지, 나머지는 1개까지 — apply_avatar_deco 와 동일 규칙
 // (deco-face-slot-capacity.sql, deco-head-slot-capacity.sql)
 const slotCap = (slot) => (['face', '얼굴', 'head', '머리'].includes(slot) ? 2 : 1)
@@ -126,7 +131,7 @@ export default function Closet() {
   const sections = useMemo(() => {
     const bySlot = new Map()
     for (const id of owned.keys()) {
-      const slot = slotOf(id)
+      const slot = normSlot(slotOf(id))
       if (!bySlot.has(slot)) bySlot.set(slot, [])
       bySlot.get(slot).push(id)
     }
@@ -216,7 +221,7 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
   // 같은 슬롯에서 이 그룹에 이미(로컬 기준) 장착 중인 다른 아이템(자기 자신 제외) — 정원 계산용
   const others = useMemo(() => {
     if (!itemId) return []
-    return [...worn.keys()].filter((id) => id !== itemId && slotOf(id) === slot)
+    return [...worn.keys()].filter((id) => id !== itemId && normSlot(slotOf(id)) === normSlot(slot))
   }, [itemId, worn, slot])
   const overCap = !alreadyHere && others.length >= cap
   // 해제할 후보가 2개 이상이면(정원 2인 슬롯에서 이미 꽉 찬 상태로 하나 더 고를 때)

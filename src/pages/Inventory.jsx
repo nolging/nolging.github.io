@@ -30,6 +30,10 @@ const slotLabel = (slot) => ({ head: '머리', face: '얼굴', glasses: '안경'
 // 얼굴/머리 슬롯은 한 번에 2개까지 동시 장착 가능(나머지는 1개, 백엔드 apply_avatar_deco 와 동일 규칙).
 // deco_slot 값은 관리자가 자유 문자열로 설정하므로 영문/한글 표기 둘 다 인식한다.
 const slotCapacity = (slot) => (['face', '얼굴', 'head', '머리'].includes(slot) ? 2 : 1)
+// deco_slot 은 아이템마다 영문(head/face)·한글(머리/얼굴) 표기가 섞여 있을 수 있어(과거 일괄
+// 한글화 마이그레이션은 그 시점에 있던 아이템에만 적용됨), 정원 계산 시 같은 슬롯인지 비교할
+// 땐 항상 이 정규화를 거쳐야 한다 — 안 그러면 표기가 다른 아이템끼리 "다른 슬롯"으로 오인된다.
+const normSlot = (slot) => (['head', '머리'].includes(slot) ? 'head' : ['face', '얼굴'].includes(slot) ? 'face' : slot)
 // 프로필 꾸미기 섹션 유형 필터 알약 순서(상점과 동일). 실제로 보유한 유형만 노출한다.
 const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
 // 명찰 used 행이 아직 유효(24h 내)한지
@@ -427,7 +431,7 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
     getGroupDecoMap(target.id).then((dm) => {
       if (!on) return
       const worn = (dm?.[myId] || []) // [{ id, tf, usedAt }]
-        .filter((d) => d.id !== item.id && (catalogDecoSlot(d.id) || decoSlot(d.id)) === slot)
+        .filter((d) => d.id !== item.id && normSlot(catalogDecoSlot(d.id) || decoSlot(d.id)) === normSlot(slot))
       if (worn.length < cap) return
       // 오래 장착한 순으로 정렬(기본 선택값 = 가장 오래된 것, 백엔드 기본 규칙과 동일)
       const sorted = [...worn].sort((a, b) => new Date(a.usedAt || 0) - new Date(b.usedAt || 0))
