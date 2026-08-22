@@ -561,17 +561,27 @@ const heartBeamPath = (cx, cy, a) =>
   + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.02} ${cy - a * 0.15}`
   + ` C${cx + a * 1.15} ${cy - a * 0.98} ${cx + a * 0.15} ${cy - a * 1.08} ${cx} ${cy - a * 0.58} Z`
 const HEART_BEAM_PATH_D = heartBeamPath(50, 54, 34)
-const HEART_BEAM_STROKE = 15.3
-// 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 진한 겹(2가지 색·흐림 정도만 반복 — 가장
-// 진하고 또렷한 겹은 뺐다). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작
-// 시점(d)을 줘 항상 크기가 다른 하트 2겹이 겹쳐서 자라는 것처럼 보이게 한다. d 를
-// 음수(마이너스 딜레이)로 줘서, 페이지에 처음 들어와도 각 겹이 이미 주기 중간 어딘가에
-// 가 있는 상태로 바로 시작한다 — 그래야 "방금 시작한" 게 아니라 "원래부터 계속 반복되고
-// 있었던" 것처럼 보인다(양수 딜레이면 맨 처음엔 딜레이가 지날 때까지 화면에 아무것도
-// 안 보이다가 그제서야 첫 하트가 사진 뒤에서 자라나기 시작해 부자연스럽다).
+// 하트 테두리 굵기 = 보이는 영역 지름(=이 하트가 그려지는 <svg> 의 viewBox 폭)의 %.
+// SVG 는 viewBox 좌표를 실제 화면 크기에 맞춰 알아서 늘이거나 줄이므로, "폭의 %"로 정의해
+// 두면 그 자체로 이미 화면 크기에 정확히 비례한다 — 아바타가 24px 든 220px 든 별도 계산 없이
+// 항상 같은 비율로 보인다(전에는 굵기를 고정 숫자로 두고, 작을수록 더 가파르게 줄이는
+// 지수 보정·기준 크기·미리보기용 추정 크기 같은 걸 잔뜩 얹어 흉내 냈는데, 화면마다 서로
+// 다른 방향으로 계속 어긋나서 — 훨씬 단순하고 예측 가능한 이 방식으로 바꿨다).
+const HEART_BEAM_STROKE_PCT = 0.153
+// 흐림 반경 = "그 겹의 굵기"의 %. 흐림을 굵기와 별개의 고정 숫자로 관리하면 굵기 계산 방식을
+// 바꿀 때마다 같이 어긋났었다 — 굵기에 곱하는 비율로 정의해 두면 무슨 화면에서든 항상 같은
+// 상대적 부드러움을 유지한다. 옅은 겹은 더 크게, 진한 겹은 더 작게 흐려서 바깥은 부드럽고
+// 안쪽은 또렷하게 보인다.
+// 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 진한 겹(2가지 색만 반복 — 가장 진하고 또렷한
+// 겹은 뺐다). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작 시점(d)을 줘 항상
+// 크기가 다른 하트 2겹이 겹쳐서 자라는 것처럼 보이게 한다. d 를 음수(마이너스 딜레이)로
+// 줘서, 페이지에 처음 들어와도 각 겹이 이미 주기 중간 어딘가에 가 있는 상태로 바로 시작한다
+// — 그래야 "방금 시작한" 게 아니라 "원래부터 계속 반복되고 있었던" 것처럼 보인다(양수
+// 딜레이면 맨 처음엔 딜레이가 지날 때까지 화면에 아무것도 안 보이다가 그제서야 첫 하트가
+// 사진 뒤에서 자라나기 시작해 부자연스럽다).
 const HEART_BEAM_FLAVORS = [
-  { c: '#ffd9ea', blur: 3.6, op: 0.9 },
-  { c: '#ffb0d6', blur: 1.5, op: 1 },
+  { c: '#ffd9ea', blurPct: 0.6, op: 0.9 },
+  { c: '#ffb0d6', blurPct: 0.25, op: 1 },
 ]
 const HEART_BEAM_DUR = 2.8
 // 색은 2가지만 반복하되, 하트 "개수"는 색 개수보다 많게(4개) 늘려 다음 하트가 더 빨리
@@ -583,36 +593,22 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
   flavorIdx: i % HEART_BEAM_FLAVORS.length,
   d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_PULSE_COUNT,
 }))
-// non-scaling-stroke 는 획 굵기를 "이 엘리먼트에 걸린 transform"(scale 등)에서만 면제해줄 뿐,
-// 아바타(SVG viewBox)의 실제 픽셀 크기에는 정상적으로 비례한다 — 즉 작은 아바타/미리보기에서는
-// 자동으로 얇게, 큰 아바타에서는 자동으로 굵게 보인다(성장 애니메이션의 scale() 만 무시해
-// 커지는 동안 굵기가 늘어나지 않게 하려던 목적). 다만 DecoAdjuster 의 "크기" 슬라이더(tf.s)도
-// 내부적으로 <g transform="...scale(tf.s)..."> 로 적용되는데, 이 transform 도 non-scaling-stroke
-// 가 똑같이 무시해버려서, 다른 꾸미기는 크기를 키우면 선도 같이 굵어지는데 하트 빔만 사용자가
-// 크기를 조절해도 굵기가 그대로였다 — tf.s 를 굵기 계산에 직접 곱해 반영해 맞춘다.
-//
-// blur(흐림) 는 굵기와 달리 실측해보니 작은 아바타에서 "저절로" 충분히 얇아지지 않는다 —
-// feGaussianBlur 는 하트 테두리 안쪽의 빈(하얀) 공간까지 양쪽에서 함께 번지는데, 작은
-// 아바타일수록 그 빈 공간 자체가 몇 픽셀로 좁아져서 고정된 흐림 반경이 그 틈을 완전히
-// 메워버려 하트가 (링이 아니라) 통짜 얼룩처럼 보인다 — 그룹 카드·위시 카드처럼 작은
-// 아바타에서 "하트가 너무 굵어 보인다"고 느끼던 원인 중 하나였다(직접 여러 크기를
-// 나란히 렌더링해 확인). size(실제 아바타 픽셀 지름)를 받아 흐림 반경도 같은 비율로 줄인다.
-//
-// 그런데 흐림만 비례로 줄여도 작은 아바타에서는 여전히 링이 두꺼워 보였다 — 130px 기준으로
-// "선형 비례"(굵기=크기에 정확히 비례)로는 부족했다. 얇은 선이 작은 화면에서는 상대적으로
-// 더 두껍게 "느껴지는" 건 흔한 착시라, 130px(이미 적절해 보이던 기준 크기) 아래로는 크기에
-// 따라 굵기를 더 가파르게(지수 HEART_BEAM_STROKE_K > 1) 줄인다 — 130px 이상에선 원래 굵기
-// 그대로 유지. 대신 흐림까지 같은 정도로 급격히 줄이면, 부드럽게 번지며 나타나던 가장자리가
-// 갑자기 "툭" 튀어나오는 것처럼 보여 애니메이션 속도 자체가 더 빨라진 것처럼 느껴진다(가장자리가
-// 또렷할수록 등장이 더 순간적으로 느껴지는 착시) — 굵기를 얇게 줄인 만큼 안쪽 여유가 생겨서,
-// 흐림은 굵기보다 완만하게(지수 HEART_BEAM_BLUR_K < 1, 즉 선형보다 덜 줄어듦) 줄여도 다시
-// 안쪽이 메워지지 않는다. 130px 이상에서는 굵기와 마찬가지로 흐림도 더는 커지지 않게
-// 고정한다 — 전엔 흐림만 130px 위로도 계속 선형으로 커지게 해 둬서(DecoAdjuster 처럼
-// 232px 로 크게 띄우는 화면에서) 굵기는 그대로인데 흐림만 과하게 번져 오히려 더
-// 흐릿하고(=가늘어 보이고) 있었다.
-const HEART_BEAM_SIZE_BASELINE = 130
-const HEART_BEAM_STROKE_K = 1.7
-const HEART_BEAM_BLUR_K = 0.6
+// 굵기는 절대 숫자가 아니라 "프로필 사진(아바타)의 지름 대비 몇 %" 로 계산한다 — 하트는
+// 항상 아바타 좌표계(0~100, 지름 100)에 그려지고, 그 좌표계는 실제로 몇 픽셀짜리 <svg> 로
+// 렌더링되든(그룹 카드의 작은 아바타든, 데이트 페이지의 큰 아바타든, 상점 미리보기든) SVG
+// 자체가 알아서 그 비율대로 스케일해준다 — 그래서 "크기별로 굵기를 몇 배 줄일지"를 별도
+// 지수·기준값으로 보정할 필요가 아예 없다. 상점/인벤토리 미리보기(PREVIEW_VB)는 하트가
+// 사진 바깥까지 자라는 걸 다 담으려고 아바타 좌표계보다 더 넓은 여백까지 보여주는 것뿐,
+// 아바타 자체의 지름(100)은 그대로이므로 굳이 그 바깥 여백 폭을 넘겨받아 반영할 필요가
+// 없다(기본값 100 그대로 사용). DecoAdjuster 의 "크기" 슬라이더(tf.s)는
+// <g transform="...scale(tf.s)..."> 로 적용되는데 vector-effect="non-scaling-stroke" 가
+// 이 transform 도 무시해버리므로 tf.s 를 굵기 계산에 직접 곱해 반영한다.
+// 흐림(blur) 도 절대 반경이 아니라 "그 순간의 획 굵기 대비 몇 %" 로 계산한다 — 굵기 자체가
+// 이미 viewBox 비율로 자동 축소되므로, 흐림을 굵기의 %로 걸어두면 굵기가 줄어드는 만큼
+// 흐림도 같은 비율로 저절로 따라 줄어 별도 보정이 필요 없다(작은 아바타에서 흐림이 하트
+// 안쪽 빈 공간까지 메워 통짜 얼룩처럼 보이던 문제, 반대로 큰 화면에서 흐림만 남아 흐릿해
+// 보이던 문제 모두 이 비례 관계 하나로 해소됨).
+const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
 // 상점/인벤토리 미리보기에서는 링(테두리)만 있다 보니 가운데가 비어 배경이 그대로 비쳐
 // 보였다 — 퍼지는 링들과 별개로, 항상 맨 위(가장 나중에 그려짐)에 작고 고정된 크기의
 // 꽉 찬(면이 채워진) 하트를 하나 더 얹는다. 색은 고정이 아니라, 그 순간 가장 안쪽(가장
@@ -622,35 +618,17 @@ const HEART_BEAM_BLUR_K = 0.6
 // 값(HEART_BEAM_PULSES 의 d)으로 이미 정해져 있는 값이라 CSS 키프레임만으로 똑같은
 // 타이밍에 맞춰 미리 계산해 둔 색 순서를 재생하면 된다(steps(1) 로 중간에 섞이지 않고
 // 딱딱 끊어서 바뀜). HEART_BEAM_DUR·PULSE_COUNT 가 바뀌면 이 퍼센트도 다시 맞춰야 한다.
-const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
-// HeartBeam 은 항상 자기 부모 <svg> 의 viewBox 기준 "0~100" 좌표로 그리는데, 실제 부모
-// viewBox 는 호출하는 쪽마다 다르다 — 아바타(AvatarDeco)는 항상 "0 0 100 100"이지만,
-// 상점/인벤토리 미리보기(DecoPreview)는 하트가 사진 바깥까지 자라는 걸 다 담으려고 훨씬
-// 넓은 뷰박스(PREVIEW_VB 의 실제 폭 180)를 쓴다 — 같은 굵기 숫자를 넣어도 뷰박스가
-// 1.8배 넓으면(=단위 하나가 차지하는 실제 픽셀이 그만큼 더 작으면) 그만큼 더 두껍게
-// "느껴지는" 게 아니라 실제로 더 두껍게 그려진다(굵기가 커버하는 면적 비율 자체가
-// 커짐) — 작은 미리보기에서 유독 두꺼워 보이던 원인이 바로 이거였다. vbScale(그 부모
-// viewBox 폭 ÷ 100)을 받아 굵기·흐림에 곱해 상쇄한다(기본 1 = 아바타 기준 뷰박스).
-// DecoPreview 는 실제 자기 컨테이너가 몇 px 인지 모른 채(측정 없이) 호출하므로, size 를
-// 안 넘겨줄 때의 기본값은 "미리보기는 항상 작은 화면(상점 그리드·인벤토리 썸네일 등)에서만
-// 쓰인다"는 걸 반영해 작게 잡는다 — 실제 아바타(50~230px 다양)와 달리 미리보기는 절대
-// 크게 안 쓰이기 때문.
-const HEART_BEAM_PREVIEW_DEFAULT_SIZE = 60
-function HeartBeam({ tf, size, vbScale = 1 }) {
-  const px = Number(size) || HEART_BEAM_PREVIEW_DEFAULT_SIZE
-  const sizeRatio = px / HEART_BEAM_SIZE_BASELINE
-  const strokeScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_STROKE_K - 1))
-  const blurScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_BLUR_K))
-  const sw = HEART_BEAM_STROKE * strokeScale * vbScale * (Number(tf?.s) || 1)
+function HeartBeam({ tf }) {
+  const sw = 100 * HEART_BEAM_STROKE_PCT * (Number(tf?.s) || 1)
   return (
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
-          // 흐림 반경(f.blur*blurScale*vbScale) 이 필터 영역보다 커지면 사각형 경계에서
-          // 뚝 잘려 보인다(둥근 흐림이 아니라 네모난 테두리가 비쳐 보이던 원인) — 영역을
-          // 넉넉하게 잡아 어떤 크기 조합에서도 안 잘리게 한다.
+          // 흐림 반경(sw*f.blurPct) 이 필터 영역보다 커지면 사각형 경계에서 뚝 잘려 보인다
+          // (둥근 흐림이 아니라 네모난 테두리가 비쳐 보이던 원인) — 영역을 넉넉하게 잡아
+          // 어떤 크기 조합에서도 안 잘리게 한다.
           <filter key={i} id={`heartBeamBlur${i}`} x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation={f.blur * blurScale * vbScale} />
+            <feGaussianBlur stdDeviation={sw * f.blurPct} />
           </filter>
         ))}
       </defs>
@@ -766,7 +744,6 @@ const sideProps = (pickable, side) => (pickable ? { 'data-deco-side': side, styl
 
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB_OVERRIDE[id] || PREVIEW_VB[id] || '0 0 100 100'
-  const vbScale = (Number(vb.split(' ')[2]) || 100) / 100
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
@@ -796,7 +773,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
       {id === 'deco-red-hood' && <RedHood />}
-      {id === 'deco-heart-beam' && <HeartBeam vbScale={vbScale} />}
+      {id === 'deco-heart-beam' && <HeartBeam />}
     </svg>
   )
 }
