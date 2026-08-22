@@ -561,22 +561,25 @@ const heartBeamPath = (cx, cy, a) =>
   + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.02} ${cy - a * 0.15}`
   + ` C${cx + a * 1.15} ${cy - a * 0.98} ${cx + a * 0.15} ${cy - a * 1.08} ${cx} ${cy - a * 0.58} Z`
 const HEART_BEAM_PATH_D = heartBeamPath(50, 54, 34)
-// 하트 테두리 굵기 = 보이는 영역 지름(=이 하트가 그려지는 <svg> 의 viewBox 폭)의 %.
-// SVG 는 viewBox 좌표를 실제 화면 크기에 맞춰 알아서 늘이거나 줄이므로, "폭의 %"로 정의해
-// 두면 그 자체로 이미 화면 크기에 정확히 비례한다 — 아바타가 24px 든 220px 든 별도 계산 없이
-// 항상 같은 비율로 보인다(전에는 굵기를 고정 숫자로 두고, 작을수록 더 가파르게 줄이는
-// 지수 보정·기준 크기·미리보기용 추정 크기 같은 걸 잔뜩 얹어 흉내 냈는데, 화면마다 서로
-// 다른 방향으로 계속 어긋나서 — 훨씬 단순하고 예측 가능한 이 방식으로 바꿨다).
-const HEART_BEAM_STROKE_PCT = 0.153
+// 하트 테두리 굵기 = 프로필 사진 지름의 %. 하트는 항상 아바타 좌표계(viewBox "0 0 100 100",
+// 즉 지름 100)에 그려지고, SVG 가 그 좌표계를 실제 렌더링 픽셀 크기에 맞춰 알아서 늘이거나
+// 줄여주므로 "지름의 %"로 정의해 두면 24px 아바타든 220px 아바타든 별도 계산 없이 항상
+// 정확히 같은 비율로 보인다.
+//
+// ⚠️ 단, 이게 성립하려면 획에 vector-effect="non-scaling-stroke" 를 걸면 안 된다 —
+// 이걸 걸면 굵기가 viewBox 스케일을 무시하고 "화면 픽셀" 단위로 고정돼 버려서, 크기와
+// 상관없이 항상 같은 두께로 그려진다(직접 측정: 24px 아바타 → 14px, 220px 아바타 → 16px.
+// 즉 작은 아바타에서는 지름의 58%, 큰 아바타에서는 7%). 여기서 몇 %로 계산하든 그 값이
+// 통째로 버려지기 때문에, 작은 아바타에서만 하트가 유독 굵고 사진 밖으로 훨씬 크게
+// 삐져나오고 큰 아바타에서는 거의 안 보이던 문제의 진짜 원인이 바로 이것이었다.
+// 원래 이 속성을 쓴 이유는 하트가 커지는 동안(transform: scale) 획까지 같이 굵어지는 걸
+// 막으려던 것인데, 그건 아래 CSS 키프레임에서 stroke-width 를 scale 의 역수로 함께
+// 애니메이션해서 해결한다(index.css 의 avd-heart-beam).
+const HEART_BEAM_STROKE_PCT = 0.118
 // 흐림 반경 = "그 겹의 굵기"의 %. 흐림을 굵기와 별개의 고정 숫자로 관리하면 굵기 계산 방식을
 // 바꿀 때마다 같이 어긋났었다 — 굵기에 곱하는 비율로 정의해 두면 무슨 화면에서든 항상 같은
 // 상대적 부드러움을 유지한다. 옅은 겹은 더 크게, 진한 겹은 더 작게 흐려서 바깥은 부드럽고
 // 안쪽은 또렷하게 보인다.
-// (참고: 흐림 반경이 클수록, 아주 작은 아바타에서는 브라우저의 흐림 필터 자체가 픽셀
-// 크기에 맞춰 완벽히 축소 렌더링되지 않는 경향이 있어(래스터라이즈 해상도 한계) 흐림이
-// 상대적으로 더 퍼져 보일 수 있다 — 이건 이 굵기·흐림 계산식의 한계가 아니라 브라우저의
-// 필터 렌더링 특성이라 값만으로 완전히 없앨 수는 없다. 흐림 비율을 낮게 유지해 그 영향을
-// 최소화한다.)
 // 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 진한 겹(2가지 색만 반복 — 가장 진하고 또렷한
 // 겹은 뺐다). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작 시점(d)을 줘 항상
 // 크기가 다른 하트 2겹이 겹쳐서 자라는 것처럼 보이게 한다. d 를 음수(마이너스 딜레이)로
@@ -598,40 +601,39 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
   flavorIdx: i % HEART_BEAM_FLAVORS.length,
   d: -((i + 0.5) * HEART_BEAM_DUR) / HEART_BEAM_PULSE_COUNT,
 }))
-// 굵기는 절대 숫자가 아니라 "프로필 사진(아바타)의 지름 대비 몇 %" 로 계산한다 — 하트는
-// 항상 아바타 좌표계(0~100, 지름 100)에 그려지고, 그 좌표계는 실제로 몇 픽셀짜리 <svg> 로
-// 렌더링되든(그룹 카드의 작은 아바타든, 데이트 페이지의 큰 아바타든, 상점 미리보기든) SVG
-// 자체가 알아서 그 비율대로 스케일해준다 — 그래서 "크기별로 굵기를 몇 배 줄일지"를 별도
-// 지수·기준값으로 보정할 필요가 아예 없다. 상점/인벤토리 미리보기(PREVIEW_VB)는 하트가
-// 사진 바깥까지 자라는 걸 다 담으려고 아바타 좌표계보다 더 넓은 여백까지 보여주는 것뿐,
-// 아바타 자체의 지름(100)은 그대로이므로 굳이 그 바깥 여백 폭을 넘겨받아 반영할 필요가
-// 없다(기본값 100 그대로 사용). DecoAdjuster 의 "크기" 슬라이더(tf.s)는
-// <g transform="...scale(tf.s)..."> 로 적용되는데 vector-effect="non-scaling-stroke" 가
-// 이 transform 도 무시해버리므로 tf.s 를 굵기 계산에 직접 곱해 반영한다.
-// 흐림(blur) 도 절대 반경이 아니라 "그 순간의 획 굵기 대비 몇 %" 로 계산한다 — 굵기 자체가
-// 이미 viewBox 비율로 자동 축소되므로, 흐림을 굵기의 %로 걸어두면 굵기가 줄어드는 만큼
-// 흐림도 같은 비율로 저절로 따라 줄어 별도 보정이 필요 없다(작은 아바타에서 흐림이 하트
-// 안쪽 빈 공간까지 메워 통짜 얼룩처럼 보이던 문제, 반대로 큰 화면에서 흐림만 남아 흐릿해
-// 보이던 문제 모두 이 비례 관계 하나로 해소됨).
-function HeartBeam({ tf }) {
-  const sw = 100 * HEART_BEAM_STROKE_PCT * (Number(tf?.s) || 1)
+// 굵기·흐림 모두 아바타 좌표계(지름 100)의 값으로만 정하고, 실제 화면 크기 변환은 SVG 의
+// viewBox 스케일에 전적으로 맡긴다 — 그래서 이 컴포넌트는 아바타가 몇 px 인지 알 필요가
+// 없고(size 같은 걸 받지 않는다), 화면마다 다른 보정도 필요 없다.
+// 상점/인벤토리 미리보기(PREVIEW_VB)는 하트가 사진 바깥까지 자라는 걸 다 담으려고 아바타
+// 좌표계보다 넓은 여백까지 보여주는 것뿐이고 아바타 자체의 지름(100)은 그대로라, 그 바깥
+// 여백 폭을 굵기 계산에 반영하면 오히려 어긋난다(이전에 vbScale 로 나눠주던 보정을 뺀 이유).
+// DecoAdjuster 의 "크기" 슬라이더(tf.s)도 <g transform="...scale(tf.s)..."> 로 적용되는데,
+// non-scaling-stroke 를 뺐으므로 이 transform 이 획 굵기까지 정상적으로 같이 키워준다 —
+// 예전처럼 tf.s 를 굵기에 직접 곱하면 두 번 적용돼서 오히려 과하게 굵어진다.
+const HEART_BEAM_STROKE = 100 * HEART_BEAM_STROKE_PCT
+function HeartBeam() {
   return (
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
-          // 흐림 반경(sw*f.blurPct) 이 필터 영역보다 커지면 사각형 경계에서 뚝 잘려 보인다
+          // 흐림 반경(굵기의 %) 이 필터 영역보다 커지면 사각형 경계에서 뚝 잘려 보인다
           // (둥근 흐림이 아니라 네모난 테두리가 비쳐 보이던 원인) — 영역을 넉넉하게 잡아
           // 어떤 크기 조합에서도 안 잘리게 한다.
           <filter key={i} id={`heartBeamBlur${i}`} x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation={sw * f.blurPct} />
+            <feGaussianBlur stdDeviation={HEART_BEAM_STROKE * f.blurPct} />
           </filter>
         ))}
       </defs>
       {HEART_BEAM_PULSES.map((p, i) => (
+        // strokeWidth 는 애니메이션이 꺼진 환경(prefers-reduced-motion)용 기본값 — 켜져
+        // 있을 땐 CSS 키프레임(avd-heart-beam)이 scale 의 역수로 덮어써서, 커지는 동안에도
+        // 획이 같은 굵기로 보이게 한다. 그 키프레임의 숫자들은 이 HEART_BEAM_STROKE 에서
+        // 나온 값이라 여기 굵기를 바꾸면 index.css 쪽도 같이 다시 계산해야 한다.
         <path key={i}
-          className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
-          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={sw}
-          strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
+          className="avd-heart-beam-pulse"
+          style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
+          d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={HEART_BEAM_STROKE}
+          strokeLinejoin="round" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
     </g>
   )
