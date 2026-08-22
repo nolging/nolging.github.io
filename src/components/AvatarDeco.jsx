@@ -612,9 +612,13 @@ const HEART_BEAM_STROKE_K = 1.7
 const HEART_BEAM_BLUR_K = 0.6
 // 상점/인벤토리 미리보기에서는 링(테두리)만 있다 보니 가운데가 비어 배경이 그대로 비쳐
 // 보였다 — 퍼지는 링들과 별개로, 항상 맨 위(가장 나중에 그려짐)에 작고 고정된 크기의
-// 꽉 찬(면이 채워진) 하트를 하나 더 얹어 "가장 안쪽"이 실제로 꽉 차 있는 느낌이 나게 한다.
-// 바로 바깥의 테두리 링(가장 위에 그려지는 마지막 겹, HEART_BEAM_FLAVORS[0])과 색이
-// 이어져 보이게 같은 색을 쓴다.
+// 꽉 찬(면이 채워진) 하트를 하나 더 얹는다. 색은 고정이 아니라, 그 순간 가장 안쪽(가장
+// 최근에 다시 태어난) 테두리 링과 같은 색으로 계속 바뀌어야 한다 — DOM 을 다시 정렬해
+// "누가 가장 안쪽인지" 매 순간 JS 로 추적하는 방식은 하트의 움직임 자체를 어색하게
+// 만들어서(이전 시도) 걷어냈고, 대신 애초에 어떤 겹이 몇 초에 다시 태어나는지는 딜레이
+// 값(HEART_BEAM_PULSES 의 d)으로 이미 정해져 있는 값이라 CSS 키프레임만으로 똑같은
+// 타이밍에 맞춰 미리 계산해 둔 색 순서를 재생하면 된다(steps(1) 로 중간에 섞이지 않고
+// 딱딱 끊어서 바뀜). HEART_BEAM_DUR·PULSE_COUNT 가 바뀌면 이 퍼센트도 다시 맞춰야 한다.
 const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
 function HeartBeam({ tf, size }) {
   const px = Number(size) || 90
@@ -637,7 +641,7 @@ function HeartBeam({ tf, size }) {
           d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={sw}
           strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
-      <path d={HEART_BEAM_CORE_D} fill={HEART_BEAM_FLAVORS[0].c} />
+      <path className="avd-heart-beam-core" d={HEART_BEAM_CORE_D} fill={HEART_BEAM_FLAVORS[0].c} />
     </g>
   )
 }
