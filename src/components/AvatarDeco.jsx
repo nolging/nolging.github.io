@@ -595,13 +595,27 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 // feGaussianBlur 는 하트 테두리 안쪽의 빈(하얀) 공간까지 양쪽에서 함께 번지는데, 작은
 // 아바타일수록 그 빈 공간 자체가 몇 픽셀로 좁아져서 고정된 흐림 반경이 그 틈을 완전히
 // 메워버려 하트가 (링이 아니라) 통짜 얼룩처럼 보인다 — 그룹 카드·위시 카드처럼 작은
-// 아바타에서 "하트가 너무 굵어 보인다"고 느끼던 원인이 바로 이거였다(직접 여러 크기를
-// 나란히 렌더링해 확인). size(실제 아바타 픽셀 지름)를 받아 흐림 반경도 같은 비율로
-// 줄여서, 작은 아바타에서는 흐림도 함께 옅어지게 한다.
-const HEART_BEAM_BLUR_BASELINE = 130
+// 아바타에서 "하트가 너무 굵어 보인다"고 느끼던 원인 중 하나였다(직접 여러 크기를
+// 나란히 렌더링해 확인). size(실제 아바타 픽셀 지름)를 받아 흐림 반경도 같은 비율로 줄인다.
+//
+// 그런데 흐림만 비례로 줄여도 작은 아바타에서는 여전히 링이 두꺼워 보였다 — 130px 기준으로
+// "선형 비례"(굵기=크기에 정확히 비례)로는 부족했다. 얇은 선이 작은 화면에서는 상대적으로
+// 더 두껍게 "느껴지는" 건 흔한 착시라, 130px(이미 적절해 보이던 기준 크기) 아래로는 크기에
+// 따라 굵기를 더 가파르게(지수 HEART_BEAM_STROKE_K > 1) 줄인다 — 130px 이상에선 원래 굵기
+// 그대로 유지. 대신 흐림까지 같은 정도로 급격히 줄이면, 부드럽게 번지며 나타나던 가장자리가
+// 갑자기 "툭" 튀어나오는 것처럼 보여 애니메이션 속도 자체가 더 빨라진 것처럼 느껴진다(가장자리가
+// 또렷할수록 등장이 더 순간적으로 느껴지는 착시) — 굵기를 얇게 줄인 만큼 안쪽 여유가 생겨서,
+// 흐림은 굵기보다 완만하게(지수 HEART_BEAM_BLUR_K < 1, 즉 선형보다 덜 줄어듦) 줄여도 다시
+// 안쪽이 메워지지 않는다.
+const HEART_BEAM_SIZE_BASELINE = 130
+const HEART_BEAM_STROKE_K = 1.7
+const HEART_BEAM_BLUR_K = 0.6
 function HeartBeam({ tf, size }) {
-  const sw = HEART_BEAM_STROKE * (Number(tf?.s) || 1)
-  const blurScale = (Number(size) || 90) / HEART_BEAM_BLUR_BASELINE
+  const px = Number(size) || 90
+  const sizeRatio = px / HEART_BEAM_SIZE_BASELINE
+  const strokeScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_STROKE_K - 1))
+  const blurScale = px >= HEART_BEAM_SIZE_BASELINE ? sizeRatio : Math.pow(sizeRatio, HEART_BEAM_BLUR_K)
+  const sw = HEART_BEAM_STROKE * strokeScale * (Number(tf?.s) || 1)
   return (
     <g>
       <defs>
