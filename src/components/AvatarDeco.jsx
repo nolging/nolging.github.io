@@ -573,10 +573,12 @@ const HEART_BEAM_PATH_D = heartBeamPath(HEART_BEAM_CX, HEART_BEAM_CY, HEART_BEAM
 // 즉 작은 아바타에서는 지름의 58%, 큰 아바타에서는 7%). 여기서 몇 %로 계산하든 그 값이
 // 통째로 버려지기 때문에, 작은 아바타에서만 하트가 유독 굵고 사진 밖으로 훨씬 크게
 // 삐져나오고 큰 아바타에서는 거의 안 보이던 문제의 진짜 원인이 바로 이것이었다.
-// 원래 이 속성을 쓴 이유는 하트가 커지는 동안(transform: scale) 획까지 같이 굵어지는 걸
-// 막으려던 것인데, 그건 아래 CSS 키프레임에서 stroke-width 를 scale 의 역수로 함께
-// 애니메이션해서 해결한다(index.css 의 avd-heart-beam).
-const HEART_BEAM_STROKE_PCT = 0.118
+// 이 굵기는 애니메이션하지 않고 고정이다 — stroke-width 는 "칠하기" 속성이라 애니메이션하면
+// 매 프레임 레이어를 다시 칠하게 만들고, 그게 다른 꾸미기 아이템이 떨려 보이던 원인이었다
+// (자세한 내용은 index.css 의 avd-heart-beam 키프레임 주석). 고정이라 커지는 동안 획도 같이
+// 굵어지는데, 잘 보이는 구간의 한가운데(scale 약 1.2)에서 예전의 일정 굵기와 비슷해 보이도록
+// 기준값을 그만큼 낮춰 잡았다.
+const HEART_BEAM_STROKE_PCT = 0.098
 // 흐림 반경 = "그 겹의 굵기"의 %. 흐림을 굵기와 별개의 고정 숫자로 관리하면 굵기 계산 방식을
 // 바꿀 때마다 같이 어긋났었다 — 굵기에 곱하는 비율로 정의해 두면 무슨 화면에서든 항상 같은
 // 상대적 부드러움을 유지한다. 옅은 겹은 더 크게, 진한 겹은 더 작게 흐려서 바깥은 부드럽고
@@ -619,12 +621,11 @@ const HEART_BEAM_STROKE = 100 * HEART_BEAM_STROKE_PCT
 // 아이템들까지 매 프레임 다시 래스터라이즈되는 게 흔들려 보이던 원인.
 //
 // 그래서 퍼센트 대신 사용자 좌표(userSpaceOnUse)로 필요한 만큼만 정확히 잡는다. 필요한 여유는
-//   (그 순간 가장 굵을 때의 획 굵기 절반) + (가우시안 흐림이 실질적으로 번지는 거리 ≈ 3σ)
-// 이고, 획이 가장 굵은 건 가장 작을 때(scale 0.32)다 — CSS 가 scale 의 역수로 굵기를
-// 키우기 때문. 상수를 바꾸면 이 식이 알아서 따라간다.
-const HEART_BEAM_MIN_SCALE = 0.32   // index.css avd-heart-beam 의 0% 지점과 반드시 일치
+//   (획 굵기 절반) + (가우시안 흐림이 실질적으로 번지는 거리 ≈ 3σ)
+// 이다. 필터는 transform 이 적용되기 "전"의 좌표계에서 계산되고 굵기도 이제 고정이라,
+// 커지는 배율과 무관하게 이 영역 하나면 충분하다. 상수를 바꾸면 식이 알아서 따라간다.
 const HEART_BEAM_PAD =
-  (HEART_BEAM_STROKE / HEART_BEAM_MIN_SCALE) / 2
+  HEART_BEAM_STROKE / 2
   + 3 * HEART_BEAM_STROKE * Math.max(...HEART_BEAM_FLAVORS.map((f) => f.blurPct))
 const HEART_BEAM_FILTER = {
   x: HEART_BEAM_CX - HEART_BEAM_A * 1.02 - HEART_BEAM_PAD,
@@ -647,10 +648,8 @@ function HeartBeam() {
         ))}
       </defs>
       {HEART_BEAM_PULSES.map((p, i) => (
-        // strokeWidth 는 애니메이션이 꺼진 환경(prefers-reduced-motion)용 기본값 — 켜져
-        // 있을 땐 CSS 키프레임(avd-heart-beam)이 scale 의 역수로 덮어써서, 커지는 동안에도
-        // 획이 같은 굵기로 보이게 한다. 그 키프레임의 숫자들은 이 HEART_BEAM_STROKE 에서
-        // 나온 값이라 여기 굵기를 바꾸면 index.css 쪽도 같이 다시 계산해야 한다.
+        // strokeWidth 는 고정 — CSS 키프레임은 transform/opacity 만 건드린다(칠하기 속성인
+        // stroke-width 를 애니메이션하면 매 프레임 다시 칠하게 돼 다른 아이템이 떨려 보인다).
         <path key={i}
           className="avd-heart-beam-pulse"
           style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
