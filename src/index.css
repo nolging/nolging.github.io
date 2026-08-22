@@ -3405,21 +3405,22 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-themed > .theme-wp { z-index: 0; }
 .tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 테마 요소를 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 
-/* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그린다(움직이지 않는 정적 왜곡).
-   전엔 baseFrequency 를 SMIL 로 흔들어 일렁이게 했지만, 그러면 필터가 매 프레임 다시
-   계산되며 카드/페이지 전체가 계속 다시 그려져서, 같은 화면의 하트 빔(흐림 필터)과 겹칠 때
-   다른 꾸미기 아이템이 떨려 보였다 — ThemeWaterpark.jsx 의 RippleDefs 주석 참고. */
+/* 수영장 타일 격자선.
+   원래는 SVG 물결 변위 필터(url(#wpRipple))로 격자선을 살짝 휘어 보이게 했다. 그런데 이
+   필터가 "하트 빔 + 수영장 테마" 조합에서만 다른 꾸미기 아이템이 떨려 보이던 원인이었다 —
+   각각 따로 쓸 땐 멀쩡하고 둘이 겹칠 때만 증상이 나온다는 게 결정적인 단서였는데, 한 화면에
+   SVG 필터가 둘(타일 물결 + 하트 빔 흐림) 동시에 놓이는 게 유일한 차이였다. 필터가 걸린
+   내용은 오프스크린 버퍼를 거쳐 합성되는데, 그 버퍼가 둘 겹치면 가만히 있어야 할 아이템까지
+   리샘플링되며 미세하게 흔들린다(SMIL 애니메이션만 빼는 걸론 부족했다 — 정적인 필터도
+   버퍼는 그대로 거치기 때문). 그래서 필터 자체를 걷어내고 격자선은 곧게 그린다. */
 .wp-tiles { position: absolute; inset: -14px;
   background:
     repeating-linear-gradient(0deg,  #E9FCF8 0 3px, transparent 3px 60px),
     repeating-linear-gradient(90deg, #E9FCF8 0 3px, transparent 3px 60px);
-  filter: url(#wpRipple);
 }
-@media (prefers-reduced-motion: reduce) { .wp-tiles { filter: none; } }
 /* 상점/인벤토리 미리보기는 아주 작아서 60px 격자를 그대로 쓰면 타일 한 칸도 다 못
-   보여준다 — 비율에 맞게 축소한 격자. 물결 필터도 절대 픽셀 변위(scale)가 작은 화면
-   에서 과하게 출렁여 보여서 축소된 wpRippleSm 필터로 바꿔 쓴다. */
-.store-wp .wp-tiles { inset: -5px; filter: url(#wpRippleSm);
+   보여준다 — 비율에 맞게 축소한 격자. */
+.store-wp .wp-tiles { inset: -5px;
   background:
     repeating-linear-gradient(0deg,  #E9FCF8 0 1px, transparent 1px 20px),
     repeating-linear-gradient(90deg, #E9FCF8 0 1px, transparent 1px 20px);
