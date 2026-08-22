@@ -3396,6 +3396,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 그룹명·그룹 설명(헤더)은 별도 색상 지정 없이 기본 테마와 같은 var(--text)/var(--muted) 를
    그대로 씀 — 옅은 하늘색 배경이라 흰 글자보다 원래 어두운 글자색이 더 잘 읽힌다. */
 .group-card.group-tile.tile-waterpark { background: #A2DFF6; isolation: isolate; }
+/* 아바타·꾸미기 아이템 자체는 가만히 있는데, 바로 뒤/옆에서 야자잎이 흔들리고 물결이
+   일렁이니 착시(induced motion)로 아바타까지 흔들리는 것처럼 보인다는 리포트가 있었다 —
+   Playwright 로 프레임을 찍어 diff 해보면 아바타 영역 픽셀은 전혀 안 바뀌고 배경만
+   움직이는 게 확인된다(실제 이동이 아니라 순수 착시). 아바타에 얇은 흰 테두리를 둘러
+   배경과 경계를 뚜렷하게 나눠주면 이 착시가 크게 줄어든다. */
+.tile-waterpark .avatar, .gd-theme-waterpark .avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, .92); }
 
 .theme-wp { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 /* iOS Safari 는 형제 요소(.tab-pane)가 -webkit-overflow-scrolling:touch 로 스크롤/당겨서
