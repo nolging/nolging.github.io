@@ -10,8 +10,9 @@ import waterparkLeafTrShadowPng from '../assets/theme/wp-leaf-tr-shadow.png'
 import waterparkLeafMidPng from '../assets/theme/wp-leaf-mid.png'
 import waterparkLeafMidShadowPng from '../assets/theme/wp-leaf-mid-shadow.png'
 
-// 워터파크 테마: 이미지 없이 CSS 로 직접 그린 격자 타일 배경.
-// 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그린다.
+// 워터파크 테마: 이미지 없이 CSS + SVG 필터로 직접 그린 격자 타일 배경.
+// 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터의 baseFrequency 를
+// SMIL 애니메이션으로 천천히 흔들어 선이 수영장 물 때문에 살짝 일렁이는 것처럼 보이게 한다.
 // 비치볼·꽃은 샘플 이미지 속 위치 그대로 떠 있고, 물살에 밀리듯 작은 타원 경로를 등속으로
 // 맴돈다(제자리로 돌아오는 루프라 멀리 안 감). transform 의 %는 각 요소 자기 박스 기준이라
 // 이미지 크기가 다르면 같은 % 라도 실제 이동 거리가 달라지므로, 크기 그룹별로 화면상 이동
@@ -53,9 +54,24 @@ const LEAF_TR_SHADOW = { left: 73.81, top: 1.2, width: 26.19, origin: '100% 0%',
 const LEAF_MID = { left: 41.65, top: -2.29, width: 30.36, origin: '95% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
 const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%', cardOnlyTopPx: -30, previewOnlyTopPx: -8 }
 
-// (격자선을 휘게 하던 SVG 물결 필터 wpRipple/wpRippleSm 은 제거했다 — 이유는 index.css 의
-//  .wp-tiles 주석 참고. 한 화면에 하트 빔의 흐림 필터와 같이 놓이면 다른 꾸미기 아이템이
-//  떨려 보이는 원인이었다.)
+// wpRippleSm: 상점/인벤토리 미리보기(아주 작은 정사각형)용 — scale 을 줄여서 같은 절대
+// 픽셀 변위가 작은 화면에서 과하게 출렁여 보이지 않게 한다(격자 크기 축소와 같은 이유).
+const RippleDefs = () => (
+  <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+    <filter id="wpRipple" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
+        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="wpRippleSm" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
+        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+)
 
 // leaf/float 의 top 값을 계산: 기본 topOffsetPx(항상 적용) + {variant}OnlyTopPx(해당
 // variant 에서만 추가 적용, 예: cardOnlyTopPx, previewOnlyTopPx). detail 은 둘 다 없음.
@@ -78,6 +94,7 @@ export default function ThemeWaterpark({ className = '', variant = 'detail' }) {
   const floats = variant === 'card' ? FLOATS.filter((f) => !f.cardHide) : FLOATS
   return (
     <div className={`theme-wp${className ? ` ${className}` : ''}`} aria-hidden="true">
+      <RippleDefs />
       <div className="wp-tiles" />
       <img className="wp-leaf-sway" src={waterparkLeafShadowPng} alt=""
         style={{ left: leafLeft(LEAF_SHADOW, variant), top: leafTop(LEAF_SHADOW, variant), width: `${LEAF_SHADOW.width}%`, transformOrigin: LEAF_SHADOW.origin, zIndex: SHADOW_Z }} />
