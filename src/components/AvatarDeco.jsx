@@ -560,7 +560,8 @@ const heartBeamPath = (cx, cy, a) =>
   + ` C${cx - a * 0.98} ${cy + a * 0.5} ${cx - a * 0.45} ${cy + a * 0.55} ${cx} ${cy + a * 1.0}`
   + ` C${cx + a * 0.45} ${cy + a * 0.55} ${cx + a * 0.98} ${cy + a * 0.5} ${cx + a * 1.02} ${cy - a * 0.15}`
   + ` C${cx + a * 1.15} ${cy - a * 0.98} ${cx + a * 0.15} ${cy - a * 1.08} ${cx} ${cy - a * 0.58} Z`
-const HEART_BEAM_PATH_D = heartBeamPath(50, 54, 34)
+const HEART_BEAM_CX = 50, HEART_BEAM_CY = 54, HEART_BEAM_A = 34
+const HEART_BEAM_PATH_D = heartBeamPath(HEART_BEAM_CX, HEART_BEAM_CY, HEART_BEAM_A)
 // 하트 테두리 굵기 = 프로필 사진 지름의 %. 하트는 항상 아바타 좌표계(viewBox "0 0 100 100",
 // 즉 지름 100)에 그려지고, SVG 가 그 좌표계를 실제 렌더링 픽셀 크기에 맞춰 알아서 늘이거나
 // 줄여주므로 "지름의 %"로 정의해 두면 24px 아바타든 220px 아바타든 별도 계산 없이 항상
@@ -611,15 +612,36 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 // non-scaling-stroke 를 뺐으므로 이 transform 이 획 굵기까지 정상적으로 같이 키워준다 —
 // 예전처럼 tf.s 를 굵기에 직접 곱하면 두 번 적용돼서 오히려 과하게 굵어진다.
 const HEART_BEAM_STROKE = 100 * HEART_BEAM_STROKE_PCT
+// 흐림 필터가 실제로 다시 그려지는 영역. 전에는 objectBoundingBox 퍼센트로 "넉넉하게"
+// x=-200% width=500% 를 줬는데(잘림만 안 나면 된다고 대충 잡은 값), 이러면 40px 아바타
+// 기준 140x128px — 아바타의 3.5배, 사방 50px 씩 — 이 매 프레임 다시 그려진다. 그 영역이
+// 옆 아바타까지 통째로 덮어서, 하트 빔을 낀 아바타 주변의 "가만히 있어야 할" 꾸미기
+// 아이템들까지 매 프레임 다시 래스터라이즈되는 게 흔들려 보이던 원인.
+//
+// 그래서 퍼센트 대신 사용자 좌표(userSpaceOnUse)로 필요한 만큼만 정확히 잡는다. 필요한 여유는
+//   (그 순간 가장 굵을 때의 획 굵기 절반) + (가우시안 흐림이 실질적으로 번지는 거리 ≈ 3σ)
+// 이고, 획이 가장 굵은 건 가장 작을 때(scale 0.32)다 — CSS 가 scale 의 역수로 굵기를
+// 키우기 때문. 상수를 바꾸면 이 식이 알아서 따라간다.
+const HEART_BEAM_MIN_SCALE = 0.32   // index.css avd-heart-beam 의 0% 지점과 반드시 일치
+const HEART_BEAM_PAD =
+  (HEART_BEAM_STROKE / HEART_BEAM_MIN_SCALE) / 2
+  + 3 * HEART_BEAM_STROKE * Math.max(...HEART_BEAM_FLAVORS.map((f) => f.blurPct))
+const HEART_BEAM_FILTER = {
+  x: HEART_BEAM_CX - HEART_BEAM_A * 1.02 - HEART_BEAM_PAD,
+  y: HEART_BEAM_CY - HEART_BEAM_A * 1.08 - HEART_BEAM_PAD,
+  width: HEART_BEAM_A * 1.02 * 2 + HEART_BEAM_PAD * 2,
+  height: HEART_BEAM_A * (1.08 + 1.0) + HEART_BEAM_PAD * 2,
+}
 function HeartBeam() {
   return (
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
-          // 흐림 반경(굵기의 %) 이 필터 영역보다 커지면 사각형 경계에서 뚝 잘려 보인다
-          // (둥근 흐림이 아니라 네모난 테두리가 비쳐 보이던 원인) — 영역을 넉넉하게 잡아
-          // 어떤 크기 조합에서도 안 잘리게 한다.
-          <filter key={i} id={`heartBeamBlur${i}`} x="-200%" y="-200%" width="500%" height="500%">
+          // 영역이 좁으면 흐림이 사각형 경계에서 뚝 잘려 보이므로(둥근 흐림이 아니라 네모난
+          // 테두리가 비쳐 보이던 그 증상) HEART_BEAM_FILTER 로 필요한 만큼은 반드시 확보한다.
+          <filter key={i} id={`heartBeamBlur${i}`} filterUnits="userSpaceOnUse"
+            x={HEART_BEAM_FILTER.x} y={HEART_BEAM_FILTER.y}
+            width={HEART_BEAM_FILTER.width} height={HEART_BEAM_FILTER.height}>
             <feGaussianBlur stdDeviation={HEART_BEAM_STROKE * f.blurPct} />
           </filter>
         ))}
@@ -818,10 +840,20 @@ export default function AvatarDeco({ items, layer = 'front', pickable = false, s
     .filter((d) => ART[d.id] && (BACK_IDS.has(d.id) === (layer === 'back')))
     .sort((a, b) => rank(a.id) - rank(b.id))
   if (!show.length) return null
-  return (
-    <svg className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
+  const draw = (list, key) => (
+    <svg key={key} className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {show.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} size={size} /></Tf> })}
+      {list.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} size={size} /></Tf> })}
     </svg>
   )
+  // 하트 빔만 따로 자기 <svg> 에 그린다. 하트 빔은 흐림 필터가 걸린 채로 매 프레임 커지고
+  // 옅어지는데, 한 <svg> 안에 같이 들어 있으면 그 svg 전체가 매 프레임 다시 그려지면서
+  // 가만히 있어야 할 다른 꾸미기 아이템(귀·모자 등)까지 함께 다시 래스터라이즈된다 —
+  // 하트 빔을 낀 아바타에서만 다른 아이템들이 미세하게 떨려 보이던 증상. svg 를 나눠두면
+  // 하트 빔이 다시 그려져도 나머지 아이템은 자기 그림 그대로 유지된다.
+  // (하트 빔은 BORDER 라 rank 0 = 맨 뒤 → 먼저 그려야 순서가 그대로 유지된다.)
+  const beam = show.filter((d) => d.id === 'deco-heart-beam')
+  if (!beam.length) return draw(show, 'all')
+  const rest = show.filter((d) => d.id !== 'deco-heart-beam')
+  return <>{draw(beam, 'beam')}{rest.length > 0 && draw(rest, 'rest')}</>
 }
