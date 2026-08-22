@@ -606,7 +606,10 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 // 갑자기 "툭" 튀어나오는 것처럼 보여 애니메이션 속도 자체가 더 빨라진 것처럼 느껴진다(가장자리가
 // 또렷할수록 등장이 더 순간적으로 느껴지는 착시) — 굵기를 얇게 줄인 만큼 안쪽 여유가 생겨서,
 // 흐림은 굵기보다 완만하게(지수 HEART_BEAM_BLUR_K < 1, 즉 선형보다 덜 줄어듦) 줄여도 다시
-// 안쪽이 메워지지 않는다.
+// 안쪽이 메워지지 않는다. 130px 이상에서는 굵기와 마찬가지로 흐림도 더는 커지지 않게
+// 고정한다 — 전엔 흐림만 130px 위로도 계속 선형으로 커지게 해 둬서(DecoAdjuster 처럼
+// 232px 로 크게 띄우는 화면에서) 굵기는 그대로인데 흐림만 과하게 번져 오히려 더
+// 흐릿하고(=가늘어 보이고) 있었다.
 const HEART_BEAM_SIZE_BASELINE = 130
 const HEART_BEAM_STROKE_K = 1.7
 const HEART_BEAM_BLUR_K = 0.6
@@ -620,18 +623,26 @@ const HEART_BEAM_BLUR_K = 0.6
 // 타이밍에 맞춰 미리 계산해 둔 색 순서를 재생하면 된다(steps(1) 로 중간에 섞이지 않고
 // 딱딱 끊어서 바뀜). HEART_BEAM_DUR·PULSE_COUNT 가 바뀌면 이 퍼센트도 다시 맞춰야 한다.
 const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
-function HeartBeam({ tf, size }) {
+// HeartBeam 은 항상 자기 부모 <svg> 의 viewBox 기준 "0~100" 좌표로 그리는데, 실제 부모
+// viewBox 는 호출하는 쪽마다 다르다 — 아바타(AvatarDeco)는 항상 "0 0 100 100"이지만,
+// 상점/인벤토리 미리보기(DecoPreview)는 하트가 사진 바깥까지 자라는 걸 다 담으려고 훨씬
+// 넓은 뷰박스(PREVIEW_VB 의 실제 폭 180)를 쓴다 — 같은 굵기 숫자를 넣어도 뷰박스가
+// 1.8배 넓으면(=단위 하나가 차지하는 실제 픽셀이 그만큼 더 작으면) 그만큼 더 두껍게
+// "느껴지는" 게 아니라 실제로 더 두껍게 그려진다(굵기가 커버하는 면적 비율 자체가
+// 커짐) — 작은 미리보기에서 유독 두꺼워 보이던 원인이 바로 이거였다. vbScale(그 부모
+// viewBox 폭 ÷ 100)을 받아 굵기·흐림에 곱해 상쇄한다(기본 1 = 아바타 기준 뷰박스).
+function HeartBeam({ tf, size, vbScale = 1 }) {
   const px = Number(size) || 90
   const sizeRatio = px / HEART_BEAM_SIZE_BASELINE
   const strokeScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_STROKE_K - 1))
-  const blurScale = px >= HEART_BEAM_SIZE_BASELINE ? sizeRatio : Math.pow(sizeRatio, HEART_BEAM_BLUR_K)
-  const sw = HEART_BEAM_STROKE * strokeScale * (Number(tf?.s) || 1)
+  const blurScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_BLUR_K))
+  const sw = HEART_BEAM_STROKE * strokeScale * vbScale * (Number(tf?.s) || 1)
   return (
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
           <filter key={i} id={`heartBeamBlur${i}`} x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation={f.blur * blurScale} />
+            <feGaussianBlur stdDeviation={f.blur * blurScale * vbScale} />
           </filter>
         ))}
       </defs>
@@ -747,6 +758,7 @@ const sideProps = (pickable, side) => (pickable ? { 'data-deco-side': side, styl
 
 export function DecoPreview({ id }) {
   const vb = PREVIEW_VB_OVERRIDE[id] || PREVIEW_VB[id] || '0 0 100 100'
+  const vbScale = (Number(vb.split(' ')[2]) || 100) / 100
   return (
     <svg className="deco-preview" viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {id === 'deco-sprout' && <Sprout />}
@@ -776,7 +788,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-angel-ring' && <AngelRing />}
       {id === 'deco-bubble' && <Bubble />}
       {id === 'deco-red-hood' && <RedHood />}
-      {id === 'deco-heart-beam' && <HeartBeam />}
+      {id === 'deco-heart-beam' && <HeartBeam vbScale={vbScale} />}
     </svg>
   )
 }
