@@ -840,20 +840,26 @@ export default function AvatarDeco({ items, layer = 'front', pickable = false, s
     .filter((d) => ART[d.id] && (BACK_IDS.has(d.id) === (layer === 'back')))
     .sort((a, b) => rank(a.id) - rank(b.id))
   if (!show.length) return null
-  const draw = (list, key) => (
-    <svg key={key} className={`avatar-deco avatar-deco-${layer}`} viewBox="0 0 100 100" width="100%" height="100%"
+  const draw = (list, key, extra = '') => (
+    <svg key={key} className={`avatar-deco avatar-deco-${layer}${extra}`} viewBox="0 0 100 100" width="100%" height="100%"
       preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {list.map((d) => { const Art = ART[d.id]; return <Tf key={d.id} id={d.id} tf={d.tf}><Art tf={d.tf} pickable={pickable} size={size} /></Tf> })}
     </svg>
   )
-  // 하트 빔만 따로 자기 <svg> 에 그린다. 하트 빔은 흐림 필터가 걸린 채로 매 프레임 커지고
-  // 옅어지는데, 한 <svg> 안에 같이 들어 있으면 그 svg 전체가 매 프레임 다시 그려지면서
-  // 가만히 있어야 할 다른 꾸미기 아이템(귀·모자 등)까지 함께 다시 래스터라이즈된다 —
-  // 하트 빔을 낀 아바타에서만 다른 아이템들이 미세하게 떨려 보이던 증상. svg 를 나눠두면
-  // 하트 빔이 다시 그려져도 나머지 아이템은 자기 그림 그대로 유지된다.
+  // 하트 빔만 따로 자기 <svg> 에 그리고(avd-beam-layer 로 별도 합성 레이어까지 올린다),
+  // 나머지 아이템은 원래대로 한 <svg> 에 모아 그린다.
+  //
+  // 하트 빔은 흐림 필터가 걸린 채로 매 프레임 커지고 옅어지는 유일한 아이템이다. 이게
+  // 다른 아이템과 같은 그리기 트리에 들어 있으면, 그 영역을 다시 그릴 때마다 필터 때문에
+  // 오프스크린 버퍼를 거치게 되고 그 과정에서 가만히 있어야 할 아이템(귀·모자 등)까지 같이
+  // 리샘플링돼 미세하게 떨려 보인다. 단, 다시 그릴 일이 자주 없으면(옷장·데이트 페이지 등)
+  // 티가 안 나고, 수영장 테마처럼 배경 물결 필터가 카드 전체를 매 프레임 다시 그리게 만드는
+  // 화면과 겹칠 때만 증상이 드러난다 — "하트 빔 + 수영장 테마" 조합에서만 흔들린 이유.
+  // 그래서 하트 빔을 자기 레이어로 분리해, 카드가 다시 그려져도 하트 빔의 필터가 그 그리기
+  // 트리에 끼어들지 않게 한다(두 효과 다 그대로 유지).
   // (하트 빔은 BORDER 라 rank 0 = 맨 뒤 → 먼저 그려야 순서가 그대로 유지된다.)
   const beam = show.filter((d) => d.id === 'deco-heart-beam')
   if (!beam.length) return draw(show, 'all')
   const rest = show.filter((d) => d.id !== 'deco-heart-beam')
-  return <>{draw(beam, 'beam')}{rest.length > 0 && draw(rest, 'rest')}</>
+  return <>{draw(beam, 'beam', ' avd-beam-layer')}{rest.length > 0 && draw(rest, 'rest')}</>
 }
