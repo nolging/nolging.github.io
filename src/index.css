@@ -1734,20 +1734,40 @@ button.mention-chip:active { opacity: .6; }
 }
 .avd-heart-pop { transform-box: fill-box; transform-origin: center; animation: avd-heart-pop 5.2s linear infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-pop { animation: none; opacity: 0; } }
-/* 하트 빔: 중심에서 하트가 일정한 속도로(linear + transform 은 0%/100% 두 지점만 지정해
-   구간 내내 같은 속도로 커짐) 프로필 사진 바깥까지 퍼지다 자연스럽게 페이드아웃. 투명도는
-   등장(0~10%) 후 한동안 유지되다 뒷부분(65~100%)에서만 옅어져 "갑자기 뚝" 사라지지 않는다.
-   최대 배율(scale)은 굵기·흐림과 달리 % 계산 대상이 아니라 애니메이션의 배수라 아바타
-   크기와 무관하게 항상 같은 비율로 커진다 — 다만 값 자체는 작게 유지한다: 작은 아바타일수록
-   흐림 필터가 픽셀 크기에 맞춰 완벽히 축소 렌더링되지 않아(브라우저 래스터라이즈 해상도
-   한계) 최대로 커진 순간 흐림이 상대적으로 더 퍼져 보이는데, 최대 배율을 낮게 잡아 두면
-   그 폭 자체가 줄어 이 현상의 영향도 함께 줄어든다. 컴포넌트에서 하트 2개를 균등한
-   딜레이로 겹쳐 그려 두 색이 번갈아 퍼지는 것처럼 보인다. */
+/* 하트 빔: 중심에서 하트가 일정한 속도로(linear + scale 이 0.32→2 로 등간격이라 구간 내내
+   같은 속도로 커짐) 프로필 사진 바깥까지 퍼지다 자연스럽게 페이드아웃. 투명도는 등장(0~10%)
+   후 한동안 유지되다 뒷부분(65~100%)에서만 옅어져 "갑자기 뚝" 사라지지 않는다. scale 은
+   배수라 아바타 크기와 무관하게 늘 같은 비율로 커진다 — 즉 하트가 사진 밖으로 삐져나오는
+   정도도 크기와 상관없이 항상 동일하다.
+
+   stroke-width 를 scale 의 역수(기준 굵기 ÷ 그 시점의 scale)로 같이 애니메이션하는 이유:
+   커지는 동안 획까지 같이 굵어지는 걸 막기 위해서다. 예전엔 이걸 위해
+   vector-effect="non-scaling-stroke" 를 썼는데, 그러면 굵기가 viewBox 스케일 자체를 무시하고
+   화면 픽셀 단위로 고정돼(24px 아바타 → 14px, 220px 아바타 → 16px 로 실측됨) 작은 아바타에서만
+   유독 굵고 크게 삐져나오는 원인이 됐다. 역수 방식은 viewBox 비례는 그대로 살리면서 굵기만
+   일정하게 유지한다. scale 이 0~100% 사이에서 선형이라 그 역수는 곡선이므로, 구간을 잘게
+   나눠(0/6.25/12.5/25…) 직선 근사한다 — 정거장 값이 어긋나면 커지는 도중 굵기가 출렁이니
+   scale 과 stroke-width 는 반드시 같은 지점에서 짝지어 수정할 것.
+
+   ⚠️ 굵기를 calc(var(--hb-sw)/scale) 로 쓰면 안 된다 — var() 가 섞인 값은 브라우저가
+   보간(interpolate)하지 못하고 키프레임마다 뚝뚝 끊어서 바뀌어(실측: 구간 중간에서도 직전
+   정거장 값 그대로) 굵기가 계단처럼 튄다. 그래서 숫자를 직접 박아 둔다. 이 값들은
+   AvatarDeco.jsx 의 HEART_BEAM_STROKE_PCT(=0.118 → 아바타 좌표계 기준 굵기 11.8)에서 나온
+   11.8 ÷ scale 이므로, 그 상수를 바꾸면 아래 stroke-width 도 같이 다시 계산해야 한다.
+   컴포넌트에서 하트 4겹을 균등한 딜레이로 겹쳐 그려 두 색이 번갈아 퍼지는 것처럼 보인다. */
 @keyframes avd-heart-beam {
-  0% { transform: scale(.32); opacity: 0; }
-  10% { opacity: 1; }
-  65% { opacity: .92; }
-  100% { transform: scale(1.6); opacity: 0; }
+  0%     { transform: scale(.32);  stroke-width: 36.875; opacity: 0; }
+  6.25%  { transform: scale(.425); stroke-width: 27.765; }
+  10%    { opacity: 1; }
+  12.5%  { transform: scale(.53);  stroke-width: 22.264; }
+  25%    { transform: scale(.74);  stroke-width: 15.946; }
+  37.5%  { transform: scale(.95);  stroke-width: 12.421; }
+  50%    { transform: scale(1.16); stroke-width: 10.172; }
+  62.5%  { transform: scale(1.37); stroke-width: 8.613; }
+  65%    { opacity: .92; }
+  75%    { transform: scale(1.58); stroke-width: 7.468; }
+  87.5%  { transform: scale(1.79); stroke-width: 6.592; }
+  100%   { transform: scale(2);    stroke-width: 5.9;   opacity: 0; }
 }
 .avd-heart-beam-pulse { transform-box: fill-box; transform-origin: center; animation: avd-heart-beam 2.8s linear infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-beam-pulse { animation: none; opacity: .3; } }
