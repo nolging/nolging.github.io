@@ -572,6 +572,11 @@ const HEART_BEAM_STROKE_PCT = 0.153
 // 바꿀 때마다 같이 어긋났었다 — 굵기에 곱하는 비율로 정의해 두면 무슨 화면에서든 항상 같은
 // 상대적 부드러움을 유지한다. 옅은 겹은 더 크게, 진한 겹은 더 작게 흐려서 바깥은 부드럽고
 // 안쪽은 또렷하게 보인다.
+// (참고: 흐림 반경이 클수록, 아주 작은 아바타에서는 브라우저의 흐림 필터 자체가 픽셀
+// 크기에 맞춰 완벽히 축소 렌더링되지 않는 경향이 있어(래스터라이즈 해상도 한계) 흐림이
+// 상대적으로 더 퍼져 보일 수 있다 — 이건 이 굵기·흐림 계산식의 한계가 아니라 브라우저의
+// 필터 렌더링 특성이라 값만으로 완전히 없앨 수는 없다. 흐림 비율을 낮게 유지해 그 영향을
+// 최소화한다.)
 // 바깥→안쪽 순서로: 가장 흐릿하고 옅은 겹 → 진한 겹(2가지 색만 반복 — 가장 진하고 또렷한
 // 겹은 뺐다). 한 주기(HEART_BEAM_DUR) 동안 균등한 간격으로 어긋난 시작 시점(d)을 줘 항상
 // 크기가 다른 하트 2겹이 겹쳐서 자라는 것처럼 보이게 한다. d 를 음수(마이너스 딜레이)로
@@ -580,8 +585,8 @@ const HEART_BEAM_STROKE_PCT = 0.153
 // 딜레이면 맨 처음엔 딜레이가 지날 때까지 화면에 아무것도 안 보이다가 그제서야 첫 하트가
 // 사진 뒤에서 자라나기 시작해 부자연스럽다).
 const HEART_BEAM_FLAVORS = [
-  { c: '#ffd9ea', blurPct: 0.6, op: 0.9 },
-  { c: '#ffb0d6', blurPct: 0.25, op: 1 },
+  { c: '#ffd9ea', blurPct: 0.24, op: 0.9 },
+  { c: '#ffb0d6', blurPct: 0.1, op: 1 },
 ]
 const HEART_BEAM_DUR = 2.8
 // 색은 2가지만 반복하되, 하트 "개수"는 색 개수보다 많게(4개) 늘려 다음 하트가 더 빨리
@@ -608,16 +613,6 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 // 흐림도 같은 비율로 저절로 따라 줄어 별도 보정이 필요 없다(작은 아바타에서 흐림이 하트
 // 안쪽 빈 공간까지 메워 통짜 얼룩처럼 보이던 문제, 반대로 큰 화면에서 흐림만 남아 흐릿해
 // 보이던 문제 모두 이 비례 관계 하나로 해소됨).
-const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
-// 상점/인벤토리 미리보기에서는 링(테두리)만 있다 보니 가운데가 비어 배경이 그대로 비쳐
-// 보였다 — 퍼지는 링들과 별개로, 항상 맨 위(가장 나중에 그려짐)에 작고 고정된 크기의
-// 꽉 찬(면이 채워진) 하트를 하나 더 얹는다. 색은 고정이 아니라, 그 순간 가장 안쪽(가장
-// 최근에 다시 태어난) 테두리 링과 같은 색으로 계속 바뀌어야 한다 — DOM 을 다시 정렬해
-// "누가 가장 안쪽인지" 매 순간 JS 로 추적하는 방식은 하트의 움직임 자체를 어색하게
-// 만들어서(이전 시도) 걷어냈고, 대신 애초에 어떤 겹이 몇 초에 다시 태어나는지는 딜레이
-// 값(HEART_BEAM_PULSES 의 d)으로 이미 정해져 있는 값이라 CSS 키프레임만으로 똑같은
-// 타이밍에 맞춰 미리 계산해 둔 색 순서를 재생하면 된다(steps(1) 로 중간에 섞이지 않고
-// 딱딱 끊어서 바뀜). HEART_BEAM_DUR·PULSE_COUNT 가 바뀌면 이 퍼센트도 다시 맞춰야 한다.
 function HeartBeam({ tf }) {
   const sw = 100 * HEART_BEAM_STROKE_PCT * (Number(tf?.s) || 1)
   return (
@@ -638,7 +633,6 @@ function HeartBeam({ tf }) {
           d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={sw}
           strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
-      <path className="avd-heart-beam-core" d={HEART_BEAM_CORE_D} fill={HEART_BEAM_FLAVORS[0].c} />
     </g>
   )
 }
