@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import kittyRibbonPng from '../assets/deco/kitty-ribbon.png'
 import partyHatPng from '../assets/deco/party-hat.png'
 import cherryCreamPng from '../assets/deco/cherry-cream.png'
@@ -611,39 +610,11 @@ const HEART_BEAM_PULSES = Array.from({ length: HEART_BEAM_PULSE_COUNT }, (_, i) 
 const HEART_BEAM_SIZE_BASELINE = 130
 const HEART_BEAM_STROKE_K = 1.7
 const HEART_BEAM_BLUR_K = 0.6
-// 4겹이 각자 독립적으로(딜레이만 다르게) 같은 주기를 반복하다 보니, "가장 최근에 다시
-// 태어난(=가장 작은) 겹"이 어느 DOM 순서 자리에 있는지는 시간이 지나며 계속 돌아가며
-// 바뀐다(고정된 DOM 순서로는 절대 항상 맞을 수 없음 — 매 STEP 초마다 누군가 새로 태어나며
-// "가장 최근"이 다음 겹으로 넘어간다). 그래서 CSS 만으로는 "나중에 생긴(더 안쪽) 겹이
-// 항상 맨 앞"을 못 만족시킨다 — 짧게 주기적으로 각 겹의 "나이"(마지막으로 다시 태어난 뒤
-// 지난 시간)를 다시 계산해서, 어린 순(=작은 순)으로 DOM 순서를 다시 매긴다(SVG 는 DOM
-// 순서가 곧 그리는 순서라 나중 자식이 항상 위에 그려짐). 눈에 잘 안 띄는 이유: 순서가
-// 뒤바뀌는 시점은 항상 한쪽이 막 다시 태어나는(투명도 0 근처) 순간이라 원래도 잘 안 보임 —
-// 그래도 매 프레임 다시 계산하기보다 가벼운 주기(STEP/2)로만 보정한다.
-const HEART_BEAM_STEP = HEART_BEAM_DUR / HEART_BEAM_PULSE_COUNT
-function useHeartBeamOrder(groupRef, pathRefs) {
-  useEffect(() => {
-    const g = groupRef.current
-    if (!g) return
-    const mountedAt = performance.now()
-    const reorder = () => {
-      const t = (performance.now() - mountedAt) / 1000
-      const byAge = HEART_BEAM_PULSES
-        .map((p, idx) => ({ idx, age: (((t - p.d) % HEART_BEAM_DUR) + HEART_BEAM_DUR) % HEART_BEAM_DUR }))
-        .sort((a, b) => b.age - a.age) // 늙은(큰) 순서로 먼저 붙이면 어린(작은) 겹이 마지막 자식(맨 위)이 된다
-      for (const { idx } of byAge) {
-        const el = pathRefs.current[idx]
-        if (el) g.appendChild(el)
-      }
-    }
-    reorder()
-    const id = setInterval(reorder, (HEART_BEAM_STEP * 1000) / 2)
-    return () => clearInterval(id)
-  }, [groupRef, pathRefs])
-}
 // 상점/인벤토리 미리보기에서는 링(테두리)만 있다 보니 가운데가 비어 배경이 그대로 비쳐
 // 보였다 — 퍼지는 링들과 별개로, 항상 맨 위(가장 나중에 그려짐)에 작고 고정된 크기의
 // 꽉 찬(면이 채워진) 하트를 하나 더 얹어 "가장 안쪽"이 실제로 꽉 차 있는 느낌이 나게 한다.
+// 바로 바깥의 테두리 링(가장 위에 그려지는 마지막 겹, HEART_BEAM_FLAVORS[0])과 색이
+// 이어져 보이게 같은 색을 쓴다.
 const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
 function HeartBeam({ tf, size }) {
   const px = Number(size) || 90
@@ -651,11 +622,8 @@ function HeartBeam({ tf, size }) {
   const strokeScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_STROKE_K - 1))
   const blurScale = px >= HEART_BEAM_SIZE_BASELINE ? sizeRatio : Math.pow(sizeRatio, HEART_BEAM_BLUR_K)
   const sw = HEART_BEAM_STROKE * strokeScale * (Number(tf?.s) || 1)
-  const groupRef = useRef(null)
-  const pathRefs = useRef([])
-  useHeartBeamOrder(groupRef, pathRefs)
   return (
-    <g ref={groupRef}>
+    <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
           <filter key={i} id={`heartBeamBlur${i}`} x="-80%" y="-80%" width="260%" height="260%">
@@ -664,12 +632,12 @@ function HeartBeam({ tf, size }) {
         ))}
       </defs>
       {HEART_BEAM_PULSES.map((p, i) => (
-        <path key={i} ref={(el) => { pathRefs.current[i] = el }}
+        <path key={i}
           className="avd-heart-beam-pulse" style={{ animationDelay: `${p.d}s`, animationDuration: `${HEART_BEAM_DUR}s` }}
           d={HEART_BEAM_PATH_D} fill="none" stroke={p.c} strokeOpacity={p.op} strokeWidth={sw}
           strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter={`url(#heartBeamBlur${p.flavorIdx})`} />
       ))}
-      <path d={HEART_BEAM_CORE_D} fill={HEART_BEAM_FLAVORS[1].c} />
+      <path d={HEART_BEAM_CORE_D} fill={HEART_BEAM_FLAVORS[0].c} />
     </g>
   )
 }
