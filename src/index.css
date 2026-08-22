@@ -1737,34 +1737,20 @@ button.mention-chip:active { opacity: .6; }
 /* 하트 빔: 중심에서 하트가 일정한 속도로(linear + transform 은 0%/100% 두 지점만 지정해
    구간 내내 같은 속도로 커짐) 프로필 사진 바깥까지 퍼지다 자연스럽게 페이드아웃. 투명도는
    등장(0~10%) 후 한동안 유지되다 뒷부분(65~100%)에서만 옅어져 "갑자기 뚝" 사라지지 않는다.
-   전엔 최대 2.6배까지 커진 뒤에야 사라졌는데, 너무 커지기 전에 사라지도록 최대 배율을
-   낮췄다. 컴포넌트에서 하트 2개를 균등한 딜레이로 겹쳐 그려 두 색이 번갈아 퍼지는 것처럼
-   보인다. */
+   최대 배율(scale)은 굵기·흐림과 달리 % 계산 대상이 아니라 애니메이션의 배수라 아바타
+   크기와 무관하게 항상 같은 비율로 커진다 — 다만 값 자체는 작게 유지한다: 작은 아바타일수록
+   흐림 필터가 픽셀 크기에 맞춰 완벽히 축소 렌더링되지 않아(브라우저 래스터라이즈 해상도
+   한계) 최대로 커진 순간 흐림이 상대적으로 더 퍼져 보이는데, 최대 배율을 낮게 잡아 두면
+   그 폭 자체가 줄어 이 현상의 영향도 함께 줄어든다. 컴포넌트에서 하트 2개를 균등한
+   딜레이로 겹쳐 그려 두 색이 번갈아 퍼지는 것처럼 보인다. */
 @keyframes avd-heart-beam {
   0% { transform: scale(.32); opacity: 0; }
   10% { opacity: 1; }
   65% { opacity: .92; }
-  100% { transform: scale(2); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 .avd-heart-beam-pulse { transform-box: fill-box; transform-origin: center; animation: avd-heart-beam 2.8s linear infinite; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .avd-heart-beam-pulse { animation: none; opacity: .3; } }
-/* 가운데 코어 하트: 고정색이 아니라 그 순간 가장 안쪽(가장 최근에 다시 태어난) 테두리
-   링과 같은 색으로 계속 바뀐다. 어떤 겹이 몇 초에 다시 태어나는지는 이미 딜레이 값으로
-   정해져 있어서(AvatarDeco.jsx 의 HEART_BEAM_PULSES d) DOM 을 다시 정렬해 매 순간 JS 로
-   추적할 필요 없이, 그 타이밍 그대로 색이 바뀌는 지점을 퍼센트로 미리 계산해 뒀다(주기
-   2.8초 기준 12.5/37.5/62.5/87.5% 마다 교대). steps(1) 로 재생해 색이 서서히 섞이지 않고
-   그 순간 딱 바뀐다. HEART_BEAM_DUR·PULSE_COUNT(컴포넌트)를 바꾸면 이 퍼센트도 같이
-   맞춰야 한다. */
-@keyframes avd-heart-beam-core {
-  0% { fill: #ffd9ea; }
-  12.5% { fill: #ffb0d6; }
-  37.5% { fill: #ffd9ea; }
-  62.5% { fill: #ffb0d6; }
-  87.5% { fill: #ffd9ea; }
-  100% { fill: #ffd9ea; }
-}
-.avd-heart-beam-core { animation: avd-heart-beam-core 2.8s steps(1) infinite; }
-@media (prefers-reduced-motion: reduce) { .avd-heart-beam-core { animation: none; } }
 .avatar-deco-back { z-index: -1; }   /* 귀: 아바타 뒤(둥근 아바타에 아랫부분이 가려짐) */
 .avatar-deco-front { z-index: 2; }   /* 새싹·홍조: 아바타 앞 */
 .avd-sway { animation: avd-sway 2.7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
