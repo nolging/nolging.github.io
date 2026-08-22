@@ -11,8 +11,8 @@ import waterparkLeafMidPng from '../assets/theme/wp-leaf-mid.png'
 import waterparkLeafMidShadowPng from '../assets/theme/wp-leaf-mid-shadow.png'
 
 // 워터파크 테마: 이미지 없이 CSS + SVG 필터로 직접 그린 격자 타일 배경.
-// 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터의 baseFrequency 를
-// SMIL 애니메이션으로 천천히 흔들어 선이 수영장 물 때문에 살짝 일렁이는 것처럼 보이게 한다.
+// 배경색(#A2DFF6) 위에 선(#E9FCF8) 격자를 그리고, 물결 변위 필터로 선이 수영장 물 때문에
+// 살짝 휘어 보이게 한다(움직이지 않는 정적 왜곡 — 이유는 아래 RippleDefs 주석 참고).
 // 비치볼·꽃은 샘플 이미지 속 위치 그대로 떠 있고, 물살에 밀리듯 작은 타원 경로를 등속으로
 // 맴돈다(제자리로 돌아오는 루프라 멀리 안 감). transform 의 %는 각 요소 자기 박스 기준이라
 // 이미지 크기가 다르면 같은 % 라도 실제 이동 거리가 달라지므로, 크기 그룹별로 화면상 이동
@@ -56,18 +56,20 @@ const LEAF_MID_SHADOW = { left: 44.36, top: -2.29, width: 29.57, origin: '94% 3%
 
 // wpRippleSm: 상점/인벤토리 미리보기(아주 작은 정사각형)용 — scale 을 줄여서 같은 절대
 // 픽셀 변위가 작은 화면에서 과하게 출렁여 보이지 않게 한다(격자 크기 축소와 같은 이유).
+//
+// 격자선이 물결에 휘어 보이는 왜곡은 그대로 두고, baseFrequency 를 천천히 흔들어 "일렁이게"
+// 하던 SMIL <animate> 만 뺐다. 그 애니메이션이 있으면 필터가 매 프레임 다시 계산되면서
+// 카드/페이지 전체가 계속 다시 그려지는데, 같은 화면에 흐림 필터가 걸린 하트 빔이 있으면
+// 그때마다 아바타의 다른 꾸미기 아이템까지 함께 리샘플링돼 미세하게 떨려 보였다.
+// 정적인 필터는 한 번 그려서 캐시되므로 그 조건 자체가 사라진다.
 const RippleDefs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
     <filter id="wpRipple" x="-12%" y="-12%" width="124%" height="124%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
-        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
-      </feTurbulence>
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n" />
       <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" />
     </filter>
     <filter id="wpRippleSm" x="-12%" y="-12%" width="124%" height="124%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
-        <animate attributeName="baseFrequency" values="0.011 0.02;0.0125 0.022;0.011 0.02" dur="10s" repeatCount="indefinite" />
-      </feTurbulence>
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n" />
       <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
     </filter>
   </svg>
