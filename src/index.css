@@ -3407,11 +3407,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 
 /* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그리고, feTurbulence 의 baseFrequency 를
    천천히 흔들어(SMIL) 물 때문에 선이 일렁이는 것처럼 보이게 한다(정적 왜곡이 아니라 애니메이션). */
+/* contain:paint — 이 물결 필터는 매 프레임 다시 칠해진다. 필터가 걸린 요소가 카드/페이지의
+   다른 내용과 같은 래스터 표면을 공유하면, 그 표면 전체가 매 프레임 다시 그려지면서 같은
+   표면에 얹힌 정적인 요소(꾸미기 아이템처럼 가늘고 디테일한 그림)까지 미세하게 흔들려
+   보일 수 있다. contain:paint 로 이 요소의 그리기를 자기 자신 안에 가둬서 그 전파를 막는다.
+   (실측: Chromium 에서는 물결 시계만 돌려도 정적 꾸미기 아이템 변위가 0.0000px 이라 재현이
+   안 됨 — iPad Safari 에서만 보고된 증상이라 이 브라우저에서는 검증하지 못했다. 잘려 보이는
+   부작용은 없다: 이 요소는 이미 inset:-14px 로 카드/화면 밖까지 나가 있고 어차피 바깥은
+   overflow 로 잘리므로, 필터 결과를 이 요소 경계에서 자르는 건 눈에 보이지 않는다.) */
 .wp-tiles { position: absolute; inset: -14px;
   background:
     repeating-linear-gradient(0deg,  #E9FCF8 0 3px, transparent 3px 60px),
     repeating-linear-gradient(90deg, #E9FCF8 0 3px, transparent 3px 60px);
   filter: url(#wpRipple);
+  contain: paint;
 }
 @media (prefers-reduced-motion: reduce) { .wp-tiles { filter: none; } }
 /* 상점/인벤토리 미리보기는 아주 작아서 60px 격자를 그대로 쓰면 타일 한 칸도 다 못
