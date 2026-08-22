@@ -3395,10 +3395,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .gd-themed > .theme-wp { z-index: 0; }
 .tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 테마 요소를 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 
-/* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그린다(움직이지 않는 정적 왜곡).
-   전엔 baseFrequency 를 SMIL 로 흔들어 일렁이게 했지만, 그러면 필터가 매 프레임 다시
-   계산되며 카드/페이지 전체가 계속 다시 그려져서, 같은 화면의 하트 빔(흐림 필터)과 겹칠 때
-   다른 꾸미기 아이템이 떨려 보였다 — ThemeWaterpark.jsx 의 RippleDefs 주석 참고. */
+/* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그리고, feTurbulence 의 baseFrequency 를
+   천천히 흔들어(SMIL) 물 때문에 선이 일렁이는 것처럼 보이게 한다(정적 왜곡이 아니라 애니메이션). */
 .wp-tiles { position: absolute; inset: -14px;
   background:
     repeating-linear-gradient(0deg,  #E9FCF8 0 3px, transparent 3px 60px),
