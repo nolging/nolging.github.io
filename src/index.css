@@ -3396,7 +3396,12 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .tile-waterpark .theme-wp { z-index: -1; }   /* 카드: 테마 요소를 모든 카드 콘텐츠(고양이 포함) 뒤로 */
 
 /* 수영장 타일 격자선 — 물결 변위 필터로 살짝 휘게 그리고, feTurbulence 의 baseFrequency 를
-   천천히 흔들어(SMIL) 물 때문에 선이 일렁이는 것처럼 보이게 한다(정적 왜곡이 아니라 애니메이션). */
+   천천히 흔들어(SMIL) 물 때문에 선이 일렁이는 것처럼 보이게 한다(정적 왜곡이 아니라 애니메이션).
+
+   참고: "이 테마를 쓰는 화면에서만 아바타의 꾸미기 아이템이 떨려 보인다"는 문제가 있었는데,
+   범인은 이 물결 효과가 아니라 하트 빔 쪽에서 stroke-width(칠하기 속성)를 애니메이션하던
+   것이었다(index.css 의 avd-heart-beam 주석 참고). 진단하느라 이 효과를 잠깐 걷어냈다가
+   원인이 아님이 확인돼 되돌렸으니, 비슷한 증상이 보여도 여기부터 지우지 말 것. */
 .wp-tiles { position: absolute; inset: -14px;
   background:
     repeating-linear-gradient(0deg,  #E9FCF8 0 3px, transparent 3px 60px),
