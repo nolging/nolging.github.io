@@ -570,8 +570,8 @@ const HEART_BEAM_STROKE = 15.3
 // 있었던" 것처럼 보인다(양수 딜레이면 맨 처음엔 딜레이가 지날 때까지 화면에 아무것도
 // 안 보이다가 그제서야 첫 하트가 사진 뒤에서 자라나기 시작해 부자연스럽다).
 const HEART_BEAM_FLAVORS = [
-  { c: '#ffd9ea', blur: 2.4, op: 0.9 },
-  { c: '#ffb0d6', blur: 1.0, op: 1 },
+  { c: '#ffd9ea', blur: 3.6, op: 0.9 },
+  { c: '#ffb0d6', blur: 1.5, op: 1 },
 ]
 const HEART_BEAM_DUR = 2.8
 // 색은 2가지만 반복하되, 하트 "개수"는 색 개수보다 많게(4개) 늘려 다음 하트가 더 빨리
@@ -631,8 +631,13 @@ const HEART_BEAM_CORE_D = heartBeamPath(50, 54, 13)
 // "느껴지는" 게 아니라 실제로 더 두껍게 그려진다(굵기가 커버하는 면적 비율 자체가
 // 커짐) — 작은 미리보기에서 유독 두꺼워 보이던 원인이 바로 이거였다. vbScale(그 부모
 // viewBox 폭 ÷ 100)을 받아 굵기·흐림에 곱해 상쇄한다(기본 1 = 아바타 기준 뷰박스).
+// DecoPreview 는 실제 자기 컨테이너가 몇 px 인지 모른 채(측정 없이) 호출하므로, size 를
+// 안 넘겨줄 때의 기본값은 "미리보기는 항상 작은 화면(상점 그리드·인벤토리 썸네일 등)에서만
+// 쓰인다"는 걸 반영해 작게 잡는다 — 실제 아바타(50~230px 다양)와 달리 미리보기는 절대
+// 크게 안 쓰이기 때문.
+const HEART_BEAM_PREVIEW_DEFAULT_SIZE = 60
 function HeartBeam({ tf, size, vbScale = 1 }) {
-  const px = Number(size) || 90
+  const px = Number(size) || HEART_BEAM_PREVIEW_DEFAULT_SIZE
   const sizeRatio = px / HEART_BEAM_SIZE_BASELINE
   const strokeScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_STROKE_K - 1))
   const blurScale = Math.min(1, Math.pow(sizeRatio, HEART_BEAM_BLUR_K))
@@ -641,7 +646,10 @@ function HeartBeam({ tf, size, vbScale = 1 }) {
     <g>
       <defs>
         {HEART_BEAM_FLAVORS.map((f, i) => (
-          <filter key={i} id={`heartBeamBlur${i}`} x="-80%" y="-80%" width="260%" height="260%">
+          // 흐림 반경(f.blur*blurScale*vbScale) 이 필터 영역보다 커지면 사각형 경계에서
+          // 뚝 잘려 보인다(둥근 흐림이 아니라 네모난 테두리가 비쳐 보이던 원인) — 영역을
+          // 넉넉하게 잡아 어떤 크기 조합에서도 안 잘리게 한다.
+          <filter key={i} id={`heartBeamBlur${i}`} x="-200%" y="-200%" width="500%" height="500%">
             <feGaussianBlur stdDeviation={f.blur * blurScale * vbScale} />
           </filter>
         ))}
