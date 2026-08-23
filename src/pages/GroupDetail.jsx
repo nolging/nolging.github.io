@@ -883,9 +883,9 @@ export default function GroupDetail() {
         )}
       </aside>
 
-      {/* 태스크 작성 버튼 (고정) */}
+      {/* 태스크 작성 버튼 (고정) — 지금 보고 있는 탭(위시/약속/추억)을 작성 화면 초기 상태로 넘긴다 */}
       <button className="fab" aria-label={`${terms.noun} 작성`} title={`${terms.noun} 작성`}
-        onClick={() => navigate(`/groups/${groupId}/tasks/new`, { state: { groupType: group.group_type } })}>+</button>
+        onClick={() => navigate(`/groups/${groupId}/tasks/new`, { state: { groupType: group.group_type, status: filter } })}>+</button>
 
       {/* 초대 시트 (시안 12e) */}
       <BottomSheet open={inviteOpen} onClose={() => setInviteOpen(false)}>

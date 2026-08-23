@@ -8,7 +8,7 @@ import ScheduleFields, { defaultSchedule, buildSchedulePayload } from './Schedul
 // allowStatus=true 면 상단에 상태(위시/약속/추억) 탭이 나오고, 약속·추억 선택 시
 // 일정·참여자 입력이 함께 노출된다. (작성 화면 전용, 편집 화면에선 미사용)
 export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete, deleteLabel = '위시 삭제하기',
-  allowStatus = false, members = [], meId, categories }) {
+  allowStatus = false, initialStatus, members = [], meId, categories }) {
   // 그룹의 위시 유형 목록(없으면 기본 6종)
   const cats = Array.isArray(categories) && categories.length ? categories : DEFAULT_WISH_CATEGORIES
   const [title, setTitle] = useState(initial.title || '')
@@ -20,7 +20,7 @@ export default function TaskForm({ initial = {}, submitLabel, onSubmit, onDelete
   const [error, setError] = useState('')
   const [nameErr, setNameErr] = useState('')
   const [typeErr, setTypeErr] = useState('')
-  const [status, setStatus] = useState('open')       // open=위시 / accepted=약속 / done=추억
+  const [status, setStatus] = useState(initialStatus || 'open')  // open=위시 / accepted=약속 / done=추억
   const [sched, setSched] = useState(defaultSchedule)
   const partsInit = useRef(false)
 
