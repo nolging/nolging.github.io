@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { createTask, createTaskScheduled, listMemberCards, getGroup, touchQuest } from '../lib/api'
-import { resolveCategories } from '../lib/constants'
+import { resolveCategories, TASK_STATUSES } from '../lib/constants'
 import TaskForm from '../components/TaskForm'
 
 export default function CreateTask() {
   const { groupId } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
-  const groupType = useLocation().state?.groupType
+  const location = useLocation()
+  const groupType = location.state?.groupType
+  // 그룹 상세의 "+" 로 들어온 경우, 그때 보고 있던 탭(위시/약속/추억)을 그대로 초기 상태로.
+  const initialStatus = TASK_STATUSES.includes(location.state?.status) ? location.state.status : undefined
   const [members, setMembers] = useState([])
   const [categories, setCategories] = useState(null) // 그룹 위시 유형(로드 전 null=기본)
 
@@ -23,6 +26,7 @@ export default function CreateTask() {
       groupType={groupType}
       submitLabel="저장"
       allowStatus
+      initialStatus={initialStatus}
       members={members}
       meId={profile.id}
       categories={categories}
