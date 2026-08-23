@@ -1868,10 +1868,26 @@ button.mention-chip:active { opacity: .6; }
 .qw-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #9a92b8; }
 .qw-soon-ico { font-size: 38px; }
 
-/* ---- 물음표 공방: 목록(카페형, 비밀 게시판 목록과 동일 구조) ---- */
+/* ---- 물음표 공방: 목록 ---- */
 .content:has(> .qw-list-page) { padding: 0; overflow: hidden; }
-.qw-list-page { gap: 0; height: 100%; display: flex; flex-direction: column; }
-.qw-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+.qw-list-page { position: relative; gap: 0; height: 100%; display: flex; flex-direction: column; }
+/* 하단 장식 그라데이션 — 좌측 연보라·우측 민트가 화면 아래쪽에서 서로 번지듯 만난다.
+   qw-list-page 자체는 스크롤되지 않는 뷰포트 높이 컨테이너라 absolute + bottom:0 만으로
+   스크롤 위치와 무관하게 항상 화면 하단에 고정된다(fixed 안 써도 됨). 두 원형 그라데이션이
+   중앙에서 겹치는 구간은 알파 합성으로 저절로 자연스럽게 섞인다 — 이음매를 따로 안 맞춰도 됨.
+   목록/카드는 위에 올라오므로(.qw-scroll z-index:1) 카드 사이 여백·빈 목록 화면에서만 비친다. */
+.qw-list-page::before {
+  content: ''; position: absolute; inset: auto 0 0 0; height: 46%; min-height: 260px;
+  /* 맨 아래 linear-gradient 는 항상 어느 정도 불투명해서(중앙에서도 완전 투명해지지 않음)
+     두 원형 그라데이션의 옅어지는 가장자리가 서로 안 닿아 중앙에 흰 틈이 남는 걸 막아준다 —
+     그 위에 얹힌 원형 그라데이션이 각 모서리를 더 진하고 둥글게 강조하는 구조. */
+  background:
+    radial-gradient(70% 95% at 4% 100%, rgba(196, 181, 253, .55) 0%, rgba(196, 181, 253, 0) 76%),
+    radial-gradient(70% 95% at 96% 100%, rgba(110, 231, 183, .5) 0%, rgba(110, 231, 183, 0) 76%),
+    linear-gradient(90deg, rgba(196, 181, 253, .22), rgba(110, 231, 183, .22));
+  pointer-events: none; z-index: 0;
+}
+.qw-scroll { position: relative; z-index: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding-bottom: calc(90px + env(safe-area-inset-bottom)); }   /* 우하단 고정 FAB(물음표 쓰기)에 안 가리게 */
 .qw-empty { text-align: center; color: #a49bc6; font-size: 13px; padding: 60px 0; }
 
@@ -1882,11 +1898,12 @@ button.mention-chip:active { opacity: .6; }
 .qw-type-poll { background: #3b82f6; }
 .qw-type-qna { background: #2fa84f; }
 
-.qw-rows { list-style: none; margin: 0; padding: 0; }
-.qw-row { border-bottom: 1px solid #ececf1; }
+/* 물음표 카드 — 그룹 상세 위시 카드(.task-item)와 동일한 모서리·그림자·여백 언어 */
+.qw-rows { list-style: none; margin: 0; padding: 14px var(--pad-x) 0; display: flex; flex-direction: column; gap: 10px; }
+.qw-row { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); overflow: hidden; }
 .qw-row.mine { background: #f5f1fe; }
 .qw-row-btn { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
-  border: none; background: none; cursor: pointer; text-align: left; padding: 15px var(--pad-x); }
+  border: none; background: none; cursor: pointer; text-align: left; padding: 14px 16px; }
 .qw-row-btn:active { background: rgba(115, 99, 232, .06); }
 .qw-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
 .qw-row-q { font-size: 16px; font-weight: 600; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
