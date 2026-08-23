@@ -11,6 +11,7 @@ const QUEST_TARGET = {
   r_wish_ticket_present: '/store', r_item_note: '/notes/new', r_nyangpito: '/inventory',
   r_buy: '/store', r_spend10: '/store', r_game_win: '/', r_poke: '/',
   r_waterbomb: '/notes/new', r_deco: '/inventory', r_schedule: '/schedule',
+  r_item_present: '/notes/new',
   r_premium_shop: '/store',
   r_write_wish: '/', r_eraser: '/notes/new',
   // r_nametag/r_ledboard: 아이템 보유 여부에 따라 인벤토리/프리미엄 상점으로 갈리므로

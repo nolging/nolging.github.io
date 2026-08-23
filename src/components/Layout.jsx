@@ -588,10 +588,11 @@ export default function Layout() {
       </header>
     )
   } else if (touchMatch) {
-    // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로, 직전 히스토리 없으면(푸시 콜드스타트) 데이트 페이지로
+    // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로, 직전 히스토리 없으면(푸시 콜드스타트) 데이트 페이지로.
+    // 마이 페이지 '도전'(r_kiss)으로 왔으면 마이 페이지로.
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${touchMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (fromMe ? navigate('/me') : backOr(`/groups/${touchMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
@@ -740,11 +741,12 @@ export default function Layout() {
     topbar = null
   } else if (praiseMatch) {
     // 칭찬 스티커: 좌측 뒤로(데이트로), 제목. 페이지 그라데이션을 상단바까지 연장(headerBg).
-    // 완성한 판이 있으면 우측 삼선 버튼 → 히스토리 드롭다운.
+    // 완성한 판이 있으면 우측 삼선 버튼 → 히스토리 드롭다운. 마이 페이지 '도전'(r_sticker)으로
+    // 왔으면 마이 페이지로.
     const hasMenu = headerMenu?.items?.length > 0
     topbar = (
       <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
-        <button type="button" onClick={() => backOr(`/groups/${praiseMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (fromMe ? navigate('/me') : backOr(`/groups/${praiseMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
         {hasMenu && (
           <div className="praise-menu-wrap">
@@ -798,10 +800,11 @@ export default function Layout() {
   } else if (membersMatch) {
     // 멤버 페이지: 좌측 뒤로(직전 페이지 — 그룹 홈 카드에서 왔으면 그룹 홈, 그 외엔 그룹 상세),
     // 제목 "멤버"(커플 그룹은 페이지가 제목을 "데이트"로 등록). 직전 히스토리 없으면(콜드스타트) 그룹 상세로.
+    // 마이 페이지 '도전'(r_date)으로 왔으면 마이 페이지로.
     const membersBackTo = location.state?.from === 'home' ? '/' : `/groups/${membersMatch.params.groupId}`
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(membersBackTo)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (fromMe ? navigate('/me') : backOr(membersBackTo))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{headerTitle || '멤버'}</span>
       </header>
     )
@@ -890,12 +893,15 @@ export default function Layout() {
     )
   } else if (groupMatch) {
     // 그룹 상세 페이지: 좌측 뒤로(기본=내 그룹), 우측 그룹 설정 톱니바퀴
-    // 알림/일정에서 "그룹으로 이동"(replace)으로 왔으면 히스토리 pop 으로 그 페이지 복귀
+    // 알림/일정에서 "그룹으로 이동"(replace)으로 왔으면 히스토리 pop 으로 그 페이지 복귀.
+    // 마이 페이지 '도전'(r_accept/r_review/r_first_comment)으로 왔으면 마이 페이지로.
     const id = groupMatch.params.groupId
     const gFrom = location.state?.from
     topbar = (
       <header className="topbar">
-        {(gFrom === 'notifications' || gFrom === 'schedule')
+        {fromMe
+          ? <button type="button" onClick={() => navigate('/me')} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : (gFrom === 'notifications' || gFrom === 'schedule')
           ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
           : <button type="button" onClick={() => backOr('/')} className="btn btn-ghost btn-sm icon-btn" aria-label="내 그룹" title="내 그룹"><BackIcon /></button>}
         {headerFilter && (
@@ -958,9 +964,11 @@ export default function Layout() {
     )
   } else if (scheduleMatch) {
     // 일정 페이지: 좌측 "일정" 제목, 우측 유형 필터(하단 시트는 페이지가 소유) + 검색(돋보기 버튼이
-    // 알약 검색창으로 자연스럽게 늘어남 — 원형 버튼은 그대로 왼쪽에 남고 뒤에서 입력창이 펼쳐지는 트릭)
+    // 알약 검색창으로 자연스럽게 늘어남 — 원형 버튼은 그대로 왼쪽에 남고 뒤에서 입력창이 펼쳐지는 트릭).
+    // 마이 페이지 '도전'(r_schedule)으로 왔으면 좌측에 뒤로가기(마이 페이지로) 추가.
     topbar = (
       <header className="topbar">
+        {!schedSearchOpen && fromMe && <Link to="/me" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>}
         {!schedSearchOpen && <span className="topbar-heading topbar-title-lg">일정</span>}
         {!schedSearchOpen && (
           <button type="button" className="btn btn-ghost btn-sm icon-btn push-right sched-filter-btn"
