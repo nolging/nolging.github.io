@@ -493,8 +493,16 @@ export default function NoteCompose() {
 
       {/* 선물 아이템 시트 */}
       <BottomSheet open={sheet === 'gift'} onClose={() => setSheet(null)}>
-        <h3 className="nc-sheet-title">선물할 아이템</h3>
-        <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
+        <div className="nc-sheet-head">
+          <div>
+            <h3 className="nc-sheet-title">선물할 아이템</h3>
+            <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
+          </div>
+          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store')}>
+            상점으로 가기
+            <svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+          </button>
+        </div>
         {giftNotice && <div className="nc-gift-notice">{giftNotice}</div>}
         <div className="nc-sheet-scroll">
         {giftSections.length === 0 ? (
