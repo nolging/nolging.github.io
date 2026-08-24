@@ -124,7 +124,7 @@ export default function MediaInfo({ category, info, onClear, onSetProviders }) {
     if (info.providers?.length) rows.push(['제공처', <ProviderBadges list={info.providers} />])
     else if (info.providers_buy?.length) rows.push(['제공처', <ProviderBadges list={info.providers_buy} suffix="(개별 구매)" />])
     else rows.push(['제공처', <span className="muted">정보 없음</span>])
-    if (info.genres?.length) rows.push(genreRow(info.genres))
+    rows.push(info.genres?.length ? genreRow(info.genres) : ['장르', <span className="muted">정보 없음</span>])
     if (info.kind === 'tv') { if (info.episode_count) rows.push(['구성', `${info.episode_count} 부작`]) }
     else if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
   } else if (category === '영화') { // 개봉일 → 장르 → 러닝타임
