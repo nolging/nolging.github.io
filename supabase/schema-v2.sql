@@ -1656,9 +1656,10 @@ create policy item_gifts_select on public.item_gifts
 -- 정가는 서버에서 확정(구매와 동일). 보낸 즉시 츄르 차감(환불/거절 없음)하고,
 -- 받는 사람 '쪽지함'으로 전송한다. 인벤토리에는 상대가 수령(claim_gift)해야 들어간다.
 drop function if exists public.gift_item(text, uuid, uuid);
-create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid, p_qty integer default 1)
+drop function if exists public.gift_item(text, uuid, uuid, integer);
+create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid, p_qty integer default 1, p_message text default null)
 returns integer language plpgsql security definer set search_path = public as $$
-declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid; v_qty integer; v_total integer; i integer;
+declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid; v_qty integer; v_total integer; i integer; v_body text; v_items text; v_nt_t text; v_nt_b text;
 begin
   v_qty := greatest(1, coalesce(p_qty, 1));
   select * into it from public.store_items where id = p_item_id and is_active;
@@ -1692,6 +1693,8 @@ begin
   select avatar_url into v_sender_av    from public.group_members where group_id = p_group_id and user_id = auth.uid();
   select avatar_url into v_recipient_av from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
 
+  v_body := coalesce(nullif(btrim(p_message), ''), it.name || case when v_qty > 1 then ' ×' || v_qty else '' end);
+
   insert into public.coin_ledger(user_id, delta, reason, ref_type)
     values (auth.uid(), -v_total, it.name || ' 선물' || case when v_qty > 1 then ' ×' || v_qty else '' end, 'gift');
   -- 수량만큼 선물 기록(item_gifts 원장) + 쪽지는 1개로 묶어 전송(qty 에 수량 저장, 수령 시 한 번에 인벤토리로).
@@ -1701,17 +1704,211 @@ begin
   end loop;
   insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, qty, claimed, rejected)
     values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sender_av, v_recipient_av,
-            it.name || case when v_qty > 1 then ' ×' || v_qty else '' end, 'gift', it.id, it.name, v_qty, false, false)
+            v_body, 'gift', it.id, it.name, v_qty, false, false)
     returning id into v_note_id;
-  -- 받는 사람에게 알림(→ Database Webhook → 푸시). 묶음 쪽지에 연결.
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
-    values (p_recipient_id, auth.uid(), 'gift', v_sender || ' 님이 선물을 보냈어요',
-            it.name || case when v_qty > 1 then ' ' || v_qty || '개' else '' end || ' · 쪽지함에서 수령하세요', p_group_id, v_note_id);
+  -- 받는 사람에게 알림(→ Database Webhook → 푸시). 묶음 쪽지에 연결. 제목/본문은 notif_render 로 통일.
+  v_items := it.name || case when v_qty > 1 then ' ' || v_qty || '개' else '' end;
+  select r.title, r.body into v_nt_t, v_nt_b from public.notif_render('gift', jsonb_build_object('actor', v_sender, 'items', v_items)) r;
+  if v_nt_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
+      values (p_recipient_id, auth.uid(), 'gift', v_nt_t, v_nt_b, p_group_id, v_note_id);
+  end if;
 
   return v_balance - v_total;
 end;
 $$;
-grant execute on function public.gift_item(text, uuid, uuid, integer) to authenticated;
+grant execute on function public.gift_item(text, uuid, uuid, integer, text) to authenticated;
+
+-- 인벤토리 보유 아이템으로 선물(gift_item 과 달리 츄르로 새로 사는 게 아니라 보유분을 소모).
+-- 메시지·익명 옵션 지원(옵션 인자는 gift-message.sql/notes-anonymous.sql 에서 추가됐다가
+-- 아래 notif_render 연동과 함께 notif-strict-templates-2.sql 에서 최종 정리됨).
+create or replace function public.gift_owned_item(p_item_id text, p_group_id uuid, p_recipient_id uuid, p_qty integer default 1, p_message text default null, p_anonymous boolean default false)
+returns void language plpgsql security definer set search_path = public as $$
+declare it public.store_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_note_id uuid; v_qty integer; i integer; v_body text; v_anon boolean; v_ids uuid[]; v_name text; v_items text; v_nt_t text; v_nt_b text;
+begin
+  v_anon := coalesce(p_anonymous, false);
+  v_qty := greatest(1, coalesce(p_qty, 1));
+  select * into it from public.store_items where id = p_item_id;
+  v_name := coalesce(it.name, p_item_id);
+
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 선물할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 선물할 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+
+  if p_item_id = 'wish' then raise exception '선물받은 소원권은 다시 선물할 수 없어요.'; end if;
+
+  if coalesce(it.premium, false) then
+    if it.tier = 'couple' then
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring' and status = 'used') then
+        raise exception '커플 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    elsif it.tier = 'friend' then
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'friend-ring' and status = 'used') then
+        raise exception '우정 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    else
+      if not exists (select 1 from public.user_items where user_id = p_recipient_id and item_id in ('couple-ring','friend-ring') and status = 'used') then
+        raise exception '프리미엄 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+    end if;
+  end if;
+
+  select array_agg(id) into v_ids from (
+    select id from public.user_items
+     where user_id = auth.uid() and item_id = p_item_id and status = 'active'
+     order by created_at asc limit v_qty
+  ) t;
+  if v_ids is null or array_length(v_ids, 1) < v_qty then raise exception '선물할 아이템이 부족해요.'; end if;
+
+  if p_item_id = 'couple-ring' then
+    if v_qty > 1 then raise exception '커플 링은 한 개만 선물할 수 있어요.'; end if;
+    if exists (select 1 from public.user_items where user_id = p_recipient_id and item_id = 'couple-ring') then
+      raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
+  end if;
+
+  if v_anon then perform public.consume_one_eraser(); end if;
+
+  update public.user_items set status = 'used', used_at = now() where id = any(v_ids);
+
+  v_sender    := public.notif_member_name(p_group_id, auth.uid());
+  v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+  v_body := coalesce(nullif(btrim(p_message), ''), v_name);
+
+  for i in 1..v_qty loop
+    insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
+      values (p_group_id, auth.uid(), p_recipient_id, p_item_id, v_name, v_sender, v_recipient);
+    insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, claimed, rejected, anonymous)
+      values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'gift', p_item_id, v_name, false, false, v_anon)
+      returning id into v_note_id;
+  end loop;
+
+  v_items := v_name || case when v_qty > 1 then ' ' || v_qty || '개' else '' end;
+  select r.title, r.body into v_nt_t, v_nt_b from public.notif_render(case when v_anon then 'gift_anon' else 'gift' end, jsonb_build_object('actor', v_sender, 'items', v_items)) r;
+  if v_nt_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
+      values (p_recipient_id, case when v_anon then null else auth.uid() end, 'gift', v_nt_t, v_nt_b, p_group_id, v_note_id);
+  end if;
+end;
+$$;
+grant execute on function public.gift_owned_item(text, uuid, uuid, integer, text, boolean) to authenticated;
+
+-- 쪽지 작성 화면에서 여러 종류의 보유 아이템을 한 쪽지에 동봉해 선물(note_items 로 항목 나열).
+create or replace function public.send_gift_note(
+  p_group_id uuid, p_recipient_id uuid, p_message text, p_anonymous boolean, p_gifts jsonb
+) returns uuid language plpgsql security definer set search_path = public as $$
+declare v_sender text; v_recipient text; v_sav text; v_rav text; v_note_id uuid;
+        v_anon boolean; g jsonb; v_item_id text; v_qty integer; it public.store_items;
+        v_name text; v_ids uuid[]; v_count integer := 0; v_first_name text; v_total integer := 0; i integer;
+        v_items text; v_nt_t text; v_nt_b text;
+begin
+  v_anon := coalesce(p_anonymous, false);
+  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 선물할 수 있습니다.'; end if;
+  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 선물할 수 없습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
+  if p_gifts is null or jsonb_array_length(p_gifts) = 0 then raise exception '선물할 아이템이 없어요.'; end if;
+
+  v_sender    := public.notif_member_name(p_group_id, auth.uid());
+  v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
+  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
+
+  if v_anon then perform public.consume_one_eraser(); end if;
+
+  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, claimed, rejected, anonymous)
+    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav,
+            coalesce(nullif(btrim(p_message), ''), '아이템'), 'gift', false, false, v_anon)
+    returning id into v_note_id;
+
+  for g in select * from jsonb_array_elements(p_gifts) loop
+    v_item_id := g->>'item_id';
+    v_qty := greatest(1, coalesce((g->>'qty')::int, 1));
+    select * into it from public.store_items where id = v_item_id;
+    v_name := coalesce(it.name, v_item_id);
+    if v_first_name is null then v_first_name := v_name; end if;
+
+    if v_item_id = 'wish' then raise exception '선물받은 소원권은 다시 선물할 수 없어요.'; end if;
+    if coalesce(it.premium, false) then
+      if it.tier = 'couple' then
+        if not exists (select 1 from public.user_items where user_id=p_recipient_id and item_id='couple-ring' and status='used') then
+          raise exception '커플 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+      elsif it.tier = 'friend' then
+        if not exists (select 1 from public.user_items where user_id=p_recipient_id and item_id='friend-ring' and status='used') then
+          raise exception '우정 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+      else
+        if not exists (select 1 from public.user_items where user_id=p_recipient_id and item_id in ('couple-ring','friend-ring') and status='used') then
+          raise exception '프리미엄 회원에게만 선물할 수 있는 아이템이에요.'; end if;
+      end if;
+    end if;
+    if v_item_id = 'couple-ring' then
+      if v_qty > 1 then raise exception '커플 링은 한 개만 선물할 수 있어요.'; end if;
+      if exists (select 1 from public.user_items where user_id=p_recipient_id and item_id='couple-ring') then
+        raise exception '상대가 이미 커플 링을 보유하고 있어요.'; end if;
+    end if;
+
+    select array_agg(id) into v_ids from (
+      select id from public.user_items where user_id=auth.uid() and item_id=v_item_id and status='active'
+      order by created_at asc limit v_qty) t;
+    if v_ids is null or array_length(v_ids,1) < v_qty then raise exception '% 아이템이 부족해요.', v_name; end if;
+    update public.user_items set status='used', used_at=now() where id = any(v_ids);
+
+    for i in 1..v_qty loop
+      insert into public.item_gifts(group_id, sender_id, recipient_id, item_id, item_name, sender_name, recipient_name)
+        values (p_group_id, auth.uid(), p_recipient_id, v_item_id, v_name, v_sender, v_recipient);
+    end loop;
+    insert into public.note_items(note_id, item_id, item_name, qty) values (v_note_id, v_item_id, v_name, v_qty);
+    v_count := v_count + 1; v_total := v_total + v_qty;
+  end loop;
+
+  v_items := case when v_count > 1 then v_first_name || ' 외 ' || (v_count-1) || '종'
+                  else v_first_name || case when v_total>1 then ' ' || v_total || '개' else '' end end;
+  select r.title, r.body into v_nt_t, v_nt_b from public.notif_render(case when v_anon then 'gift_anon' else 'gift' end, jsonb_build_object('actor', v_sender, 'items', v_items)) r;
+  if v_nt_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, note_id)
+      values (p_recipient_id, case when v_anon then null else auth.uid() end, 'gift', v_nt_t, v_nt_b, p_group_id, v_note_id);
+  end if;
+  return v_note_id;
+end; $$;
+grant execute on function public.send_gift_note(uuid, uuid, text, boolean, jsonb) to authenticated;
+
+-- 랜덤 퀘스트 완료 판정 헬퍼(get_quests/claim_quest/claim_slot_quest 등 quests*.sql 의 RPC가
+-- 내부에서 호출 — 그 RPC 들 자체는 아직 이 파일에 통합돼 있지 않고 quests.sql 계열 마이그레이션에만
+-- 있음. 이 함수만 먼저 최신본(quest-item-note-fix-2.sql 기준, 여러 차례 수정 이력을 합친 최종본)으로
+-- 반영해 둔다). client 가 직접 호출하지 않는 내부 헬퍼라 별도 grant 없음.
+create or replace function public._quest_done(p_key text, p_since timestamptz)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare v_uid uuid := auth.uid();
+begin
+  return case p_key
+    when 'attend'      then true
+    when 'visit'       then exists(select 1 from public.profiles where id = v_uid and last_group_visit_at >= p_since)
+    when 'note'        then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since)
+    when 'r_wish'      then exists(select 1 from public.tasks where created_by = v_uid and created_at >= p_since)
+    -- 강화 아이템 '사용'만 인정(아이템 선물 kind='gift' 는 제외)
+    when 'r_item_note' then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since
+                                     and coalesce(kind, '') <> 'gift'
+                                     and (kind in ('cassette','video','bluray','link','polaroid') or anonymous = true or timer_seconds is not null))
+    -- 긁는 '행동'으로 판정(당첨/꽝 무관): 냥피또가 used 로 소모됐는지
+    when 'r_nyangpito' then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'nyangpito' and status = 'used' and used_at >= p_since)
+    when 'r_buy'       then exists(select 1 from public.coin_ledger where user_id = v_uid and ref_type = 'purchase' and created_at >= p_since)
+    when 'r_spend10'   then coalesce((select -sum(delta) from public.coin_ledger
+                                        where user_id = v_uid and delta < 0 and created_at >= p_since), 0) >= 10
+    when 'r_game_win'  then exists(select 1 from public.coin_ledger where user_id = v_uid and delta > 0
+                                     and ref_type in ('omok','catchmind','rps') and created_at >= p_since)
+    when 'r_poke'      then exists(select 1 from public.notifications where actor_id = v_uid and type = 'poke' and created_at >= p_since)
+    when 'r_date'          then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_date' and at >= p_since)
+    when 'r_doodle'        then exists(select 1 from public.group_drawings where author = v_uid and created_at >= p_since)
+    when 'r_kiss'          then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_kiss' and at >= p_since)
+    when 'r_accept'        then exists(select 1 from public.tasks where assignee_id = v_uid and accepted_at >= p_since)
+    when 'r_waterbomb'     then exists(select 1 from public.notes where sender_id = v_uid and timer_seconds is not null and created_at >= p_since)
+    when 'r_deco'          then exists(select 1 from public.user_items where user_id = v_uid and item_id like 'deco-%' and status = 'used' and used_at >= p_since)
+    when 'r_premium_shop'  then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_premium_shop' and at >= p_since)
+    when 'r_review'        then exists(select 1 from public.task_reviews where author_id = v_uid and created_at >= p_since)
+    when 'r_first_comment' then exists(select 1 from public.task_comments c where c.author_id = v_uid and c.created_at >= p_since
+                                         and not exists(select 1 from public.task_comments c2 where c2.task_id = c.task_id and c2.created_at < c.created_at))
+    when 'r_schedule'      then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_schedule' and at >= p_since)
+    when 'r_item_present'  then exists(select 1 from public.notes where sender_id = v_uid and kind = 'gift' and created_at >= p_since)
+    when 'r_purin_mic'     then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'purin-mic' and status = 'used' and used_at >= p_since)
+    else false end;
+end $$;
 
 -- 선물 수령: 쪽지(kind=gift)를 claimed 처리 + 내 인벤토리에 아이템 생성. 거절은 없음.
 create or replace function public.claim_gift(p_note_id uuid)
