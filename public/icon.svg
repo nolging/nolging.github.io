@@ -5,7 +5,7 @@
       <stop offset="1" stop-color="#6250e0"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="64" fill="url(#bg)"/>
   <svg x="168.5" y="72.5" width="175" height="175" viewBox="0 0 24 24" fill="#191722">
     <ellipse cx="6" cy="9.2" rx="1.9" ry="1.9"/>
     <ellipse cx="9.6" cy="6.4" rx="2" ry="2"/>
