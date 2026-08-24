@@ -1077,7 +1077,6 @@ function TaskItem({ task, cats, meId, isOwner, isAdmin, terms, nameOf, avatarOf,
             ) : (
               <span className="task-author">
                 <MemberAvatarBtn groupId={groupId} userId={task.created_by} src={avatarOf(task.created_by)} name={nameOf(task.created_by)} size={22} deco={decoOf?.(task.created_by)} />
-                <span className="task-author-name">{nameOf(task.created_by)}</span>
               </span>
             )}
           </div>
