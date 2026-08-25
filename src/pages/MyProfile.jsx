@@ -14,9 +14,9 @@ const QUEST_TARGET = {
   r_item_present: '/notes/new',
   r_premium_shop: '/store',
   r_write_wish: '/', r_eraser: '/notes/new',
-  // r_nametag/r_ledboard: 아이템 보유 여부에 따라 인벤토리/프리미엄 상점으로 갈리므로
+  // r_nametag/r_ledboard/r_purin_mic: 아이템 보유 여부에 따라 인벤토리/프리미엄 상점으로 갈리므로
   // challenge() 에서 따로 분기(여기 값은 보유 시 기본값).
-  r_nametag: '/inventory', r_ledboard: '/inventory',
+  r_nametag: '/inventory', r_ledboard: '/inventory', r_purin_mic: '/inventory',
 }
 
 // 퀘스트 키 → 아이콘/파스텔 (데일리 + 랜덤 시드). 랜덤 이모지는 DB(quest_defs.emoji) 우선, bg 는 이 표 사용.
@@ -158,6 +158,7 @@ export default function MyProfile() {
   const [friendGroups, setFriendGroups] = useState([])
   const [ownedNametag, setOwnedNametag] = useState(false)
   const [ownedLedboard, setOwnedLedboard] = useState(false)
+  const [ownedPurinMic, setOwnedPurinMic] = useState(false)
 
   // '도전' 이동 경로 계산용 커플/우정 그룹
   useEffect(() => {
@@ -173,6 +174,7 @@ export default function MyProfile() {
     if (!uid) return
     ownsItem(uid, 'name-tag').then(setOwnedNametag).catch(() => {})
     ownsItem(uid, 'ledboard').then(setOwnedLedboard).catch(() => {})
+    ownsItem(uid, 'purin-mic').then(setOwnedPurinMic).catch(() => {})
   }, [profile?.id])
 
   // 쿨다운 표시용 1초 틱
@@ -248,6 +250,8 @@ export default function MyProfile() {
     // 명찰/전광판: 아이템이 있으면 인벤토리에서 바로 쓰게, 없으면 살 수 있는 프리미엄 상점으로
     if (key === 'r_nametag' && !ownedNametag) { navigate('/store', { state: { from: '/me', premium: true } }); return }
     if (key === 'r_ledboard' && !ownedLedboard) { navigate('/store', { state: { from: '/me', premium: true } }); return }
+    // 푸린 마이크: 있으면 인벤토리에서 바로 쓰게, 없으면 살 수 있는 프리미엄 상점으로
+    if (key === 'r_purin_mic') { navigate(ownedPurinMic ? '/inventory' : '/store', { state: ownedPurinMic ? { from: '/me' } : { from: '/me', premium: true } }); return }
     const route = questRoute(key) || '/'
     // 쪽지 쓰기 도전은 PC 에서 팝업 창으로
     if (route === '/notes/new') { openCompose(navigate, null); return }
