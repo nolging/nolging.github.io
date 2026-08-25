@@ -1799,11 +1799,14 @@ button.mention-chip:active { opacity: .6; }
    자연스럽게 거울 대칭으로 함께 파닥인다(귀의 "쫑긋"과 동일한 원리). */
 .avd-wing-flap { animation: avd-wing-flap 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: right center; }
 @keyframes avd-wing-flap { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(11deg); } }
-/* 악마 뿔: 검정 뿔 뒤에 겹친 붉은 블러가 깜빡여 뿔 자체가 붉게 명멸하는 느낌을 준다. */
+/* 악마 뿔: 검정 뿔 뒤에 겹친 붉은 블러가 깜빡이는 동시에(-glow), 뿔과 같은 모양의 크리스프한
+   빨강을 뿔 위에 겹쳐 같은 타이밍으로 깜빡여(-flash) 검정 뿔 자체가 붉게 물드는 것처럼 보인다. */
 @keyframes avd-devil-horn-glow { 0%, 100% { opacity: .35; } 50% { opacity: .95; } }
 .avd-devil-horn-glow { animation: avd-devil-horn-glow 1.3s ease-in-out infinite; }
+@keyframes avd-devil-horn-flash { 0%, 100% { opacity: 0; } 50% { opacity: .85; } }
+.avd-devil-horn-flash { animation: avd-devil-horn-flash 1.3s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .avd-sway, .avd-twitch-l, .avd-twitch-r, .avd-blush, .avd-spark, .avd-anger, .avd-gum, .avd-perk, .avd-wing-flap { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .avd-devil-horn-glow { animation: none; opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .avd-devil-horn-glow { animation: none; opacity: .6; } .avd-devil-horn-flash { animation: none; opacity: 0; } }
 /* ---- 프로필 꾸미기 조정(위치·크기·각도) ---- */
 .deco-adj { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px; }
 /* touch-action:none → 편집 중 페이지가 스크롤·확대되지 않게 */
