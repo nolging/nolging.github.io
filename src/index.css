@@ -1901,7 +1901,9 @@ button.mention-chip:active { opacity: .6; }
   mask-image: linear-gradient(to bottom, transparent 0%, #000 65%);
   pointer-events: none; z-index: 0;
 }
-/* 하단 그라데이션 위에 흰색으로 작게 반짝이는 효과(비눗방울·천사 링과 같은 8각 별 모양 재사용) */
+/* 하단 그라데이션 위에 흰색으로 반짝이는 효과(비눗방울·천사 링과 같은 8각 별 모양 재사용) +
+   둥실둥실 위아래로 펄스하는 흰 물음표 — QuestionWorkshop.jsx 의 QW_SPARKLE_ITEMS 가
+   크기(sm/md/lg)·위치·딜레이·주기를 섞어 뿌려서 한 번에 여러 개가 제각각 보이게 한다. */
 .qw-spark-field { position: absolute; inset: auto 0 0 0; height: 62%; min-height: 340px; overflow: hidden; pointer-events: none; z-index: 0; }
 .qw-spark {
   position: absolute; width: 5px; height: 5px; background: #fff;
@@ -1909,8 +1911,23 @@ button.mention-chip:active { opacity: .6; }
   opacity: 0; animation: qw-spark-twinkle 2.6s ease-in-out infinite;
 }
 .qw-spark-sm { width: 3.5px; height: 3.5px; }
-@keyframes qw-spark-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1); } }
+.qw-spark-md { width: 5px; height: 5px; }
+.qw-spark-lg { width: 7.5px; height: 7.5px; }
+@keyframes qw-spark-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .95; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .qw-spark { animation: none; opacity: .55; } }
+.qw-qmark {
+  position: absolute; color: #fff; font-weight: 800; line-height: 1; user-select: none;
+  text-shadow: 0 1px 5px rgba(124, 108, 220, .35);
+  opacity: 0; animation-name: qw-qmark-float; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+}
+.qw-qmark-sm { font-size: 12px; }
+.qw-qmark-md { font-size: 16px; }
+.qw-qmark-lg { font-size: 21px; }
+@keyframes qw-qmark-float {
+  0%, 100% { opacity: .3; transform: translateY(0) scale(.85); }
+  50% { opacity: .85; transform: translateY(-10px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .qw-qmark { animation: none; opacity: .5; } }
 .qw-scroll { position: relative; z-index: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding-bottom: calc(90px + env(safe-area-inset-bottom)); }   /* 우하단 고정 FAB(물음표 쓰기)에 안 가리게 */
 .qw-empty { text-align: center; color: #a49bc6; font-size: 13px; padding: 60px 0; }
