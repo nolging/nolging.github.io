@@ -450,18 +450,22 @@ function AngelRing() {
   return (
     <g className="avd-angel-ring">
       <defs>
-        <radialGradient id="angelRingGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stopColor="#fff6d0" stopOpacity="0.85" />
-          <stop offset="55%" stopColor="#ffe58a" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#ffe58a" stopOpacity="0" />
-        </radialGradient>
         <linearGradient id="angelRingMetal" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fffbe6" />
           <stop offset="45%" stopColor="#ffe17a" />
           <stop offset="100%" stopColor="#ffc93f" />
         </linearGradient>
+        {/* 링 자체가 빛나 보이게: 가운데를 채우는 원이 아니라, 같은 타원 "테두리 선"을 굵고
+            흐릿하게 겹쳐 그린다 — 광원이 링의 선을 따라가서 빈 가운데가 아니라 금속 링에서
+            빛이 번지는 것처럼 보인다. */}
+        <filter id="angelRingBlur" x="-80%" y="-200%" width="260%" height="500%">
+          <feGaussianBlur stdDeviation="1.6" />
+        </filter>
       </defs>
-      <ellipse cx="50" cy="-7" rx="26" ry="11" fill="url(#angelRingGlow)" />
+      <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#ffe58a" strokeOpacity="0.8"
+        strokeWidth="7" filter="url(#angelRingBlur)" />
+      <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#fff6d0" strokeOpacity="0.9"
+        strokeWidth="3.2" filter="url(#angelRingBlur)" />
       <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="url(#angelRingMetal)" strokeWidth="3.2" />
       <path className="avd-angel-spark" d={HALO_SPARK_PATH} transform="translate(29 -11) scale(2.4)" fill="#fff6d0" />
       <path className="avd-angel-spark avd-angel-spark-2" d={HALO_SPARK_PATH} transform="translate(71 -3) scale(2)" fill="#fff6d0" />
