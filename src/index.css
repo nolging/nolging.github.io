@@ -1894,13 +1894,23 @@ button.mention-chip:active { opacity: .6; }
      mask 는 이 블록 전체를 위쪽은 투명 → 아래쪽은 불복명하게 세로로 한 번 더 페이드시켜서,
      색이 있는 영역이 (위 콘텐츠와 뚝 끊기지 않고) 위로 갈수록 자연스럽게 옅어지다 사라지게 한다. */
   background:
-    radial-gradient(70% 95% at 4% 100%, rgba(196, 181, 253, .55) 0%, rgba(196, 181, 253, 0) 76%),
+    radial-gradient(92% 120% at 4% 100%, rgba(196, 181, 253, .55) 0%, rgba(196, 181, 253, 0) 76%),
     radial-gradient(70% 95% at 96% 100%, rgba(110, 231, 183, .5) 0%, rgba(110, 231, 183, 0) 76%),
     linear-gradient(90deg, rgba(196, 181, 253, .22), rgba(110, 231, 183, .22));
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 65%);
   mask-image: linear-gradient(to bottom, transparent 0%, #000 65%);
   pointer-events: none; z-index: 0;
 }
+/* 하단 그라데이션 위에 흰색으로 작게 반짝이는 효과(비눗방울·천사 링과 같은 8각 별 모양 재사용) */
+.qw-spark-field { position: absolute; inset: auto 0 0 0; height: 62%; min-height: 340px; overflow: hidden; pointer-events: none; z-index: 0; }
+.qw-spark {
+  position: absolute; width: 5px; height: 5px; background: #fff;
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  opacity: 0; animation: qw-spark-twinkle 2.6s ease-in-out infinite;
+}
+.qw-spark-sm { width: 3.5px; height: 3.5px; }
+@keyframes qw-spark-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .qw-spark { animation: none; opacity: .55; } }
 .qw-scroll { position: relative; z-index: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding-bottom: calc(90px + env(safe-area-inset-bottom)); }   /* 우하단 고정 FAB(물음표 쓰기)에 안 가리게 */
 .qw-empty { text-align: center; color: #a49bc6; font-size: 13px; padding: 60px 0; }
@@ -2659,6 +2669,18 @@ button.mlist-row:hover { background: #f6f5fa; }
   background: linear-gradient(140deg, #ffd45e, #ff6a9a);
   box-shadow: 0 10px 24px rgba(255, 120, 120, .45);
 }
+/* 물음표 공방: iOS 글래스(프로스티드) 버튼 — 뒤에 깔린 보라·민트 그라데이션이 블러로 비쳐
+   보이게 반투명 흰색 유리 재질로. 아이콘은 흰색 대신 보라 톤으로 바꿔 밝은 유리 위에서도 또렷하게. */
+.qw-list-page .fab {
+  background: linear-gradient(140deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .28));
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .65);
+  color: #6250e0;
+  box-shadow: 0 10px 24px rgba(124, 108, 220, .22),
+    inset 0 1px 1px rgba(255, 255, 255, .9), inset 0 -1px 3px rgba(124, 108, 220, .12);
+}
+.qw-list-page .fab:hover { filter: none; background: linear-gradient(140deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .36)); }
 
 /* 테마 그룹 상세: 탭 바 + 상단바 버튼을 살짝 반투명(프로스티드)으로 → 뒤 테마 배경이 비침.
    활성 탭 알약(.tab-underline)은 불투명 흰색 그대로 둠. */

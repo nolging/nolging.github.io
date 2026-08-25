@@ -79,6 +79,14 @@ export default function QuestionWorkshop() {
 
   return (
     <div className="page qw-page qw-list-page">
+      <div className="qw-spark-field" aria-hidden="true">
+        <span className="qw-spark" style={{ left: '9%', bottom: '20%', animationDelay: '0s' }} />
+        <span className="qw-spark qw-spark-sm" style={{ left: '21%', bottom: '42%', animationDelay: '.7s' }} />
+        <span className="qw-spark qw-spark-sm" style={{ left: '4%', bottom: '52%', animationDelay: '1.6s' }} />
+        <span className="qw-spark" style={{ left: '47%', bottom: '12%', animationDelay: '1.2s' }} />
+        <span className="qw-spark qw-spark-sm" style={{ right: '22%', bottom: '32%', animationDelay: '.3s' }} />
+        <span className="qw-spark" style={{ right: '8%', bottom: '16%', animationDelay: '1.9s' }} />
+      </div>
       <div className="qw-scroll">
         {error && <div className="alert alert-error">{error}</div>}
         {loading ? <div className="spinner" /> : posts.length === 0 ? (
