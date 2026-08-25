@@ -2670,13 +2670,13 @@ button.mlist-row:hover { background: #f6f5fa; }
   box-shadow: 0 10px 24px rgba(255, 120, 120, .45);
 }
 /* 물음표 공방: iOS 글래스(프로스티드) 버튼 — 뒤에 깔린 보라·민트 그라데이션이 블러로 비쳐
-   보이게 반투명 흰색 유리 재질로. 아이콘은 흰색 대신 보라 톤으로 바꿔 밝은 유리 위에서도 또렷하게. */
+   보이게 반투명 흰색 유리 재질로. 아이콘은 흰색 대신 검정으로 바꿔 밝은 유리 위에서도 또렷하게. */
 .qw-list-page .fab {
   background: linear-gradient(140deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .28));
   backdrop-filter: blur(18px) saturate(180%);
   -webkit-backdrop-filter: blur(18px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, .65);
-  color: #6250e0;
+  color: #17171b;
   box-shadow: 0 10px 24px rgba(124, 108, 220, .22),
     inset 0 1px 1px rgba(255, 255, 255, .9), inset 0 -1px 3px rgba(124, 108, 220, .12);
 }
