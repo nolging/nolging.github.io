@@ -18,6 +18,26 @@ import Modal from '../components/Modal'
 
 const TYPE_LABEL = { vs: 'VS', poll: '고르기', qna: '문답' }
 
+// 목록 하단 장식(qw-spark-field)에 뿌릴 반짝임·물음표 — 크기 제각각(sm/md/lg), 서로 다른
+// 딜레이·주기로 겹쳐 놓아 한 번에 여러 개가 보이면서 자연스럽게 어긋나 깜빡이게 한다.
+// side/pos 는 left 또는 right 기준 위치, bottom 은 qw-spark-field 자체 높이 기준 %.
+const QW_SPARKLE_ITEMS = [
+  { type: 'spark', size: 'lg', side: 'left', pos: '5%', bottom: '18%', delay: '0s', dur: '2.8s' },
+  { type: 'qmark', size: 'sm', side: 'left', pos: '13%', bottom: '36%', delay: '.4s', dur: '3.6s' },
+  { type: 'spark', size: 'sm', side: 'left', pos: '25%', bottom: '50%', delay: '.9s', dur: '2.3s' },
+  { type: 'qmark', size: 'md', side: 'left', pos: '2%', bottom: '56%', delay: '1.4s', dur: '3.9s' },
+  { type: 'spark', size: 'md', side: 'left', pos: '35%', bottom: '9%', delay: '.2s', dur: '2.5s' },
+  { type: 'spark', size: 'sm', side: 'left', pos: '45%', bottom: '30%', delay: '1.7s', dur: '2.9s' },
+  { type: 'qmark', size: 'lg', side: 'left', pos: '54%', bottom: '15%', delay: '.6s', dur: '4.1s' },
+  { type: 'qmark', size: 'sm', side: 'left', pos: '38%', bottom: '44%', delay: '2.3s', dur: '3.4s' },
+  { type: 'spark', size: 'lg', side: 'right', pos: '30%', bottom: '40%', delay: '1.1s', dur: '2.6s' },
+  { type: 'qmark', size: 'sm', side: 'right', pos: '19%', bottom: '54%', delay: '.1s', dur: '3.3s' },
+  { type: 'spark', size: 'md', side: 'right', pos: '9%', bottom: '22%', delay: '1.9s', dur: '2.4s' },
+  { type: 'spark', size: 'sm', side: 'right', pos: '3%', bottom: '46%', delay: '.8s', dur: '2.7s' },
+  { type: 'qmark', size: 'md', side: 'right', pos: '29%', bottom: '9%', delay: '2.1s', dur: '3.7s' },
+  { type: 'spark', size: 'sm', side: 'right', pos: '13%', bottom: '12%', delay: '1.5s', dur: '2.2s' },
+]
+
 function qwTime(iso) {
   try {
     const d = new Date(iso), now = new Date()
@@ -80,12 +100,13 @@ export default function QuestionWorkshop() {
   return (
     <div className="page qw-page qw-list-page">
       <div className="qw-spark-field" aria-hidden="true">
-        <span className="qw-spark" style={{ left: '9%', bottom: '20%', animationDelay: '0s' }} />
-        <span className="qw-spark qw-spark-sm" style={{ left: '21%', bottom: '42%', animationDelay: '.7s' }} />
-        <span className="qw-spark qw-spark-sm" style={{ left: '4%', bottom: '52%', animationDelay: '1.6s' }} />
-        <span className="qw-spark" style={{ left: '47%', bottom: '12%', animationDelay: '1.2s' }} />
-        <span className="qw-spark qw-spark-sm" style={{ right: '22%', bottom: '32%', animationDelay: '.3s' }} />
-        <span className="qw-spark" style={{ right: '8%', bottom: '16%', animationDelay: '1.9s' }} />
+        {QW_SPARKLE_ITEMS.map((it, i) => (
+          it.type === 'qmark'
+            ? <span key={i} className={`qw-qmark qw-qmark-${it.size}`}
+                style={{ [it.side]: it.pos, bottom: it.bottom, animationDelay: it.delay, animationDuration: it.dur }}>?</span>
+            : <span key={i} className={`qw-spark qw-spark-${it.size}`}
+                style={{ [it.side]: it.pos, bottom: it.bottom, animationDelay: it.delay, animationDuration: it.dur }} />
+        ))}
       </div>
       <div className="qw-scroll">
         {error && <div className="alert alert-error">{error}</div>}
