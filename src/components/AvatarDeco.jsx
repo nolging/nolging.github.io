@@ -153,11 +153,24 @@ function DevilWing({ preview, tf, pickable }) {
 const DEVIL_HORN_D = 'M17.91 8.74 C17.91 11.69 18.02 13.47 18.19 13.47 C18.37 13.47 18.48 13.24 18.48 12.92 C18.48 12.64 18.74 12.32 19.05 12.23 C19.37 12.15 19.74 11.75 19.91 11.35 C20.06 10.95 20.29 10.63 20.40 10.66 C20.54 10.69 21.20 10.37 21.86 9.91 C22.55 9.48 23.30 9.20 23.52 9.28 C23.75 9.37 23.93 9.26 23.93 9.05 C23.93 8.62 18.71 4.01 18.22 4.01 C17.99 4.01 17.91 5.47 17.91 8.74 Z'
 function DevilHorn({ tf, pickable }) {
   const t = tf || DECO_TF0
+  // 뿔 자체가 붉게 깜빡이는 펄스: 검정 뿔 뒤에 같은 모양을 붉게 흐릿하게 겹쳐 그리고
+  // opacity 만 깜빡인다(합성 단계 처리 — stroke-width 애니메이션 금지 이유는 파일 상단 참고).
+  const horn = (
+    <>
+      <path className="avd-devil-horn-glow" d={DEVIL_HORN_D} fill="#e5484d" filter="url(#devilHornBlur)" />
+      <path d={DEVIL_HORN_D} fill="#17171b" />
+    </>
+  )
   return (
     <>
-      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].l, t.left)} {...sideProps(pickable, 'l')}><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+      <defs>
+        <filter id="devilHornBlur" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="1.1" />
+        </filter>
+      </defs>
+      <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].l, t.left)} {...sideProps(pickable, 'l')}>{horn}</g>
       <g transform={tfAt(SPLIT_ANCHOR['deco-devil-horn'].r, t.right)} {...sideProps(pickable, 'r')}>
-        <g transform="translate(100,0) scale(-1,1)"><path d={DEVIL_HORN_D} fill="#17171b" /></g>
+        <g transform="translate(100,0) scale(-1,1)">{horn}</g>
       </g>
     </>
   )
@@ -462,10 +475,15 @@ function AngelRing() {
           <feGaussianBlur stdDeviation="1.6" />
         </filter>
       </defs>
-      <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#ffe58a" strokeOpacity="0.8"
-        strokeWidth="7" filter="url(#angelRingBlur)" />
-      <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#fff6d0" strokeOpacity="0.9"
-        strokeWidth="3.2" filter="url(#angelRingBlur)" />
+      {/* 은은한 펄스: 블러 처리된 두 겹의 빛(글로우)만 opacity 로 깜빡이고, 크리스프한
+          금속 링 자체는 고정 — opacity 는 합성 단계에서 처리돼 다시 칠하지 않는다(파일
+          상단 stroke-width 관련 경고 참고). */}
+      <g className="avd-angel-glow-pulse">
+        <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#ffe58a" strokeOpacity="0.8"
+          strokeWidth="7" filter="url(#angelRingBlur)" />
+        <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="#fff6d0" strokeOpacity="0.9"
+          strokeWidth="3.2" filter="url(#angelRingBlur)" />
+      </g>
       <ellipse cx="50" cy="-7" rx="18" ry="6.4" fill="none" stroke="url(#angelRingMetal)" strokeWidth="3.2" />
       <path className="avd-angel-spark" d={HALO_SPARK_PATH} transform="translate(29 -11) scale(2.4)" fill="#fff6d0" />
       <path className="avd-angel-spark avd-angel-spark-2" d={HALO_SPARK_PATH} transform="translate(71 -3) scale(2)" fill="#fff6d0" />
