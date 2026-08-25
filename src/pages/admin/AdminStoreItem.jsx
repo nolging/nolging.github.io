@@ -129,7 +129,10 @@ export default function AdminStoreItem() {
         <form onSubmit={save} className="aq-form" key={id || 'new'}>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="si-id">ID <span className="aq-required">*</span></label>
-            <input id="si-id" defaultValue={form.id} onChange={setField('id')} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" />
+            <input id="si-id" defaultValue={form.id} onChange={(e) => {
+              const v = e.target.value
+              setForm((f) => ({ ...f, id: v, category: v.startsWith('deco-') ? 'avatar' : f.category }))
+            }} placeholder="예: wish (영문/숫자/-)" disabled={editing} autoCapitalize="none" />
           </div>
           <div className="aq-frow">
             <label className="aq-flabel" htmlFor="si-name">이름 <span className="aq-required">*</span></label>
@@ -154,7 +157,7 @@ export default function AdminStoreItem() {
               {CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
-          {form.id.startsWith('deco-') && (
+          {catOf(form.id, form.category) === 'avatar' && (
             <div className="aq-frow aq-frow-top">
               <label className="aq-flabel" htmlFor="si-decoslot">꾸미기 유형</label>
               <div style={{ flex: 1 }}>
@@ -172,7 +175,6 @@ export default function AdminStoreItem() {
                   <input style={{ marginTop: 8 }} value={form.decoSlot} onChange={setField('decoSlot')}
                     placeholder="상점에 보일 유형 이름 (예: 안경)" autoFocus />
                 )}
-                <p className="si-hint" style={{ margin: '4px 0 0' }}>여기서 고른(입력한) 이름이 상점·인벤토리에 그대로 표시돼요. 같은 유형끼리는 하나만, 다른 유형은 동시에 장착돼요.</p>
               </div>
             </div>
           )}
