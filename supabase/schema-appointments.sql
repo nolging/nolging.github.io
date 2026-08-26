@@ -107,6 +107,35 @@ alter table public.appointment_participants enable row level security;
 alter table public.groups add column if not exists next_anniv_kind text check (next_anniv_kind in ('days', 'years'));
 alter table public.groups add column if not exists next_anniv_value integer check (next_anniv_value > 0);
 
+-- 커플 공간: 기념일 원본 컬럼 + RPC(schema-v2.sql 에서 이관 — next_anniv_* 는 이 값의
+-- "커스텀 다음 기념일 오버라이드"일 뿐, 기념일 자체는 이 anniversary 컬럼).
+alter table public.groups add column if not exists anniversary date;
+-- 그룹 update 는 소유자만 가능하므로, 멤버 누구나 기념일을 설정할 수 있게 RPC 제공.
+create or replace function public.set_group_anniversary(p_group_id uuid, p_date date)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception 'not authorized';
+  end if;
+  update public.groups set anniversary = p_date where id = p_group_id;
+end;
+$$;
+grant execute on function public.set_group_anniversary(uuid, date) to authenticated;
+
+-- 기념일을 따로 입력하지 않았을 때의 기본값 = 커플 링을 수령(장착)한 날짜.
+-- (양쪽 멤버의 used 커플 링 중 가장 이른 used_at 의 날짜) — security definer 로 RLS 우회.
+create or replace function public.couple_ring_claimed_at(p_group_id uuid)
+returns date language plpgsql security definer set search_path = public as $$
+declare d date;
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return null; end if;
+  select date(min(used_at)) into d from public.user_items
+   where item_id = 'couple-ring' and status = 'used' and group_id = p_group_id and used_at is not null;
+  return d;
+end;
+$$;
+grant execute on function public.couple_ring_claimed_at(uuid) to authenticated;
+
 
 -- =============================================================
 --  2. RLS 정책

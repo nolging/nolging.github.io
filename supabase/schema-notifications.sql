@@ -39,6 +39,9 @@
 --  schema-board.sql, schema-error-reports.sql 에 이 파일과 동일한(하드코딩 폴백 제거된)
 --  최종 버전으로 반영돼 있는지 교차 확인 완료.
 --
+--  ⚠️ use_ledboard() 는 이 파일에 있지만 led_banners 테이블은 schema-premium-items.sql
+--  로 이관됐다 — 새 환경에는 그 파일을 이 파일보다 먼저(또는 최소 같이) 적용해야 한다.
+--
 --  notif_render() 의 최신 버전(아래)은 `notif_templates.active` 컬럼을 참조합니다.
 --  이 컬럼은 admin-notif-active.sql(이 번들에 포함되지 않음)에서 추가되며,
 --  admin_set_notif() 도 그 파일에서 6번째 인자(p_active)를 받는 버전으로 다시
@@ -611,6 +614,28 @@ begin
 end;
 $$;
 grant execute on function public.use_friend_ring(uuid, text) to authenticated;
+
+-- 우정 링 수령: 쪽지 claimed 처리 + 내 인벤토리에 장착(used) 우정 링 생성. 거절 없음
+-- (커플 링과 달리 즉시 적용이라 거절 개념이 없다). schema-v2.sql 에서 이관.
+create or replace function public.claim_friend_ring(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'friend_ring' then
+    raise exception '수령할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령했어요.'; end if;
+
+  update public.notes set claimed = true, is_read = true where id = n.id;
+
+  if not exists (select 1 from public.user_items
+                 where user_id = auth.uid() and item_id = 'friend-ring' and status = 'used' and group_id = n.group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.claim_friend_ring(uuid) to authenticated;
 
 -- 약속 리마인더(cron 등에서 호출 — authenticated 에게 grant 하지 않음)
 create or replace function public.dispatch_due_reminders()

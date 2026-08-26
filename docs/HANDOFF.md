@@ -27,7 +27,8 @@
 
 ## 핵심 파일
 - 프론트: `src/lib/api.js`(모든 쿼리), `src/context/AuthContext.jsx`, `src/pages/*`, `src/components/*`
-- 백엔드: `supabase/schema.sql`(v1), `supabase/schema-v2.sql`(v2 마이그레이션), `supabase/functions/admin-create-user/index.ts`
+- 백엔드: `supabase/schema.sql`(최초 기반 스키마) + 도메인별 통합본 `supabase/schema-*.sql`(core·admin·appointments·avatar-deco·board·notes·error-reports·notifications·quests·qworkshop·store·premium-items·minigames·account-system·economy-store·realtime-games), `supabase/functions/admin-create-user/index.ts`
+  — 예전엔 개별 파일 100개+ 를 그때그때 추가하는 방식이었는데, 리포 정리로 도메인별 통합본만 남기고 원본은 삭제했다. 새 환경 셋업 순서는 `schema.sql` → `schema-core.sql` → 나머지 도메인 파일(순서 무관, 단 파일 헤더에 적힌 상호 의존만 지키면 됨 — 예: `schema-premium-items.sql` 은 `schema-notifications.sql` 보다 먼저).
 
 ## 로컬 실행 (새 환경)
 ```bash
@@ -44,7 +45,7 @@ VITE_EMAIL_DOMAIN=nolging.app
 > Node 20 필요. 이 프로젝트를 처음 만든 맥은 brew/Node 부재로 `~/.local` 에 수동 설치했음. 표준 환경(웹/클라우드)에선 그냥 `npm install` 이면 됨.
 
 ## DB/함수 변경 방법
-- **스키마 변경(DDL)**: Supabase SQL Editor 에 `schema.sql`→`schema-v2.sql` 순서로 실행. (또는 Supabase Personal Access Token 으로 Management API `POST /v1/projects/iqtaejiidkpnlfmqipmy/database/query` 에 SQL 전송 — idempotent)
+- **스키마 변경(DDL)**: 실제 운영 DB에는 Supabase SQL Editor 에 그때그때 필요한 SQL만 실행(또는 Personal Access Token 으로 Management API `POST /v1/projects/iqtaejiidkpnlfmqipmy/database/query` 에 전송 — idempotent). 이후 **해당 내용을 도메인에 맞는 `supabase/schema-*.sql` 파일에도 직접 반영**해서 그 파일이 항상 "지금 운영 DB의 최신 상태"를 그대로 재현하게 유지한다(새 환경 셋업/재해복구용 — 원본 개별 파일을 남기지 않으므로 이 문서화가 유일한 기록).
 - **Edge Function 배포**: `SUPABASE_ACCESS_TOKEN=<PAT> supabase functions deploy admin-create-user --project-ref iqtaejiidkpnlfmqipmy --no-verify-jwt` (Docker 불필요)
 
 ## 알아둘 함정(이미 해결/주의)

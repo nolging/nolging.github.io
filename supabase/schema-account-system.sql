@@ -17,8 +17,11 @@
 --  필요는 없습니다. 문서화 / 재해복구 / 새 환경(스테이징 등) 구축용으로 존재합니다.
 --
 --  외부 의존(다른 도메인 번들/스키마에 정의됨, 이 파일에서는 사용만 함):
---   is_admin(), is_couple_group(), is_friend_group(), grant_friend_ring_on_join(),
+--   is_admin(), is_couple_group(), is_friend_group(),
 --   notif_render(), notif_member_name(), notif_noun(), _quest_grade_ok()
+--  (grant_friend_ring_on_join() 은 2차 정리 때 이 파일 소관으로 확정 — join_group(_with_profile)
+--   이 바로 아래에서 호출하는데 정작 정의가 어디에도 없이 빠져 있던 것을 schema-v2.sql 에서
+--   찾아 이 파일로 옮겼다.)
 -- =============================================================
 
 
@@ -140,6 +143,24 @@ begin
   update public.group_members set left_at = now()
     where group_id = p_group_id and user_id = v_target and left_at is null;
 end $$;
+
+-- 이미 우정 링이 적용된 그룹에 새로 가입하면, 그 멤버 인벤토리에도 장착(used) 우정 링을
+-- 자동 지급(중복 방지). 우정 그룹이 아니면 아무것도 안 함. join_group(_with_profile) 이 호출
+-- (schema-v2.sql 에서 이관 — 이 파일 헤더의 "외부 의존"에 이름만 있고 정의가 빠져 있었다).
+create or replace function public.grant_friend_ring_on_join(p_group_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return; end if;
+  if public.is_friend_group(p_group_id)
+     and not exists (select 1 from public.user_items
+                     where user_id = auth.uid() and item_id = 'friend-ring'
+                       and status = 'used' and group_id = p_group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', p_group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.grant_friend_ring_on_join(uuid) to authenticated;
 
 -- 재가입: 남아 있던 행 재활성화(left_at 해제)
 create or replace function public.join_group(p_code text)

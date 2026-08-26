@@ -249,6 +249,17 @@ returns boolean language sql security definer stable set search_path = public as
 $$;
 grant execute on function public.is_friend_group(uuid) to authenticated;
 
+-- 내가 속한 우정 그룹(적용된 우정 링 존재) id 목록 (멤버 전원이 즉시 인식). schema-v2.sql 에서 이관.
+create or replace function public.my_friend_group_ids()
+returns setof uuid language sql security definer stable set search_path = public as $$
+  select distinct gm.group_id
+  from public.group_members gm
+  where gm.user_id = auth.uid()
+    and exists (select 1 from public.user_items ui
+                where ui.group_id = gm.group_id and ui.item_id = 'friend-ring' and ui.status = 'used');
+$$;
+grant execute on function public.my_friend_group_ids() to authenticated;
+
 -- =============================================================
 --  11. 그룹 꾸미기 테마 컬럼
 -- =============================================================

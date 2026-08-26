@@ -17,12 +17,12 @@ npm run build    # 프로덕션 빌드
 - 로그인은 **아이디(=profiles.nickname) + 비밀번호** → 내부적으로 `아이디@nolging.app` 합성 이메일. (`src/lib/supabase.js`)
 - 사용자 생성/상태변경은 프론트에서 직접 하지 말고 **Edge Function `admin-create-user`**(action: request|create|set-status|delete) 경유. RLS 상 profiles 쓰기는 service_role(함수)만.
 - 연락처/생일 노출은 **그룹설정 공개 AND 개인설정 공개 둘 다 Y** 일 때만 (`group_member_cards` RPC).
-- 스키마(DDL) 변경은 Supabase SQL Editor 또는 Management API 로 적용하고, `supabase/schema.sql` / `supabase/schema-v2.sql` 에도 반영.
+- 스키마(DDL) 변경은 Supabase SQL Editor 또는 Management API 로 적용하고, 해당 도메인의 `supabase/schema-*.sql` 통합본에도 반영(구조는 아래 docs/HANDOFF.md 참고).
 - 배포: `main` 에 push 하면 자동 배포. GitHub Pages 는 **같은 커밋 SHA 재배포 시 활성화 안 됨** → 새 커밋 필요.
 
 ## 구조
 - 프론트: `src/lib/api.js`(모든 쿼리), `src/context/AuthContext.jsx`, `src/pages/*`, `src/components/*`, `src/lib/constants.js`
-- 백엔드: `supabase/schema.sql`, `supabase/schema-v2.sql`, `supabase/functions/admin-create-user/index.ts`
+- 백엔드: `supabase/schema.sql`(기반) + 도메인별 `supabase/schema-*.sql` 통합본(core/admin/appointments/avatar-deco/board/notes/error-reports/notifications/quests/qworkshop/store/premium-items/minigames/account-system/economy-store/realtime-games), `supabase/functions/admin-create-user/index.ts`
 
 ## 환경변수 (VITE_ 접두사)
 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(공개 안전), `VITE_EMAIL_DOMAIN=nolging.app`
