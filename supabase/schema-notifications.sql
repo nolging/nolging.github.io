@@ -1,20 +1,165 @@
 -- =============================================================
---  알림 발송 전체를 notif_templates 에 전적으로 의존하도록 강화(2단계).
---  1단계(notif-strict-templates.sql)에서 notif_render() 가 템플릿 없음/비활성 시
---  null 을 반환하도록 고쳤는데, 정작 대부분의 발송 함수는 여전히
---  coalesce(v_t, '하드코딩 문구') 로 폴백하고 있어 active=false 로 꺼도 실제로는
---  계속 나가고 있었다. 이 파일은 그 폴백을 전부 제거하고, notif_render 가 null 을
---  반환하면(템플릿 없음/비활성) 해당 알림을 아예 보내지 않도록 모든 발송 지점을
---  다시 정의한다. 아이템 소모/쪽지 발송 등 알림과 무관한 나머지 로직은 그대로 둔다.
+--  알림(notifications) 시스템 통합본
+--  ---------------------------------------------------------------
+--  원래 아래 16개의 개별 SQL 파일로 나뉘어 순차 적용되던 것을 하나로 묶었습니다.
+--    notif-templates.sql              (템플릿 테이블 + notif_render + 핵심 알림 5종 트리거)
+--    comment-mentions.sql             (댓글 @멘션: mentioned_ids 컬럼 + 트리거 1차 개편)
+--    notif-comment-status.sql         (댓글 알림 {noun} 을 항목 현재 상태로 계산)
+--    notif-couple.sql                 (소원권/커플 링/우정 링/리마인더/칭찬 스티커판)
+--    notif-emoji.sql                  (notif_templates.emoji 컬럼 + 알림센터 이모지)
+--    notif-gift.sql                   (아이템 선물: 상점/인벤토리/묶음)
+--    notif-media.sql                  (음악/영상/블루레이/선물 상자 아이템)
+--    notif-ledboard-nametag.sql       (전광판/명찰 + notif_templates.emoji_bg)
+--    notif-social.sql                 (놀기 신청/콕 찌르기/우심뽀까 부르기)
+--    notif-noun-fix.sql               (알림 명칭 통일: 위시/약속/추억)
+--    notif-reorder.sql                (관리자 알림 목록 정렬 순서 변경 RPC)
+--    memory-review-notifs.sql         (새 추억/새 리뷰 알림 최초 도입)
+--    notif-cleanup.sql                (30일 지난 알림 자동 정리 cron)
+--    notif-admin-catalog-fix.sql      (새 추억/리뷰/물음표 공방 댓글·답글을 템플릿화)
+--    notif-strict-templates.sql       (1단계: notif_render 가 비활성 템플릿을 null 처리)
+--    notif-strict-templates-2.sql     (2단계: 모든 발송 지점에서 하드코딩 폴백 제거)
 --
---  적용: Supabase SQL Editor 에 그대로 실행.
---  (notif-strict-templates.sql, member-soft-leave.sql, board-notifs.sql, notif-couple.sql,
---   notif-social.sql, notif-gift.sql, notif-media.sql, notif-ledboard-nametag.sql,
---   megaphone-notif.sql, polaroid-film.sql, purin-mic-mirror-selfheal.sql,
---   error-reports-reward.sql, error-reports-push.sql, notif-comment-status.sql 이후)
+--  이 저장소는 마이그레이션 툴 없이 Supabase SQL Editor 로 그때그때 적용해 온 터라,
+--  같은 함수/트리거가 여러 파일에 걸쳐 반복 재정의됩니다. 이 파일은 그 중 "최신" 버전만
+--  모아 정리한 것으로, 리포 정리 작업의 일부로 생성되었습니다.
+--
+--  실행 시점: schema.sql, schema-v2.sql 이후. 이미 운영 DB에는 원본 파일들로 순차
+--  적용이 끝난 상태이므로 이 파일을 운영 DB에 다시 실행할 필요는 없습니다.
+--  문서화 · 재해복구 · 새 환경(fresh) 구축 시 참고용입니다.
+--
+--  ── 스코프 밖 안내(확인 완료) ──────────────────────────────────
+--  notif-strict-templates-2.sql 은 앱 전역의 "알림 발송 지점"을 훑으며 하드코딩 폴백을
+--  제거한 대규모 리팩터라서, 아래 함수들도 함께 재정의했습니다:
+--    use_polaroid_film, megaphone_send, use_purin_mic,
+--    board_create_post, board_add_comment,
+--    submit_error_report, admin_send_error_report, reply_error_report
+--  이들은 폴라로이드/확성기/푸린 마이크/비밀 게시판/오류 리포트라는 별도 도메인의
+--  핵심 로직을 담고 있어 알림 도메인 순수성을 지키기 위해 이 파일에는 포함하지
+--  않았습니다 — 각각 schema-premium-items.sql(폴라로이드/확성기/푸린 마이크),
+--  schema-board.sql, schema-error-reports.sql 에 이 파일과 동일한(하드코딩 폴백 제거된)
+--  최종 버전으로 반영돼 있는지 교차 확인 완료.
+--
+--  notif_render() 의 최신 버전(아래)은 `notif_templates.active` 컬럼을 참조합니다.
+--  이 컬럼은 admin-notif-active.sql(이 번들에 포함되지 않음)에서 추가되며,
+--  admin_set_notif() 도 그 파일에서 6번째 인자(p_active)를 받는 버전으로 다시
+--  재정의됩니다. 이 파일에는 그 이전 단계(5-인자, emoji/emoji_bg 까지)만 담았으니,
+--  `active` 컬럼을 추가하는 스키마가 별도로 적용되어 있어야 notif_render 가 정상
+--  동작합니다(컬럼 없이 새 환경에 이 파일만 실행하면 notif_render 호출 시점에
+--  "column active does not exist" 런타임 오류가 납니다).
 -- =============================================================
 
--- ── 댓글/답글/멘션 ──────────────────────────────────────────
+
+-- =============================================================
+--  1. 테이블: notif_templates
+-- =============================================================
+
+create table if not exists public.notif_templates (
+  key        text primary key,
+  label      text not null,            -- 관리자 목록에 보일 이름
+  title      text not null,            -- 제목 템플릿
+  body       text not null,            -- 본문 템플릿
+  vars       text,                     -- 사용 가능한 치환자 안내(예: {actor}, {text})
+  sort_order int  not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table public.notif_templates enable row level security;  -- 접근은 정의자/관리자 RPC 로만
+
+-- 알림센터 이모지(관리자 편집 가능)
+alter table public.notif_templates add column if not exists emoji text;
+
+-- 알림센터 이모지 배경색(#RRGGBB). null 이면 프런트 기본 스타일(타입별 CSS) 사용.
+alter table public.notif_templates add column if not exists emoji_bg text;
+comment on column public.notif_templates.emoji_bg is
+  '알림센터 이모지 배경색(#RRGGBB). null 이면 프런트 기본 스타일(타입별 CSS) 사용.';
+
+-- 댓글 @멘션에 필요한 컬럼 (task_comments 쪽)
+alter table public.task_comments
+  add column if not exists mentioned_ids uuid[];
+
+
+-- =============================================================
+--  2. 헬퍼 함수: 렌더 / 관리자 조회·수정·정렬 / 이모지·스타일 맵
+-- =============================================================
+
+-- 렌더: 템플릿의 {키} 를 vars 값으로 치환.
+-- 템플릿이 없거나 비활성(active = false, notif-strict-templates.sql 이후)이면
+-- title/body 를 null 로 반환 — 호출부는 이 경우 알림 발송 자체를 건너뛴다
+-- (notif-strict-templates.sql / notif-strict-templates-2.sql: "하드코딩 문구로 폴백" 제거).
+create or replace function public.notif_render(p_key text, p_vars jsonb default '{}'::jsonb, out title text, out body text)
+language plpgsql stable set search_path = public as $$
+declare t public.notif_templates; k text; v text;
+begin
+  select * into t from public.notif_templates where key = p_key and active;
+  if t.key is null then title := null; body := null; return; end if;
+  title := t.title; body := t.body;
+  for k, v in select key, value from jsonb_each_text(coalesce(p_vars, '{}'::jsonb)) loop
+    title := replace(title, '{' || k || '}', coalesce(v, ''));
+    body  := replace(body,  '{' || k || '}', coalesce(v, ''));
+  end loop;
+end $$;
+
+-- 알림 명칭 통일: 모든 그룹에서 위시/약속/추억 사용('태스크' 폐기, notif-noun-fix.sql)
+create or replace function public.notif_noun(p_type text)
+returns text language sql immutable as $$
+  select '위시';
+$$;
+
+-- 관리자 조회 RPC
+create or replace function public.admin_list_notifs()
+returns setof public.notif_templates language plpgsql security definer set search_path = public stable as $$
+begin
+  if not public.is_admin(auth.uid()) then raise exception '권한이 없습니다.'; end if;
+  return query select * from public.notif_templates order by sort_order, key;
+end $$;
+grant execute on function public.admin_list_notifs() to authenticated;
+
+-- 관리자 수정 RPC: admin_set_notif() 는 이 파일 소관이 아니라 schema-admin.sql 참고.
+-- (admin-notif-active.sql 에서 p_active 6번째 인자 버전으로 다시 재정의됨 — 그게 최종본이라
+--  schema-admin.sql 에 있고, notif_templates.active 컬럼도 그 파일에서 추가된다. 이 파일의
+--  notif_render() 는 그 컬럼을 참조하므로, 새 환경에 적용할 땐 이 파일 다음에 schema-admin.sql
+--  도 반드시 적용해야 한다 — 순서: schema.sql → schema-v2.sql → 이 파일 → schema-admin.sql.)
+
+-- 알림 관리 목록 정렬 순서 변경 RPC (notif-reorder.sql)
+-- p_items: [{"key":"...", "sortOrder": n}, ...]
+create or replace function public.admin_reorder_notifs(p_items jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_it jsonb;
+begin
+  if not public.is_admin(auth.uid()) then raise exception '권한이 없습니다.'; end if;
+  for v_it in select * from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) loop
+    update public.notif_templates
+       set sort_order = coalesce((v_it->>'sortOrder')::int, sort_order)
+     where key = v_it->>'key';
+  end loop;
+end $$;
+grant execute on function public.admin_reorder_notifs(jsonb) to authenticated;
+
+-- 알림센터용 type→emoji 맵(로그인 사용자 누구나) — notif_styles() 도입 이후에도 호환을 위해 유지
+create or replace function public.notif_emojis()
+returns jsonb language sql security definer set search_path = public stable as $$
+  select coalesce(jsonb_object_agg(key, emoji) filter (where emoji is not null), '{}'::jsonb)
+  from public.notif_templates;
+$$;
+grant execute on function public.notif_emojis() to authenticated;
+
+-- 알림센터용 스타일 맵: { key: { emoji, bg } }
+create or replace function public.notif_styles()
+returns jsonb language sql security definer set search_path = public stable as $$
+  select coalesce(
+    jsonb_object_agg(key, jsonb_strip_nulls(jsonb_build_object('emoji', emoji, 'bg', emoji_bg)))
+      filter (where emoji is not null or emoji_bg is not null),
+    '{}'::jsonb)
+  from public.notif_templates;
+$$;
+grant execute on function public.notif_styles() to authenticated;
+
+
+-- =============================================================
+--  3. 트리거 함수: 댓글/답글/멘션, 새 항목, 새 멤버, 약속→추억 전환
+--     (notif-strict-templates-2.sql 최종본: 템플릿 없음/비활성이면 발송 자체를 건너뜀)
+-- =============================================================
+
+-- 댓글/답글/멘션. {noun} 은 항목의 "현재 상태"로 계산(위시/약속/추억, notif-comment-status.sql).
 create or replace function public.tg_notify_comment()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -68,7 +213,7 @@ drop trigger if exists trg_notify_comment on public.task_comments;
 create trigger trg_notify_comment after insert on public.task_comments
   for each row execute function public.tg_notify_comment();
 
--- ── 새 항목(위시/약속/추억) ──────────────────────────────────
+-- 새 항목(위시/할 일/추억)
 create or replace function public.tg_notify_task_insert()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_group public.groups; v_noun text; v_t text; v_b text;
@@ -89,7 +234,7 @@ drop trigger if exists trg_notify_task_insert on public.tasks;
 create trigger trg_notify_task_insert after insert on public.tasks
   for each row execute function public.tg_notify_task_insert();
 
--- ── 새 멤버 가입 ────────────────────────────────────────────
+-- 새 멤버 가입
 create or replace function public.tg_notify_member_join()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_name text; v_t text; v_b text;
@@ -108,7 +253,35 @@ drop trigger if exists trg_notify_member_join on public.group_members;
 create trigger trg_notify_member_join after insert on public.group_members
   for each row execute function public.tg_notify_member_join();
 
--- ── 놀기 신청(accept) / 콕 찌르기(poke) / 우심뽀까 부르기(touch_call) ──
+-- 약속(accepted) → 추억(done) 전환: 참여자(작성자 제외)에게 '새 추억' 알림
+-- (notif-strict-templates.sql 최종본. new_memory/new_review 는 여기서 처음 등장 —
+--  memory-review-notifs.sql 이 하드코딩 문구로 도입했고, notif-admin-catalog-fix.sql 이
+--  notif_templates 에 등록해 관리자 편집 가능하게 했으며, notif-strict-templates.sql 이
+--  템플릿 없으면 발송을 건너뛰도록 최종 정리했다.)
+create or replace function public.tg_notify_task_done()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_t text; v_b text;
+begin
+  select r.title, r.body into v_t, v_b from public.notif_render('new_memory', jsonb_build_object('title', NEW.title)) r;
+  if v_t is null then return NEW; end if;
+  insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+  select tp.user_id, auth.uid(), 'new_memory', v_t, v_b, NEW.group_id, NEW.id
+  from public.task_participants tp
+  where tp.task_id = NEW.id and tp.user_id <> auth.uid();
+  return NEW;
+end;
+$$;
+drop trigger if exists trg_notify_task_done on public.tasks;
+create trigger trg_notify_task_done after update on public.tasks
+  for each row when (OLD.status = 'accepted' and NEW.status = 'done')
+  execute function public.tg_notify_task_done();
+
+
+-- =============================================================
+--  4. 항목별 발송 함수 — 놀기 신청 / 콕 찌르기 / 우심뽀까 부르기 (notif-social.sql 계열)
+--     (notif-strict-templates-2.sql 최종본)
+-- =============================================================
+
 create or replace function public.schedule_task(
   p_task_id uuid, p_scheduled_at timestamptz, p_time_set boolean,
   p_repeat text, p_repeat_until date, p_remind int, p_participants uuid[]
@@ -193,7 +366,12 @@ end;
 $$;
 grant execute on function public.summon_to_touch(uuid, uuid) to authenticated;
 
--- ── 소원권 사용 ─────────────────────────────────────────────
+
+-- =============================================================
+--  5. 항목별 발송 함수 — 소원권/커플 링/우정 링/리마인더/칭찬 스티커판 (notif-couple.sql 계열)
+--     (notif-strict-templates-2.sql 최종본)
+-- =============================================================
+
 create or replace function public.use_wish(p_from_user_id uuid, p_wish text)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_nt_t text; v_nt_b text;
@@ -225,7 +403,6 @@ end;
 $$;
 grant execute on function public.use_wish(uuid, text) to authenticated;
 
--- ── 커플 링(보내기/수락/거절) ────────────────────────────────
 create or replace function public.use_couple_ring(p_group_id uuid, p_recipient_id uuid, p_message text default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_item public.user_items; v_cnt int; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text; v_note_id uuid; v_nt_t text; v_nt_b text;
@@ -327,7 +504,6 @@ end;
 $$;
 grant execute on function public.reject_couple_ring(uuid) to authenticated;
 
--- ── 우정 링 보내기 ──────────────────────────────────────────
 create or replace function public.use_friend_ring(p_group_id uuid, p_message text default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_item public.user_items; v_cnt int; v_sender text; v_sav text; v_body text;
@@ -362,7 +538,7 @@ end;
 $$;
 grant execute on function public.use_friend_ring(uuid, text) to authenticated;
 
--- ── 약속 리마인더 ───────────────────────────────────────────
+-- 약속 리마인더(cron 등에서 호출 — authenticated 에게 grant 하지 않음)
 create or replace function public.dispatch_due_reminders()
 returns integer language plpgsql security definer set search_path = public as $$
 declare t record; v_when text; v_nt_t text; v_nt_b text; n int := 0;
@@ -392,7 +568,7 @@ begin
   return n;
 end; $$;
 
--- ── 칭찬 스티커(도착/완성) ──────────────────────────────────
+-- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text; v_reason text;
@@ -435,7 +611,12 @@ begin
 end $$;
 grant execute on function public.praise_place(uuid, uuid, int, text) to authenticated;
 
--- ── 아이템 선물(상점/인벤토리/묶음) ──────────────────────────
+
+-- =============================================================
+--  6. 항목별 발송 함수 — 아이템 선물(상점/인벤토리/묶음) (notif-gift.sql 계열)
+--     (notif-strict-templates-2.sql 최종본)
+-- =============================================================
+
 create or replace function public.gift_item(p_item_id text, p_group_id uuid, p_recipient_id uuid, p_qty integer default 1, p_message text default null)
 returns integer language plpgsql security definer set search_path = public as $$
 declare it public.store_items; v_balance integer; v_sender text; v_recipient text; v_sender_av text; v_recipient_av text; v_note_id uuid; v_qty integer; v_total integer; i integer; v_body text; v_items text; v_nt_t text; v_nt_b text;
@@ -641,7 +822,12 @@ begin
 end; $$;
 grant execute on function public.send_gift_note(uuid, uuid, text, boolean, jsonb) to authenticated;
 
--- ── 아이템 사용(음악/영상/블루레이/선물 상자) ────────────────
+
+-- =============================================================
+--  7. 항목별 발송 함수 — 아이템 사용(음악/영상/블루레이/선물 상자) (notif-media.sql 계열)
+--     (notif-strict-templates-2.sql 최종본)
+-- =============================================================
+
 create or replace function public.use_cassette(p_group_id uuid, p_recipient_id uuid, p_message text, p_url text, p_anonymous boolean default false)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_item public.user_items; v_sender text; v_recipient text; v_sav text; v_rav text; v_body text; v_anon boolean; v_nt_t text; v_nt_b text;
@@ -775,57 +961,12 @@ end;
 $$;
 grant execute on function public.use_link(uuid, uuid, text, text, text, boolean) to authenticated;
 
--- ── 폴라로이드 사진 ─────────────────────────────────────────
-create or replace function public.use_polaroid_film(
-  p_group_id uuid, p_recipient_id uuid, p_message text, p_urls jsonb, p_anonymous boolean default false
-) returns uuid language plpgsql security definer set search_path = public as $$
-declare
-  v_sender text; v_recipient text; v_sav text; v_rav text; v_body text; v_anon boolean;
-  v_qty integer; v_ids uuid[]; v_note_id uuid; v_url text; i integer; v_nt_t text; v_nt_b text;
-begin
-  v_anon := coalesce(p_anonymous, false);
-  if p_urls is null or jsonb_typeof(p_urls) <> 'array' or jsonb_array_length(p_urls) = 0 then
-    raise exception '첨부할 사진이 없어요.'; end if;
-  v_qty := jsonb_array_length(p_urls);
-  if v_qty > 5 then raise exception '사진은 쪽지 하나에 최대 5장까지 첨부할 수 있어요.'; end if;
-  if not public.is_group_member(p_group_id, auth.uid()) then raise exception '그룹 멤버만 사용할 수 있습니다.'; end if;
-  if p_recipient_id = auth.uid() then raise exception '자기 자신에게는 보낼 수 없습니다.'; end if;
-  if not public.is_group_member(p_group_id, p_recipient_id) then raise exception '받는 사람이 그룹 멤버가 아닙니다.'; end if;
 
-  select array_agg(id) into v_ids from (
-    select id from public.user_items where user_id = auth.uid() and item_id = 'polaroid-film' and status = 'active'
-    order by created_at asc limit v_qty) t;
-  if v_ids is null or array_length(v_ids, 1) < v_qty then raise exception '폴라로이드 필름이 부족해요.'; end if;
-  update public.user_items set status = 'used', used_at = now() where id = any(v_ids);
-  if v_anon then perform public.consume_one_eraser(); end if;
+-- =============================================================
+--  8. 항목별 발송 함수 — 전광판 게재 / 명찰 사용 (notif-ledboard-nametag.sql)
+--     (notif-strict-templates-2.sql 최종본)
+-- =============================================================
 
-  v_sender    := coalesce(public.notif_member_name(p_group_id, auth.uid()), '');
-  v_recipient := coalesce(public.notif_member_name(p_group_id, p_recipient_id), '');
-  select avatar_url into v_sav from public.group_members where group_id = p_group_id and user_id = auth.uid();
-  select avatar_url into v_rav from public.group_members where group_id = p_group_id and user_id = p_recipient_id;
-  v_body := coalesce(nullif(btrim(p_message), ''), '사진을 보냈어요 📷');
-
-  insert into public.notes(group_id, sender_id, recipient_id, sender_name, recipient_name, sender_avatar, recipient_avatar, body, kind, item_id, item_name, qty, anonymous)
-    values (p_group_id, auth.uid(), p_recipient_id, v_sender, v_recipient, v_sav, v_rav, v_body, 'polaroid', 'polaroid-film', '폴라로이드 필름', v_qty, v_anon)
-    returning id into v_note_id;
-
-  i := 0;
-  for v_url in select jsonb_array_elements_text(p_urls) loop
-    insert into public.note_photos(note_id, url, sort_order) values (v_note_id, v_url, i);
-    i := i + 1;
-  end loop;
-
-  select r.title, r.body into v_nt_t, v_nt_b from public.notif_render(case when v_anon then 'polaroid_anon' else 'polaroid' end, jsonb_build_object('actor', v_sender)) r;
-  if v_nt_t is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-      values (p_recipient_id, case when v_anon then null else auth.uid() end, 'polaroid', v_nt_t, v_nt_b, p_group_id);
-  end if;
-  return v_note_id;
-end;
-$$;
-grant execute on function public.use_polaroid_film(uuid, uuid, text, jsonb, boolean) to authenticated;
-
--- ── 전광판 게재 / 명찰 사용 ───────────────────────────────────
 create or replace function public.use_ledboard(p_text text, p_color text)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_item public.user_items; v_group uuid; v_color text;
@@ -835,6 +976,7 @@ begin
   if char_length(btrim(p_text)) > 60 then raise exception '문구는 60자까지 입력할 수 있어요.'; end if;
   v_color := public.led_color_ok(p_color);
 
+  -- 장착한 커플 링 그룹(= 커플 그룹)
   select group_id into v_group from public.user_items
    where user_id = auth.uid() and item_id = 'couple-ring' and status = 'used' and group_id is not null
    order by used_at desc nulls last limit 1;
@@ -852,6 +994,7 @@ begin
   insert into public.led_banners(group_id, owner_id, text, color, active, started_at, expires_at)
     values (v_group, auth.uid(), btrim(p_text), v_color, true, now(), now() + interval '24 hours');
 
+  -- 상대(연인)에게 알림 → Database Webhook 이 send-push 호출
   select user_id into v_partner from public.group_members
    where group_id = v_group and user_id <> auth.uid() and left_at is null limit 1;
   if v_partner is not null then
@@ -897,6 +1040,7 @@ begin
       nick_locked_until = now() + interval '24 hours'
      where group_id = p_group_id and user_id = v_partner;
 
+    -- 카운트다운이 시작되는 이 시점에만 대상에게 알림(이후 이름만 바꿀 때는 조용히)
     select coalesce(nullif(gm.display_nickname, ''), '연인') into v_actor
       from public.group_members gm where gm.group_id = p_group_id and gm.user_id = v_uid;
     select r.title, r.body into v_t, v_b
@@ -915,270 +1059,261 @@ begin
 end $$;
 grant execute on function public.use_name_tag(uuid, text) to authenticated;
 
--- ── 확성기 ──────────────────────────────────────────────────
--- 본문은 사용자가 입력한 그대로 보내되(템플릿 본문 없음), 제목 템플릿이 없거나
--- 비활성이면 발송 자체를 건너뛴다(아이템 소모는 그대로 처리).
-create or replace function public.megaphone_send(p_group uuid, p_body text)
-returns jsonb language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_item public.user_items;
-        v_gname text; v_body text := btrim(coalesce(p_body, '')); v_title text; v_cnt int := 0;
+
+-- =============================================================
+--  9. 새 추억(새로고침 없이 신규 등록) / 새 리뷰 / 물음표 공방 댓글·답글
+--     memory-review-notifs.sql 이 처음 도입, notif-admin-catalog-fix.sql 이 템플릿화,
+--     notif-strict-templates.sql 이 "템플릿 없으면 발송 생략"으로 최종 정리(이 버전이 최신).
+-- =============================================================
+
+create or replace function public.create_task_scheduled(
+  p_group_id uuid, p_title text, p_description text, p_category text, p_media_info jsonb,
+  p_done boolean,
+  p_scheduled_at timestamptz, p_time_set boolean, p_repeat text, p_repeat_until date,
+  p_remind int, p_participants uuid[]
+) returns public.tasks
+language plpgsql security definer set search_path = public as $$
+declare v_task public.tasks; v_remind_at timestamptz; v_t text; v_b text;
 begin
-  if not public.is_group_member(p_group, v_uid) then raise exception '그룹 멤버가 아니에요.'; end if;
-  if v_body = '' then raise exception '보낼 메시지를 입력해 주세요.'; end if;
-  if char_length(v_body) > 500 then raise exception '메시지는 500자까지예요.'; end if;
-
-  select name into v_gname from public.groups where id = p_group;
-  select r.title into v_title from public.notif_render('megaphone', jsonb_build_object('group', coalesce(v_gname, '그룹'))) r;
-
-  select * into v_item from public.user_items
-    where user_id = v_uid and item_id = 'megaphone' and status = 'active'
-    order by created_at asc limit 1 for update;
-  if v_item.id is null then raise exception '사용할 수 있는 확성기가 없어요.'; end if;
-
-  update public.user_items set status = 'used', used_at = now(), group_id = p_group where id = v_item.id;
-
-  if v_title is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-    select m.user_id, v_uid, 'megaphone', v_title, v_body, p_group
-    from public.group_members m
-    where m.group_id = p_group and m.user_id <> v_uid;
-    get diagnostics v_cnt = row_count;
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 등록할 수 있어요.';
   end if;
 
-  return jsonb_build_object('sent', v_cnt, 'title', v_title);
-end $$;
-grant execute on function public.megaphone_send(uuid, text) to authenticated;
+  -- 이 트랜잭션의 tasks INSERT 트리거가 새 항목 알림을 건너뛰게 함
+  perform set_config('nolging.silent_task', 'on', true);
 
--- ── 푸린 마이크 ─────────────────────────────────────────────
-create or replace function public.use_purin_mic(p_group_id uuid, p_image_url text)
-returns jsonb language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_partner uuid; v_row public.profile_graffiti; v_item public.user_items;
-        v_active boolean; v_actor text; v_t text; v_b text;
-begin
-  if not public.is_couple_group(p_group_id) then raise exception '커플 그룹에서만 사용할 수 있어요.'; end if;
-  if not public.is_group_member(p_group_id, v_uid) then raise exception '그룹 멤버가 아니에요.'; end if;
-  if p_image_url is null or btrim(p_image_url) = '' then raise exception '낙서 이미지가 없어요.'; end if;
+  if p_remind is not null and p_scheduled_at is not null then
+    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
+  end if;
 
-  select user_id into v_partner from public.group_members where group_id = p_group_id and user_id <> v_uid limit 1;
-  if v_partner is null then raise exception '짝꿍을 찾을 수 없어요.'; end if;
+  insert into public.tasks(
+    group_id, title, description, category, media_info, created_by,
+    status, assignee_id, accepted_at, completed_at,
+    scheduled_at, scheduled_time_set, repeat_rule, repeat_until,
+    remind_min, remind_at, reminded)
+  values (
+    p_group_id, p_title, coalesce(p_description, ''), p_category, p_media_info, auth.uid(),
+    case when p_done then 'done' else 'accepted' end, auth.uid(), now(),
+    case when p_done then now() else null end,
+    p_scheduled_at, coalesce(p_time_set, true), p_repeat, p_repeat_until,
+    p_remind, v_remind_at, false)
+  returning * into v_task;
 
-  select * into v_row from public.profile_graffiti where group_id = p_group_id and target_user_id = v_partner for update;
-  v_active := v_row.group_id is not null and v_row.artist_id = v_uid and v_row.expires_at > now();
+  insert into public.task_participants(task_id, user_id)
+    select v_task.id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
+    where public.is_group_member(p_group_id, x) on conflict do nothing;
 
-  if not v_active then
-    select * into v_item from public.user_items
-      where user_id = v_uid and item_id = 'purin-mic' and status = 'active'
-      order by created_at asc limit 1 for update;
-    if v_item.id is null then raise exception '사용할 수 있는 푸린 마이크가 없어요.'; end if;
-    update public.user_items set status = 'used', used_at = now() where id = v_item.id;
-
-    insert into public.profile_graffiti(group_id, target_user_id, artist_id, image_url, expires_at)
-      values (p_group_id, v_partner, v_uid, p_image_url, now() + interval '24 hours')
-    on conflict (group_id, target_user_id) do update
-      set artist_id = excluded.artist_id, image_url = excluded.image_url,
-          updated_at = now(), expires_at = excluded.expires_at;
-
-    update public.group_members set graffiti_locked_until = now() + interval '24 hours'
-      where group_id = p_group_id and user_id = v_partner;
-
-    select coalesce(nullif(gm.display_nickname, ''), '연인') into v_actor
-      from public.group_members gm where gm.group_id = p_group_id and gm.user_id = v_uid;
-    select r.title, r.body into v_t, v_b
-      from public.notif_render('purin_mic', jsonb_build_object('actor', v_actor)) r;
+  -- 처음부터 추억(done) 상태로 등록한 경우 → 참여자(작성자 제외)에게 '새 추억' 알림
+  if p_done then
+    select r.title, r.body into v_t, v_b from public.notif_render('new_memory', jsonb_build_object('title', v_task.title)) r;
     if v_t is not null then
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-        values (v_partner, v_uid, 'purin_mic', v_t, v_b, p_group_id);
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+      select tp.user_id, auth.uid(), 'new_memory', v_t, v_b, p_group_id, v_task.id
+      from public.task_participants tp
+      where tp.task_id = v_task.id and tp.user_id <> auth.uid();
     end if;
-  else
-    update public.profile_graffiti set image_url = p_image_url, updated_at = now()
-      where group_id = p_group_id and target_user_id = v_partner;
-    update public.group_members set graffiti_locked_until = v_row.expires_at
-      where group_id = p_group_id and user_id = v_partner
-        and graffiti_locked_until is distinct from v_row.expires_at;
   end if;
 
-  select * into v_row from public.profile_graffiti where group_id = p_group_id and target_user_id = v_partner;
-  return jsonb_build_object('target_id', v_row.target_user_id, 'image_url', v_row.image_url, 'until', v_row.expires_at);
-end $$;
-grant execute on function public.use_purin_mic(uuid, text) to authenticated;
+  return v_task;
+end; $$;
+grant execute on function public.create_task_scheduled(uuid, text, text, text, jsonb, boolean, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
 
--- ── 비밀 게시판(새 글 / 댓글 / 답글) ─────────────────────────
-create or replace function public.board_create_post(p_group uuid, p_prefix uuid, p_title text, p_body text)
-returns uuid language plpgsql security definer set search_path = public as $$
-declare v_id uuid; v_title text; v_prefix uuid; v_t text; v_b text;
+create or replace function public.submit_review(p_task_id uuid, p_rating numeric, p_comment text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_gid uuid; v_status text; r public.task_reviews; v_rewarded boolean; v_balance integer;
+  v_actor text; v_t text; v_b text;
 begin
-  if not public.board_access(p_group, auth.uid()) then raise exception '이 게시판에 글을 쓸 수 없어요.'; end if;
-  v_title := btrim(coalesce(p_title, ''));
-  if v_title = '' then raise exception '제목을 입력해 주세요.'; end if;
-  if char_length(v_title) > 100 then raise exception '제목은 100자 이내로 입력해 주세요.'; end if;
-  if char_length(coalesce(p_body, '')) > 5000 then raise exception '본문이 너무 길어요.'; end if;
-  if p_prefix is not null then
-    select id into v_prefix from public.board_prefixes where id = p_prefix and group_id = p_group;
+  select group_id, status into v_gid, v_status from public.tasks where id = p_task_id;
+  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
+  if not public.is_group_member(v_gid, auth.uid()) then
+    raise exception '그룹 멤버만 가능합니다.'; end if;
+  if v_status <> 'done' then
+    raise exception '완료된 추억에만 리뷰를 남길 수 있습니다.'; end if;
+  if not public.is_task_participant(p_task_id, auth.uid()) then
+    raise exception '약속에 참여한 멤버만 리뷰를 작성할 수 있습니다.'; end if;
+  if p_rating is null or p_rating < 0.5 or p_rating > 5 or (p_rating * 2) <> floor(p_rating * 2) then
+    raise exception '별점은 0.5~5 사이 0.5 단위여야 합니다.'; end if;
+
+  insert into public.task_reviews(task_id, group_id, author_id, rating, comment)
+    values (p_task_id, v_gid, auth.uid(), p_rating, coalesce(p_comment, ''))
+  on conflict (task_id, author_id) do update
+    set rating = excluded.rating, comment = excluded.comment, updated_at = now()
+  returning * into r;
+
+  -- 리뷰 작성 보상 1 츄르 (태스크당 1회, 수정 재작성해도 중복 지급 안 됨)
+  with ins as (
+    insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
+      values (auth.uid(), 1, '리뷰 작성 보상', 'review_reward', p_task_id)
+    on conflict do nothing
+    returning 1
+  )
+  select exists (select 1 from ins) into v_rewarded;
+
+  select coalesce(sum(delta), 0)::integer into v_balance
+    from public.coin_ledger where user_id = auth.uid();
+
+  -- 첫 리뷰 작성일 때만(수정 재저장 시 중복 알림 방지) 다른 참여자에게 알림
+  if v_rewarded then
+    v_actor := coalesce(public.notif_member_name(v_gid, auth.uid()), '멤버');
+    select r2.title, r2.body into v_t, v_b from public.notif_render('new_review', jsonb_build_object('actor', v_actor)) r2;
+    if v_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
+      select tp.user_id, auth.uid(), 'new_review', v_t, v_b, v_gid, p_task_id
+      from public.task_participants tp
+      where tp.task_id = p_task_id and tp.user_id <> auth.uid();
+    end if;
   end if;
-  insert into public.board_posts(group_id, author_id, prefix_id, title, body)
-    values (p_group, auth.uid(), v_prefix, v_title, coalesce(p_body, ''))
-    returning id into v_id;
 
-  select r.title, r.body into v_t, v_b from public.notif_render('board_post', jsonb_build_object('title', v_title)) r;
-  if v_t is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id)
-    select gm.user_id, null, 'board_post', v_t, coalesce(nullif(v_b, ''), v_title), p_group, v_id
-    from public.group_members gm
-    where gm.group_id = p_group and gm.user_id <> auth.uid();
-  end if;
+  return jsonb_build_object(
+    'id', r.id, 'rating', r.rating, 'comment', r.comment,
+    'rewarded', v_rewarded, 'balance', v_balance
+  );
+end;
+$$;
+grant execute on function public.submit_review(uuid, numeric, text) to authenticated;
 
-  return v_id;
-end $$;
-grant execute on function public.board_create_post(uuid, uuid, text, text) to authenticated;
-
-create or replace function public.board_add_comment(p_post uuid, p_parent uuid, p_body text)
+-- 물음표 공방 댓글/답글(멘션은 기존 'mention' 템플릿 재사용)
+create or replace function public.qworkshop_add_comment(p_post uuid, p_parent uuid, p_body text, p_mentioned_ids uuid[])
 returns uuid language plpgsql security definer set search_path = public as $$
-declare v_group uuid; v_id uuid; v_body text; v_parent uuid; v_pparent uuid;
-        v_post_author uuid; v_target_author uuid; v_t text; v_b text;
+declare
+  v_group uuid; v_post_author uuid; v_id uuid; v_body text;
+  v_parent uuid; v_pparent uuid; v_target_author uuid; v_actor text; v_t text; v_b text;
 begin
-  select group_id, author_id into v_group, v_post_author from public.board_posts where id = p_post;
-  if v_group is null then raise exception '글을 찾을 수 없어요.'; end if;
-  if not public.board_access(v_group, auth.uid()) then raise exception '댓글을 쓸 수 없어요.'; end if;
+  select group_id, author_id into v_group, v_post_author from public.qworkshop_posts where id = p_post;
+  if v_group is null then raise exception '물음표를 찾을 수 없어요.'; end if;
+  if not public.qworkshop_access(v_group, auth.uid()) then raise exception '댓글을 쓸 수 없어요.'; end if;
   v_body := btrim(coalesce(p_body, ''));
   if v_body = '' then raise exception '내용을 입력해 주세요.'; end if;
   if char_length(v_body) > 2000 then raise exception '댓글이 너무 길어요.'; end if;
+
+  -- 답글은 1단계만: 부모가 또 답글이면 그 부모(최상위)에 붙인다.
   if p_parent is not null then
-    select parent_id, author_id into v_pparent, v_target_author from public.board_comments where id = p_parent and post_id = p_post;
+    select parent_id, author_id into v_pparent, v_target_author
+      from public.qworkshop_comments where id = p_parent and post_id = p_post;
     if v_target_author is null then raise exception '원 댓글을 찾을 수 없어요.'; end if;
     v_parent := p_parent;
     if v_pparent is not null then v_parent := v_pparent; end if;
   end if;
-  insert into public.board_comments(post_id, group_id, author_id, parent_id, body)
-    values (p_post, v_group, auth.uid(), v_parent, v_body)
+
+  insert into public.qworkshop_comments(post_id, group_id, author_id, parent_id, body, mentioned_ids)
+    values (p_post, v_group, auth.uid(), v_parent, v_body, p_mentioned_ids)
     returning id into v_id;
+
+  v_actor := coalesce(public.notif_member_name(v_group, auth.uid()), '');
 
   if p_parent is null then
     if v_post_author is not null and v_post_author <> auth.uid() then
-      select r.title, r.body into v_t, v_b from public.notif_render('board_comment', jsonb_build_object('text', v_body)) r;
+      select r.title, r.body into v_t, v_b from public.notif_render('qworkshop_comment', jsonb_build_object('actor', v_actor, 'text', v_body)) r;
       if v_t is not null then
-        insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
-          values (v_post_author, null, 'board_comment', v_t, coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+        insert into public.notifications(user_id, actor_id, type, title, body, group_id, qworkshop_post_id, qworkshop_comment_id)
+          values (v_post_author, auth.uid(), 'qworkshop_comment', v_t, v_b, v_group, p_post, v_id);
       end if;
     end if;
   else
     if v_target_author is not null and v_target_author <> auth.uid() then
-      select r.title, r.body into v_t, v_b from public.notif_render('board_reply', jsonb_build_object('text', v_body)) r;
+      select r.title, r.body into v_t, v_b from public.notif_render('qworkshop_reply', jsonb_build_object('actor', v_actor, 'text', v_body)) r;
       if v_t is not null then
-        insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
-          values (v_target_author, null, 'board_reply', v_t, coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+        insert into public.notifications(user_id, actor_id, type, title, body, group_id, qworkshop_post_id, qworkshop_comment_id)
+          values (v_target_author, auth.uid(), 'qworkshop_reply', v_t, v_b, v_group, p_post, v_id);
       end if;
     end if;
   end if;
+
+  if p_mentioned_ids is not null then
+    select r.title, r.body into v_t, v_b from public.notif_render('mention', jsonb_build_object('actor', v_actor, 'text', v_body)) r;
+    if v_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, qworkshop_post_id, qworkshop_comment_id)
+      select distinct u, auth.uid(), 'mention', v_t, v_b, v_group, p_post, v_id
+      from unnest(p_mentioned_ids) as u
+      where u <> auth.uid()
+        and public.is_group_member(v_group, u)
+        and u is distinct from v_post_author
+        and u is distinct from v_target_author;
+    end if;
+  end if;
+
   return v_id;
 end $$;
-grant execute on function public.board_add_comment(uuid, uuid, text) to authenticated;
+grant execute on function public.qworkshop_add_comment(uuid, uuid, text, uuid[]) to authenticated;
 
--- ── 오류 리포트(제출/관리자 답장/유저 답장) ──────────────────
-create or replace function public.submit_error_report(p_title text, p_body text)
-returns public.error_reports language plpgsql security definer set search_path = public as $$
-declare r public.error_reports; v_name text; v_t text; v_b text;
-begin
-  if p_title is null or btrim(p_title) = '' then raise exception '제목을 입력해 주세요.'; end if;
-  if p_body  is null or btrim(p_body)  = '' then raise exception '내용을 입력해 주세요.'; end if;
-  if char_length(p_title) > 100  then raise exception '제목은 100자까지 입력할 수 있어요.'; end if;
-  if char_length(p_body)  > 2000 then raise exception '내용은 2000자까지 입력할 수 있어요.'; end if;
 
-  insert into public.error_reports(reporter_id, title, body)
-    values (auth.uid(), btrim(p_title), btrim(p_body)) returning * into r;
+-- =============================================================
+--  10. 알림 자동 정리 (notif-cleanup.sql)
+-- =============================================================
 
-  select nickname into v_name from public.profiles where id = auth.uid();
-  select rr.title, rr.body into v_t, v_b
-    from public.notif_render('error_report',
-           jsonb_build_object('actor', coalesce(v_name, '회원'), 'title', btrim(p_title))) rr;
-  if v_t is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, report_id)
-      select p.id, auth.uid(), 'error_report', v_t, v_b, r.id
-        from public.profiles p where p.role = 'admin';
-  end if;
-  return r;
-end;
+create or replace function public.cleanup_old_notifications()
+returns void language sql security definer set search_path = public as $$
+  delete from public.notifications where created_at < now() - interval '30 days';
 $$;
-grant execute on function public.submit_error_report(text, text) to authenticated;
 
-create or replace function public.admin_send_error_report(
-  p_report_id uuid, p_body text, p_items jsonb default null, p_coin integer default null
-) returns void language plpgsql security definer set search_path = public as $$
-declare v_rep uuid; v_first boolean := false; v_t text; v_b text; v_note_id uuid;
-        v_it jsonb; v_item_id text; v_qty integer; v_name text;
+-- 매일 새벽 3시 15분, 30일 지난 알림만 정리(이미 있으면 교체)
+create extension if not exists pg_cron;
+do $$
 begin
-  if not public.is_admin(auth.uid()) then raise exception '관리자만 사용할 수 있어요.'; end if;
-  if p_body is null or btrim(p_body) = '' then raise exception '내용을 입력해 주세요.'; end if;
-  select reporter_id into v_rep from public.error_reports where id = p_report_id;
-  if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
+  perform cron.unschedule('nolging-cleanup-notifications');
+exception when others then null;
+end $$;
+select cron.schedule('nolging-cleanup-notifications', '15 3 * * *', $$select public.cleanup_old_notifications()$$);
 
-  insert into public.notes(sender_name, recipient_name, body, kind, report_id, is_anchor, is_read, reward_coin)
-    values ('SYSTEM', '', btrim(p_body), 'system', p_report_id, false, false, p_coin)
-    returning id into v_note_id;
+-- 지금까지 쌓인 30일 지난 알림도 즉시 1회 정리
+select public.cleanup_old_notifications();
 
-  if p_items is not null then
-    for v_it in select * from jsonb_array_elements(p_items) loop
-      v_item_id := v_it->>'item_id';
-      v_qty := greatest(1, coalesce((v_it->>'qty')::int, 1));
-      v_name := coalesce(v_it->>'item_name', v_item_id);
-      insert into public.note_items(note_id, item_id, item_name, qty) values (v_note_id, v_item_id, v_name, v_qty);
-    end loop;
-  end if;
 
-  update public.notes set body = btrim(p_body), is_read = false, created_at = now()
-   where report_id = p_report_id and is_anchor = true;
-  if not found then
-    v_first := true;
-    insert into public.notes(recipient_id, sender_name, recipient_name, body, kind, report_id, is_anchor, is_read)
-      values (v_rep, 'SYSTEM', '', btrim(p_body), 'system', p_report_id, true, false);
-  end if;
+-- =============================================================
+--  11. 알림 템플릿 시드 — 전체 32종, 키 기준 UNION(각 파일에서 최신 문구 사용)
+--      on conflict 시 label/vars/sort_order 만 갱신(관리자가 편집한 title/body/emoji 보존)
+--      — 원본 각 파일들의 on conflict 절과 동일한 정책.
+-- =============================================================
 
-  update public.error_reports set user_hidden = false where id = p_report_id;
+insert into public.notif_templates (key, label, title, body, vars, emoji, sort_order) values
+  -- notif-templates.sql (핵심 알림) — vars 는 notif-noun-fix.sql 최종본
+  ('new_member',   '새 멤버 가입',   '새 멤버가 가입했어요',        '{name} 님 입장!',           '{name} = 새 멤버 닉네임', '👋', 10),
+  ('new_task',     '새 항목 등록',   '새 {noun}가 있어요',          '{title}',                   '{noun} = 위시/약속/추억, {title} = 항목 제목', '📝', 20),
+  ('task_comment', '내 항목에 댓글', '내 {noun}에 댓글이 달렸어요',  '{actor}: {text}',           '{noun} = 위시/약속/추억, {actor} = 작성자, {text} = 댓글 내용', '💬', 30),
+  ('reply',        '내 댓글에 답글', '내 댓글에 답글이 달렸어요',    '{actor}: {text}',           '{actor} = 작성자, {text} = 답글 내용', '↩︎', 40),
+  ('mention',      '댓글 멘션',      '{actor} 님이 회원님을 언급했어요', '{actor}: {text}',        '{actor} = 작성자, {text} = 댓글 내용', '@', 50),
 
-  if v_first then
-    select rr.title, rr.body into v_t, v_b from public.notif_render('system_note', jsonb_build_object()) rr;
-    if v_t is not null then
-      insert into public.notifications(user_id, type, title, body, report_id)
-        values (v_rep, 'system_note', v_t, v_b, p_report_id);
-    end if;
-  else
-    select rr.title, rr.body into v_t, v_b
-      from public.notif_render('error_chat_admin', jsonb_build_object('text', btrim(p_body))) rr;
-    if v_t is not null then
-      insert into public.notifications(user_id, type, title, body, report_id, silent)
-        values (v_rep, 'system_note', v_t, v_b, p_report_id, true);
-    end if;
-  end if;
-end;
-$$;
-grant execute on function public.admin_send_error_report(uuid, text, jsonb, integer) to authenticated;
+  -- notif-gift.sql
+  ('gift',      '아이템 선물',        '{actor} 님이 선물을 보냈어요', '{items} · 쪽지함에서 수령하세요', '{actor} = 보낸 사람, {items} = 선물 내용(예: 명찰 2개 / 명찰 외 1종)', '🎁', 60),
+  ('gift_anon', '아이템 선물(익명)',  '익명의 선물이 도착했어요',     '{items} · 쪽지함에서 수령하세요', '{items} = 선물 내용(예: 명찰 2개 / 명찰 외 1종)', '🎁', 61),
 
-create or replace function public.reply_error_report(p_report_id uuid, p_body text)
-returns void language plpgsql security definer set search_path = public as $$
-declare v_rep uuid; v_resolved boolean; v_title text; v_name text; v_t text; v_b text;
-begin
-  if p_body is null or btrim(p_body) = '' then raise exception '내용을 입력해 주세요.'; end if;
-  select reporter_id, resolved, title into v_rep, v_resolved, v_title from public.error_reports where id = p_report_id;
-  if v_rep is null then raise exception '리포트를 찾을 수 없어요.'; end if;
-  if v_rep <> auth.uid() then raise exception '본인 리포트에만 답장할 수 있어요.'; end if;
-  if v_resolved then raise exception '이미 해결 완료된 리포트라 답장할 수 없어요.'; end if;
+  -- notif-ledboard-nametag.sql
+  ('ledboard', '연인이 전광판 게재', '연인이 전광판을 켰어요',   '{actor}: {text}',
+   '{actor} = 게재한 사람 닉네임, {text} = 전광판 문구', '📟', 60),
+  ('nametag',  '연인이 명찰 사용',   '연인이 내 이름을 바꿨어요', '이제 24시간 동안 {nickname} (으)로 불려요',
+   '{actor} = 사용한 사람 닉네임, {nickname} = 바뀐 이름', '🏷️', 61),
 
-  insert into public.notes(sender_id, sender_name, recipient_name, body, kind, report_id, is_anchor, is_read)
-    values (auth.uid(), '나', '', btrim(p_body), 'system', p_report_id, false, true);
+  -- notif-media.sql
+  ('cassette',      '음악 도착',              '{actor} 님이 음악을 보냈어요',        '쪽지함에서 들어보세요 🎵', '{actor} = 보낸 사람', '🎵', 70),
+  ('cassette_anon', '음악 도착(익명)',        '익명의 음악이 도착했어요',            '쪽지함에서 들어보세요 🎵', '(치환자 없음)', '🎵', 71),
+  ('video',         '영상 도착(비디오)',       '{actor} 님이 영상을 보냈어요',        '쪽지함에서 확인하세요 📹', '{actor} = 보낸 사람', '📹', 72),
+  ('video_anon',    '영상 도착(비디오·익명)',  '익명의 영상이 도착했어요',            '쪽지함에서 확인하세요 📹', '(치환자 없음)', '📹', 73),
+  ('bluray',        '영상 도착(블루레이)',     '{actor} 님이 영상을 보냈어요',        '쪽지함에서 확인하세요 💿', '{actor} = 보낸 사람', '💿', 74),
+  ('bluray_anon',   '영상 도착(블루레이·익명)', '익명의 영상이 도착했어요',           '쪽지함에서 확인하세요 💿', '(치환자 없음)', '💿', 75),
+  ('link',          '선물 상자 도착',          '{actor} 님이 선물 상자를 보냈어요',   '쪽지함에서 확인하세요 🎁', '{actor} = 보낸 사람', '🎁', 76),
+  ('link_anon',     '선물 상자 도착(익명)',    '익명의 선물 상자가 도착했어요',       '쪽지함에서 확인하세요 🎁', '(치환자 없음)', '🎁', 77),
 
-  update public.notes set body = btrim(p_body), created_at = now(), is_read = true
-   where report_id = p_report_id and is_anchor = true;
+  -- notif-social.sql
+  ('accept',     '놀기 신청(참여 확정)', '{actor} 님의 놀기 신청!',              '{title}', '{actor} = 신청자, {title} = 항목 제목', '🙌', 80),
+  ('poke',       '콕 찌르기',            '{actor} 님이 콕 찔렀어요!',            '',        '{actor} = 콕 찌른 사람', '👉', 81),
+  ('touch_call', '우심뽀까 부르기',       '{actor} 님이 입술 내밀고 기다리고 있어요!', 'ㅡ 3ㅡ', '{actor} = 부른 사람', '💋', 82),
 
-  select nickname into v_name from public.profiles where id = auth.uid();
-  select rr.title, rr.body into v_t, v_b
-    from public.notif_render('error_chat_user',
-           jsonb_build_object('actor', coalesce(v_name, '회원'), 'text', btrim(p_body), 'title', coalesce(v_title, ''))) rr;
-  if v_t is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, report_id, silent)
-      select p.id, auth.uid(), 'error_report', v_t, v_b, p_report_id, true
-        from public.profiles p where p.role = 'admin';
-  end if;
-end;
-$$;
-grant execute on function public.reply_error_report(uuid, text) to authenticated;
+  -- notif-couple.sql
+  ('wish',               '소원권 사용',        '{actor} 님이 소원을 빌었어요',        '{wish}',                      '{actor} = 소원 빈 사람, {wish} = 소원 내용', '🌟', 90),
+  ('couple_ring',        '커플 링 도착',       '{actor} 님이 커플 링을 보냈어요',      '쪽지함에서 확인하세요',        '{actor} = 보낸 사람', '💍', 91),
+  ('couple_ring_accept', '커플 링 수락',       '{actor} 님과 커플 링을 나눠 꼈어요',   '이제 프리미엄 그룹이에요 💍',   '{actor} = 수락한 사람 · (알림센터 이모지는 커플 링 도착과 공유)', '💍', 92),
+  ('couple_ring_reject', '커플 링 거절',       '{actor} 님이 커플 링을 거절했어요',    '커플 링은 다시 사용할 수 있어요', '{actor} = 거절한 사람 · (알림센터 이모지는 커플 링 도착과 공유)', '💍', 93),
+  ('friend_ring',        '우정 링 도착',       '{actor} 님이 우정 링을 보냈어요',      '쪽지함에서 확인하세요 🤝',      '{actor} = 보낸 사람', '🤝', 94),
+  ('reminder',           '약속 리마인더',      '[{title}] {when}',                    '준비해 주세요',                '{title} = 항목 제목, {when} = 약속 시각', '⏰', 95),
+  ('praise',             '칭찬 스티커판 완성',  '{actor} 님이 칭찬 스티커판을 완성했어요', '칭찬 스티커에서 소원권을 수령하세요 🎉', '{actor} = 완성한 짝꿍', '🎉', 96),
+  ('praise_new',         '칭찬 스티커 도착',    '{actor} 님이 칭찬 스티커를 붙였어요', '{reason}', '{actor} = 붙인 짝꿍, {reason} = 칭찬 내용', '🌟', 100),
+
+  -- notif-admin-catalog-fix.sql
+  ('new_memory',        '새 추억 생성',              '새로운 추억이 생겼어요',        '[{title}] 리뷰를 작성해 주세요', '{title} = 항목 제목', '📔', 110),
+  ('new_review',        '새 리뷰 등록',              '{actor} 님이 리뷰를 작성했어요', '별이 몇 개나 떴을까요?',         '{actor} = 리뷰 작성자', '⭐', 111),
+  ('qworkshop_comment', '물음표 공방 내 물음표 댓글', '내 물음표에 댓글이 달렸어요',    '{actor}: {text}', '{actor} = 작성자, {text} = 댓글 내용', '💬', 112),
+  ('qworkshop_reply',   '물음표 공방 내 댓글 답글',   '내 댓글에 답글이 달렸어요',      '{actor}: {text}', '{actor} = 작성자, {text} = 답글 내용', '↩️', 113)
+on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
 
 notify pgrst, 'reload schema';

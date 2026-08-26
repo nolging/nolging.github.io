@@ -126,12 +126,11 @@ begin
   select rr.title, rr.body into v_t, v_b
     from public.notif_render('error_report',
            jsonb_build_object('actor', coalesce(v_name, '회원'), 'title', btrim(p_title))) rr;
-  insert into public.notifications(user_id, actor_id, type, title, body, report_id)
-    select p.id, auth.uid(), 'error_report',
-           coalesce(v_t, '새 오류 리포트'),
-           coalesce(v_b, coalesce(v_name, '회원') || ' 님이 "' || btrim(p_title) || '" 오류를 리포트했어요'),
-           r.id
-      from public.profiles p where p.role = 'admin';
+  if v_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, report_id)
+      select p.id, auth.uid(), 'error_report', v_t, v_b, r.id
+        from public.profiles p where p.role = 'admin';
+  end if;
   return r;
 end;
 $$;
@@ -252,16 +251,19 @@ begin
   if v_first then
     -- 최초 문의: 알림센터 + 푸시(기존 그대로)
     select rr.title, rr.body into v_t, v_b from public.notif_render('system_note', jsonb_build_object()) rr;
-    insert into public.notifications(user_id, type, title, body, report_id)
-      values (v_rep, 'system_note', coalesce(v_t, 'SYSTEM 문의'),
-              coalesce(v_b, '오류 리포트에 SYSTEM 이 문의를 남겼어요'), p_report_id);
+    if v_t is not null then
+      insert into public.notifications(user_id, type, title, body, report_id)
+        values (v_rep, 'system_note', v_t, v_b, p_report_id);
+    end if;
   else
     -- 이후 문의: 푸시만(알림센터 미표시) + 접속 중이면 send-push 가 생략.
-    -- 문구는 관리자 '알림 관리'의 error_chat_admin 템플릿을 렌더(미배포 시 폴백).
+    -- 문구는 관리자 '알림 관리'의 error_chat_admin 템플릿을 렌더(비활성/미배포 시 알림 자체를 건너뜀).
     select rr.title, rr.body into v_t, v_b
       from public.notif_render('error_chat_admin', jsonb_build_object('text', btrim(p_body))) rr;
-    insert into public.notifications(user_id, type, title, body, report_id, silent)
-      values (v_rep, 'system_note', coalesce(v_t, '깜냥'), coalesce(v_b, btrim(p_body)), p_report_id, true);
+    if v_t is not null then
+      insert into public.notifications(user_id, type, title, body, report_id, silent)
+        values (v_rep, 'system_note', v_t, v_b, p_report_id, true);
+    end if;
   end if;
 end;
 $$;
@@ -287,14 +289,15 @@ begin
 
   select nickname into v_name from public.profiles where id = auth.uid();
   -- 관리자에게 푸시만(알림센터 미표시). 접속 중인 관리자는 send-push 가 생략.
-  -- 문구는 관리자 '알림 관리'의 error_chat_user 템플릿을 렌더(미배포 시 폴백).
+  -- 문구는 관리자 '알림 관리'의 error_chat_user 템플릿을 렌더(비활성/미배포 시 알림 자체를 건너뜀).
   select rr.title, rr.body into v_t, v_b
     from public.notif_render('error_chat_user',
            jsonb_build_object('actor', coalesce(v_name, '회원'), 'text', btrim(p_body), 'title', coalesce(v_title, ''))) rr;
-  insert into public.notifications(user_id, actor_id, type, title, body, report_id, silent)
-    select p.id, auth.uid(), 'error_report',
-           coalesce(v_t, coalesce(v_name, '회원')), coalesce(v_b, btrim(p_body)), p_report_id, true
-      from public.profiles p where p.role = 'admin';
+  if v_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, report_id, silent)
+      select p.id, auth.uid(), 'error_report', v_t, v_b, p_report_id, true
+        from public.profiles p where p.role = 'admin';
+  end if;
 end;
 $$;
 

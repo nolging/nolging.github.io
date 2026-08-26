@@ -348,7 +348,6 @@ begin
   where user_id=v_uid and slot=p_slot;
   return public.get_quests();
 end $$;
-grant execute on function public.reroll_slot_quest(int) to authenticated;
 
 -- 하단 탭 "마이" 배지: 완료돼서 "받기" 가능한 퀘스트가 있는지 가벼운 boolean 으로 확인.
 --   · get_quests() 는 슬롯 5칸 보장/무효 슬롯 교체(쓰기)까지 하는 무거운 함수라, 60초마다
@@ -382,7 +381,6 @@ begin
   return false;
 end;
 $$;
-grant execute on function public.has_claimable_quest() to authenticated;
 
 
 -- =========================

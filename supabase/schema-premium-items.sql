@@ -279,9 +279,7 @@ begin
   if char_length(v_body) > 500 then raise exception '메시지는 500자까지예요.'; end if;
 
   select name into v_gname from public.groups where id = p_group;
-  -- 제목: 관리자 편집 템플릿에서 렌더( {group} 치환 ), 없으면 기본 문구
   select r.title into v_title from public.notif_render('megaphone', jsonb_build_object('group', coalesce(v_gname, '그룹'))) r;
-  v_title := coalesce(nullif(btrim(v_title), ''), '[' || coalesce(v_gname, '그룹') || '] 확성기가 켜졌어요');
 
   select * into v_item from public.user_items
     where user_id = v_uid and item_id = 'megaphone' and status = 'active'
@@ -290,11 +288,13 @@ begin
 
   update public.user_items set status = 'used', used_at = now(), group_id = p_group where id = v_item.id;
 
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-  select m.user_id, v_uid, 'megaphone', v_title, v_body, p_group
-  from public.group_members m
-  where m.group_id = p_group and m.user_id <> v_uid;
-  get diagnostics v_cnt = row_count;
+  if v_title is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+    select m.user_id, v_uid, 'megaphone', v_title, v_body, p_group
+    from public.group_members m
+    where m.group_id = p_group and m.user_id <> v_uid;
+    get diagnostics v_cnt = row_count;
+  end if;
 
   return jsonb_build_object('sent', v_cnt, 'title', v_title);
 end $$;
@@ -302,9 +302,9 @@ grant execute on function public.megaphone_send(uuid, text) to authenticated;
 
 -- 3-9) 푸린 마이크 사용/수정: 커플 그룹에서만, 짝꿍 사진에 낙서.
 --      (purin-mic.sql → purin-mic-lock-notify.sql → purin-mic-mirror-selfheal.sql 순으로
---      3번 재정의된 함수 중 마지막 self-heal 버전. 새로 잠글 때 group_members.graffiti_locked_until
---      미러 컬럼을 채우고 대상에게 알림을 보내며, 재수정(else 분기)/조회 시에도 미러 컬럼이
---      원본(profile_graffiti)과 어긋나 있으면 항상 맞춰 쓰도록 자가 치유한다.)
+--      self-heal 로직이 자리잡은 뒤, 알림 문구 하드코딩 폴백만 notif-strict-templates-2.sql
+--      (schema-notifications.sql) 에서 한 번 더 제거됨 — 템플릿이 없으면 알림 자체를
+--      건너뛴다. 자가 치유 로직 자체는 그대로.)
 create or replace function public.use_purin_mic(p_group_id uuid, p_image_url text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_uid uuid := auth.uid(); v_partner uuid; v_row public.profile_graffiti; v_item public.user_items;
@@ -341,10 +341,10 @@ begin
       from public.group_members gm where gm.group_id = p_group_id and gm.user_id = v_uid;
     select r.title, r.body into v_t, v_b
       from public.notif_render('purin_mic', jsonb_build_object('actor', v_actor)) r;
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-      values (v_partner, v_uid, 'purin_mic',
-              coalesce(v_t, '연인이 내 프로필 사진에 낙서했어요'),
-              coalesce(v_b, '24시간 동안 낙서가 남아 있어요'), p_group_id);
+    if v_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+        values (v_partner, v_uid, 'purin_mic', v_t, v_b, p_group_id);
+    end if;
   else
     update public.profile_graffiti set image_url = p_image_url, updated_at = now()
       where group_id = p_group_id and target_user_id = v_partner;
@@ -454,10 +454,10 @@ begin
   end loop;
 
   select r.title, r.body into v_nt_t, v_nt_b from public.notif_render(case when v_anon then 'polaroid_anon' else 'polaroid' end, jsonb_build_object('actor', v_sender)) r;
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-    values (p_recipient_id, case when v_anon then null else auth.uid() end, 'polaroid',
-            coalesce(v_nt_t, case when v_anon then '익명의 폴라로이드 사진이 도착했어요' when v_sender <> '' then v_sender || ' 님이 폴라로이드 사진을 보냈어요' else '폴라로이드 사진이 도착했어요' end),
-            coalesce(v_nt_b, '쪽지함에서 인화해 보세요 📷'), p_group_id);
+  if v_nt_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+      values (p_recipient_id, case when v_anon then null else auth.uid() end, 'polaroid', v_nt_t, v_nt_b, p_group_id);
+  end if;
   return v_note_id;
 end;
 $$;

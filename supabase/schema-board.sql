@@ -238,13 +238,14 @@ begin
   insert into public.board_posts(group_id, author_id, prefix_id, title, body)
     values (p_group, auth.uid(), v_prefix, v_title, coalesce(p_body, ''))
     returning id into v_id;
-  -- 새 글 알림(익명): 그룹 멤버 전원(글쓴이 제외)
+  -- 새 글 알림(익명): 그룹 멤버 전원(글쓴이 제외). 템플릿이 없거나 비활성이면 알림 자체를 건너뜀.
   select r.title, r.body into v_t, v_b from public.notif_render('board_post', jsonb_build_object('title', v_title)) r;
-  insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id)
-  select gm.user_id, null, 'board_post',
-         coalesce(v_t, '비밀 게시판에 새 글이 올라왔어요'), coalesce(nullif(v_b, ''), v_title), p_group, v_id
-  from public.group_members gm
-  where gm.group_id = p_group and gm.user_id <> auth.uid();
+  if v_t is not null then
+    insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id)
+    select gm.user_id, null, 'board_post', v_t, coalesce(nullif(v_b, ''), v_title), p_group, v_id
+    from public.group_members gm
+    where gm.group_id = p_group and gm.user_id <> auth.uid();
+  end if;
   return v_id;
 end $$;
 
@@ -325,16 +326,18 @@ begin
   if p_parent is null then
     if v_post_author is not null and v_post_author <> auth.uid() then
       select r.title, r.body into v_t, v_b from public.notif_render('board_comment', jsonb_build_object('text', v_body)) r;
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
-        values (v_post_author, null, 'board_comment',
-                coalesce(v_t, '내 글에 댓글이 달렸어요'), coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+      if v_t is not null then
+        insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
+          values (v_post_author, null, 'board_comment', v_t, coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+      end if;
     end if;
   else
     if v_target_author is not null and v_target_author <> auth.uid() then
       select r.title, r.body into v_t, v_b from public.notif_render('board_reply', jsonb_build_object('text', v_body)) r;
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
-        values (v_target_author, null, 'board_reply',
-                coalesce(v_t, '내 댓글에 답글이 달렸어요'), coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+      if v_t is not null then
+        insert into public.notifications(user_id, actor_id, type, title, body, group_id, post_id, board_comment_id)
+          values (v_target_author, null, 'board_reply', v_t, coalesce(nullif(v_b, ''), v_body), v_group, p_post, v_id);
+      end if;
     end if;
   end if;
   return v_id;
