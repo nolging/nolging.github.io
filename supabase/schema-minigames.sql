@@ -11,6 +11,10 @@
 --    - praise-admin-view.sql    (칭찬 스티커: 앱 관리자 열람 허용)
 --  각 함수/테이블은 여러 파일에 걸쳐 반복 수정된 이력이 있으며, 이 파일에는 항상
 --  "최종(가장 나중) 버전"만 담았습니다. 저장소 정리 작업의 일환으로 생성되었습니다.
+--  예외: praise_place() 하나는 위 8개 파일이 아니라 notif-strict-templates-2.sql(알림
+--  묶음, schema-notifications.sql)에서 다시 정의된 게 실제로 더 최신 버전이라 그걸 담았음
+--  — notif_render 기반으로 다시 쓰였고 스티커 한 칸 붙일 때마다도 알림('praise_new')이
+--  가니, praise/praise_new notif_templates 시드 행은 schema-notifications.sql에 있음.
 --
 --  ⚠️ 이미 운영 중인(live) 프로덕션 DB에는 원본 8개 파일이 각각 순서대로 이미 적용되어
 --     있으므로, 이 파일을 프로덕션에 다시 실행할 필요는 없습니다.
@@ -344,11 +348,13 @@ end;
 $$;
 
 -- 스티커 붙이기: 현재(미완성) 판에. 20칸째면 판을 완성 처리(쪽지 자동 발송 없음, 알림만).
--- (최종본: praise-history.sql — 최초 버전은 20칸 완성 시 소원권 쪽지를 바로 발송했으나,
---  이후 "판 주인이 직접 수령" 방식으로 바뀌면서 praise_claim 함수가 대신 담당)
+-- (최종본: notif-strict-templates-2.sql — praise-history.sql 버전은 완성 알림 문구를
+--  하드코딩했고 칸마다 알림도 없었는데, notif_render 기반으로 다시 쓰면서 칸을 붙일 때마다
+--  'praise_new' 알림도 추가됐다. 이 파일이 notifications 묶음과 겹치는 유일한 함수 —
+--  notif_render/템플릿 정의는 schema-notifications.sql 쪽에 있다.)
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int;
+declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text; v_reason text;
 begin
   if not public.is_couple_group(p_group_id) then raise exception '커플 그룹이 아니에요.'; end if;
   if not public.is_group_member(p_group_id, v_uid) then raise exception '그룹 멤버가 아니에요.'; end if;
@@ -363,22 +369,29 @@ begin
   if v_board.id is null then raise exception '상대가 아직 스티커판을 준비하지 않았어요.'; end if;
   if v_board.completed_at is not null then raise exception '이미 완성된 스티커판이에요.'; end if;
 
+  v_reason := left(btrim(p_reason), 100);
   insert into public.praise_stickers(board_id, group_id, owner_id, slot_index, reason, from_id)
-    values (v_board.id, p_group_id, p_owner_id, p_slot, left(btrim(p_reason), 100), v_uid);
+    values (v_board.id, p_group_id, p_owner_id, p_slot, v_reason, v_uid);
 
+  v_pactor := coalesce(public.notif_member_name(p_group_id, v_uid), '');
   select count(*) into v_count from public.praise_stickers where board_id = v_board.id;
   if v_count >= 20 then
     update public.praise_boards
       set completed_at = now(), group_id = p_group_id, gifter_id = v_uid
       where id = v_board.id;
-    -- 완성 알림(→ 푸시). 소원권은 주인이 직접 수령.
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-      values (p_owner_id, v_uid, 'gift',
-              coalesce(public.notif_member_name(p_group_id, v_uid), '') || ' 님이 칭찬 스티커판을 완성했어요',
-              '칭찬 스티커에서 소원권을 수령하세요 🎉', p_group_id);
+    select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('praise', jsonb_build_object('actor', v_pactor)) nr;
+    if v_nt_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+        values (p_owner_id, v_uid, 'praise', v_nt_t, v_nt_b, p_group_id);
+    end if;
+  else
+    select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('praise_new', jsonb_build_object('actor', v_pactor, 'reason', v_reason)) nr;
+    if v_nt_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+        values (p_owner_id, v_uid, 'praise_new', v_nt_t, coalesce(nullif(v_nt_b, ''), v_reason), p_group_id);
+    end if;
   end if;
-end;
-$$;
+end $$;
 
 -- 스티커 내용 수정(붙인 사람만, 삭제 불가)
 create or replace function public.praise_edit(p_sticker_id uuid, p_reason text)
