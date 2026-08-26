@@ -39,6 +39,9 @@
 --  schema-board.sql, schema-error-reports.sql 에 이 파일과 동일한(하드코딩 폴백 제거된)
 --  최종 버전으로 반영돼 있는지 교차 확인 완료.
 --
+--  ⚠️ use_ledboard() 는 이 파일에 있지만 led_banners 테이블은 schema-premium-items.sql
+--  로 이관됐다 — 새 환경에는 그 파일을 이 파일보다 먼저(또는 최소 같이) 적용해야 한다.
+--
 --  notif_render() 의 최신 버전(아래)은 `notif_templates.active` 컬럼을 참조합니다.
 --  이 컬럼은 admin-notif-active.sql(이 번들에 포함되지 않음)에서 추가되며,
 --  admin_set_notif() 도 그 파일에서 6번째 인자(p_active)를 받는 버전으로 다시
@@ -48,6 +51,63 @@
 --  "column active does not exist" 런타임 오류가 납니다).
 -- =============================================================
 
+
+-- =============================================================
+--  0. 테이블: notifications(알림 레코드) + notification_prefs(카테고리별 푸시 on/off)
+--     — schema-v2.sql 에서 이관(2차 리포 정리). 알림 발송 로직(트리거/RPC)이 아니라
+--     "알림이 실제로 쌓이는 테이블"과 "유저별 수신 설정"이라 여기(알림 묶음)가 제자리.
+-- =============================================================
+
+create table if not exists public.notifications (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id)      on delete cascade, -- 수신자
+  actor_id   uuid references public.profiles(id)               on delete set null, -- 행위자
+  type       text not null,   -- reply | task_comment | new_task | new_member | accept | ...
+  title      text not null,
+  body       text,
+  group_id   uuid references public.groups(id)                 on delete cascade,
+  task_id    uuid references public.tasks(id)                  on delete cascade,
+  comment_id uuid references public.task_comments(id)          on delete cascade,
+  note_id    uuid,   -- 선물/커플 링 등 알림이 가리키는 쪽지(수령 여부로 이동 목적지 결정)
+  is_read    boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user
+  on public.notifications(user_id, is_read, created_at desc);
+alter table public.notifications enable row level security;
+
+-- 본인 알림만 조회/읽음처리/삭제 가능. INSERT 는 트리거/RPC(정의자 권한)만 수행.
+drop policy if exists notif_select on public.notifications;
+create policy notif_select on public.notifications
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists notif_update on public.notifications;
+create policy notif_update on public.notifications
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists notif_delete on public.notifications;
+create policy notif_delete on public.notifications
+  for delete to authenticated using (user_id = auth.uid());
+
+-- 알림 카테고리별 푸시 설정 (OFF 여도 알림 행은 생성, 푸시만 생략)
+create table if not exists public.notification_prefs (
+  user_id    uuid primary key references public.profiles(id) on delete cascade,
+  new_member boolean not null default true,
+  new_task   boolean not null default true,
+  accept     boolean not null default true,
+  comment    boolean not null default true,  -- task_comment + reply
+  reminder   boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+alter table public.notification_prefs enable row level security;
+
+drop policy if exists np_select on public.notification_prefs;
+create policy np_select on public.notification_prefs
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists np_insert on public.notification_prefs;
+create policy np_insert on public.notification_prefs
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists np_update on public.notification_prefs;
+create policy np_update on public.notification_prefs
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- =============================================================
 --  1. 테이블: notif_templates
@@ -102,6 +162,23 @@ end $$;
 create or replace function public.notif_noun(p_type text)
 returns text language sql immutable as $$
   select '위시';
+$$;
+
+-- '수락' 용어(그룹 유형별). schema-v2.sql 에서 이관.
+create or replace function public.notif_accept_term(p_type text)
+returns text language sql immutable as $$
+  select case when p_type = 'ilhaging' then '일정 추가' else '놀기 신청' end;
+$$;
+
+-- 그룹 안에서 보여줄 표시 닉네임(없으면 '멤버') — 알림 문구 조립에 광범위하게 쓰이는 헬퍼.
+-- schema-v2.sql 에서 이관.
+create or replace function public.notif_member_name(p_group_id uuid, p_user_id uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select coalesce(nullif(gm.display_nickname, ''), '멤버')
+  from public.group_members gm
+  join public.profiles p on p.id = gm.user_id
+  where gm.group_id = p_group_id and gm.user_id = p_user_id
+  limit 1;
 $$;
 
 -- 관리자 조회 RPC
@@ -538,6 +615,28 @@ end;
 $$;
 grant execute on function public.use_friend_ring(uuid, text) to authenticated;
 
+-- 우정 링 수령: 쪽지 claimed 처리 + 내 인벤토리에 장착(used) 우정 링 생성. 거절 없음
+-- (커플 링과 달리 즉시 적용이라 거절 개념이 없다). schema-v2.sql 에서 이관.
+create or replace function public.claim_friend_ring(p_note_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare n public.notes;
+begin
+  select * into n from public.notes where id = p_note_id;
+  if n.id is null or n.recipient_id <> auth.uid() or n.kind <> 'friend_ring' then
+    raise exception '수령할 수 없는 선물입니다.'; end if;
+  if n.claimed then raise exception '이미 수령했어요.'; end if;
+
+  update public.notes set claimed = true, is_read = true where id = n.id;
+
+  if not exists (select 1 from public.user_items
+                 where user_id = auth.uid() and item_id = 'friend-ring' and status = 'used' and group_id = n.group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, from_user_id, from_name, from_avatar, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', n.sender_id, n.sender_name, n.sender_avatar, n.group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.claim_friend_ring(uuid) to authenticated;
+
 -- 약속 리마인더(cron 등에서 호출 — authenticated 에게 grant 하지 않음)
 create or replace function public.dispatch_due_reminders()
 returns integer language plpgsql security definer set search_path = public as $$
@@ -567,6 +666,16 @@ begin
   end loop;
   return n;
 end; $$;
+
+-- pg_cron 매분 스케줄(schema-v2.sql 에서 이관 — 원래도 dispatch_due_reminders() 와 세트였는데
+-- 함수만 여기로 옮겨오면서 스케줄 등록이 누락돼 있었다. 이미 있으면 교체).
+create extension if not exists pg_cron;
+do $$
+begin
+  perform cron.unschedule('nolging-reminders');
+exception when others then null;
+end $$;
+select cron.schedule('nolging-reminders', '* * * * *', $$select public.dispatch_due_reminders()$$);
 
 -- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)

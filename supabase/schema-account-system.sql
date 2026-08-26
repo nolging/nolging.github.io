@@ -9,13 +9,19 @@
 --   · system-notices.sql            — 관리자 시스템 공지(즉시/예약 발송) 푸시 알림
 --   · user-delete-cleanup.sql       — 계정 삭제 시 그룹 소유권 이전 + 소프트 탈퇴 처리
 --
+--  push_subscriptions 테이블(브라우저 푸시 구독 저장소) 자체는 schema-v2.sql 에 있던 것을
+--  2차 리포 정리로 이관(attach/detach RPC 가 이 파일에 있으니 테이블도 여기가 제자리).
+--
 --  적용 순서: supabase/schema.sql → supabase/schema-v2.sql → (다른 도메인 번들들) → 이 파일.
 --  이 파일은 이미 운영 DB에 개별 파일들로 순차 적용되어 있으므로, 운영 DB에 다시 실행할
 --  필요는 없습니다. 문서화 / 재해복구 / 새 환경(스테이징 등) 구축용으로 존재합니다.
 --
 --  외부 의존(다른 도메인 번들/스키마에 정의됨, 이 파일에서는 사용만 함):
---   is_admin(), is_couple_group(), is_friend_group(), grant_friend_ring_on_join(),
+--   is_admin(), is_couple_group(), is_friend_group(),
 --   notif_render(), notif_member_name(), notif_noun(), _quest_grade_ok()
+--  (grant_friend_ring_on_join() 은 2차 정리 때 이 파일 소관으로 확정 — join_group(_with_profile)
+--   이 바로 아래에서 호출하는데 정작 정의가 어디에도 없이 빠져 있던 것을 schema-v2.sql 에서
+--   찾아 이 파일로 옮겼다.)
 -- =============================================================
 
 
@@ -27,6 +33,33 @@
 -- 탈퇴해도 행은 남기고 left_at 만 기록 → 그 멤버가 쓴 위시/리뷰/댓글/쪽지는 삭제되지 않고,
 -- 닉네임·프로필도 계속 표시됨. 재가입하면 left_at 해제.
 alter table public.group_members add column if not exists left_at timestamptz;
+
+-- ── push_subscriptions: 브라우저 푸시 구독 저장소 (schema-v2.sql 에서 이관) ────────
+-- notifications INSERT → Database Webhook → Edge Function(send-push) 이 이 구독들로
+-- 푸시를 전송한다. attach/detach RPC(아래 3.)는 이 테이블을 다룬다.
+create table if not exists public.push_subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  endpoint   text not null,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_push_subscriptions_user on public.push_subscriptions(user_id);
+alter table public.push_subscriptions enable row level security;
+
+drop policy if exists ps_select on public.push_subscriptions;
+create policy ps_select on public.push_subscriptions
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists ps_insert on public.push_subscriptions;
+create policy ps_insert on public.push_subscriptions
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists ps_update on public.push_subscriptions;
+create policy ps_update on public.push_subscriptions
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists ps_delete on public.push_subscriptions;
+create policy ps_delete on public.push_subscriptions
+  for delete to authenticated using (user_id = auth.uid());
 
 -- ── push_subscriptions: (user_id, endpoint) 복합 UNIQUE로 교체 (push-multi-account.sql) ──
 -- 기존: endpoint 단독 UNIQUE → 계정 전환 시 이전 계정 구독이 삭제됨.
@@ -110,6 +143,24 @@ begin
   update public.group_members set left_at = now()
     where group_id = p_group_id and user_id = v_target and left_at is null;
 end $$;
+
+-- 이미 우정 링이 적용된 그룹에 새로 가입하면, 그 멤버 인벤토리에도 장착(used) 우정 링을
+-- 자동 지급(중복 방지). 우정 그룹이 아니면 아무것도 안 함. join_group(_with_profile) 이 호출
+-- (schema-v2.sql 에서 이관 — 이 파일 헤더의 "외부 의존"에 이름만 있고 정의가 빠져 있었다).
+create or replace function public.grant_friend_ring_on_join(p_group_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_group_member(p_group_id, auth.uid()) then return; end if;
+  if public.is_friend_group(p_group_id)
+     and not exists (select 1 from public.user_items
+                     where user_id = auth.uid() and item_id = 'friend-ring'
+                       and status = 'used' and group_id = p_group_id) then
+    insert into public.user_items(user_id, item_id, item_name, source, group_id, status, used_at)
+      values (auth.uid(), 'friend-ring', '우정 링', 'gift', p_group_id, 'used', now());
+  end if;
+end;
+$$;
+grant execute on function public.grant_friend_ring_on_join(uuid) to authenticated;
 
 -- 재가입: 남아 있던 행 재활성화(left_at 해제)
 create or replace function public.join_group(p_code text)

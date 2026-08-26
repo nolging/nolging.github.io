@@ -16,6 +16,14 @@
 --  ⚠️ 이미 운영 DB에는 원본 파일들이 순서대로 적용되어 있으므로, 이 파일을 운영 DB에
 --  다시 실행할 필요는 없다. schema.sql + schema-v2.sql 적용 후 "새 환경을 처음부터
 --  세팅"하거나 재해복구가 필요할 때, 혹은 문서화 목적으로 참고하기 위한 파일이다.
+--
+--  2차 정리(schema-v2.sql 분리)로 led_banners 테이블 + led_color_ok/edit_led_banner/
+--  stop_led_banner, unapply_group_theme() 도 이 파일로 이관했다 — 전부 schema-v2.sql 에
+--  있었는데 정작 참조하는 my_led_banner/takeover_ledboard/apply_group_theme(이 파일)가
+--  이미 있어서 빠진 걸 알아채기 어려웠다.
+--  ⚠️ use_ledboard() 는 schema-notifications.sql 에 있는데 led_banners 테이블(이 파일)을
+--  쓰므로, 새 환경에는 이 파일을 schema-notifications.sql 보다 먼저(또는 최소 같이)
+--  적용해야 한다.
 -- =============================================================
 
 
@@ -193,6 +201,65 @@ begin
   return n;
 end;
 $$;
+
+-- 전광판(LED 배너) 원본 테이블 + 색상 검증 헬퍼 + 문구/색상 수정·중단 RPC.
+-- schema-v2.sql 에서 이관 — my_led_banner/takeover_ledboard(이 파일)와 use_ledboard
+-- (schema-notifications.sql)가 이 테이블을 참조하는데 테이블 자체가 어디에도 없었다.
+-- ⚠️ 순서: use_ledboard 가 이 테이블을 쓰므로, 새 환경에는 이 파일을
+--   schema-notifications.sql 보다 먼저(또는 최소한 같이) 적용해야 한다.
+create table if not exists public.led_banners (
+  id         uuid primary key default gen_random_uuid(),
+  group_id   uuid not null references public.groups(id)   on delete cascade,
+  owner_id   uuid not null references public.profiles(id) on delete cascade,
+  text       text not null,
+  color      text not null default 'amber',
+  active     boolean not null default true,
+  started_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_led_banners_group_active on public.led_banners(group_id) where active;
+alter table public.led_banners enable row level security;
+
+-- 커플 그룹 멤버(둘)만 조회. 쓰기는 정의자 함수만.
+drop policy if exists led_banners_select on public.led_banners;
+create policy led_banners_select on public.led_banners
+  for select to authenticated
+  using (public.is_group_member(group_id, auth.uid()) or public.is_admin(auth.uid()));
+
+create or replace function public.led_color_ok(p_color text)
+returns text language sql immutable as $$
+  select case when lower(coalesce(nullif(btrim(p_color), ''), 'amber'))
+                   in ('amber','red','green','blue','pink','cyan')
+              then lower(btrim(p_color)) else 'amber' end;
+$$;
+
+-- 전광판 문구/색상 수정 (게재한 본인만)
+create or replace function public.edit_led_banner(p_text text, p_color text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_id uuid; v_color text;
+begin
+  if p_text is null or btrim(p_text) = '' then raise exception '문구를 입력해 주세요.'; end if;
+  if char_length(btrim(p_text)) > 60 then raise exception '문구는 60자까지 입력할 수 있어요.'; end if;
+  v_color := public.led_color_ok(p_color);
+  select id into v_id from public.led_banners
+   where owner_id = auth.uid() and active and expires_at > now()
+   order by started_at desc limit 1;
+  if v_id is null then raise exception '수정할 전광판이 없어요.'; end if;
+  update public.led_banners set text = btrim(p_text), color = v_color where id = v_id;
+end;
+$$;
+grant execute on function public.edit_led_banner(text, text) to authenticated;
+
+-- 전광판 게재 중단 (게재한 본인만) — 24시간 전이라도 즉시 내림
+create or replace function public.stop_led_banner()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update public.led_banners set active = false
+   where owner_id = auth.uid() and active and expires_at > now();
+end;
+$$;
+grant execute on function public.stop_led_banner() to authenticated;
 
 -- 3-6) 게재자 닉네임을 함께 반환하는 내 전광판 조회 (반환 컬럼 추가 → drop 후 재생성).
 drop function if exists public.my_led_banner();
@@ -592,6 +659,23 @@ begin
 end;
 $$;
 grant execute on function public.apply_group_theme(uuid, text) to authenticated;
+
+-- 적용 해제: 아이템을 다시 미적용(active)으로 되돌리고 그룹 테마 제거. schema-v2.sql 에서 이관.
+create or replace function public.unapply_group_theme(p_theme text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_item public.user_items;
+begin
+  select * into v_item from public.user_items
+    where user_id = auth.uid() and item_id = 'theme-' || p_theme and status = 'used'
+    order by used_at desc nulls last limit 1 for update;
+  if v_item.id is null then raise exception '적용 중인 테마가 없어요.'; end if;
+  update public.user_items set status = 'active', group_id = null where id = v_item.id;
+  if v_item.group_id is not null then
+    update public.groups set deco_theme = null where id = v_item.group_id and deco_theme = p_theme;
+  end if;
+end;
+$$;
+grant execute on function public.unapply_group_theme(text) to authenticated;
 
 
 -- =====================================================================
