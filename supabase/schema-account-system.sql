@@ -9,6 +9,9 @@
 --   · system-notices.sql            — 관리자 시스템 공지(즉시/예약 발송) 푸시 알림
 --   · user-delete-cleanup.sql       — 계정 삭제 시 그룹 소유권 이전 + 소프트 탈퇴 처리
 --
+--  push_subscriptions 테이블(브라우저 푸시 구독 저장소) 자체는 schema-v2.sql 에 있던 것을
+--  2차 리포 정리로 이관(attach/detach RPC 가 이 파일에 있으니 테이블도 여기가 제자리).
+--
 --  적용 순서: supabase/schema.sql → supabase/schema-v2.sql → (다른 도메인 번들들) → 이 파일.
 --  이 파일은 이미 운영 DB에 개별 파일들로 순차 적용되어 있으므로, 운영 DB에 다시 실행할
 --  필요는 없습니다. 문서화 / 재해복구 / 새 환경(스테이징 등) 구축용으로 존재합니다.
@@ -27,6 +30,33 @@
 -- 탈퇴해도 행은 남기고 left_at 만 기록 → 그 멤버가 쓴 위시/리뷰/댓글/쪽지는 삭제되지 않고,
 -- 닉네임·프로필도 계속 표시됨. 재가입하면 left_at 해제.
 alter table public.group_members add column if not exists left_at timestamptz;
+
+-- ── push_subscriptions: 브라우저 푸시 구독 저장소 (schema-v2.sql 에서 이관) ────────
+-- notifications INSERT → Database Webhook → Edge Function(send-push) 이 이 구독들로
+-- 푸시를 전송한다. attach/detach RPC(아래 3.)는 이 테이블을 다룬다.
+create table if not exists public.push_subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  endpoint   text not null,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_push_subscriptions_user on public.push_subscriptions(user_id);
+alter table public.push_subscriptions enable row level security;
+
+drop policy if exists ps_select on public.push_subscriptions;
+create policy ps_select on public.push_subscriptions
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists ps_insert on public.push_subscriptions;
+create policy ps_insert on public.push_subscriptions
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists ps_update on public.push_subscriptions;
+create policy ps_update on public.push_subscriptions
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists ps_delete on public.push_subscriptions;
+create policy ps_delete on public.push_subscriptions
+  for delete to authenticated using (user_id = auth.uid());
 
 -- ── push_subscriptions: (user_id, endpoint) 복합 UNIQUE로 교체 (push-multi-account.sql) ──
 -- 기존: endpoint 단독 UNIQUE → 계정 전환 시 이전 계정 구독이 삭제됨.

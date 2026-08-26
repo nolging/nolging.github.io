@@ -28,12 +28,50 @@
 --  함수를 호출한다 — 두 함수는 이 파일 밖(알림 관련 통합본)에 정의되어 있으므로
 --  이 파일만 단독으로 새 환경에 실행하기 전에 notifications 도메인 통합본도
 --  함께 적용되어 있어야 한다.
+--
+--  2차 정리(schema-v2.sql 분리)로 tasks 의 약속 캐시 컬럼 7개와 task_participants
+--  테이블(참여자 풀)도 이 파일로 이관했다 — 둘 다 원래 schema-v2.sql 에 있었고,
+--  이 파일의 함수들이 이미 광범위하게 참조하고 있었는데 테이블 자체는 없었다.
+--  reschedule_task() 는 schema-v2.sql 에 있었지만 이 파일 자체 주석에 "폐기(프론트는
+--  update_appointment + set_task_participants 를 각각 호출)"라고 적혀 있어 죽은
+--  함수로 판단, 이관하지 않았다.
 -- =============================================================
 
 
 -- =============================================================
 --  1. 테이블
 -- =============================================================
+
+-- tasks: 약속 캐시 컬럼(schema-v2.sql 에서 이관). "가장 가까운 미래(없으면 가장 최근
+-- 과거) 약속"을 비추는 캐시로, appointments 도입 이후에도 그대로 유지되며 트리거로
+-- 자동 동기화된다(그룹 상세 카드 등 기존 조회 로직이 이 컬럼들을 그대로 쓰기 때문).
+alter table public.tasks add column if not exists scheduled_at timestamptz;
+alter table public.tasks add column if not exists repeat_rule  text;
+alter table public.tasks add column if not exists scheduled_time_set boolean not null default true;
+alter table public.tasks add column if not exists repeat_until date;
+alter table public.tasks add column if not exists remind_min int;         -- 분(약속 시간 기준 전), null=없음, 0=정시
+alter table public.tasks add column if not exists remind_at  timestamptz; -- 계산된 알림 시각
+alter table public.tasks add column if not exists reminded   boolean not null default false;
+
+-- 약속 참여 멤버 풀(schema-v2.sql 에서 이관). "위시를 약속 상태로 처음 넘길 때 정한
+-- 참여자 풀" — 아래 appointments 도입 이후에도 폐기되지 않고, 그 풀 안에서 약속마다
+-- (appointment_participants 로) 실제 참여자를 따로 고르는 구조로 계속 쓰인다.
+create table if not exists public.task_participants (
+  task_id    uuid not null references public.tasks(id)     on delete cascade,
+  user_id    uuid not null references public.profiles(id)  on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (task_id, user_id)
+);
+alter table public.task_participants enable row level security;
+
+-- 그룹 멤버는 참여자 목록 조회 가능(쓰기는 이 파일의 RPC 로만)
+drop policy if exists tp_select on public.task_participants;
+create policy tp_select on public.task_participants
+  for select to authenticated
+  using (
+    public.is_group_member((select group_id from public.tasks where id = task_id), auth.uid())
+    or public.is_admin(auth.uid())
+  );
 
 -- 약속(위시당 여러 개 가능). tasks 의 기존 scheduled_at/repeat_rule/... 컬럼은
 -- "가장 가까운 미래(없으면 가장 최근 과거) 약속"을 비추는 캐시로 유지되며,
