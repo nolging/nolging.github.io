@@ -372,7 +372,7 @@ export default function Store() {
                     <input type="text" inputMode="numeric" placeholder="0" disabled={busy}
                       value={donateAmount ? num(donateAmountNum) : ''}
                       onChange={(e) => setDonateAmount(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, ''))} />
-                    {myBalance != null && <span className="st-donate-balance">/{num(myBalance)}</span>}
+                    {myBalance != null && <span className="st-donate-balance">/ {num(myBalance)}</span>}
                   </div>
                   {donateOverBalance && <div className="st-donate-warn">보유한 츄르보다 많아요.</div>}
 
