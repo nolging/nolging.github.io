@@ -213,6 +213,11 @@ begin
     when 'r_kiss'          then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_kiss' and at >= p_since)
     when 'r_accept'        then exists(select 1 from public.tasks where assignee_id = v_uid and accepted_at >= p_since)
     when 'r_waterbomb'     then exists(select 1 from public.notes where sender_id = v_uid and timer_seconds is not null and created_at >= p_since)
+    -- 관리자가 관리자 페이지에서 직접 등록한 퀘스트(r_item_present/r_purin_mic 와 동일 패턴).
+    -- 지금까지 이 case 가 빠져 있어서 always false 였음 — 익명(지우개) 쪽지를 보내도
+    -- 절대 완료 처리가 안 되던 버그(물풍선 폭탄과 동시에 떠서 같은 쪽지로 둘 다 조건을
+    -- 채웠을 때도 r_waterbomb 만 완료되고 이건 안 됐던 원인).
+    when 'r_eraser'        then exists(select 1 from public.notes where sender_id = v_uid and anonymous = true and created_at >= p_since)
     when 'r_deco'          then exists(select 1 from public.user_items where user_id = v_uid and item_id like 'deco-%' and status = 'used' and used_at >= p_since)
     when 'r_premium_shop'  then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_premium_shop' and at >= p_since)
     when 'r_review'        then exists(select 1 from public.task_reviews where author_id = v_uid and created_at >= p_since)
