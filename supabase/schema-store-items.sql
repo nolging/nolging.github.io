@@ -1,11 +1,14 @@
 -- =============================================================
---  프리미엄 소비/효과 아이템 + 그룹 공용 꾸미기 테마(THEME) — 통합본
---  다음 15개의 개별 SQL 파일을 하나로 합친 것 (저장소 정리 작업의 일부로 생성):
+--  상점 아이템(일반 + 프리미엄) 사용/효과 로직 + 그룹 공용 꾸미기 테마(THEME) — 통합본
+--  (구 파일명 schema-premium-items.sql — 프리미엄 전용이 아니라 폴라로이드 필름/물풍선 폭탄
+--   같은 일반 아이템의 기능도 함께 관리하고 있어 이름에서 premium 을 뺐다.)
+--  다음 16개의 개별 SQL 파일을 하나로 합친 것 (저장소 정리 작업의 일부로 생성):
 --    premium-items.sql, premium-items-open.sql, nametag-auto-revert.sql,
 --    led-takeover.sql, megaphone.sql, megaphone-notif.sql,
 --    purin-mic.sql, purin-mic-lock-notify.sql, purin-mic-mirror-selfheal.sql,
 --    polaroid-film.sql, water-balloon.sql,
---    theme-items.sql, theme-waterpark.sql, theme-swap-fix.sql, theme-swap-crossuser.sql
+--    theme-items.sql, theme-waterpark.sql, theme-swap-fix.sql, theme-swap-crossuser.sql,
+--    donate-coin.sql(길냥이 후원)
 --
 --  각 객체는 위 파일들에 걸쳐 여러 번 재정의된 경우 "가장 마지막" 버전만 담았다.
 --  (예: use_purin_mic / purin_mic_state / dispatch_purin_mic_reverts 는
@@ -676,6 +679,40 @@ begin
 end;
 $$;
 grant execute on function public.unapply_group_theme(text) to authenticated;
+
+-- 3-19) 길냥이 후원: 회원 간 츄르 직접 후원(구매/재고 없이 순수 coin_ledger 이동).
+--       후원한 회원(-금액)과 받는 회원(+금액) 양쪽에 원장을 남기며, reason 에는 서로의 닉네임을 표기.
+drop function if exists public.donate_coin(uuid, uuid, integer);
+create or replace function public.donate_coin(p_group_id uuid, p_recipient_id uuid, p_amount integer)
+returns integer language plpgsql security definer set search_path = public as $$
+declare v_balance integer; v_sender text; v_recipient text;
+begin
+  if p_amount is null or p_amount <= 0 then
+    raise exception '후원할 금액을 입력해 주세요.'; end if;
+  if p_recipient_id = auth.uid() then
+    raise exception '자기 자신에게는 후원할 수 없어요.'; end if;
+  if not public.is_group_member(p_group_id, auth.uid()) then
+    raise exception '그룹 멤버만 후원할 수 있습니다.'; end if;
+  if not public.is_group_member(p_group_id, p_recipient_id) then
+    raise exception '후원할 대상이 그룹 멤버가 아닙니다.'; end if;
+
+  select coalesce(sum(delta), 0)::integer into v_balance
+    from public.coin_ledger where user_id = auth.uid();
+  if v_balance < p_amount then
+    raise exception '츄르가 부족해요.'; end if;
+
+  v_sender    := public.notif_member_name(p_group_id, auth.uid());
+  v_recipient := public.notif_member_name(p_group_id, p_recipient_id);
+
+  insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id, created_by)
+    values (auth.uid(), -p_amount, '길냥이 츄르 후원 - ' || v_recipient, 'donation', p_recipient_id, auth.uid());
+  insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id, created_by)
+    values (p_recipient_id, p_amount, '길냥이 츄르 후원 - ' || v_sender, 'donation', auth.uid(), auth.uid());
+
+  return v_balance - p_amount;
+end;
+$$;
+grant execute on function public.donate_coin(uuid, uuid, integer) to authenticated;
 
 
 -- =====================================================================

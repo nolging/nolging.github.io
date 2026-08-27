@@ -27,8 +27,8 @@
 
 ## 핵심 파일
 - 프론트: `src/lib/api.js`(모든 쿼리), `src/context/AuthContext.jsx`, `src/pages/*`, `src/components/*`
-- 백엔드: `supabase/schema.sql`(최초 기반 스키마) + 도메인별 통합본 `supabase/schema-*.sql`(core·admin·appointments·avatar-deco·board·notes·error-reports·notifications·quests·qworkshop·store·premium-items·minigames·account-system·economy-store·realtime-games), `supabase/functions/admin-create-user/index.ts`
-  — 예전엔 개별 파일 100개+ 를 그때그때 추가하는 방식이었는데, 리포 정리로 도메인별 통합본만 남기고 원본은 삭제했다. 새 환경 셋업 순서는 `schema.sql` → `schema-core.sql` → 나머지 도메인 파일(순서 무관, 단 파일 헤더에 적힌 상호 의존만 지키면 됨 — 예: `schema-premium-items.sql` 은 `schema-notifications.sql` 보다 먼저).
+- 백엔드: `supabase/schema.sql`(최초 기반 스키마) + 도메인별 통합본 `supabase/schema-*.sql`(core·admin·appointments·avatar-deco·board·notes·error-reports·notifications·quests·qworkshop·store·store-items·minigames·account-system·economy-store·realtime-games), `supabase/functions/admin-create-user/index.ts`
+  — 예전엔 개별 파일 100개+ 를 그때그때 추가하는 방식이었는데, 리포 정리로 도메인별 통합본만 남기고 원본은 삭제했다. 새 환경 셋업 순서는 `schema.sql` → `schema-core.sql` → 나머지 도메인 파일(순서 무관, 단 파일 헤더에 적힌 상호 의존만 지키면 됨 — 예: `schema-store-items.sql` 은 `schema-notifications.sql` 보다 먼저).
 
 ## 로컬 실행 (새 환경)
 ```bash
