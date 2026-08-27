@@ -22,7 +22,7 @@ npm run build    # 프로덕션 빌드
 
 ## 구조
 - 프론트: `src/lib/api.js`(모든 쿼리), `src/context/AuthContext.jsx`, `src/pages/*`, `src/components/*`, `src/lib/constants.js`
-- 백엔드: `supabase/schema.sql`(기반) + 도메인별 `supabase/schema-*.sql` 통합본(core/admin/appointments/avatar-deco/board/notes/error-reports/notifications/quests/qworkshop/store/premium-items/minigames/account-system/economy-store/realtime-games), `supabase/functions/admin-create-user/index.ts`
+- 백엔드: `supabase/schema.sql`(기반) + 도메인별 `supabase/schema-*.sql` 통합본(core/admin/appointments/avatar-deco/board/notes/error-reports/notifications/quests/qworkshop/store/store-items/minigames/account-system/economy-store/realtime-games), `supabase/functions/admin-create-user/index.ts`
 
 ## 환경변수 (VITE_ 접두사)
 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(공개 안전), `VITE_EMAIL_DOMAIN=nolging.app`

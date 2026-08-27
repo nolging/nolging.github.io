@@ -265,7 +265,7 @@ grant execute on function public.my_friend_group_ids() to authenticated;
 -- =============================================================
 --  groups.deco_theme 에 테마 id 저장(null=없음). 테마 아이템 id = 'theme-'||deco_theme.
 --  이 컬럼을 쓰는 apply_group_theme/unapply_group_theme 함수 자체는
---  schema-premium-items.sql 에 최신본이 있으므로 여기서는 컬럼만 추가한다.
+--  schema-store-items.sql 에 최신본이 있으므로 여기서는 컬럼만 추가한다.
 alter table public.groups add column if not exists deco_theme text;
 
 -- =============================================================

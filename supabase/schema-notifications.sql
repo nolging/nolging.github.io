@@ -35,11 +35,11 @@
 --    submit_error_report, admin_send_error_report, reply_error_report
 --  이들은 폴라로이드/확성기/푸린 마이크/비밀 게시판/오류 리포트라는 별도 도메인의
 --  핵심 로직을 담고 있어 알림 도메인 순수성을 지키기 위해 이 파일에는 포함하지
---  않았습니다 — 각각 schema-premium-items.sql(폴라로이드/확성기/푸린 마이크),
+--  않았습니다 — 각각 schema-store-items.sql(폴라로이드/확성기/푸린 마이크),
 --  schema-board.sql, schema-error-reports.sql 에 이 파일과 동일한(하드코딩 폴백 제거된)
 --  최종 버전으로 반영돼 있는지 교차 확인 완료.
 --
---  ⚠️ use_ledboard() 는 이 파일에 있지만 led_banners 테이블은 schema-premium-items.sql
+--  ⚠️ use_ledboard() 는 이 파일에 있지만 led_banners 테이블은 schema-store-items.sql
 --  로 이관됐다 — 새 환경에는 그 파일을 이 파일보다 먼저(또는 최소 같이) 적용해야 한다.
 --
 --  notif_render() 의 최신 버전(아래)은 `notif_templates.active` 컬럼을 참조합니다.
