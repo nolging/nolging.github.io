@@ -8,7 +8,7 @@ import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import PawIcon from '../components/PawIcon'
 import { decoSlot } from '../components/AvatarDeco'
-import { listStoreItems, purchaseItem, giftItem, donateCoin, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest, markStoreSeen } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, donateCoin, getMyCoinBalance, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest, markStoreSeen } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
@@ -71,10 +71,15 @@ export default function Store() {
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
   const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift'|'donation', text }
-  // 길냥이 후원(donation) 전용 상태: 대상자 선택 + 후원 금액
+  // 길냥이 후원(donation) 전용 상태: 대상자 선택 + 후원 금액 + 내 잔액(한도 표시/검증용)
   const [donateRecipient, setDonateRecipient] = useState(null)
   const [donateAmount, setDonateAmount] = useState('')
   const [donatePickOpen, setDonatePickOpen] = useState(false)
+  const [myBalance, setMyBalance] = useState(null)
+  useEffect(() => {
+    if (selected?.id !== 'donation') return
+    getMyCoinBalance().then(setMyBalance).catch(() => {})
+  }, [selected])
   useEffect(() => {
     let on = true
     listStoreItems()
@@ -154,11 +159,16 @@ export default function Store() {
     if (!window.confirm(`${num(amount)} 츄르를 후원할까요?`)) return
     setBusy(true); setNotice(null)
     try {
-      await donateCoin(donateRecipient.groupId, donateRecipient.userId, amount)
+      const bal = await donateCoin(donateRecipient.groupId, donateRecipient.userId, amount)
+      setMyBalance(bal)
       await refreshCoin?.()
       setNotice({ type: 'ok', kind: 'donation', who: donateRecipient.name, amount })
     } catch (err) { setNotice({ type: 'err', text: err.message }) } finally { setBusy(false) }
   }
+
+  const donateAmountNum = parseInt(donateAmount, 10) || 0
+  const donateOverBalance = myBalance != null && donateAmountNum > myBalance
+  const donateReady = !!donateRecipient && donateAmountNum > 0
 
   const done = notice?.type === 'ok'
   const hasPremium = hasCouple || hasFriend
@@ -352,20 +362,22 @@ export default function Store() {
                       <span className="nc-label">To.</span>
                       {donateRecipient
                         ? <span className="nc-to-val"><Avatar src={donateRecipient.avatar} name={donateRecipient.name} size={26} />{donateRecipient.name}</span>
-                        : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
+                        : <span className="nc-placeholder">후원할 길냥이를 선택하세요</span>}
                       <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
                     </button>
                   </div>
 
                   <div className="st-donate-amount">
                     <PawIcon className="st-paw" />
-                    <input type="number" inputMode="numeric" min="1" placeholder="0" disabled={busy}
-                      value={donateAmount}
-                      onChange={(e) => setDonateAmount(e.target.value.replace(/[^0-9]/g, ''))} />
+                    <input type="text" inputMode="numeric" placeholder="0" disabled={busy}
+                      value={donateAmount ? num(donateAmountNum) : ''}
+                      onChange={(e) => setDonateAmount(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, ''))} />
+                    {myBalance != null && <span className="st-donate-balance">/{num(myBalance)}</span>}
                   </div>
+                  {donateOverBalance && <div className="st-donate-warn">보유한 츄르보다 많아요.</div>}
 
                   <div className="st-detail-actions">
-                    <button type="button" className="st-btn-buy" disabled={busy} onClick={handleDonate}>
+                    <button type="button" className="st-btn-buy" disabled={busy || !donateReady} onClick={handleDonate}>
                       {busy ? '처리 중…' : '후원하기'}
                     </button>
                   </div>
