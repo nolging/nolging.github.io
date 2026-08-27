@@ -3152,6 +3152,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 /* 프로필 꾸미기 미리보기: 원 없이 꾸미기 아이템만 크게 */
 .store-deco { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .deco-preview { width: 84%; height: 84%; overflow: hidden; }
+/* 길냥이 후원: 빼꼼 고양이 + 깡통 */
+.store-donation { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.donation-cat { width: 78%; height: 78%; overflow: visible; }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .st-paw { width: 12px; height: 12px; flex-shrink: 0; }
@@ -3185,6 +3188,13 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .st-total-l { font-size: 12.5px; font-weight: 700; color: #8b8798; }
 .st-total-v { display: flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 800; color: #191722; }
 .st-total-v .st-paw { color: #191722; }
+/* 길냥이 후원: 후원 금액 입력(발바닥 아이콘 좌측 고정, 숫자 우측 정렬) */
+.st-donate-amount { margin-top: 12px; display: flex; align-items: center; gap: 8px; background: #f7f6fa; border-radius: 999px; padding: 12px 18px; }
+.st-donate-amount input { flex: 1; min-width: 0; border: none; background: none; outline: none; text-align: right;
+  font-family: inherit; font-size: 16px; font-weight: 800; color: #191722; }
+.st-donate-amount input::placeholder { color: #b0b0b8; font-weight: 600; }
+.st-donate-amount input::-webkit-outer-spin-button, .st-donate-amount input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.st-donate-amount input[type=number] { -moz-appearance: textfield; }
 .st-detail-actions { margin-top: 14px; display: flex; gap: 9px; }
 .st-btn-ghost, .st-btn-buy { height: 50px; border-radius: 999px; font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
 .st-btn-ghost { flex: 1; border: 1.5px solid #e4e2ea; background: #fff; color: #191722; }

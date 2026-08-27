@@ -6,6 +6,7 @@ import ThemeBubbles from './ThemeBubbles'
 import ThemeFireworks from './ThemeFireworks'
 import ThemeWaterpark from './ThemeWaterpark'
 import { DecoPreview } from './AvatarDeco'
+import DonationCat from './DonationCat'
 
 // 아이템 이미지: 업로드 SVG(svg prop 또는 카탈로그) 우선 → public/store/{id}.svg → 이모지 폴백.
 // - 카세트('cassette')는 플랫폼에 따라 airpods/buds 아이콘으로 자동 매핑.
@@ -44,6 +45,13 @@ export default function StoreItemImage({ id, emoji, className, svg }) {
     return (
       <span className={`${className} store-wp`} aria-hidden="true">
         <ThemeWaterpark variant="preview" />
+      </span>
+    )
+  }
+  if (id === 'donation') {
+    return (
+      <span className={`${className} store-donation`} aria-hidden="true">
+        <DonationCat />
       </span>
     )
   }

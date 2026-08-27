@@ -1776,6 +1776,18 @@ export async function giftItem(itemId, groupId, recipientId, qty = 1, message = 
   return Number(data) || 0
 }
 
+// 길냥이 후원: 회원 간 츄르 직접 후원(구매/재고 없이 coin_ledger 이동만).
+export async function donateCoin(groupId, recipientId, amount) {
+  const { data, error } = await supabase.rpc('donate_coin', { p_group_id: groupId, p_recipient_id: recipientId, p_amount: amount })
+  if (error) {
+    if (error.code === 'PGRST202' || /donate_coin/.test(error.message || '')) {
+      throw new Error('후원 기능이 아직 DB에 설정되지 않았습니다. (donate_coin 함수를 먼저 적용해 주세요)')
+    }
+    throw error
+  }
+  return Number(data) || 0
+}
+
 // 쪽지에서 아이템 선물: 내 인벤토리에서 아이템을 꺼내 상대 쪽지함으로(수령 시 상대 인벤토리로).
 // gift_item(츄르로 구매해 선물)과 달리 보유 아이템을 소모한다.
 export async function giftOwnedItem(itemId, groupId, recipientId, qty = 1, { message = null, anonymous = false } = {}) {
