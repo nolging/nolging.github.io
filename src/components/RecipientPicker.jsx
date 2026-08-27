@@ -65,12 +65,16 @@ export default function RecipientPicker({ open, onClose, onPick, title = '받는
   }), [groups, myId, exclude, include])
 
   // 그룹 선택 시: 나 외 멤버가 한 명뿐이면 자동 선택(추가 클릭 없이 '선택'만 누르면 됨),
-  // 여러 명이면 초기화해 직접 고르게 한다. (eligibleGroups 정의 이후에 두어 TDZ 방지)
+  // 여러 명이면 초기화해 직접 고르게 한다.
+  // ⚠️ eligibleGroups 가 아니라 groups 를 참조한다 — 호출부가 excludeGroupIds/includeGroupIds 를
+  // (기본값 [] 포함) 매 렌더마다 새 배열로 넘기면 eligibleGroups 참조가 매번 바뀌어, 이 effect가
+  // 리렌더마다 재실행되며 멤버 선택(setMemberId)을 곧바로 ''로 되돌려버리는 버그가 있었다
+  // (멤버가 1명뿐이면 항상 자동 선택돼 가려졌지만, 2명 이상이라 직접 눌러야 하는 경우 선택이 안 됐다).
   useEffect(() => {
-    const g = eligibleGroups.find((x) => x.id === groupId)
+    const g = groups.find((x) => x.id === groupId)
     const others = (g?.group_members || []).filter((m) => m.user_id !== myId)
     setMemberId(others.length === 1 ? others[0].user_id : '')
-  }, [groupId, eligibleGroups, myId])
+  }, [groupId, groups, myId])
 
   // 로딩/에러/실제 없음을 구분해 표시 (일시적 실패를 "그룹 없음"으로 오인하지 않게)
   const notReady = loading || !myId

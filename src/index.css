@@ -3190,9 +3190,11 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .st-total-v .st-paw { color: #191722; }
 /* 길냥이 후원: 후원 금액 입력(발바닥 아이콘 좌측 고정, 숫자 우측 정렬 + 보유 츄르 표기) */
 .st-donate-amount { margin-top: 12px; display: flex; align-items: center; gap: 4px; background: #f7f6fa; border-radius: 999px; padding: 12px 18px; }
-/* 전역 input 스타일(높이 46px 이상·자체 패딩·테두리)을 덮어써 합계 줄(.st-total)과 높이를 맞춘다 */
+/* 전역 input 스타일(높이 46px 이상·자체 패딩·테두리)을 덮어써 합계 줄(.st-total)과 높이를 맞춘다.
+   min-height 는 전역 규칙(input:not([type="checkbox"]):not([type="radio"]))이 클래스 선택자 2개치
+   특이도를 가져 일반적인 덮어쓰기로는 이기지 못하므로 !important 로 명시적으로 무효화한다. */
 .st-donate-amount input {
-  flex: 1; min-width: 0; min-height: 0; border: none; background: none; outline: none; text-align: right;
+  flex: 1; min-width: 0; min-height: 0 !important; border: none; background: none; outline: none; text-align: right;
   padding: 0; border-radius: 0; font-family: inherit; font-size: 16px; font-weight: 800; color: #191722;
 }
 .st-donate-amount input::placeholder { color: #b0b0b8; font-weight: 600; }
