@@ -12,14 +12,14 @@ export default function DonationCat() {
       <g className="login-cat-eye" style={{ transformOrigin: '41px 26px' }}>
         <circle cx="41" cy="26" r="6.5" fill="#ffd43b" /><circle cx="41.6" cy="26.6" r="4.6" fill="#191722" /><circle cx="38.6" cy="23.8" r="1.3" fill="#fff" />
       </g>
-      {/* 머리 위 후원용 깡통: 위(뚜껑)·아래(바닥) 모두 온전한 타원으로 보이게, 몸통은 그 사이 직사각형 */}
+      {/* 머리 위 후원용 깡통: 위(뚜껑)·아래(바닥) 모두 온전한 타원으로 보이게, 몸통은 그 사이 직사각형.
+          반짝이는 빛(흰색)은 바닥 타원보다 나중에(앞에) 그려 겹치는 부분도 위로 보이게 한다. */}
       <g transform="translate(32 -2)">
-        <ellipse cx="0" cy="-15" rx="3" ry="1.4" fill="none" stroke="#9298a6" strokeWidth="1.3" />
         <rect x="-10" y="-10" width="20" height="18" fill="#e2e5ec" />
         <rect x="-10" y="-2" width="20" height="10" fill="#ff8fab" />
-        <rect x="-6.5" y="-8" width="3.4" height="16" rx="1.7" fill="#fff" opacity=".55" />
         <ellipse cx="0" cy="8" rx="10" ry="3" fill="#ff8fab" />
-        <ellipse cx="0" cy="-13" rx="10" ry="3" fill="#dfe2ea" />
+        <rect x="-6.5" y="-8" width="3.4" height="16" rx="1.7" fill="#fff" opacity=".55" />
+        <ellipse cx="0" cy="-13" rx="10" ry="3" fill="#9298a6" />
       </g>
     </svg>
   )
