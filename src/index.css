@@ -3154,7 +3154,7 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .deco-preview { width: 84%; height: 84%; overflow: hidden; }
 /* 길냥이 후원: 빼꼼 고양이 + 깡통 */
 .store-donation { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-.donation-cat { width: 78%; height: 78%; overflow: visible; }
+.donation-cat { width: 84%; height: 100%; overflow: visible; }
 .st-card-name { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: #191722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-card-price { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 800; color: #7363e8; }
 .st-paw { width: 12px; height: 12px; flex-shrink: 0; }
