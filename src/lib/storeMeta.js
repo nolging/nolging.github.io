@@ -8,7 +8,7 @@ export function catOf(id, category) {
   if (id === 'couple-ring' || id === 'friend-ring' || id === 'wish') return 'special'
   if (String(id).startsWith('deco-')) return 'avatar'
   if (String(id).startsWith('theme-')) return 'theme'
-  if (id === 'nyangpito') return 'etc'
+  if (id === 'nyangpito' || id === 'donation') return 'etc'
   return 'feature'
 }
 
@@ -18,7 +18,7 @@ export const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
 // id 별 썸네일 배경(파스텔). 없으면 기본값(프리미엄=어두운 톤).
 const IMG_BG = {
   'couple-ring': '#fde8ee', 'friend-ring': '#e6eefd', 'wish': '#fff0d6', 'link': '#fde8ee',
-  'nyangpito': '#eaf4ec', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
+  'nyangpito': '#eaf4ec', 'donation': '#fdf0dd', 'cassette': '#fbf1d3', 'video': '#fde8ee', 'bluray': '#e6eefd',
   'eraser': '#e8f4ec', 'telescope': '#eeebfe', 'ledboard': '#332c52', 'waterbomb': '#e3f1fb',
   'polaroid-film': '#fdf1e6',
   'sticker-grape': '#332c52', 'sticker-apple': '#332c52',

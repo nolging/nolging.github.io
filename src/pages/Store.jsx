@@ -3,10 +3,12 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import GiftItemModal from '../components/GiftItemModal'
+import RecipientPicker from '../components/RecipientPicker'
+import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
 import PawIcon from '../components/PawIcon'
 import { decoSlot } from '../components/AvatarDeco'
-import { listStoreItems, purchaseItem, giftItem, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest, markStoreSeen } from '../lib/api'
+import { listStoreItems, purchaseItem, giftItem, donateCoin, ownsCoupleRing, listInventory, listCoupleGroups, listFriendGroups, touchQuest, markStoreSeen } from '../lib/api'
 import { CAT, CAT_ORDER, catOf, imgBgOf, itemName } from '../lib/storeMeta'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
@@ -68,7 +70,11 @@ export default function Store() {
   }, [premiumView]) // eslint-disable-line react-hooks/exhaustive-deps
   const [qty, setQty] = useState(1)
   const [invCounts, setInvCounts] = useState({})
-  const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift', text }
+  const [notice, setNotice] = useState(null) // { type:'ok'|'err', kind?:'buy'|'gift'|'donation', text }
+  // 길냥이 후원(donation) 전용 상태: 대상자 선택 + 후원 금액
+  const [donateRecipient, setDonateRecipient] = useState(null)
+  const [donateAmount, setDonateAmount] = useState('')
+  const [donatePickOpen, setDonatePickOpen] = useState(false)
   useEffect(() => {
     let on = true
     listStoreItems()
@@ -111,8 +117,14 @@ export default function Store() {
   }, [user?.id])
   useEffect(() => { loadCounts() }, [loadCounts])
 
-  function open(item) { setNotice(null); setBusy(false); setQty(1); setSelected(item) }
-  function close() { setSelected(null); setNotice(null); setBusy(false) }
+  function open(item) {
+    setNotice(null); setBusy(false); setQty(1); setSelected(item)
+    setDonateRecipient(null); setDonateAmount(''); setDonatePickOpen(false)
+  }
+  function close() {
+    setSelected(null); setNotice(null); setBusy(false)
+    setDonateRecipient(null); setDonateAmount(''); setDonatePickOpen(false)
+  }
 
   async function handleBuy() {
     if (!selected || busy) return
@@ -131,6 +143,21 @@ export default function Store() {
     if (!selected) return
     await giftItem(selected.id, r.groupId, r.userId, qty, message || null)
     await refreshCoin?.()
+  }
+
+  // 길냥이 후원: 후원할 길냥이 + 금액 확인 → 알러트 재확인 → coin_ledger 양방향 이동.
+  async function handleDonate() {
+    if (!selected || busy) return
+    if (!donateRecipient) { setNotice({ type: 'err', text: '후원할 길냥이를 선택해 주세요.' }); return }
+    const amount = parseInt(donateAmount, 10)
+    if (!amount || amount <= 0) { setNotice({ type: 'err', text: '후원할 금액을 입력해 주세요.' }); return }
+    if (!window.confirm(`${num(amount)} 츄르를 후원할까요?`)) return
+    setBusy(true); setNotice(null)
+    try {
+      await donateCoin(donateRecipient.groupId, donateRecipient.userId, amount)
+      await refreshCoin?.()
+      setNotice({ type: 'ok', kind: 'donation', who: donateRecipient.name, amount })
+    } catch (err) { setNotice({ type: 'err', text: err.message }) } finally { setBusy(false) }
   }
 
   const done = notice?.type === 'ok'
@@ -270,24 +297,34 @@ export default function Store() {
         ))
       )}
 
-      <Modal open={!!selected && !giftOpen} onClose={close} cardClassName="st-modal">
+      <Modal open={!!selected && !giftOpen && !donatePickOpen} onClose={close} cardClassName="st-modal">
         {selected && (done ? (
           <div className={`st-done ${notice.kind === 'gift' ? 'is-gift' : ''}`}>
             <div className="st-done-ico">
               {notice.kind === 'gift'
                 ? '🎁'
+                : notice.kind === 'donation'
+                ? '🐾'
                 : <svg width="30" viewBox="0 0 24 24" fill="none" stroke="#4a9d6a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
             </div>
-            <div className="st-done-t">{notice.kind === 'gift' ? '선물을 보냈어요!' : '구매 완료!'}</div>
+            <div className="st-done-t">{notice.kind === 'gift' ? '선물을 보냈어요!' : notice.kind === 'donation' ? '후원 완료!' : '구매 완료!'}</div>
             <div className="st-done-s">
               {notice.kind === 'gift'
                 ? <>{notice.who} 님에게 {selected.name}을(를)<br />선물로 보냈어요 🎀</>
+                : notice.kind === 'donation'
+                ? <>{notice.who} 님에게<br />{num(notice.amount)} 츄르를 후원했어요.</>
                 : <>{selected.name} {qty}개를 구매했어요.<br />인벤토리에서 확인할 수 있어요.</>}
             </div>
-            <button type="button" className="st-btn-buy st-btn-block" onClick={() => navigate(notice.kind === 'gift' ? '/notes' : '/inventory', notice.kind === 'gift' ? { state: { tab: 'sent' } } : undefined)}>
-              {notice.kind === 'gift' ? '보낸 쪽지함으로 가기' : '인벤토리로 이동'}
-            </button>
-            <button type="button" className="st-btn-text" onClick={close}>{notice.kind === 'gift' ? '닫기' : '계속 둘러보기'}</button>
+            {notice.kind === 'donation' ? (
+              <button type="button" className="st-btn-buy st-btn-block" onClick={close}>확인</button>
+            ) : (
+              <>
+                <button type="button" className="st-btn-buy st-btn-block" onClick={() => navigate(notice.kind === 'gift' ? '/notes' : '/inventory', notice.kind === 'gift' ? { state: { tab: 'sent' } } : undefined)}>
+                  {notice.kind === 'gift' ? '보낸 쪽지함으로 가기' : '인벤토리로 이동'}
+                </button>
+                <button type="button" className="st-btn-text" onClick={close}>{notice.kind === 'gift' ? '닫기' : '계속 둘러보기'}</button>
+              </>
+            )}
           </div>
         ) : (() => {
           const maxQty = selected.id === 'couple-ring' ? 1 : 99
@@ -301,33 +338,62 @@ export default function Store() {
                 <span className="st-detail-thumb" style={{ background: selected.imageBg || imgBgOf(selected.id, selected.premium) }}>
                   <StoreItemImage id={selected.id} emoji={selected.emoji} svg={selected.imageSvg} className="st-detail-img" />
                 </span>
-                {selected.id !== 'couple-ring' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)} 개</span>}
+                {selected.id !== 'couple-ring' && selected.id !== 'donation' && <span className="st-owned">보유 {num(invCounts[selected.id] || 0)} 개</span>}
                 <div className="st-detail-name">{itemName(selected.id, selected.name)}</div>
                 <div className="st-detail-desc">{selected.desc}</div>
               </div>
 
               {notice?.type === 'err' && <div className="st-notice is-err">{notice.text}</div>}
 
-              <div className="st-detail-priceRow">
-                <div className="st-price-big"><PawIcon className="st-paw-lg" />{num(selected.price)}</div>
-                <div className="st-stepper">
-                  <button type="button" aria-label="수량 감소" disabled={qty <= 1 || busy} onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-                  <span>{qty}</span>
-                  <button type="button" aria-label="수량 증가" disabled={qty >= maxQty || busy} onClick={() => setQty((q) => Math.min(maxQty, q + 1))}>＋</button>
-                </div>
-              </div>
+              {selected.id === 'donation' ? (
+                <>
+                  <div className="st-detail-priceRow">
+                    <button type="button" className="nc-to" onClick={() => setDonatePickOpen(true)}>
+                      <span className="nc-label">To.</span>
+                      {donateRecipient
+                        ? <span className="nc-to-val"><Avatar src={donateRecipient.avatar} name={donateRecipient.name} size={26} />{donateRecipient.name}</span>
+                        : <span className="nc-placeholder">받는 사람을 선택하세요</span>}
+                      <svg className="nc-chev" width="16" viewBox="0 0 24 24" fill="none" stroke="#b0b0b8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                    </button>
+                  </div>
 
-              <div className="st-total">
-                <span className="st-total-l">합계</span>
-                <span className="st-total-v"><PawIcon className="st-paw" />{num(selected.price * qty)}</span>
-              </div>
+                  <div className="st-donate-amount">
+                    <PawIcon className="st-paw" />
+                    <input type="number" inputMode="numeric" min="1" placeholder="0" disabled={busy}
+                      value={donateAmount}
+                      onChange={(e) => setDonateAmount(e.target.value.replace(/[^0-9]/g, ''))} />
+                  </div>
 
-              <div className="st-detail-actions">
-                <button type="button" className="st-btn-ghost" disabled={busy} onClick={() => { setNotice(null); setGiftOpen(true) }}>선물하기</button>
-                <button type="button" className="st-btn-buy" disabled={selected.giftOnly || busy || ownedCouple} onClick={handleBuy}>
-                  {ownedCouple ? '보유 중' : busy ? '처리 중…' : '구매하기'}
-                </button>
-              </div>
+                  <div className="st-detail-actions">
+                    <button type="button" className="st-btn-buy" disabled={busy} onClick={handleDonate}>
+                      {busy ? '처리 중…' : '후원하기'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="st-detail-priceRow">
+                    <div className="st-price-big"><PawIcon className="st-paw-lg" />{num(selected.price)}</div>
+                    <div className="st-stepper">
+                      <button type="button" aria-label="수량 감소" disabled={qty <= 1 || busy} onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
+                      <span>{qty}</span>
+                      <button type="button" aria-label="수량 증가" disabled={qty >= maxQty || busy} onClick={() => setQty((q) => Math.min(maxQty, q + 1))}>＋</button>
+                    </div>
+                  </div>
+
+                  <div className="st-total">
+                    <span className="st-total-l">합계</span>
+                    <span className="st-total-v"><PawIcon className="st-paw" />{num(selected.price * qty)}</span>
+                  </div>
+
+                  <div className="st-detail-actions">
+                    <button type="button" className="st-btn-ghost" disabled={busy} onClick={() => { setNotice(null); setGiftOpen(true) }}>선물하기</button>
+                    <button type="button" className="st-btn-buy" disabled={selected.giftOnly || busy || ownedCouple} onClick={handleBuy}>
+                      {ownedCouple ? '보유 중' : busy ? '처리 중…' : '구매하기'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )
         })())}
@@ -339,6 +405,9 @@ export default function Store() {
         item={selected ? { id: selected.id, name: itemName(selected.id, selected.name), emoji: selected.emoji } : null}
         qty={qty} price={selected?.price ?? null} purchased onSend={giftSend}
         excludeGroupIds={selected?.id === 'friend-ring' ? premiumGroupIds : []} />
+
+      <RecipientPicker open={donatePickOpen} onClose={() => setDonatePickOpen(false)} title="후원할 길냥이"
+        onPick={(r) => { setDonateRecipient(r); setDonatePickOpen(false) }} />
     </div>
   )
 }
