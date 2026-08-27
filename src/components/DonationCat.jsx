@@ -2,7 +2,7 @@
 // 동일한 얼굴 위에 후원용 깡통을 얹은 버전.
 export default function DonationCat() {
   return (
-    <svg className="donation-cat" viewBox="0 -17 64 51" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+    <svg className="donation-cat" viewBox="0 -15 64 49" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
       <path d="M8 27 L11.3 10 Q11.5 5.5 16 7.8 L30 17 Z" fill="#191722" />
       <path d="M56 27 L52.7 10 Q52.5 5.5 48 7.8 L34 17 Z" fill="#191722" />
       <path d="M6 34 A26 22 0 0 1 58 34 Z" fill="#191722" />
@@ -14,7 +14,7 @@ export default function DonationCat() {
       </g>
       {/* 머리 위 후원용 깡통: 고양이 머리 꼭대기에 밑면이 닿게 배치.
           라벨 윗변은 원통을 감싸는 호(중앙이 아래로 처지는 곡선)로, 반짝이는 빛은 바닥 타원보다 나중에(앞에) 그린다. */}
-      <g transform="translate(32 1)">
+      <g transform="translate(32 3)">
         <rect x="-10" y="-10" width="20" height="18" fill="#e2e5ec" />
         <path d="M-10 -2 A10 2 0 0 0 10 -2 L10 8 L-10 8 Z" fill="#ff8fab" />
         <ellipse cx="0" cy="8" rx="10" ry="3" fill="#ff8fab" />
