@@ -238,6 +238,8 @@ export default function Layout() {
   // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
   const adminSection = ['/admin', '/admin/members', '/admin/store', '/admin/quests', '/admin/notifs', '/admin/misc'].includes(location.pathname)
   const adminSub = location.pathname.startsWith('/admin/') && !adminSection
+  // PC 상단 내비게이션(desknav)에서 브랜드 클릭 목적지 + 중앙 메뉴를 관리자용으로 바꿀지 판단
+  const inAdminArea = adminSection || adminSub
   const adminSubTitle = (p) =>
     p.startsWith('/admin/members') ? (p.endsWith('/new') ? '계정 생성' : '회원 상세')
       : p.startsWith('/admin/store') ? (p.endsWith('/new') ? '아이템 추가' : '아이템 수정')
@@ -1100,15 +1102,28 @@ export default function Layout() {
           .page 와 동일하게 1080px 중앙 정렬(좌우 패딩은 바깥 .desknav 가 담당) */}
       <header className="desknav">
           <div className="desknav-inner">
-            <Link to="/" className="brand"><Brand /></Link>
-            <nav className="desknav-left" ref={desknavRef}>
-              <NavLink to="/" end>내 그룹</NavLink>
-              <NavLink to="/schedule">일정</NavLink>
-              <NavLink to="/store"><span className="nav-ico-wrap">상점{storeNew && <span className="nav-dot" aria-label="신상 입고" />}</span></NavLink>
-              <NavLink to="/inventory">인벤토리</NavLink>
-              <span className="desknav-indicator" aria-hidden="true"
-                style={{ transform: `translateX(${desknavIndicator.left}px)`, width: desknavIndicator.width }} />
-            </nav>
+            {/* 관리자로 로그인 중이면 브랜드가 관리자 페이지 ⇄ 일반 화면을 오가는 토글 역할도 함 */}
+            <Link to={isAdmin ? (inAdminArea ? '/' : '/admin') : '/'} className="brand"><Brand /></Link>
+            {inAdminArea ? (
+              <nav className="desknav-left" ref={desknavRef}>
+                <NavLink to="/admin/store">상점 관리</NavLink>
+                <NavLink to="/admin/quests">퀘스트 관리</NavLink>
+                <NavLink to="/admin/notifs">알림 관리</NavLink>
+                <NavLink to="/admin/members">회원 관리</NavLink>
+                <NavLink to="/admin/misc">기타 관리</NavLink>
+                <span className="desknav-indicator" aria-hidden="true"
+                  style={{ transform: `translateX(${desknavIndicator.left}px)`, width: desknavIndicator.width }} />
+              </nav>
+            ) : (
+              <nav className="desknav-left" ref={desknavRef}>
+                <NavLink to="/" end>내 그룹</NavLink>
+                <NavLink to="/schedule">일정</NavLink>
+                <NavLink to="/store"><span className="nav-ico-wrap">상점{storeNew && <span className="nav-dot" aria-label="신상 입고" />}</span></NavLink>
+                <NavLink to="/inventory">인벤토리</NavLink>
+                <span className="desknav-indicator" aria-hidden="true"
+                  style={{ transform: `translateX(${desknavIndicator.left}px)`, width: desknavIndicator.width }} />
+              </nav>
+            )}
             <div className="desknav-right">
               <div className="desknav-notif" ref={notifRef}>
                 <button type="button" className={`desknav-icon ${notifOpen ? 'active' : ''}`}
@@ -1122,6 +1137,10 @@ export default function Layout() {
                 <span className="nav-ico-wrap"><NoteIcon />{noteUnread > 0 && <span className="nav-dot" aria-label="안 읽은 쪽지" />}</span>
               </NavLink>
               <NavLink to="/me" className="desknav-me" title="마이 페이지">{profile?.nickname || '마이 페이지'}</NavLink>
+              {(isAdmin || hasAdminSaved()) && (
+                <button type="button" className="desknav-icon" aria-label="계정 전환" title="계정 전환"
+                  onClick={() => setAcctOpen(true)}><SwapIcon /></button>
+              )}
             </div>
           </div>
         </header>
