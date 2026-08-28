@@ -227,6 +227,15 @@ begin
     -- 관리자가 관리자 페이지에서 직접 등록한 퀘스트(quest_defs 시드 없이 앱에서 생성됨)
     when 'r_item_present'  then exists(select 1 from public.notes where sender_id = v_uid and kind = 'gift' and created_at >= p_since)
     when 'r_purin_mic'     then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'purin-mic' and status = 'used' and used_at >= p_since)
+    -- 아래 5개는 프런트(touchQuest)가 quest_events 에 이벤트를 남기는데도 이 CASE 에 분기가
+    -- 없어 항상 else false 로 떨어져 절대 완료 처리되지 않던 것들. r_sticker("칭찬 스티커
+    -- 붙여 주기")/r_nametag("명찰 빼앗기")는 실사용 중 발견된 버그, 나머지 셋도 touchQuest
+    -- 호출부는 있으나 판정 분기가 없어 동일하게 깨져 있어 함께 추가한다.
+    when 'r_sticker'             then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_sticker' and at >= p_since)
+    when 'r_nametag'             then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_nametag' and at >= p_since)
+    when 'r_ledboard'            then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_ledboard' and at >= p_since)
+    when 'r_write_wish'          then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_write_wish' and at >= p_since)
+    when 'r_wish_ticket_present' then exists(select 1 from public.quest_events where user_id = v_uid and key = 'r_wish_ticket_present' and at >= p_since)
     else false end;
 end $$;
 
@@ -426,10 +435,11 @@ on conflict (id) do nothing;
 
 -- r_item_present("아이템 택배 보내기"), r_purin_mic("얼굴에 낙서하기")는 관리자 페이지에서
 -- 직접 등록된 quest_defs 행이라 SQL 시드가 없음 — _quest_done 의 CASE 분기만 여기 포함됨.
--- r_nametag("명찰 빼앗기"), r_ledboard("전광판 게재하기")도 마찬가지로 관리자 페이지에서
--- 등록된 quest_defs 행으로 보이며(_quest_pick 의 활성 아이템 제외 로직에서만 참조),
--- 이 12개 소스 파일 안에는 _quest_done 판정 분기도 quest_defs 시드도 없다 — 완료 판정이
--- 어떻게 되는지는 이 번들 범위 밖(다른 파일이나 앱 코드에 있을 수 있음)이라 확인 필요.
+-- r_nametag("명찰 빼앗기"), r_ledboard("전광판 게재하기"), r_sticker("칭찬 스티커 붙여
+-- 주기"), r_write_wish("위시 작성하기" 프런트 표기용 별도 키), r_wish_ticket_present
+-- ("소원권 선물하기")도 마찬가지로 관리자 페이지에서 등록된 quest_defs 행. 예전엔 이
+-- 5개의 _quest_done 판정 분기가 아예 없어 항상 else false 로 떨어져 절대 완료 처리가
+-- 안 되던 버그였고, 지금은 위 CASE 에 quest_events 기반 분기로 추가돼 있다.
 
 
 -- =========================
