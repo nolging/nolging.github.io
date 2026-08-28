@@ -40,9 +40,23 @@ create table if not exists public.note_items (
 );
 create index if not exists idx_note_items_note on public.note_items(note_id);
 alter table public.note_items enable row level security;
+
+-- note_items RLS 는 아래 notes_select 정책(§2)을 그대로 재사용할 수 없다 — 그 정책은
+-- 받는 사람에게 "익명 쪽지의 원본 행"을 아예 숨기는데(발신자 식별 정보 보호 목적), 그
+-- 서브쿼리가 일반 role 로 실행되면 notes 자신의 RLS 도 함께 적용돼 anonymous=true 인
+-- 쪽지는 받는 사람에게도 exists() 가 항상 false 로 나온다. 그 결과 지우개(익명)로 보낸
+-- 쪽지에 아이템을 동봉하면 받는 사람 화면에 "수령하기" 버튼 자체가 안 뜨는 버그가 있었다
+-- (listNoteItems() 가 note_items 를 직접 SELECT 하므로 이 RLS 를 그대로 탄다).
+-- 발신자 식별과 무관하게 "이 쪽지의 당사자인지"만 판정하는 정의자 함수로 우회한다.
+create or replace function public._note_participant(p_note_id uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.notes where id = p_note_id and (sender_id = auth.uid() or recipient_id = auth.uid()));
+$$;
+grant execute on function public._note_participant(uuid) to authenticated;
+
 drop policy if exists note_items_select on public.note_items;
 create policy note_items_select on public.note_items for select to authenticated using (
-  exists (select 1 from public.notes n where n.id = note_id and (n.recipient_id = auth.uid() or n.sender_id = auth.uid()))
+  public._note_participant(note_id)
 );
 
 
