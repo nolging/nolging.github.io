@@ -194,11 +194,15 @@ begin
     when 'visit'       then exists(select 1 from public.profiles where id = v_uid and last_group_visit_at >= p_since)
     when 'note'        then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since)
     when 'r_wish'      then exists(select 1 from public.tasks where created_by = v_uid and created_at >= p_since)
-    -- 강화 아이템 '사용'만 인정(아이템 선물 kind='gift' 는 제외):
+    -- 강화 아이템 '사용'을 인정한다:
     --   선물상자(link)/이어폰(cassette)/비디오(video)/블루레이(bluray)/폴라로이드필름(polaroid) → kind
     --   지우개 → 익명(anonymous=true) / 물풍선 폭탄 → 타이머(timer_seconds is not null)
+    -- ⚠️ 예전엔 여기에 "coalesce(kind,'') <> 'gift'" 배제 조건이 있었다. 순수 선물만 있는
+    -- kind='gift' 쪽지는 kind in(...) 목록에 'gift' 가 없고 anonymous/timer_seconds 도
+    -- false 라 이 배제 조건 없이도 원래 안 걸린다 — 있으나 마나였다. 그런데 지우개(익명)나
+    -- 물풍선 폭탄(타이머)으로 보낸 쪽지에 아이템까지 동봉하면 kind 가 'gift' 로 찍히는데,
+    -- 이 배제 조건 때문에 실제로 강화 아이템을 썼는데도 완료 처리가 안 되는 버그가 있었다.
     when 'r_item_note' then exists(select 1 from public.notes where sender_id = v_uid and created_at >= p_since
-                                     and coalesce(kind, '') <> 'gift'
                                      and (kind in ('cassette','video','bluray','link','polaroid') or anonymous = true or timer_seconds is not null))
     -- 긁는 '행동'으로 판정(당첨/꽝 무관): 냥피또가 used 로 소모됐는지
     when 'r_nyangpito' then exists(select 1 from public.user_items where user_id = v_uid and item_id = 'nyangpito' and status = 'used' and used_at >= p_since)
