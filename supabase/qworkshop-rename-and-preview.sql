@@ -137,10 +137,3 @@ begin
   return v_id;
 end $$;
 grant execute on function public.qworkshop_add_comment(uuid, uuid, text, uuid[]) to authenticated;
-
--- 3) 이미 배포돼 있는 notif_templates 행은 title/body 를 덮어쓰지 않는(label/vars/sort_order 만 갱신하는)
---    on-conflict 규칙 때문에 시드 재실행만으로는 문구가 안 바뀐다 — 명시적으로 업데이트한다.
-update public.notif_templates set title = '새 질문이 도착했어요', label = '물음표 공방 새 질문'
-  where key = 'qworkshop_post';
-update public.notif_templates set title = '내 질문에 댓글이 달렸어요', label = '물음표 공방 내 질문 댓글'
-  where key = 'qworkshop_comment';
