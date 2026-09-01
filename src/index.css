@@ -2038,11 +2038,11 @@ button.mention-chip:active { opacity: .6; }
 /* 투표: 세로 나열, 각 행 배경에 득표율만큼 옅은 채움 바가 깔린다(3f 시안). 내가 고른 행은
    파란 링 + 체크 아이콘, 나머지는 빈 동그라미. */
 .qw-poll { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
-.qw-poll-opt { position: relative; display: flex; align-items: center; gap: 10px;
-  border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow);
-  cursor: pointer; padding: 13px 16px; text-align: left; overflow: hidden; }
+.qw-poll-opt { position: relative; display: flex; align-items: center; gap: 10px; box-sizing: border-box;
+  border: 2px solid transparent; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow);
+  cursor: pointer; padding: 11px 14px; text-align: left; overflow: hidden; }
 .qw-poll-opt.disabled { cursor: default; }
-.qw-poll-opt.answered.mine { box-shadow: 0 0 0 2px #5578d0 inset; }
+.qw-poll-opt.answered.mine { border-color: #5578d0; }
 .qw-poll-fill { position: absolute; inset: 0; right: auto; background: #e9f0fd; z-index: 0; transition: width .25s ease; }
 .qw-poll-mark { position: relative; z-index: 1; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
   border: 1.5px solid #d9d7e0; display: inline-flex; align-items: center; justify-content: center;
