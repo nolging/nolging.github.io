@@ -1942,21 +1942,21 @@ button.mention-chip:active { opacity: .6; }
 
 /* ---- 질문 목록: 필터 탭(전체/문답/VS/투표) ---- */
 .qw-filter-row { display: flex; gap: 6px; padding: 14px var(--pad-x) 0; position: relative; z-index: 1; }
-.qw-filter-chip { border: 1px solid #ececf1; background: #fff; color: #6a6875; border-radius: 999px;
-  padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.qw-filter-chip.on { background: #191722; color: #fff; border-color: #191722; }
+.qw-filter-chip { border: none; background: #f3f3f5; color: #6b6b73; border-radius: 999px;
+  padding: 8px 15px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.qw-filter-chip.on { background: #191722; color: #fff; }
 
 /* ---- 질문 목록: 카드(유형별 미리보기, 2a 시안) ---- */
 .qw-cards { list-style: none; margin: 0; padding: 12px var(--pad-x) 0; display: flex; flex-direction: column; gap: 14px; }
 .qw-card { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; text-align: left;
-  border: 1px solid rgba(0, 0, 0, .08); border-radius: var(--radius); background: var(--surface);
-  box-shadow: var(--card-shadow); cursor: pointer; padding: 20px; }
+  border: none; border-radius: var(--radius); background: var(--surface);
+  box-shadow: var(--card-shadow); cursor: pointer; padding: 16px 17px; }
 .qw-card:active { background: #fbfaff; }
 .qw-card-top { display: flex; align-items: center; gap: 8px; }
-.qw-card-seq { flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #a49bc6; }
+.qw-card-seq { flex-shrink: 0; font-size: 12px; font-weight: 800; color: rgba(0, 0, 0, .35); }
 .qw-card-avatars { margin-left: auto; }
 .qw-card-avatars .avatar { width: 26px; height: 26px; font-size: 11px; }
-.qw-card-q { font-size: 17px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-card-q { font-size: 16px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
 /* 문답 카드 미리보기: 최근 답변 한 줄 */
 .qw-card-preview { display: flex; align-items: center; gap: 10px; background: #f7f6fa; border-radius: 12px; padding: 12px 14px; }
 .qw-card-preview .avatar { width: 22px; height: 22px; font-size: 10px; flex-shrink: 0; }
@@ -1964,16 +1964,19 @@ button.mention-chip:active { opacity: .6; }
 .qw-card-preview-text b { color: #191722; font-weight: 800; }
 /* VS 카드 미리보기: 좌우 박스 + 가운데 VS */
 .qw-card-vs { position: relative; display: flex; gap: 10px; }
-.qw-card-vs-opt { flex: 1; min-width: 0; border-radius: 12px; background: #f7f6fa; padding: 10px 8px; text-align: center; }
+.qw-card-vs-opt { flex: 1; min-width: 0; border-radius: 12px; background: #f7f6fa; padding: 11px 12px; text-align: center; }
 .qw-card-vs-opt.lead { background: #fdf3f6; }
 .qw-card-vs-opt.lead .qw-card-vs-count { color: #cf5e88; }
-.qw-card-vs-label { font-size: 14px; font-weight: 800; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qw-card-vs-count { margin-top: 3px; font-size: 12.5px; font-weight: 700; color: #a49bc6; }
+.qw-card-vs-label { font-size: 13px; font-weight: 700; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qw-card-vs-count { margin-top: 3px; font-size: 11.5px; font-weight: 700; color: #8b8798; }
 .qw-card-vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  font-size: 11px; font-weight: 800; color: #a49bc6; background: var(--surface); padding: 0 6px; }
-/* 투표 카드 미리보기: 진행률 바 최대 2개 + "N개 더" */
+  font-size: 11px; font-weight: 800; color: rgba(0, 0, 0, .3); background: transparent; padding: 0; }
+/* 투표 카드 미리보기: 진행률 바 최대 2개 + "N개 더". 1위만 강조색, 나머지는 흐린 색(2a 시안) */
 .qw-card-poll { display: flex; flex-direction: column; gap: 10px; }
-.qw-card-poll-line { display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; font-weight: 700; color: #191722; }
+.qw-card-poll-line { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
+.qw-card-poll-label, .qw-card-poll-pct { color: #6b6b73; }
+.qw-card-poll-row.top .qw-card-poll-label { color: #191722; }
+.qw-card-poll-row.top .qw-card-poll-pct { color: #5578d0; }
 .qw-card-poll-bar { margin-top: 5px; height: 6px; border-radius: 999px; background: #eef0f2; overflow: hidden; }
 .qw-card-poll-fill { display: block; height: 100%; border-radius: 999px; background: #b9c6e4; }
 .qw-card-poll-fill.top { background: #5578d0; }
@@ -2009,11 +2012,7 @@ button.mention-chip:active { opacity: .6; }
 
 /* ---- 물음표 공방: 상세(3d/3e/3f 시안) ---- */
 .qw-post-page { gap: 0; padding-bottom: 90px; }
-.qw-post-head { display: flex; align-items: center; justify-content: space-between; }
-/* 뒤로/더보기 — 둥근 회색 원형 버튼(3d/3e/3f 공통 헤더) */
-.qw-round-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f3f3f5; color: #191722;
-  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
-.qw-round-btn:active { background: #ececf1; }
+.qw-post-head { display: flex; align-items: center; }
 .qw-post-info { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .qw-post-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .qw-post-q { margin: 9px 0 0; font-size: 19px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
@@ -2053,7 +2052,7 @@ button.mention-chip:active { opacity: .6; }
 .qw-poll-side { position: relative; z-index: 1; flex-shrink: 0; }
 .qw-poll-opt .qw-voter-stack .avatar { box-shadow: 0 0 0 2px var(--surface); }
 
-/* 문답: 답변 전엔 입력창만, 답변 후엔 내 답(보라 링 + "내 답변" 배지) + 남의 답 카드 목록(3d 시안) */
+/* 문답: 답변 전엔 입력창만, 답변 후엔 내 답 + 남의 답 카드 목록(모두 동일한 스타일) */
 .qw-qna { margin-top: 18px; }
 .qw-qna-input-wrap { display: flex; flex-direction: column; gap: 8px; }
 .qw-qna-input { width: 100%; box-sizing: border-box; border: 1px solid #ececf1; border-radius: 12px; background: #f8f7fb;
@@ -2065,11 +2064,8 @@ button.mention-chip:active { opacity: .6; }
 .qw-qna-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .qw-qna-list + .qw-qna-list { margin-top: 0; }
 .qw-qna-card { position: relative; border-radius: 18px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
-.qw-qna-card.mine { box-shadow: 0 0 0 1.5px #7363e8 inset; }
 .qw-qna-card-head { display: flex; align-items: center; gap: 8px; }
 .qw-qna-card-name { font-weight: 800; font-size: 14px; color: #191722; }
-.qw-qna-mine-badge { flex-shrink: 0; font-size: 11px; font-weight: 800; color: #7363e8; background: #eeebfe;
-  border-radius: 999px; padding: 3px 9px; }
 .qw-qna-card-text { margin: 9px 0 0; font-size: 14.5px; line-height: 1.6; color: #26232f; white-space: pre-wrap; word-break: break-word; }
 .qw-qna-edit { position: absolute; top: 12px; right: 14px; padding: 2px; }
 

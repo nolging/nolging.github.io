@@ -137,11 +137,15 @@ function QwListCard({ post, onOpen }) {
             {post.options.slice(0, 2).map((label, i) => {
               const c = counts[i] ?? 0
               const pct = total > 0 ? Math.round((c / total) * 100) : 0
+              const top = c === topCount && c > 0
               return (
-                <div key={i} className="qw-card-poll-row">
-                  <div className="qw-card-poll-line"><span>{label}</span><span>{pct}%</span></div>
+                <div key={i} className={`qw-card-poll-row${top ? ' top' : ''}`}>
+                  <div className="qw-card-poll-line">
+                    <span className="qw-card-poll-label">{label}</span>
+                    <span className="qw-card-poll-pct">{pct}%</span>
+                  </div>
                   <div className="qw-card-poll-bar">
-                    <span className={`qw-card-poll-fill${c === topCount && c > 0 ? ' top' : ''}`} style={{ width: `${pct}%` }} />
+                    <span className={`qw-card-poll-fill${top ? ' top' : ''}`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               )
@@ -450,11 +454,10 @@ function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload })
         </div>
       ) : (
         <ul className="qw-qna-list">
-          <li className="qw-qna-card mine">
+          <li className="qw-qna-card">
             <div className="qw-qna-card-head">
               <Avatar src={me?.avatar_url} name={me?.nickname} size={26} />
               <span className="qw-qna-card-name">{me?.nickname}</span>
-              <span className="qw-qna-mine-badge">내 답변</span>
             </div>
             <p className="qw-qna-card-text">{av.my_answer?.answer_text}</p>
             <button type="button" className="qw-link qw-qna-edit" onClick={() => setQnaEditing(true)}>수정</button>
@@ -729,13 +732,10 @@ export function QworkshopPost() {
 
   return (
     <div className="page qw-post-page">
-      <div className="qw-post-head">
-        <button type="button" onClick={() => navigate(-1)} className="qw-round-btn" aria-label="뒤로" title="뒤로">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
-        </button>
-        {(post.is_mine || post.can_delete) ? (
-          <div className="task-menu-wrap">
-            <button type="button" className="qw-round-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}><DotsIcon /></button>
+      {(post.is_mine || post.can_delete) && (
+        <div className="qw-post-head">
+          <div className="task-menu-wrap push-right">
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}><DotsIcon /></button>
             {menuOpen && (
               <>
                 <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
@@ -746,15 +746,15 @@ export function QworkshopPost() {
               </>
             )}
           </div>
-        ) : <span />}
-      </div>
+        </div>
+      )}
 
       <div className="qw-post-info">
         <span className="qw-post-line">
           <span className="qw-card-seq">{seq != null ? `${seq}번째 질문` : ''}</span>
           <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_ICON[post.type]} {TYPE_LABEL[post.type]}</span>
         </span>
-        <MemberAvatarBtn groupId={groupId} userId={post.author_id} src={post.avatar_url} name={post.nickname} size={40} />
+        <MemberAvatarBtn groupId={groupId} userId={post.author_id} src={post.avatar_url} name={post.nickname} size={28} />
       </div>
       <h2 className="qw-post-q">{post.question}</h2>
       {post.body && <p className="qw-post-body">{post.body}</p>}
