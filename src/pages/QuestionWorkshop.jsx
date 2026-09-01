@@ -11,19 +11,18 @@ import { resolveMentions, splitMentions } from '../lib/mentions'
 import { openMember } from '../lib/memberModal'
 import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
-import Modal from '../components/Modal'
+import BottomSheet from '../components/BottomSheet'
 
 // 물음표 공방 — 세 유형(VS/투표/문답)의 질문 게시판. 목록/작성·수정/상세(답변+댓글)로 구성.
 // "물음표 공방"은 기능/장소 이름이라 그대로 두고, 그 안의 포스팅 한 건을 가리키는 말은 "질문"으로 통일한다.
 // 접근 제어·댓글 멘션/답글은 비밀 게시판(RPC 전면 잠금)·위시 댓글(실명+멘션) 패턴을 그대로 따른다.
 
 const TYPE_LABEL = { vs: 'VS', poll: '투표', qna: '문답' }
-const TYPE_ICON = { vs: '⚔️', poll: '📊', qna: '💬' }
 const FILTERS = [
   { key: 'all', label: '전체' },
-  { key: 'qna', label: `${TYPE_ICON.qna} 문답` },
-  { key: 'vs', label: `${TYPE_ICON.vs} VS` },
-  { key: 'poll', label: `${TYPE_ICON.poll} 투표` },
+  { key: 'qna', label: '문답' },
+  { key: 'vs', label: 'VS' },
+  { key: 'poll', label: '투표' },
 ]
 
 // 목록 하단 장식(qw-spark-field)에 뿌릴 반짝임·물음표 — 크기 제각각(sm/md/lg), 서로 다른
@@ -108,7 +107,7 @@ function QwListCard({ post, onOpen }) {
       <button type="button" className="qw-card" onClick={onOpen}>
         <div className="qw-card-top">
           <span className="qw-card-seq">{post.seq}번째 질문</span>
-          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_ICON[post.type]} {TYPE_LABEL[post.type]}</span>
+          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
           <AvatarStack people={answerers} />
         </div>
         <div className="qw-card-q">{post.question}</div>
@@ -362,7 +361,8 @@ function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload })
   }
 
   const voterModalEl = (
-    <Modal open={!!voterModal} onClose={() => setVoterModal(null)} title={voterModal?.label}>
+    <BottomSheet open={!!voterModal} onClose={() => setVoterModal(null)}>
+      <h3 className="sheet-title">{voterModal?.label}</h3>
       <ul className="qw-voter-list">
         {(voterModal?.voters || []).map((v) => (
           <li key={v.author_id} className="qw-voter-list-item">
@@ -371,7 +371,7 @@ function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload })
           </li>
         ))}
       </ul>
-    </Modal>
+    </BottomSheet>
   )
 
   if (post.type === 'vs') {
@@ -752,7 +752,7 @@ export function QworkshopPost() {
       <div className="qw-post-info">
         <span className="qw-post-line">
           <span className="qw-card-seq">{seq != null ? `${seq}번째 질문` : ''}</span>
-          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_ICON[post.type]} {TYPE_LABEL[post.type]}</span>
+          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
         </span>
         <MemberAvatarBtn groupId={groupId} userId={post.author_id} src={post.avatar_url} name={post.nickname} size={28} />
       </div>
