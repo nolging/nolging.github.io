@@ -24,7 +24,7 @@ create table if not exists public.group_qworkshops (
   created_at timestamptz not null default now()
 );
 
--- 물음표(포스트) 유형 3종 — question(질문, 필수)/body(내용)는 공통, 나머지는 유형별:
+-- 질문(포스트) 유형 3종 — question(질문, 필수)/body(내용)는 공통, 나머지는 유형별:
 --  · vs   : 선택지 정확히 2개. 상세 페이지에서 VS 형태로 하나를 고른다.
 --  · poll : 선택지 2~10개(작성 시 2개로 시작, 최대 10개까지 추가). 투표.
 --  · qna  : 선택지 없음. 자유 서술형 답변 인풋.
@@ -41,7 +41,7 @@ create table if not exists public.qworkshop_posts (
 );
 create index if not exists idx_qworkshop_posts_group on public.qworkshop_posts(group_id, created_at desc);
 
--- 한 유저는 물음표 하나당 답 하나(선택지 변경/답변 수정은 upsert 로 허용)
+-- 한 유저는 질문 하나당 답 하나(선택지 변경/답변 수정은 upsert 로 허용)
 create table if not exists public.qworkshop_answers (
   id          uuid primary key default gen_random_uuid(),
   post_id     uuid not null references public.qworkshop_posts(id) on delete cascade,
@@ -69,7 +69,7 @@ create table if not exists public.qworkshop_comments (
 );
 create index if not exists idx_qworkshop_comments_post on public.qworkshop_comments(post_id, created_at);
 
--- 알림이 물음표/댓글로 바로 이동할 수 있게 컬럼 추가(board_posts/board_comments 와 FK 대상만 다름)
+-- 알림이 질문/댓글로 바로 이동할 수 있게 컬럼 추가(board_posts/board_comments 와 FK 대상만 다름)
 alter table public.notifications add column if not exists qworkshop_post_id uuid
   references public.qworkshop_posts(id) on delete cascade;
 alter table public.notifications add column if not exists qworkshop_comment_id uuid
@@ -138,13 +138,21 @@ returns boolean language sql stable security definer set search_path = public as
   select public.is_group_owner(p_group, p_uid) or public.is_admin(p_uid);
 $$;
 
--- ── 함수: 글(물음표) ──────────────────────────────────────
+-- ── 함수: 글(질문) ──────────────────────────────────────
+-- 목록 카드 미리보기(질문 목록 2a 시안)에 필요한 두 필드를 추가:
+--   · answerers   : 답변자 최대 4명 요약(아바타/닉네임/답변 텍스트/선택지 idx, 최신순)
+--                   — 카드 우상단 아바타 스택 + 문답 카드의 답변 미리보기 한 줄에 사용.
+--                   (미리보기용이라 전체가 아니라 캡)
+--   · option_counts: vs/고르기 선택지별 정확한 득표수(전체 집계, 캡 없음) — 카드의
+--                   "5명/3명", 진행률 바 %는 이 값 기준으로 계산해야 정확하다.
+drop function if exists public.qworkshop_posts(uuid);
 create or replace function public.qworkshop_posts(p_group uuid)
 returns table(id uuid, type text, question text, body text, options jsonb,
               created_at timestamptz, updated_at timestamptz, edited boolean,
               author_id uuid, nickname text, avatar_url text,
               is_mine boolean, can_delete boolean, has_answered boolean,
-              answer_count bigint, comment_count bigint)
+              answer_count bigint, comment_count bigint,
+              answerers jsonb, option_counts jsonb)
 language sql stable security definer set search_path = public as $$
   select po.id, po.type, po.question, po.body, po.options,
          po.created_at, po.updated_at, (po.updated_at > po.created_at) as edited,
@@ -153,14 +161,29 @@ language sql stable security definer set search_path = public as $$
          (po.author_id = auth.uid() or public.qworkshop_can_manage(po.group_id, auth.uid())) as can_delete,
          exists(select 1 from public.qworkshop_answers a where a.post_id = po.id and a.author_id = auth.uid()) as has_answered,
          (select count(*) from public.qworkshop_answers a2 where a2.post_id = po.id) as answer_count,
-         (select count(*) from public.qworkshop_comments c where c.post_id = po.id) as comment_count
+         (select count(*) from public.qworkshop_comments c where c.post_id = po.id) as comment_count,
+         (select coalesce(jsonb_agg(jsonb_build_object(
+             'avatar_url', am.avatar_url,
+             'nickname', coalesce(nullif(am.display_nickname, ''), '멤버'),
+             'answer_text', a3.answer_text, 'option_idx', a3.option_idx
+           ) order by a3.created_at desc), '[]'::jsonb)
+          from (select * from public.qworkshop_answers a3b where a3b.post_id = po.id
+                order by a3b.created_at desc limit 4) a3
+          left join public.group_members am on am.group_id = po.group_id and am.user_id = a3.author_id
+         ) as answerers,
+         (case when po.type = 'qna' then null::jsonb else
+           (select jsonb_agg(coalesce(cc.c, 0) order by g.ord)
+            from generate_series(0, jsonb_array_length(po.options) - 1) as g(ord)
+            left join (select option_idx, count(*) c from public.qworkshop_answers where post_id = po.id group by option_idx) cc
+              on cc.option_idx = g.ord)
+         end) as option_counts
   from public.qworkshop_posts po
   left join public.group_members gm on gm.group_id = po.group_id and gm.user_id = po.author_id
   where po.group_id = p_group and public.qworkshop_access(p_group, auth.uid())
   order by po.created_at desc;
 $$;
 
--- 새 물음표 작성 — 최종 버전(qworkshop-new-post-notif.sql). 그룹의 다른 멤버들에게
+-- 새 질문 작성 — 최종 버전(qworkshop-new-post-notif.sql). 그룹의 다른 멤버들에게
 -- 'qworkshop_post' 알림을 보낸다. notif-strict-templates-2.sql 이후 확립된 규칙대로
 -- notif_templates 에 해당 key 가 없거나 비활성이면 notif_render 가 null 을 돌려주고,
 -- 그 경우 발송 자체를 건너뛴다(하드코딩 폴백 없음).
@@ -168,7 +191,7 @@ create or replace function public.qworkshop_create_post(p_group uuid, p_type tex
 returns uuid language plpgsql security definer set search_path = public as $$
 declare v_id uuid; v_q text; v_opts jsonb; v_n int; v_actor text; v_t text; v_b text;
 begin
-  if not public.qworkshop_access(p_group, auth.uid()) then raise exception '물음표를 쓸 수 없어요.'; end if;
+  if not public.qworkshop_access(p_group, auth.uid()) then raise exception '질문을 쓸 수 없어요.'; end if;
   if p_type not in ('vs', 'poll', 'qna') then raise exception '유형이 올바르지 않아요.'; end if;
   v_q := btrim(coalesce(p_question, ''));
   if v_q = '' then raise exception '질문을 입력해 주세요.'; end if;
@@ -209,8 +232,8 @@ returns void language plpgsql security definer set search_path = public as $$
 declare v_post public.qworkshop_posts; v_q text; v_opts jsonb; v_n int; v_answered boolean;
 begin
   select * into v_post from public.qworkshop_posts where id = p_id;
-  if v_post.id is null then raise exception '물음표를 찾을 수 없어요.'; end if;
-  if v_post.author_id <> auth.uid() then raise exception '내가 쓴 물음표만 수정할 수 있어요.'; end if;
+  if v_post.id is null then raise exception '질문을 찾을 수 없어요.'; end if;
+  if v_post.author_id <> auth.uid() then raise exception '내가 쓴 질문만 수정할 수 있어요.'; end if;
   v_q := btrim(coalesce(p_question, ''));
   if v_q = '' then raise exception '질문을 입력해 주세요.'; end if;
   if char_length(v_q) > 100 then raise exception '질문은 100자 이내로 입력해 주세요.'; end if;
@@ -258,7 +281,7 @@ declare
   v_counts jsonb;
 begin
   select * into v_post from public.qworkshop_posts where id = p_post;
-  if v_post.id is null then raise exception '물음표를 찾을 수 없어요.'; end if;
+  if v_post.id is null then raise exception '질문을 찾을 수 없어요.'; end if;
   if not public.qworkshop_access(v_post.group_id, auth.uid()) then raise exception '접근할 수 없어요.'; end if;
 
   v_answered := exists(select 1 from public.qworkshop_answers a where a.post_id = p_post and a.author_id = auth.uid());
@@ -298,7 +321,7 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_post public.qworkshop_posts; v_opt_count int;
 begin
   select * into v_post from public.qworkshop_posts where id = p_post;
-  if v_post.id is null then raise exception '물음표를 찾을 수 없어요.'; end if;
+  if v_post.id is null then raise exception '질문을 찾을 수 없어요.'; end if;
   if not public.qworkshop_access(v_post.group_id, auth.uid()) then raise exception '접근할 수 없어요.'; end if;
 
   if v_post.type in ('vs', 'poll') then
@@ -345,7 +368,7 @@ declare
   v_parent uuid; v_pparent uuid; v_target_author uuid; v_actor text;
 begin
   select group_id, author_id into v_group, v_post_author from public.qworkshop_posts where id = p_post;
-  if v_group is null then raise exception '물음표를 찾을 수 없어요.'; end if;
+  if v_group is null then raise exception '질문을 찾을 수 없어요.'; end if;
   if not public.qworkshop_access(v_group, auth.uid()) then raise exception '댓글을 쓸 수 없어요.'; end if;
   v_body := btrim(coalesce(p_body, ''));
   if v_body = '' then raise exception '내용을 입력해 주세요.'; end if;
@@ -369,7 +392,7 @@ begin
   if p_parent is null then
     if v_post_author is not null and v_post_author <> auth.uid() then
       insert into public.notifications(user_id, actor_id, type, title, body, group_id, qworkshop_post_id, qworkshop_comment_id)
-        values (v_post_author, auth.uid(), 'qworkshop_comment', '내 물음표에 댓글이 달렸어요', v_actor || ': ' || v_body, v_group, p_post, v_id);
+        values (v_post_author, auth.uid(), 'qworkshop_comment', '내 질문에 댓글이 달렸어요', v_actor || ': ' || v_body, v_group, p_post, v_id);
     end if;
   else
     if v_target_author is not null and v_target_author <> auth.uid() then
@@ -429,7 +452,7 @@ create trigger trg_qworkshop_comments_touch before update on public.qworkshop_co
 
 -- ── 알림 템플릿 시드 ──────────────────────────────────────
 insert into public.notif_templates (key, label, title, body, vars, emoji, sort_order) values
-  ('qworkshop_post', '물음표 공방 새 물음표', '새 물음표가 도착했어요', '{actor}: {question}', '{actor} = 작성자, {question} = 질문 내용', '❓', 114)
+  ('qworkshop_post', '물음표 공방 새 질문', '새 질문이 도착했어요', '{actor}: {question}', '{actor} = 작성자, {question} = 질문 내용', '❓', 114)
 on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
 
 -- ── 권한(grant) ───────────────────────────────────────────

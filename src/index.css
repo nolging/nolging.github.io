@@ -1932,27 +1932,52 @@ button.mention-chip:active { opacity: .6; }
   padding-bottom: calc(90px + env(safe-area-inset-bottom)); }   /* 우하단 고정 FAB(물음표 쓰기)에 안 가리게 */
 .qw-empty { text-align: center; color: #a49bc6; font-size: 13px; padding: 60px 0; }
 
-.qw-type-badge { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
-  min-width: 40px; height: 24px; padding: 0 8px; box-sizing: border-box; border-radius: 999px;
+.qw-type-badge { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  min-width: 40px; height: 24px; padding: 0 9px; box-sizing: border-box; border-radius: 999px;
   font-size: 11.5px; font-weight: 800; }
-/* 문답=연보라 / 고르기=연노랑 / VS=연한 민트 (기존 카테고리 배지 팔레트·하단 그라데이션 민트와 통일) */
+/* 문답=연보라 / VS=연한 핑크 / 투표=연한 블루 (질문 목록 2a 시안 색) */
 .qw-type-qna { background: #eeebfe; color: #7363e8; }
-.qw-type-poll { background: #fff4d6; color: #c99a24; }
-.qw-type-vs { background: #e3faf1; color: #1f9c6b; }
+.qw-type-vs { background: #fde8ee; color: #cf5e88; }
+.qw-type-poll { background: #e6eefd; color: #5578d0; }
 
-/* 물음표 카드 — 그룹 상세 위시 카드(.task-item)와 동일한 모서리·그림자·여백 언어.
-   내가 쓴 물음표도 다른 카드와 동일하게 흰 배경(구분 없음). */
-.qw-rows { list-style: none; margin: 0; padding: 14px var(--pad-x) 0; display: flex; flex-direction: column; gap: 10px; }
-.qw-row { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); overflow: hidden; }
-.qw-row-btn { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
-  border: none; background: none; cursor: pointer; text-align: left; padding: 14px 16px; }
-.qw-row-btn:active { background: rgba(115, 99, 232, .06); }
-.qw-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
-/* 유형 배지를 질문과 같은 줄 왼쪽에 붙인다 — 배지는 안 줄어들고(flex-shrink:0), 질문만 말줄임. */
-.qw-row-qline { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qw-row-q { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qw-row-meta { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #a49bc6; }
-.qw-row-pending { color: #f0762b; font-weight: 700; }
+/* ---- 질문 목록: 필터 탭(전체/문답/VS/투표) ---- */
+.qw-filter-row { display: flex; gap: 6px; padding: 14px var(--pad-x) 0; position: relative; z-index: 1; }
+.qw-filter-chip { border: 1px solid #ececf1; background: #fff; color: #6a6875; border-radius: 999px;
+  padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.qw-filter-chip.on { background: #191722; color: #fff; border-color: #191722; }
+
+/* ---- 질문 목록: 카드(유형별 미리보기, 2a 시안) ---- */
+.qw-cards { list-style: none; margin: 0; padding: 12px var(--pad-x) 0; display: flex; flex-direction: column; gap: 14px; }
+.qw-card { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; text-align: left;
+  border: 1px solid rgba(0, 0, 0, .08); border-radius: var(--radius); background: var(--surface);
+  box-shadow: var(--card-shadow); cursor: pointer; padding: 20px; }
+.qw-card:active { background: #fbfaff; }
+.qw-card-top { display: flex; align-items: center; gap: 8px; }
+.qw-card-seq { flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: #a49bc6; }
+.qw-card-avatars { margin-left: auto; }
+.qw-card-avatars .avatar { width: 26px; height: 26px; font-size: 11px; }
+.qw-card-q { font-size: 17px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+/* 문답 카드 미리보기: 최근 답변 한 줄 */
+.qw-card-preview { display: flex; align-items: center; gap: 10px; background: #f7f6fa; border-radius: 12px; padding: 12px 14px; }
+.qw-card-preview .avatar { width: 22px; height: 22px; font-size: 10px; flex-shrink: 0; }
+.qw-card-preview-text { min-width: 0; font-size: 13.5px; line-height: 1.5; color: #4a4753; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qw-card-preview-text b { color: #191722; font-weight: 800; }
+/* VS 카드 미리보기: 좌우 박스 + 가운데 VS */
+.qw-card-vs { position: relative; display: flex; gap: 10px; }
+.qw-card-vs-opt { flex: 1; min-width: 0; border-radius: 12px; background: #f7f6fa; padding: 10px 8px; text-align: center; }
+.qw-card-vs-opt.lead { background: #fdf3f6; }
+.qw-card-vs-opt.lead .qw-card-vs-count { color: #cf5e88; }
+.qw-card-vs-label { font-size: 14px; font-weight: 800; color: #191722; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qw-card-vs-count { margin-top: 3px; font-size: 12.5px; font-weight: 700; color: #a49bc6; }
+.qw-card-vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-size: 11px; font-weight: 800; color: #a49bc6; background: var(--surface); padding: 0 6px; }
+/* 투표 카드 미리보기: 진행률 바 최대 2개 + "N개 더" */
+.qw-card-poll { display: flex; flex-direction: column; gap: 10px; }
+.qw-card-poll-line { display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; font-weight: 700; color: #191722; }
+.qw-card-poll-bar { margin-top: 5px; height: 6px; border-radius: 999px; background: #eef0f2; overflow: hidden; }
+.qw-card-poll-fill { display: block; height: 100%; border-radius: 999px; background: #b9c6e4; }
+.qw-card-poll-fill.top { background: #5578d0; }
+.qw-card-poll-more { font-size: 12.5px; color: #a49bc6; font-weight: 600; }
 
 /* ---- 물음표 공방: 작성/수정 ---- */
 .qw-compose-page { gap: 12px; }
@@ -1982,68 +2007,78 @@ button.mention-chip:active { opacity: .6; }
   color: #8b8798; font-size: 12px; cursor: pointer; }
 .qw-option-add { align-self: flex-start; border: none; background: none; color: #7363e8; font-size: 13.5px; font-weight: 700; cursor: pointer; padding: 4px 0; }
 
-/* ---- 물음표 공방: 상세 ---- */
+/* ---- 물음표 공방: 상세(3d/3e/3f 시안) ---- */
 .qw-post-page { gap: 0; padding-bottom: 90px; }
 .qw-post-head { display: flex; align-items: center; justify-content: space-between; }
-.qw-post-q { margin: 10px 0 0; font-size: 1.2rem; font-weight: 800; line-height: 1.45; color: #191722; word-break: break-word; }
-.qw-post-meta { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #a49bc6; }
-.qw-post-author { font-weight: 700; color: #6a6875; }
-.qw-post-body { margin: 14px 0 0; font-size: 15px; line-height: 1.7; color: #26232f; white-space: pre-wrap; word-break: break-word; }
+/* 뒤로/더보기 — 둥근 회색 원형 버튼(3d/3e/3f 공통 헤더) */
+.qw-round-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f3f3f5; color: #191722;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.qw-round-btn:active { background: #ececf1; }
+.qw-post-info { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.qw-post-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.qw-post-q { margin: 9px 0 0; font-size: 19px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-post-body { margin: 10px 0 0; font-size: 15px; line-height: 1.7; color: #26232f; white-space: pre-wrap; word-break: break-word; }
 
-/* VS: 좌우 두 선택지, 가운데 원형 배지. 득표율(%)은 보여주지 않고, 카드 우측 상단에
-   이 선택지를 고른 사람 아바타를 겹쳐 보여준다(최대 3명+N, 클릭 시 모달로 전체 목록). */
-.qw-vs { margin-top: 22px; }
-.qw-vs-row { position: relative; display: flex; gap: 10px; }
-.qw-vs-opt { position: relative; flex: 1; min-height: 100px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 9px; border: 2px solid #ececf1; border-radius: 16px;
-  background: #f8f7fb; cursor: pointer; padding: 14px 10px; }
-.qw-vs-opt.disabled { cursor: default; opacity: .7; }
-.qw-vs-opt.answered.mine { border-color: #7363e8; background: #f5f1fe; }
+/* VS: A/B 두 선택지. 답변 전엔 라벨만, 답변 후엔 득표수 + 고른 사람 아바타, 내가 고른 쪽은
+   핑크 링 + 은은한 글로우(3e 시안 — 발신자 식별과 무관하게 "내가 고른 쪽"만 강조). */
+.qw-vs { margin-top: 18px; }
+.qw-vs-row { display: flex; gap: 10px; }
+.qw-vs-opt { position: relative; flex: 1; min-height: 110px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; border-radius: 18px; background: var(--surface);
+  box-shadow: var(--card-shadow); cursor: pointer; padding: 16px 10px; }
+.qw-vs-opt.disabled { cursor: default; opacity: .85; }
+.qw-vs-opt.answered.mine { box-shadow: 0 0 0 2px #cf5e88 inset, 0 6px 18px rgba(207, 94, 136, .14); }
+.qw-vs-ab { font-size: 11.5px; font-weight: 800; color: #a49bc6; }
 .qw-vs-label { font-size: 15px; font-weight: 800; color: #191722; text-align: center; }
-.qw-vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 34px; height: 34px; border-radius: 50%; background: #191722; color: #fff; font-size: 11px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 3px 8px rgba(0, 0, 0, .2); pointer-events: none; }
-.qw-voter-stack { position: absolute; top: 8px; right: 8px; border: none; background: none; padding: 0; cursor: pointer; }
-.qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f8f7fb; }
-.qw-vs-opt.answered.mine .qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f5f1fe; }
+.qw-vs-count { font-size: 12.5px; font-weight: 700; color: #a49bc6; }
+.qw-voter-stack { border: none; background: none; padding: 0; cursor: pointer; }
+.qw-voter-stack .avatar { box-shadow: 0 0 0 2px var(--surface); }
 .qw-voter-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow-y: auto; }
 .qw-voter-list-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; font-size: 14.5px; font-weight: 600; color: #191722; }
 
-/* 고르기(투표): 세로 나열. 득표율(%)은 보여주지 않고, 오른쪽 끝에 고른 사람 아바타를
-   겹쳐 보여준다(최대 3명+N, 클릭 시 모달로 전체 목록) — VS 와 동일한 방식. */
-.qw-poll { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
-.qw-poll-opt { display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; border: 1px solid #ececf1; border-radius: 12px; background: #f8f7fb; cursor: pointer; padding: 13px 14px; text-align: left; }
-.qw-poll-opt.disabled { cursor: default; opacity: .7; }
-.qw-poll-opt.answered.mine { border-color: #7363e8; background: #f5f1fe; }
-.qw-poll-label { font-size: 14.5px; font-weight: 600; color: #191722; }
-.qw-poll-opt .qw-voter-stack { position: static; flex-shrink: 0; }
-.qw-poll-opt .qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f8f7fb; }
-.qw-poll-opt.answered.mine .qw-voter-stack .avatar { box-shadow: 0 0 0 2px #f5f1fe; }
+/* 투표: 세로 나열, 각 행 배경에 득표율만큼 옅은 채움 바가 깔린다(3f 시안). 내가 고른 행은
+   파란 링 + 체크 아이콘, 나머지는 빈 동그라미. */
+.qw-poll { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.qw-poll-opt { position: relative; display: flex; align-items: center; gap: 10px;
+  border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow);
+  cursor: pointer; padding: 13px 16px; text-align: left; overflow: hidden; }
+.qw-poll-opt.disabled { cursor: default; }
+.qw-poll-opt.answered.mine { box-shadow: 0 0 0 2px #5578d0 inset; }
+.qw-poll-fill { position: absolute; inset: 0; right: auto; background: #e9f0fd; z-index: 0; transition: width .25s ease; }
+.qw-poll-mark { position: relative; z-index: 1; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid #d9d7e0; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; color: #fff; }
+.qw-poll-opt.answered.mine .qw-poll-mark { border-color: #5578d0; background: #5578d0; }
+.qw-poll-label { position: relative; z-index: 1; flex: 1; min-width: 0; font-size: 14.5px; font-weight: 800; color: #191722; }
+.qw-poll-side { position: relative; z-index: 1; flex-shrink: 0; }
+.qw-poll-opt .qw-voter-stack .avatar { box-shadow: 0 0 0 2px var(--surface); }
 
-/* 문답: 답변 전엔 입력창만, 답변 후엔 내 답 + 남의 답 목록 공개(게이팅) */
-.qw-qna { margin-top: 22px; }
+/* 문답: 답변 전엔 입력창만, 답변 후엔 내 답(보라 링 + "내 답변" 배지) + 남의 답 카드 목록(3d 시안) */
+.qw-qna { margin-top: 18px; }
 .qw-qna-input-wrap { display: flex; flex-direction: column; gap: 8px; }
 .qw-qna-input { width: 100%; box-sizing: border-box; border: 1px solid #ececf1; border-radius: 12px; background: #f8f7fb;
   padding: 12px; min-height: 90px; font-size: 14.5px; line-height: 1.6; font-family: inherit; color: #191722; resize: vertical; }
 .qw-qna-input:focus { outline: none; border-color: #b9abf3; background: #fff; }
 .qw-qna-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .qw-link { border: none; background: none; color: #7363e8; font-size: 13px; font-weight: 700; cursor: pointer; padding: 6px 2px; }
-.qw-qna-mine { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-  background: #f5f1fe; border-radius: 12px; padding: 12px 14px; }
-.qw-qna-mine-text { margin: 0; font-size: 14.5px; line-height: 1.6; color: #191722; white-space: pre-wrap; word-break: break-word; }
 .qw-qna-locked { margin: 14px 0 0; text-align: center; color: #a49bc6; font-size: 13px; padding: 10px 0; }
 .qw-qna-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.qw-qna-item { display: flex; gap: 10px; align-items: flex-start; }
-.qw-qna-item-body { flex: 1; min-width: 0; }
-.qw-qna-item-name { font-weight: 700; font-size: 13px; color: #55525e; }
-.qw-qna-item-text { margin: 2px 0 0; font-size: 14px; line-height: 1.6; color: #26232f; white-space: pre-wrap; word-break: break-word; }
+.qw-qna-list + .qw-qna-list { margin-top: 0; }
+.qw-qna-card { position: relative; border-radius: 18px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
+.qw-qna-card.mine { box-shadow: 0 0 0 1.5px #7363e8 inset; }
+.qw-qna-card-head { display: flex; align-items: center; gap: 8px; }
+.qw-qna-card-name { font-weight: 800; font-size: 14px; color: #191722; }
+.qw-qna-mine-badge { flex-shrink: 0; font-size: 11px; font-weight: 800; color: #7363e8; background: #eeebfe;
+  border-radius: 999px; padding: 3px 9px; }
+.qw-qna-card-text { margin: 9px 0 0; font-size: 14.5px; line-height: 1.6; color: #26232f; white-space: pre-wrap; word-break: break-word; }
+.qw-qna-edit { position: absolute; top: 12px; right: 14px; padding: 2px; }
 
 /* 댓글 섹션(공용 comment-list/composer/mention-pop 재사용) */
 .qw-cmt-section { margin-top: 24px; border-top: 8px solid #f4f2f9;
   margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x)); padding: 18px var(--pad-x) 90px; }
-.qw-cmt-head { font-size: 14.5px; font-weight: 800; color: #191722; margin-bottom: 12px; }
+.qw-cmt-head { display: flex; align-items: center; justify-content: space-between; font-size: 14.5px; font-weight: 800; color: #191722; margin-bottom: 12px; }
 .qw-cmt-head .muted { color: #a49bc6; font-weight: 600; }
+.qw-cmt-sort { border: none; background: none; color: #5578d0; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 4px 2px; }
 .tr-head { text-align: center; }
 .tr-sign { display: inline-block; font-size: 19px; font-weight: 800; letter-spacing: -.3px; color: #f6f1e2; }
 .tr-sub { margin: 5px 0 0; font-size: 12.5px; color: #b0a8cf; }

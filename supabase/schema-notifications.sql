@@ -1421,7 +1421,7 @@ insert into public.notif_templates (key, label, title, body, vars, emoji, sort_o
   -- notif-admin-catalog-fix.sql
   ('new_memory',        '새 추억 생성',              '새로운 추억이 생겼어요',        '[{title}] 리뷰를 작성해 주세요', '{title} = 항목 제목', '📔', 110),
   ('new_review',        '새 리뷰 등록',              '{actor} 님이 리뷰를 작성했어요', '별이 몇 개나 떴을까요?',         '{actor} = 리뷰 작성자', '⭐', 111),
-  ('qworkshop_comment', '물음표 공방 내 물음표 댓글', '내 물음표에 댓글이 달렸어요',    '{actor}: {text}', '{actor} = 작성자, {text} = 댓글 내용', '💬', 112),
+  ('qworkshop_comment', '물음표 공방 내 질문 댓글', '내 질문에 댓글이 달렸어요',    '{actor}: {text}', '{actor} = 작성자, {text} = 댓글 내용', '💬', 112),
   ('qworkshop_reply',   '물음표 공방 내 댓글 답글',   '내 댓글에 답글이 달렸어요',      '{actor}: {text}', '{actor} = 작성자, {text} = 답글 내용', '↩️', 113)
 on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
 
