@@ -13,10 +13,18 @@ import Avatar from '../components/Avatar'
 import MemberAvatarBtn from '../components/MemberAvatarBtn'
 import Modal from '../components/Modal'
 
-// 물음표 공방 — 세 유형(VS/고르기/문답)의 질문 게시판. 목록/작성·수정/상세(답변+댓글)로 구성.
+// 물음표 공방 — 세 유형(VS/투표/문답)의 질문 게시판. 목록/작성·수정/상세(답변+댓글)로 구성.
+// "물음표 공방"은 기능/장소 이름이라 그대로 두고, 그 안의 포스팅 한 건을 가리키는 말은 "질문"으로 통일한다.
 // 접근 제어·댓글 멘션/답글은 비밀 게시판(RPC 전면 잠금)·위시 댓글(실명+멘션) 패턴을 그대로 따른다.
 
-const TYPE_LABEL = { vs: 'VS', poll: '고르기', qna: '문답' }
+const TYPE_LABEL = { vs: 'VS', poll: '투표', qna: '문답' }
+const TYPE_ICON = { vs: '⚔️', poll: '📊', qna: '💬' }
+const FILTERS = [
+  { key: 'all', label: '전체' },
+  { key: 'qna', label: `${TYPE_ICON.qna} 문답` },
+  { key: 'vs', label: `${TYPE_ICON.vs} VS` },
+  { key: 'poll', label: `${TYPE_ICON.poll} 투표` },
+]
 
 // 목록 하단 장식(qw-spark-field)에 뿌릴 반짝임·물음표 — 크기 제각각(sm/md/lg), 서로 다른
 // 딜레이·주기로 겹쳐 놓아 한 번에 여러 개가 보이면서 자연스럽게 어긋나 깜빡이게 한다.
@@ -75,16 +83,88 @@ const DotsIcon = () => (
   </svg>
 )
 
+// 아바타 스택(겹침 + N명 더). 상세의 VoterStack 과 같은 시각 언어를 목록 카드에서도 재사용.
+function AvatarStack({ people, max = 3, size = 26 }) {
+  const shown = people.slice(0, max)
+  const extra = people.length - shown.length
+  if (shown.length === 0) return null
+  return (
+    <span className="qw-card-avatars task-parts multi">
+      {shown.map((p, i) => <Avatar key={i} src={p.avatar_url} name={p.nickname} size={size} />)}
+      {extra > 0 && <span className="task-parts-more">+{extra}</span>}
+    </span>
+  )
+}
+
+// ============ 목록 카드(유형별 미리보기) ============
+function QwListCard({ post, onOpen }) {
+  const answerers = post.answerers || []
+  const counts = post.option_counts || []
+  const total = counts.reduce((a, b) => a + b, 0)
+  const topCount = counts.length ? Math.max(...counts) : 0
+
+  return (
+    <li className="qw-card-item">
+      <button type="button" className="qw-card" onClick={onOpen}>
+        <div className="qw-card-top">
+          <span className="qw-card-seq">{post.seq}번째 질문</span>
+          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_ICON[post.type]} {TYPE_LABEL[post.type]}</span>
+          <AvatarStack people={answerers} />
+        </div>
+        <div className="qw-card-q">{post.question}</div>
+
+        {post.type === 'qna' && answerers[0] && (
+          <div className="qw-card-preview">
+            <Avatar src={answerers[0].avatar_url} name={answerers[0].nickname} size={22} />
+            <span className="qw-card-preview-text"><b>{answerers[0].nickname}</b> · {answerers[0].answer_text}</span>
+          </div>
+        )}
+
+        {post.type === 'vs' && post.options?.length === 2 && (
+          <div className="qw-card-vs">
+            {post.options.map((label, i) => (
+              <div key={i} className={`qw-card-vs-opt${counts[i] > counts[1 - i] ? ' lead' : ''}`}>
+                <div className="qw-card-vs-label">{label}</div>
+                <div className="qw-card-vs-count">{counts[i] ?? 0}명</div>
+              </div>
+            ))}
+            <span className="qw-card-vs-mid">VS</span>
+          </div>
+        )}
+
+        {post.type === 'poll' && post.options?.length > 0 && (
+          <div className="qw-card-poll">
+            {post.options.slice(0, 2).map((label, i) => {
+              const c = counts[i] ?? 0
+              const pct = total > 0 ? Math.round((c / total) * 100) : 0
+              return (
+                <div key={i} className="qw-card-poll-row">
+                  <div className="qw-card-poll-line"><span>{label}</span><span>{pct}%</span></div>
+                  <div className="qw-card-poll-bar">
+                    <span className={`qw-card-poll-fill${c === topCount && c > 0 ? ' top' : ''}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+            {post.options.length > 2 && <div className="qw-card-poll-more">+ 선택지 {post.options.length - 2}개 더</div>}
+          </div>
+        )}
+      </button>
+    </li>
+  )
+}
+
 // ============ 목록 ============
 export default function QuestionWorkshop() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { setRefreshHandler } = useOutletContext()
+  const { setRefreshHandler, qwSearch } = useOutletContext()
   const { state: access } = useQworkshopAccess(groupId)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const load = useCallback(async () => {
     setError('')
@@ -93,6 +173,18 @@ export default function QuestionWorkshop() {
   }, [groupId])
   useEffect(() => { load() }, [load])
   useEffect(() => { setRefreshHandler(() => load); return () => setRefreshHandler(() => null) }, [setRefreshHandler, load])
+
+  // "N번째 질문" — 그룹 전체 개수 기준으로 오래된 순 1부터. 새로 만들수록 큰 번호.
+  const numbered = useMemo(() => {
+    const total = posts.length
+    return posts.map((p, i) => ({ ...p, seq: total - i }))
+  }, [posts])
+
+  const term = (qwSearch?.term || '').trim().toLowerCase()
+  const shown = useMemo(() => numbered
+    .filter((p) => typeFilter === 'all' || p.type === typeFilter)
+    .filter((p) => !term || p.question.toLowerCase().includes(term)),
+    [numbered, typeFilter, term])
 
   if (access === 'loading') return <QwLoading />
   if (access === 'no') return <QwNotReady />
@@ -109,33 +201,26 @@ export default function QuestionWorkshop() {
         ))}
       </div>
       <div className="qw-scroll">
+        <div className="qw-filter-row" role="tablist">
+          {FILTERS.map((f) => (
+            <button key={f.key} type="button" role="tab" aria-selected={typeFilter === f.key}
+              className={`qw-filter-chip${typeFilter === f.key ? ' on' : ''}`}
+              onClick={() => setTypeFilter(f.key)}>{f.label}</button>
+          ))}
+        </div>
         {error && <div className="alert alert-error">{error}</div>}
-        {loading ? <div className="spinner" /> : posts.length === 0 ? (
-          <div className="qw-empty">아직 물음표가 없어요. 첫 물음표를 남겨 보세요.</div>
+        {loading ? <div className="spinner" /> : shown.length === 0 ? (
+          <div className="qw-empty">{term ? '검색 결과가 없어요.' : '아직 질문이 없어요. 첫 질문을 남겨 보세요.'}</div>
         ) : (
-          <ul className="qw-rows">
-            {posts.map((p) => (
-              <li key={p.id} className="qw-row">
-                <button type="button" className="qw-row-btn"
-                  onClick={() => navigate(qwPath(groupId, `/${p.id}`), { state: { membersBackTo: location.state?.membersBackTo } })}>
-                  <span className="qw-row-main">
-                    <span className="qw-row-qline">
-                      <span className={`qw-type-badge qw-type-${p.type}`}>{TYPE_LABEL[p.type]}</span>
-                      <span className="qw-row-q">{p.question}</span>
-                    </span>
-                    <span className="qw-row-meta">
-                      <span className="qw-row-time">{qwTime(p.created_at)}</span>
-                      {p.comment_count > 0 && <span className="qw-row-cc">💬 {p.comment_count}</span>}
-                      {!p.has_answered && <span className="qw-row-pending">답변 전</span>}
-                    </span>
-                  </span>
-                </button>
-              </li>
+          <ul className="qw-cards">
+            {shown.map((p) => (
+              <QwListCard key={p.id} post={p}
+                onOpen={() => navigate(qwPath(groupId, `/${p.id}`), { state: { membersBackTo: location.state?.membersBackTo } })} />
             ))}
           </ul>
         )}
       </div>
-      <button type="button" className="fab" aria-label="물음표 쓰기" title="물음표 쓰기"
+      <button type="button" className="fab" aria-label="질문 쓰기" title="질문 쓰기"
         onClick={() => navigate(qwPath(groupId, '/new'))}>+</button>
     </div>
   )
@@ -239,7 +324,7 @@ export function QworkshopCompose() {
   )
 }
 
-// VS 카드 우측 상단: 이 선택지를 고른 사람 아바타 겹침(최대 3명+N) → 클릭 시 모달로 전체 목록
+// VS/투표 카드에서 선택지 옆에 붙는 "고른 사람" 아바타 겹침(최대 3명+N) → 클릭 시 모달로 전체 목록
 function VoterStack({ voters, onOpen, max = 3 }) {
   const shown = voters.slice(0, max)
   const extra = voters.length - max
@@ -253,7 +338,7 @@ function VoterStack({ voters, onOpen, max = 3 }) {
 }
 
 // ---- 답변/선택 영역(유형별) ----
-function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
+function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload }) {
   const [qnaEditing, setQnaEditing] = useState(!av.has_answered)
   const [qnaText, setQnaText] = useState(av.my_answer?.answer_text || '')
   const [voterModal, setVoterModal] = useState(null) // { label, voters } | null
@@ -298,13 +383,16 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
               className={`qw-vs-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}${submitting ? ' disabled' : ''}`}
               onClick={() => pick(i)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i) } }}>
-              {byOption[i].length > 0 && (
-                <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
-              )}
+              <span className="qw-vs-ab">{i === 0 ? 'A' : 'B'}</span>
               <span className="qw-vs-label">{label}</span>
+              {byOption[i].length > 0 && (
+                <>
+                  <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
+                  <span className="qw-vs-count">{byOption[i].length}명</span>
+                </>
+              )}
             </div>
           ))}
-          <span className="qw-vs-mid">VS</span>
         </div>
         {voterModalEl}
       </div>
@@ -316,19 +404,29 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
     const answered = av.has_answered
     const myIdx = av.my_answer?.option_idx
     const byOption = answered ? opts.map((_, i) => (av.answers || []).filter((a) => a.option_idx === i)) : opts.map(() => [])
+    const total = byOption.reduce((sum, arr) => sum + arr.length, 0)
     return (
       <div className="qw-poll">
-        {opts.map((label, i) => (
-          <div key={i} role="button" tabIndex={0}
-            className={`qw-poll-opt${answered ? ' answered' : ''}${myIdx === i ? ' mine' : ''}${submitting ? ' disabled' : ''}`}
-            onClick={() => pick(i)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i) } }}>
-            <span className="qw-poll-label">{label}</span>
-            {byOption[i].length > 0 && (
-              <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
-            )}
-          </div>
-        ))}
+        {opts.map((label, i) => {
+          const cnt = byOption[i].length
+          const pct = answered && total > 0 ? Math.round((cnt / total) * 100) : 0
+          const mine = myIdx === i
+          return (
+            <div key={i} role="button" tabIndex={0}
+              className={`qw-poll-opt${answered ? ' answered' : ''}${mine ? ' mine' : ''}${submitting ? ' disabled' : ''}`}
+              onClick={() => pick(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i) } }}>
+              {answered && <span className="qw-poll-fill" style={{ width: `${pct}%` }} aria-hidden="true" />}
+              <span className="qw-poll-mark" aria-hidden="true">{mine ? '✓' : ''}</span>
+              <span className="qw-poll-label">{label}</span>
+              {cnt > 0 && (
+                <span className="qw-poll-side">
+                  <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
+                </span>
+              )}
+            </div>
+          )
+        })}
         {voterModalEl}
       </div>
     )
@@ -351,21 +449,28 @@ function AnswerArea({ post, av, submitting, setSubmitting, setErr, reload }) {
           </div>
         </div>
       ) : (
-        <div className="qw-qna-mine">
-          <p className="qw-qna-mine-text">{av.my_answer?.answer_text}</p>
-          <button type="button" className="qw-link" onClick={() => setQnaEditing(true)}>수정</button>
-        </div>
+        <ul className="qw-qna-list">
+          <li className="qw-qna-card mine">
+            <div className="qw-qna-card-head">
+              <Avatar src={me?.avatar_url} name={me?.nickname} size={26} />
+              <span className="qw-qna-card-name">{me?.nickname}</span>
+              <span className="qw-qna-mine-badge">내 답변</span>
+            </div>
+            <p className="qw-qna-card-text">{av.my_answer?.answer_text}</p>
+            <button type="button" className="qw-link qw-qna-edit" onClick={() => setQnaEditing(true)}>수정</button>
+          </li>
+        </ul>
       )}
       {answered ? (
         others.length === 0 ? <p className="qw-qna-locked">아직 다른 답변이 없어요.</p> : (
           <ul className="qw-qna-list">
             {others.map((a) => (
-              <li className="qw-qna-item" key={a.author_id}>
-                <Avatar src={a.avatar_url} name={a.nickname} size={26} />
-                <div className="qw-qna-item-body">
-                  <span className="qw-qna-item-name">{a.nickname}</span>
-                  <p className="qw-qna-item-text">{a.answer_text}</p>
+              <li className="qw-qna-card" key={a.author_id}>
+                <div className="qw-qna-card-head">
+                  <Avatar src={a.avatar_url} name={a.nickname} size={26} />
+                  <span className="qw-qna-card-name">{a.nickname}</span>
                 </div>
+                <p className="qw-qna-card-text">{a.answer_text}</p>
               </li>
             ))}
           </ul>
@@ -388,6 +493,7 @@ function useQworkshopComments(postId, groupId, members) {
   const [menuId, setMenuId] = useState(null)
   const [highlightId, setHighlightId] = useState(null)
   const [err, setErr] = useState('')
+  const [newestFirst, setNewestFirst] = useState(true) // 댓글 정렬(3f 시안 기본값 "최신순")
   const inputRef = useRef(null)
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
@@ -456,7 +562,8 @@ function useQworkshopComments(postId, groupId, members) {
     const byId = {}
     comments.forEach((c) => { byId[c.id] = c })
     const rootIdOf = (c) => { let cur = c, g = 0; while (cur.parent_id && byId[cur.parent_id] && g++ < 100) cur = byId[cur.parent_id]; return cur.id }
-    const roots = comments.filter((c) => !c.parent_id)
+    let roots = comments.filter((c) => !c.parent_id)
+    if (newestFirst) roots = [...roots].reverse()
     const repliesOf = {}
     comments.forEach((c) => {
       if (!c.parent_id) return
@@ -465,7 +572,7 @@ function useQworkshopComments(postId, groupId, members) {
       ;(repliesOf[rid] = repliesOf[rid] || []).push(c)
     })
     return { roots, repliesOf }
-  }, [comments])
+  }, [comments, newestFirst])
 
   async function submit(e) {
     e?.preventDefault?.()
@@ -499,7 +606,7 @@ function useQworkshopComments(postId, groupId, members) {
   return {
     comments, loading, roots, repliesOf, body, setBody, sending, editingId, replyParent, menuId, setMenuId,
     highlightId, err, inputRef, mentionOpen, setMentionOpen, mentionQuery, mentionSuggest, onBodyChange, pickMention, renderBody,
-    loadComments, submit, removeComment, startEdit, replyTo, cancelCompose,
+    loadComments, submit, removeComment, startEdit, replyTo, cancelCompose, newestFirst, setNewestFirst,
   }
 }
 
@@ -576,8 +683,10 @@ export function QworkshopPost() {
 
   const seed = location.state?.post
   const [post, setPost] = useState(seed || null)
+  const [seq, setSeq] = useState(seed?.seq ?? null)
   const [gone, setGone] = useState(false)
   const [members, setMembers] = useState([])
+  const me = members.find((m) => m.is_self)
   const [av, setAv] = useState({ has_answered: false, my_answer: null, answers: [], counts: null })
   const [avLoading, setAvLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -591,8 +700,8 @@ export function QworkshopPost() {
   const loadPost = useCallback(async () => {
     try {
       const list = await listQworkshopPosts(groupId)
-      const fresh = list.find((x) => x.id === postId)
-      if (fresh) setPost(fresh); else setGone(true)
+      const idx = list.findIndex((x) => x.id === postId)
+      if (idx >= 0) { setPost(list[idx]); setSeq(list.length - idx) } else setGone(true)
     } catch { /* 기존 값 유지 */ }
   }, [groupId, postId])
   const loadAnswers = useCallback(async () => {
@@ -606,14 +715,14 @@ export function QworkshopPost() {
 
   async function removePost() {
     setMenuOpen(false)
-    if (!confirm('이 물음표를 삭제할까요? 답변과 댓글도 함께 삭제돼요.')) return
+    if (!confirm('이 질문을 삭제할까요? 답변과 댓글도 함께 삭제돼요.')) return
     try { await deleteQworkshopPost(postId); navigate(qwPath(groupId), { replace: true }) } catch (e) { setErr(e.message) }
   }
   function goEdit() { setMenuOpen(false); navigate(qwPath(groupId, `/${postId}/edit`), { state: { post } }) }
 
   if (access === 'loading') return <QwLoading />
   if (access === 'no') return <QwNotReady />
-  if (gone) return <div className="page"><div className="comment-empty">삭제된 물음표예요.</div></div>
+  if (gone) return <div className="page"><div className="comment-empty">삭제된 질문이에요.</div></div>
   if (!post) return <div className="page"><div className="spinner" /></div>
 
   const commentCount = h.comments.length
@@ -621,10 +730,12 @@ export function QworkshopPost() {
   return (
     <div className="page qw-post-page">
       <div className="qw-post-head">
-        <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
-        {(post.is_mine || post.can_delete) && (
+        <button type="button" onClick={() => navigate(-1)} className="qw-round-btn" aria-label="뒤로" title="뒤로">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        {(post.is_mine || post.can_delete) ? (
           <div className="task-menu-wrap">
-            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}><DotsIcon /></button>
+            <button type="button" className="qw-round-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}><DotsIcon /></button>
             {menuOpen && (
               <>
                 <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
@@ -635,22 +746,34 @@ export function QworkshopPost() {
               </>
             )}
           </div>
-        )}
+        ) : <span />}
+      </div>
+
+      <div className="qw-post-info">
+        <span className="qw-post-line">
+          <span className="qw-card-seq">{seq != null ? `${seq}번째 질문` : ''}</span>
+          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_ICON[post.type]} {TYPE_LABEL[post.type]}</span>
+        </span>
+        <MemberAvatarBtn groupId={groupId} userId={post.author_id} src={post.avatar_url} name={post.nickname} size={40} />
       </div>
       <h2 className="qw-post-q">{post.question}</h2>
-      <div className="qw-post-meta">
-        <span className="qw-post-author">{post.nickname}</span>
-        <span className="qw-post-time">{formatTime(post.created_at)}</span>
-      </div>
       {post.body && <p className="qw-post-body">{post.body}</p>}
 
       {err && <div className="alert alert-error">{err}</div>}
       {avLoading ? <div className="spinner" /> : (
-        <AnswerArea post={post} av={av} submitting={submitting} setSubmitting={setSubmitting} setErr={setErr} reload={async () => { await loadAnswers(); await loadPost() }} />
+        <AnswerArea post={post} av={av} me={me ? { avatar_url: me.avatar_url, nickname: me.display_nickname } : null}
+          submitting={submitting} setSubmitting={setSubmitting} setErr={setErr} reload={async () => { await loadAnswers(); await loadPost() }} />
       )}
 
       <div className="qw-cmt-section">
-        <div className="qw-cmt-head">댓글 <span className="muted">{commentCount}</span></div>
+        <div className="qw-cmt-head">
+          <span>댓글 <span className="muted">{commentCount}</span></span>
+          {commentCount > 1 && (
+            <button type="button" className="qw-cmt-sort" onClick={() => h.setNewestFirst((v) => !v)}>
+              {h.newestFirst ? '최신순' : '오래된순'}
+            </button>
+          )}
+        </div>
         {h.err && <div className="alert alert-error">{h.err}</div>}
         <QwCommentList h={h} groupId={groupId} />
       </div>
@@ -677,7 +800,7 @@ export function QworkshopPost() {
           <div className="composer-row">
             <textarea ref={h.inputRef} className="composer-input" value={h.body} onChange={h.onBodyChange} rows={1}
               onKeyDown={(e) => { if (e.key === 'Escape' && h.mentionOpen) { e.preventDefault(); h.setMentionOpen(false) } }}
-              placeholder={h.editingId ? '댓글 수정…' : h.replyParent ? '답글을 입력하세요' : '댓글을 입력하세요'} />
+              placeholder={h.editingId ? '댓글 수정…' : h.replyParent ? '답글을 입력하세요' : '댓글을 남겨 보세요'} />
             <button className="btn btn-primary" disabled={h.sending || !h.body.trim()}>{h.editingId ? '수정' : '등록'}</button>
           </div>
         </form>

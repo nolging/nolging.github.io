@@ -326,7 +326,12 @@ export default function Layout() {
   const [schedSearchQuery, setSchedSearchQuery] = useState('')
   const [schedSearchTerm, setSchedSearchTerm] = useState('')
   const resetSchedSearch = () => { setSchedSearchOpen(false); setSchedSearchQuery(''); setSchedSearchTerm('') }
-  useEffect(() => { resetCommentSearch(); resetSchedSearch(); setHeaderCommentCount(null) }, [location.pathname])
+  // 물음표 공방 목록: 상단바 제목 우측 돋보기 → 알약 검색창(일정 검색과 동일한 패턴/컴포넌트)
+  const [qwSearchOpen, setQwSearchOpen] = useState(false)
+  const [qwSearchQuery, setQwSearchQuery] = useState('')
+  const [qwSearchTerm, setQwSearchTerm] = useState('')
+  const resetQwSearch = () => { setQwSearchOpen(false); setQwSearchQuery(''); setQwSearchTerm('') }
+  useEffect(() => { resetCommentSearch(); resetSchedSearch(); resetQwSearch(); setHeaderCommentCount(null) }, [location.pathname])
   // 비밀 게시판 상단바 명칭: 그룹이 개설 시 지정한 이름(없으면 '비밀 게시판')
   const [boardTitle, setBoardTitle] = useState(null)
   const boardGroupId = boardMatch?.params.groupId || boardPostMatch?.params.groupId
@@ -625,12 +630,25 @@ export default function Layout() {
       </header>
     )
   } else if (qworkshopMatch) {
-    // 물음표 공방 목록: 좌측 뒤로(데이트/놀이터 페이지인 멤버 목록으로 — 비밀 게시판과 동일하게
-    // 고정 목적지), 제목
+    // 질문 목록: 좌측 뒤로(데이트/놀이터 페이지인 멤버 목록으로 — 비밀 게시판과 동일하게
+    // 고정 목적지), 제목(설명 문구 없이 제목만, 2a 시안), 우측 돋보기 → 알약 검색창(일정과 동일 패턴)
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${qworkshopMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">물음표 공방</span>
+        {!qwSearchOpen && (
+          <button type="button" onClick={() => backOr(`/groups/${qworkshopMatch.params.groupId}/members`, membersReturnState)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        )}
+        {!qwSearchOpen && <span className="topbar-heading topbar-title-lg">물음표 공방</span>}
+        <div className={`sched-search push-right ${qwSearchOpen ? 'open' : ''}`}>
+          <button type="button" className="sched-search-btn" aria-label="질문 검색" title="질문 검색"
+            onClick={() => setQwSearchOpen(true)}><SearchIcon /></button>
+          <input className="sched-search-input" autoFocus={qwSearchOpen} placeholder="질문 검색" enterKeyHint="search"
+            value={qwSearchQuery} onChange={(e) => setQwSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); setQwSearchTerm(qwSearchQuery.trim()) } }}
+            tabIndex={qwSearchOpen ? 0 : -1} />
+          {qwSearchOpen && (
+            <button type="button" className="sched-search-clear" aria-label="검색 닫기" onClick={resetQwSearch}><CloseIcon size={16} /></button>
+          )}
+        </div>
       </header>
     )
   } else if (boardNewMatch || boardEditMatch) {
@@ -1152,7 +1170,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, refreshStoreBadge: refreshStoreNew, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, qwSearch: { open: qwSearchOpen, query: qwSearchQuery, term: qwSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, refreshStoreBadge: refreshStoreNew, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
