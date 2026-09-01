@@ -1948,7 +1948,7 @@ button.mention-chip:active { opacity: .6; }
 
 /* ---- 질문 목록: 카드(유형별 미리보기, 2a 시안) ---- */
 .qw-cards { list-style: none; margin: 0; padding: 12px var(--pad-x) 0; display: flex; flex-direction: column; gap: 14px; }
-.qw-card { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; text-align: left;
+.qw-card { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; text-align: left;
   border: none; border-radius: var(--radius); background: var(--surface);
   box-shadow: var(--card-shadow); cursor: pointer; padding: 16px 17px; }
 .qw-card:active { background: #fbfaff; }
@@ -1956,14 +1956,15 @@ button.mention-chip:active { opacity: .6; }
 .qw-card-seq { flex-shrink: 0; font-size: 12px; font-weight: 800; color: rgba(0, 0, 0, .35); }
 .qw-card-avatars { margin-left: auto; }
 .qw-card-avatars .avatar { width: 26px; height: 26px; font-size: 11px; }
-.qw-card-q { font-size: 16px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-card-q { margin-top: 6px; font-size: 16px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-card-q .qw-type-badge { margin-right: 6px; vertical-align: 2px; }
 /* 문답 카드 미리보기: 최근 답변 한 줄 */
-.qw-card-preview { display: flex; align-items: center; gap: 10px; background: #f7f6fa; border-radius: 12px; padding: 12px 14px; }
+.qw-card-preview { margin-top: 14px; display: flex; align-items: center; gap: 10px; background: #f7f6fa; border-radius: 12px; padding: 12px 14px; }
 .qw-card-preview .avatar { width: 22px; height: 22px; font-size: 10px; flex-shrink: 0; }
 .qw-card-preview-text { min-width: 0; font-size: 13.5px; line-height: 1.5; color: #4a4753; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qw-card-preview-text b { color: #191722; font-weight: 800; }
 /* VS 카드 미리보기: 좌우 박스 + 가운데 VS */
-.qw-card-vs { position: relative; display: flex; gap: 10px; }
+.qw-card-vs { margin-top: 14px; position: relative; display: flex; gap: 10px; }
 .qw-card-vs-opt { flex: 1; min-width: 0; border-radius: 12px; background: #f7f6fa; padding: 11px 12px; text-align: center; }
 .qw-card-vs-opt.lead { background: #fdf3f6; }
 .qw-card-vs-opt.lead .qw-card-vs-count { color: #cf5e88; }
@@ -1972,7 +1973,7 @@ button.mention-chip:active { opacity: .6; }
 .qw-card-vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   font-size: 11px; font-weight: 800; color: rgba(0, 0, 0, .3); background: transparent; padding: 0; }
 /* 투표 카드 미리보기: 진행률 바 최대 2개 + "N개 더". 1위만 강조색, 나머지는 흐린 색(2a 시안) */
-.qw-card-poll { display: flex; flex-direction: column; gap: 10px; }
+.qw-card-poll { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .qw-card-poll-line { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
 .qw-card-poll-label, .qw-card-poll-pct { color: #6b6b73; }
 .qw-card-poll-row.top .qw-card-poll-label { color: #191722; }
@@ -2012,10 +2013,9 @@ button.mention-chip:active { opacity: .6; }
 
 /* ---- 물음표 공방: 상세(3d/3e/3f 시안) ---- */
 .qw-post-page { gap: 0; padding-bottom: 90px; }
-.qw-post-head { display: flex; align-items: center; }
 .qw-post-info { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.qw-post-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.qw-post-q { margin: 9px 0 0; font-size: 19px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-post-q { margin: 4px 0 0; font-size: 19px; font-weight: 800; line-height: 1.4; color: #191722; word-break: break-word; }
+.qw-post-q .qw-type-badge { margin-right: 6px; vertical-align: 2px; }
 .qw-post-body { margin: 10px 0 0; font-size: 15px; line-height: 1.7; color: #26232f; white-space: pre-wrap; word-break: break-word; }
 
 /* VS: A/B 두 선택지. 답변 전엔 라벨만, 답변 후엔 득표수 + 고른 사람 아바타, 내가 고른 쪽은

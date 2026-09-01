@@ -106,11 +106,13 @@ function QwListCard({ post, onOpen }) {
     <li className="qw-card-item">
       <button type="button" className="qw-card" onClick={onOpen}>
         <div className="qw-card-top">
-          <span className="qw-card-seq">{post.seq}번째 질문</span>
-          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
+          <span className="qw-card-seq">{post.seq} 번째 질문</span>
           <AvatarStack people={answerers} />
         </div>
-        <div className="qw-card-q">{post.question}</div>
+        <div className="qw-card-q">
+          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
+          {post.question}
+        </div>
 
         {post.type === 'qna' && answerers[0] && (
           <div className="qw-card-preview">
@@ -124,7 +126,7 @@ function QwListCard({ post, onOpen }) {
             {post.options.map((label, i) => (
               <div key={i} className={`qw-card-vs-opt${counts[i] > counts[1 - i] ? ' lead' : ''}`}>
                 <div className="qw-card-vs-label">{label}</div>
-                <div className="qw-card-vs-count">{counts[i] ?? 0}명</div>
+                <div className="qw-card-vs-count">{counts[i] ?? 0} 명</div>
               </div>
             ))}
             <span className="qw-card-vs-mid">VS</span>
@@ -141,7 +143,7 @@ function QwListCard({ post, onOpen }) {
                 <div key={i} className={`qw-card-poll-row${top ? ' top' : ''}`}>
                   <div className="qw-card-poll-line">
                     <span className="qw-card-poll-label">{label}</span>
-                    <span className="qw-card-poll-pct">{pct}%</span>
+                    <span className="qw-card-poll-pct">{pct} %</span>
                   </div>
                   <div className="qw-card-poll-bar">
                     <span className={`qw-card-poll-fill${top ? ' top' : ''}`} style={{ width: `${pct}%` }} />
@@ -149,7 +151,7 @@ function QwListCard({ post, onOpen }) {
                 </div>
               )
             })}
-            {post.options.length > 2 && <div className="qw-card-poll-more">+ 선택지 {post.options.length - 2}개 더</div>}
+            {post.options.length > 2 && <div className="qw-card-poll-more">+ 선택지 {post.options.length - 2} 개 더</div>}
           </div>
         )}
       </button>
@@ -392,7 +394,7 @@ function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload })
               {byOption[i].length > 0 && (
                 <>
                   <VoterStack voters={byOption[i]} onOpen={() => setVoterModal({ label, voters: byOption[i] })} />
-                  <span className="qw-vs-count">{byOption[i].length}명</span>
+                  <span className="qw-vs-count">{byOption[i].length} 명</span>
                 </>
               )}
             </div>
@@ -479,7 +481,7 @@ function AnswerArea({ post, av, me, submitting, setSubmitting, setErr, reload })
           </ul>
         )
       ) : (av.answers || []).length > 0 ? (
-        <p className="qw-qna-locked">{av.answers.length}명이 답변했어요. 답변을 남기면 볼 수 있어요.</p>
+        <p className="qw-qna-locked">{av.answers.length} 명이 답변했어요. 답변을 남기면 볼 수 있어요.</p>
       ) : null}
     </div>
   )
@@ -681,7 +683,7 @@ export function QworkshopPost() {
   const { groupId, postId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { setRefreshHandler } = useOutletContext()
+  const { setRefreshHandler, setHeaderPostMenu } = useOutletContext()
   const { state: access } = useQworkshopAccess(groupId)
 
   const seed = location.state?.post
@@ -694,7 +696,6 @@ export function QworkshopPost() {
   const [avLoading, setAvLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [err, setErr] = useState('')
-  const [menuOpen, setMenuOpen] = useState(false)
   const [bottomEl, setBottomEl] = useState(null)
   useEffect(() => { setBottomEl(document.getElementById('app-bottom')) }, [])
 
@@ -717,11 +718,21 @@ export function QworkshopPost() {
   useEffect(() => { setRefreshHandler(() => refreshAll); return () => setRefreshHandler(() => null) }, [setRefreshHandler, refreshAll])
 
   async function removePost() {
-    setMenuOpen(false)
     if (!confirm('이 질문을 삭제할까요? 답변과 댓글도 함께 삭제돼요.')) return
     try { await deleteQworkshopPost(postId); navigate(qwPath(groupId), { replace: true }) } catch (e) { setErr(e.message) }
   }
-  function goEdit() { setMenuOpen(false); navigate(qwPath(groupId, `/${postId}/edit`), { state: { post } }) }
+  function goEdit() { navigate(qwPath(groupId, `/${postId}/edit`), { state: { post } }) }
+
+  // 수정/삭제 ⋮ 를 상단바에 등록(권한자만) — 비밀 게시판 글 상세와 동일한 패턴
+  useEffect(() => {
+    if (!post) { setHeaderPostMenu(null); return }
+    const items = []
+    if (post.is_mine) items.push({ label: '수정', onClick: goEdit })
+    if (post.can_delete) items.push({ label: '삭제', danger: true, onClick: removePost })
+    setHeaderPostMenu(items.length ? { items } : null)
+    return () => setHeaderPostMenu(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post, setHeaderPostMenu])
 
   if (access === 'loading') return <QwLoading />
   if (access === 'no') return <QwNotReady />
@@ -732,31 +743,14 @@ export function QworkshopPost() {
 
   return (
     <div className="page qw-post-page">
-      {(post.is_mine || post.can_delete) && (
-        <div className="qw-post-head">
-          <div className="task-menu-wrap push-right">
-            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setMenuOpen((o) => !o)}><DotsIcon /></button>
-            {menuOpen && (
-              <>
-                <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-                <div className="menu-pop" role="menu">
-                  {post.is_mine && <button type="button" onClick={goEdit}>수정</button>}
-                  {post.can_delete && <button type="button" className="menu-danger" onClick={removePost}>삭제</button>}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="qw-post-info">
-        <span className="qw-post-line">
-          <span className="qw-card-seq">{seq != null ? `${seq}번째 질문` : ''}</span>
-          <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
-        </span>
+        <span className="qw-card-seq">{seq != null ? `${seq} 번째 질문` : ''}</span>
         <MemberAvatarBtn groupId={groupId} userId={post.author_id} src={post.avatar_url} name={post.nickname} size={28} />
       </div>
-      <h2 className="qw-post-q">{post.question}</h2>
+      <h2 className="qw-post-q">
+        <span className={`qw-type-badge qw-type-${post.type}`}>{TYPE_LABEL[post.type]}</span>
+        {post.question}
+      </h2>
       {post.body && <p className="qw-post-body">{post.body}</p>}
 
       {err && <div className="alert alert-error">{err}</div>}

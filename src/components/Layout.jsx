@@ -620,13 +620,34 @@ export default function Layout() {
       </header>
     )
   } else if (qworkshopPostMatch) {
-    // 물음표 상세: 제목 없이 좌측 뒤로 화살표만(수정/삭제는 본문 안 인페이지 메뉴로).
+    // 질문 상세: 제목 없이 좌측 뒤로 화살표, (권한 시) 우측 ⋮ → 수정/삭제(비밀 게시판과 동일 패턴).
     // 목록에서 받은 membersBackTo 를 그대로 이어서 넘겨, 목록에서 또 뒤로 갈 때도 안 끊기게 한다.
+    const hasQwPostMenu = headerPostMenu?.items?.length > 0
     topbar = (
       <header className="topbar">
         <button type="button"
           onClick={() => backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`, location.state?.membersBackTo ? { membersBackTo: location.state.membersBackTo } : undefined)}
           className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        {hasQwPostMenu && (
+          <div className="task-menu-wrap push-right">
+            <button type="button" className="btn btn-ghost btn-sm icon-btn" aria-label="더보기" onClick={() => setPostMenuOpen((o) => !o)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+              </svg>
+            </button>
+            {postMenuOpen && (
+              <>
+                <div className="menu-backdrop" onClick={() => setPostMenuOpen(false)} />
+                <div className="menu-pop" role="menu">
+                  {headerPostMenu.items.map((it, i) => (
+                    <button key={i} type="button" className={it.danger ? 'menu-danger' : ''}
+                      onClick={() => { setPostMenuOpen(false); it.onClick?.() }}>{it.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
     )
   } else if (qworkshopMatch) {
