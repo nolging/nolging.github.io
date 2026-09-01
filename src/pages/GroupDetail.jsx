@@ -452,12 +452,12 @@ export default function GroupDetail() {
   const annivToday = isCouple && isAnnivToday(group?.anniversary || claimDate)
 
   // 꾸미기 테마: 상단바~콘텐츠 배경을 테마별로 (페이지 벗어나면 원복)
-  //  heart=은은한 분홍 / bubble=소라·연보라 그라데이션 / firework=밤하늘 다크
+  //  heart=은은한 분홍 / bubble=소라·연보라 그라데이션 / firework=밤하늘 다크 / star=밤하늘 소라색(별빛)
   useEffect(() => {
     const shell = document.querySelector('.app-shell')
     if (!shell) return
     const t = group?.deco_theme
-    const map = { heart: 'gd-bg-heart', bubble: 'gd-bg-bubble', firework: 'gd-bg-firework', waterpark: 'gd-bg-waterpark' }
+    const map = { heart: 'gd-bg-heart', bubble: 'gd-bg-bubble', firework: 'gd-bg-firework', waterpark: 'gd-bg-waterpark', star: 'gd-bg-star' }
     Object.entries(map).forEach(([k, cls]) => shell.classList.toggle(cls, t === k))
     return () => Object.values(map).forEach((cls) => shell.classList.remove(cls))
   }, [group?.deco_theme])

@@ -2717,6 +2717,11 @@ button.mlist-row:hover { background: #f6f5fa; }
   background: linear-gradient(140deg, #ffd45e, #ff6a9a);
   box-shadow: 0 10px 24px rgba(255, 120, 120, .45);
 }
+/* 별빛이 내린다: 밤하늘 소라색 배경에서 빛나는 별빛(연라벤더→인디고) 톤 */
+.gd-theme-star .fab {
+  background: linear-gradient(140deg, #cfcbff, #6a63e0);
+  box-shadow: 0 10px 24px rgba(90, 84, 200, .45);
+}
 /* 물음표 공방: iOS 글래스(프로스티드) 버튼 — 뒤에 깔린 보라·민트 그라데이션이 블러로 비쳐
    보이게 반투명 흰색 유리 재질로. 아이콘은 흰색 대신 검정으로 바꿔 밝은 유리 위에서도 또렷하게. */
 .qw-list-page .fab {
@@ -2745,8 +2750,9 @@ button.mlist-row:hover { background: #f6f5fa; }
 .app-shell.gd-bg-heart .topbar .icon-btn:hover,
 .app-shell.gd-bg-bubble .topbar .icon-btn:hover,
 .app-shell.gd-bg-waterpark .topbar .icon-btn:hover { background: rgba(255, 255, 255, .7); }
-/* 폭죽(다크): 상단바 버튼은 이미 밝은 아이콘의 반투명 흰색 → blur 만 추가 */
-.app-shell.gd-bg-firework .topbar .icon-btn { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+/* 폭죽/별빛(다크): 상단바 버튼은 이미 밝은 아이콘의 반투명 흰색 → blur 만 추가 */
+.app-shell.gd-bg-firework .topbar .icon-btn,
+.app-shell.gd-bg-star .topbar .icon-btn { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 /* 폭죽 탭 바 = 프리미엄 상점 탭 바와 동일: 다크 반투명 바 + 꺼진 탭은 옅은 흰 글자.
    탭 글자색은 인라인 color-mix(var(--muted), var(--text)) 라 변수만 바꿔주면 됨
    (꺼짐=--muted 옅은흰 / 켜짐=--text 어두움 → 흰 알약 위에서 읽힘) */
@@ -2754,6 +2760,12 @@ button.mlist-row:hover { background: #f6f5fa; }
   background: rgba(255, 255, 255, .07);
   --muted: rgba(244, 242, 253, .55);
   --text: #2a2140;
+}
+/* 별빛이 내린다 탭 바 — 폭죽과 동일한 다크 반투명 방식, 소라색 톤에 맞게 글자색만 조정 */
+.gd-theme-star .tabs {
+  background: rgba(255, 255, 255, .07);
+  --muted: rgba(233, 231, 255, .55);
+  --text: #241f4d;
 }
 /* 하단 탭이 있는 화면(쪽지 등)에서는 FAB 를 탭바 위로 올린다 (탭바는 모바일에서만 노출) */
 @media (max-width: 640px), (orientation: portrait) {
@@ -3693,6 +3705,18 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .theme-fw-stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .gd-themed > .theme-fw-stars { z-index: 0; }
 
+/* ===== 별빛이 내린다 테마: 밤하늘을 채운 깊은 소라색(인디고·라벤더) + 아래로 갈수록 밝아지는
+   별빛 그라데이션. 폭죽과 같은 "다크 밤하늘" 계열이지만 따뜻한 톤 대신 시원한 청보라 톤. ===== */
+.app-shell.gd-bg-star { background: linear-gradient(180deg, #131230 0%, #201e4a 38%, #4b4793 68%, #8985d6 100%); }
+.app-shell.gd-bg-star .topbar,
+.app-shell.gd-bg-star .content { background: transparent; }
+.app-shell.gd-bg-star .topbar,
+.app-shell.gd-bg-star .topbar-heading { color: #f2f1fc; }
+.app-shell.gd-bg-star .topbar .icon-btn { background: rgba(255,255,255,.14); color: #eeedfb; }
+.app-shell.gd-bg-star .topbar .icon-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+.app-shell.gd-bg-star .gd-head h1 { color: #f3f2fb; }
+.app-shell.gd-bg-star .gd-title-text .muted { color: #bab7e6; }
+
 /* 대시보드 카드용 테마 미리보기 (카드 안에 담김) */
 /* .premium / .friend 카드 배경(0,3,0)을 이기도록 동일 특이도 + 뒤에 정의 */
 .group-card.group-tile.tile-heart { background: linear-gradient(180deg, #fffbfd 0%, #fff4f8 55%, #ffedf3 100%); }
@@ -3700,6 +3724,9 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .group-card.group-tile.tile-fw { background: linear-gradient(150deg, #100e18 0%, #14111f 55%, #2e2049 76%, #5e3350 91%, #9c5638 100%); }
 .group-tile.tile-fw .tile-name { color: #f4f1fa; }
 .group-tile.tile-fw .tile-desc, .group-tile.tile-fw .muted { color: #b6afca; }
+.group-card.group-tile.tile-star { background: linear-gradient(160deg, #131230 0%, #201e4a 40%, #4b4793 70%, #8985d6 100%); }
+.group-tile.tile-star .tile-name { color: #f3f2fb; }
+.group-tile.tile-star .tile-desc, .group-tile.tile-star .muted { color: #bab7e6; }
 .theme-fw-card { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; border-radius: inherit; }
 /* 카드용 폭죽 터짐: 중심에서 입자가 방사형으로 퍼졌다 사라지는 CSS 폭죽 */
 .fw-burst { position: absolute; width: 0; height: 0; }
