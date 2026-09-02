@@ -41,7 +41,9 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    // badge(안드로이드 알림 카드 우측 상단 소형 아이콘)는 의도적으로 생략 — 컬러 아이콘을
+    // 그대로 쓰면 왼쪽 icon 과 함께 양쪽에 아이콘이 떠서 중복으로 보인다(제보: 갤럭시).
+    // 생략하면 안드로이드가 별도 아이콘 없이 icon 하나만 보여 준다.
     data: { url: data.url || '/' },
     tag: data.tag,           // 있으면 같은 태그 알림을 갱신
     // tag 가 같으면 브라우저가 기존 알림을 "조용히" 교체만 하고 새로 알리지 않을 수 있다
