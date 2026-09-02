@@ -3329,8 +3329,8 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   width: 30px; height: 30px; border-radius: 50%; background: #f3f2f7; color: var(--text);
   font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
-/* 로또: 모달 좌상단 "당첨 확인" 버튼(부모가 flex-column stretch 라 안 늘어나게 self 고정) */
-.lotto-check-btn { align-self: flex-start; }
+/* 로또: 상점 상세 모달(.st-detail) 좌상단 "당첨 확인" 버튼 — 우상단 .st-x(닫기)와 대칭 */
+.st-lotto-check-btn { position: absolute; top: 14px; left: 14px; z-index: 1; }
 /* 로또: 당첨 번호 확인 모달 */
 .lotto-draw { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 4px 0 2px; }
 .lotto-draw-round { font-size: 13.5px; font-weight: 800; color: var(--muted); }
