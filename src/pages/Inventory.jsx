@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap, touchQuest } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, getLatestLottoDraw, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap, touchQuest } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -994,6 +994,42 @@ function LottoTicketsModal({ open, onClose, roundNo: roundNoProp = null }) {
   )
 }
 
+function formatDrawDate(iso) {
+  try { return new Date(iso).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+}
+
+// ---- 로또: 가장 최근 발표된 당첨 번호(전체 공용, 매주 토요일 18시 자동 추첨) ----
+function LottoDrawModal({ open, onClose }) {
+  const [draw, setDraw] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    setLoading(true); setError('')
+    getLatestLottoDraw().then(setDraw).catch((e) => setError(e.message)).finally(() => setLoading(false))
+  }, [open])
+
+  return (
+    <Modal open={open} onClose={onClose} title="당첨 번호">
+      {error && <div className="alert alert-error">{error}</div>}
+      {loading ? <div className="spinner" /> : !draw ? (
+        <p className="lotto-draw-empty">아직 추첨된 회차가 없어요.<br />매주 토요일 18시에 추첨해요.</p>
+      ) : (
+        <div className="lotto-draw">
+          <div className="lotto-draw-round">{draw.round_no}회</div>
+          <div className="lotto-draw-nums">
+            {draw.winning_numbers.map((n) => <span key={n} className="lotto-draw-ball">{n}</span>)}
+            <span className="lotto-draw-plus">+</span>
+            <span className="lotto-draw-ball bonus">{draw.bonus_number}</span>
+          </div>
+          {draw.drawn_at && <div className="lotto-draw-date">{formatDrawDate(draw.drawn_at)} 추첨</div>}
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 // ---- 로또: 번호 6개 선택 → 응모(보유 로또 1장 소모, 회차는 제출 시점에 결정) ----
 function LottoModal({ open, onClose, onDone, count = 0 }) {
   const [selected, setSelected] = useState([])   // 선택한 번호(최대 6개)
@@ -1003,12 +1039,13 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   const [roundNo, setRoundNo] = useState(null)
   const [used, setUsed] = useState(0)            // 이번 세션에서 소모한 로또 수
   const [ticketsOpen, setTicketsOpen] = useState(false)
+  const [drawOpen, setDrawOpen] = useState(false)
   const openCountRef = useRef(0)
 
   useEffect(() => {
     if (open) {
       setSelected([]); setBusy(false); setError(''); setSubmitted(false); setRoundNo(null)
-      setUsed(0); setTicketsOpen(false); openCountRef.current = count
+      setUsed(0); setTicketsOpen(false); setDrawOpen(false); openCountRef.current = count
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -1052,6 +1089,7 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   return (
     <Modal open={open} onClose={handleClose} cardClassName="nc-link-modal lotto-modal">
       <div className="lotto-modal-body">
+        <button type="button" className="btn btn-ghost btn-sm lotto-check-btn" onClick={() => setDrawOpen(true)}>당첨 확인</button>
         {error && <div className="alert alert-error">{error}</div>}
         {!submitted ? (
           <>
@@ -1085,6 +1123,7 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
       </div>
 
       <LottoTicketsModal open={ticketsOpen} onClose={() => setTicketsOpen(false)} roundNo={roundNo} />
+      <LottoDrawModal open={drawOpen} onClose={() => setDrawOpen(false)} />
     </Modal>
   )
 }

@@ -3329,6 +3329,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   width: 30px; height: 30px; border-radius: 50%; background: #f3f2f7; color: var(--text);
   font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
+/* 로또: 모달 좌상단 "당첨 확인" 버튼(부모가 flex-column stretch 라 안 늘어나게 self 고정) */
+.lotto-check-btn { align-self: flex-start; }
+/* 로또: 당첨 번호 확인 모달 */
+.lotto-draw { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 4px 0 2px; }
+.lotto-draw-round { font-size: 13.5px; font-weight: 800; color: var(--muted); }
+.lotto-draw-nums { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.lotto-draw-ball {
+  width: 38px; height: 38px; border-radius: 50%; background: #191722; color: #fff;
+  font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.lotto-draw-ball.bonus { background: #cf5e88; }
+.lotto-draw-plus { font-size: 16px; font-weight: 800; color: var(--muted); }
+.lotto-draw-date { font-size: 12.5px; color: var(--muted); }
+.lotto-draw-empty { text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.6; padding: 24px 0; }
 
 /* 그룹 꾸미기 테마 — 하트 뿅뿅 */
 .group-tile { position: relative; }   /* 하트 오버레이 담기(이미 overflow:hidden) */
