@@ -30,6 +30,14 @@ export default function AdminMisc() {
           </span>
           <span className="aq-card-chevron always" aria-hidden="true">›</span>
         </button>
+        <button type="button" className="aq-card" onClick={() => nav('/admin/misc/lotto')}>
+          <span className="aq-card-icon" style={{ background: '#fff0d6' }} aria-hidden="true">🎱</span>
+          <span className="aq-card-body">
+            <span className="aq-card-name">로또 당첨 관리</span>
+            <span className="aq-card-desc aq-card-desc-desktop">회차별 응모를 확인하고 당첨 룰·번호를 관리해요.</span>
+          </span>
+          <span className="aq-card-chevron always" aria-hidden="true">›</span>
+        </button>
       </div>
     </div>
   )
