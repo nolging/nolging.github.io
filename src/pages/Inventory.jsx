@@ -10,7 +10,7 @@ import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
 import ScratchCard from '../components/ScratchCard'
 import GraffitiPad from '../components/GraffitiPad'
-import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap, touchQuest } from '../lib/api'
+import { listStoreItems, listInventory, listMyGroups, useWish, useCoupleRing, useFriendRing, useCassette, useLink, useVideo, useBluray, usePolaroidFilm, getMyLedBanner, listFriendGroups, listCoupleGroups, scratchNyangpito, submitLottoEntry, listMyLottoEntries, myLatestLottoRound, getLottoRules, applyGroupTheme, unapplyGroupTheme, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf, giftOwnedItem, useStickerBoard, useNameTag, nametagState, usePurinMic, purinMicState, listMemberCards, boardEligibleGroups, setupSecretBoard, qworkshopEligibleGroups, setupQworkshop, sendMegaphone, getGroupDecoMap, touchQuest } from '../lib/api'
 import { parseMusicUrl } from '../components/MusicPlayer'
 import { parseVideoUrl } from '../components/VideoPlayer'
 import { LedboardModal, LedEditModal } from '../components/LedModals'
@@ -948,7 +948,7 @@ function ScratchModal({ open, onClose, onDone, refreshCoin, count = 0 }) {
   )
 }
 
-const LOTTO_NUMS = Array.from({ length: 30 }, (_, i) => i + 1)
+const LOTTO_RULES_DEFAULT = { number_min: 1, number_max: 30, pick_count: 6 }
 
 // ---- 로또: 이번 회차에 내가 제출한 번호 목록. roundNo 를 안 넘기면(응모 가능 수량 없이
 // 카드만 클릭한 경우) 내가 마지막으로 응모한 회차를 스스로 찾아서 보여준다. ----
@@ -1003,29 +1003,36 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
   const [roundNo, setRoundNo] = useState(null)
   const [used, setUsed] = useState(0)            // 이번 세션에서 소모한 로또 수
   const [ticketsOpen, setTicketsOpen] = useState(false)
+  const [rules, setRules] = useState(LOTTO_RULES_DEFAULT) // 번호 범위·선택 개수(관리자 설정)
   const openCountRef = useRef(0)
 
   useEffect(() => {
     if (open) {
       setSelected([]); setBusy(false); setError(''); setSubmitted(false); setRoundNo(null)
       setUsed(0); setTicketsOpen(false); openCountRef.current = count
+      getLottoRules().then(setRules).catch(() => setRules(LOTTO_RULES_DEFAULT))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const remaining = Math.max(0, openCountRef.current - used) // 이 장 제출 후 남은 로또 수
+  const nums = useMemo(() => {
+    const arr = []
+    for (let n = rules.number_min; n <= rules.number_max; n++) arr.push(n)
+    return arr
+  }, [rules])
 
   function toggleNum(n) {
     if (busy) return
     setSelected((prev) => {
       if (prev.includes(n)) return prev.filter((x) => x !== n)
-      if (prev.length >= 6) return prev
+      if (prev.length >= rules.pick_count) return prev
       return [...prev, n].sort((a, b) => a - b)
     })
   }
 
   async function submit() {
-    if (selected.length !== 6 || busy) return
+    if (selected.length !== rules.pick_count || busy) return
     setBusy(true); setError('')
     try {
       const { roundNo: rn, remaining: rem } = await submitLottoEntry(selected)
@@ -1055,16 +1062,16 @@ function LottoModal({ open, onClose, onDone, count = 0 }) {
         {error && <div className="alert alert-error">{error}</div>}
         {!submitted ? (
           <>
-            <ItemHead id="lotto" name="로또" sub="번호 6개를 골라 이번 회차에 응모해요" emoji="🎱" />
+            <ItemHead id="lotto" name="로또" sub={`번호 ${rules.pick_count}개를 골라 이번 회차에 응모해요`} emoji="🎱" />
             <div className="lotto-grid">
-              {LOTTO_NUMS.map((n) => (
+              {nums.map((n) => (
                 <button key={n} type="button"
                   className={`lotto-num ${selected.includes(n) ? 'on' : ''}`}
-                  disabled={busy || (!selected.includes(n) && selected.length >= 6)}
+                  disabled={busy || (!selected.includes(n) && selected.length >= rules.pick_count)}
                   onClick={() => toggleNum(n)}>{n}</button>
               ))}
             </div>
-            <button type="button" className="st-btn-buy st-btn-block" disabled={selected.length !== 6 || busy}
+            <button type="button" className="st-btn-buy st-btn-block" disabled={selected.length !== rules.pick_count || busy}
               onClick={submit}>{busy ? '응모 중…' : '응모하기'}</button>
             <button type="button" className="scratch-reveal-link" onClick={() => setTicketsOpen(true)}>이번 회차 응모 번호 확인</button>
           </>

@@ -1545,7 +1545,8 @@ export async function scratchNyangpito() {
   return Number(data) || 0
 }
 
-// 로또: 보유한 로또 1장 소모 + 번호 6개 응모. 응모 시점에 결정된 회차·잔여 로또 개수를 반환.
+// 로또: 보유한 로또 1장 소모 + 번호(개수는 룰에 따라 다름, getLottoRules 참고) 응모.
+// 응모 시점에 결정된 회차·잔여 로또 개수를 반환.
 export async function submitLottoEntry(numbers) {
   const { data, error } = await supabase.rpc('submit_lotto_entry', { p_numbers: numbers })
   if (error) {
@@ -1592,6 +1593,54 @@ export async function getLatestLottoDraw() {
     .limit(1)
   if (error) { if (error.code === '42P01' || error.code === '42703') return null; throw error }
   return data?.[0] ?? null
+}
+
+// 지금 응모하면 적용될 룰(번호 범위·선택 개수) — 이미 열려 있는(미추첨) 회차가 있으면 그
+// 회차에 스냅샷된 룰을, 없으면(다음 응모가 새 회차를 열 것이므로) 관리자가 설정해 둔 현재
+// 룰을 반환한다. 번호 선택 모달이 그리는 버튼 범위·선택 가능 개수를 여기서 결정한다.
+export async function getLottoRules() {
+  const fallback = { number_min: 1, number_max: 30, pick_count: 6 }
+  const { data: openRound, error: e1 } = await supabase
+    .from('lotto_rounds')
+    .select('number_min, number_max, pick_count')
+    .is('winning_numbers', null)
+    .order('round_no', { ascending: true })
+    .limit(1)
+  if (!e1 && openRound?.[0]?.number_min != null) return openRound[0]
+  const { data: cfg, error: e2 } = await supabase
+    .from('lotto_config').select('number_min, number_max, pick_count').eq('id', 1).maybeSingle()
+  if (e2) { if (e2.code === '42P01') return fallback; throw e2 }
+  return cfg || fallback
+}
+
+// 로또 관리자 설정 원본(number_min/max/pick_count/prize_tiers 전체) — 룰 설정 폼 초기값 로드용.
+// lotto_config 는 인증된 사용자 누구나 읽을 수 있어 관리자 전용 RPC 가 아니어도 된다.
+export async function getLottoConfig() {
+  const { data, error } = await supabase.from('lotto_config').select('*').eq('id', 1).maybeSingle()
+  if (error) { if (error.code === '42P01') return null; throw error }
+  return data
+}
+
+// ---- 로또 당첨 관리(관리자 전용) ----
+export async function adminListLottoRounds() {
+  const { data, error } = await supabase.rpc('admin_list_lotto_rounds')
+  if (error) { if (error.code === 'PGRST202') return []; throw error }
+  return data ?? []
+}
+export async function adminListLottoEntries(roundId) {
+  const { data, error } = await supabase.rpc('admin_list_lotto_entries', { p_round_id: roundId })
+  if (error) throw error
+  return data ?? []
+}
+export async function adminSetLottoWinningNumbers(roundId, numbers, bonus) {
+  const { error } = await supabase.rpc('admin_set_lotto_winning_numbers', { p_round_id: roundId, p_numbers: numbers, p_bonus: bonus })
+  if (error) throw error
+}
+export async function adminUpdateLottoConfig({ numberMin, numberMax, pickCount, prizeTiers }) {
+  const { error } = await supabase.rpc('admin_update_lotto_config', {
+    p_number_min: numberMin, p_number_max: numberMax, p_pick_count: pickCount, p_prize_tiers: prizeTiers,
+  })
+  if (error) throw error
 }
 
 // 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.
