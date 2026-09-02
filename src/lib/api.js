@@ -1581,6 +1581,19 @@ export async function myLatestLottoRound() {
   return data?.[0]?.round_no ?? null
 }
 
+// 가장 최근 발표된(추첨 완료된) 로또 당첨 번호 — 전체 공용, 내 응모 이력과 무관.
+// 아직 한 번도 추첨된 적 없으면 null.
+export async function getLatestLottoDraw() {
+  const { data, error } = await supabase
+    .from('lotto_rounds')
+    .select('round_no, winning_numbers, bonus_number, drawn_at')
+    .not('winning_numbers', 'is', null)
+    .order('round_no', { ascending: false })
+    .limit(1)
+  if (error) { if (error.code === '42P01' || error.code === '42703') return null; throw error }
+  return data?.[0] ?? null
+}
+
 // 전광판: 문구+색상으로 24시간 배너 게재. 전광판 1개 소모.
 export async function useLedboard({ text, color }) {
   const { error } = await supabase.rpc('use_ledboard', { p_text: text, p_color: color })
