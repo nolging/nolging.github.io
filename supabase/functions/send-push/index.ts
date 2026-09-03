@@ -88,6 +88,8 @@ Deno.serve(async (req) => {
       url = `/groups/${record.group_id}` // 연인이 전광판 게재 → 그룹 홈
     } else if (record.type === 'donation') {
       url = '/me/coins' // 길냥이 후원 받음 → 츄르 내역
+    } else if (record.type === 'lotto_draw' && record.lotto_round_id) {
+      url = `/lotto/${record.lotto_round_id}` // 로또 추첨 완료 → 당첨 번호 페이지
     } else if ((record.type === 'new_memory' || record.type === 'new_review') && record.task_id && record.group_id) {
       url = `/groups/${record.group_id}/tasks/${record.task_id}?tab=reviews` // 새 추억/새 리뷰 → 추억 상세(리뷰 탭)
     } else if (record.task_id && record.group_id) {

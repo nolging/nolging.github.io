@@ -66,7 +66,7 @@ function NotifRow({ n, icon, iconBg, clickable, timeText, onOpen, onDelete }) {
         <button type="button" className="swipe-btn danger" aria-label="삭제" title="삭제"
           tabIndex={dx === 0 ? -1 : 0} onClick={(e) => { e.stopPropagation(); setDx(0); onDelete() }}><TrashIcon /></button>
       </div>
-      <div className={`notif ${n.is_read ? '' : 'unread'} ${clickable ? 'clickable' : ''} ${n.type === 'system_notice' ? 'notif-sysnotice' : ''}`}
+      <div className={`notif ${n.is_read ? '' : 'unread'} ${clickable ? 'clickable' : ''} ${(n.type === 'system_notice' || n.type === 'lotto_draw') ? 'notif-sysnotice' : ''}`}
         style={{ transform: `translateX(${dx}px)` }}
         onClick={handleClick} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
@@ -78,7 +78,7 @@ function NotifRow({ n, icon, iconBg, clickable, timeText, onOpen, onDelete }) {
             </div>
             <span className="notif-right">
               <span className="notif-time">{timeText}</span>
-              {!n.is_read && n.type !== 'system_notice' && <span className="notif-dot" aria-label="안 읽음" />}
+              {!n.is_read && n.type !== 'system_notice' && n.type !== 'lotto_draw' && <span className="notif-dot" aria-label="안 읽음" />}
             </span>
           </div>
           {n.body && <p className="notif-text">{resolveItemText(n.body)}</p>}

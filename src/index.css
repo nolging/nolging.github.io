@@ -1643,6 +1643,7 @@ button.mention-chip:active { opacity: .6; }
   width: 38px; height: 38px; border-radius: 14px; background: var(--primary-soft);
   display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; flex-shrink: 0;
 }
+.notif-ic-lotto_draw { background: #fff0d6; }
 .notif-ic-gift, .notif-ic-wish, .notif-ic-reminder { background: #eeebfe; }
 .notif-ic-new_member, .notif-ic-accept { background: #e8f4ec; }
 .notif-ic-reply, .notif-ic-task_comment { background: #fdeee6; }
