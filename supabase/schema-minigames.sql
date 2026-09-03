@@ -55,6 +55,10 @@ create table if not exists public.lotto_entries (
 );
 create index if not exists idx_lotto_entries_user_round on public.lotto_entries(user_id, round_no, created_at);
 
+-- 알림(추첨 완료)이 당첨 번호 페이지로 바로 이동할 수 있게 컬럼 추가.
+alter table public.notifications add column if not exists lotto_round_id bigint
+  references public.lotto_rounds(id) on delete cascade;
+
 -- 로또 관리자 설정(싱글턴 1행) — 번호 범위/추첨 개수/등수별 지급 츄르. 관리자가 바꿔도
 -- 이미 열려 있는(미추첨) 회차에는 영향 없고, 새로 열리는 다음 회차부터 적용된다(아래
 -- lotto_rounds 의 스냅샷 컬럼 참고).
@@ -355,6 +359,15 @@ begin
       end if;
     end if;
   end loop;
+
+  -- 이번 회차에 응모한(당첨 여부 무관) 모든 회원에게 추첨 완료 알림. notif_render 를 거치지
+  -- 않고 시스템 공지와 동일하게 제목/본문을 직접 넣는다(알림센터에서도 시스템 공지와 같은
+  -- 카드 스타일로 표시되도록 type='lotto_draw' 고정, 클릭 시 당첨 번호 페이지로 이동).
+  insert into public.notifications(user_id, actor_id, type, title, body, lotto_round_id)
+  select distinct le.user_id, null::uuid, 'lotto_draw',
+    '로또 당첨 번호 추첨이 완료됐어요!', '당첨 확인 후 기간 내에 수령하세요', p_round_id
+  from public.lotto_entries le
+  where le.round_id = p_round_id;
 end $$;
 
 -- 로또 자동 추첨(pg_cron 용, 매주 토요일 18시 KST). 아직 당첨 번호가 없는 가장 빠른(=유일한)

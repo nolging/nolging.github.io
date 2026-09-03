@@ -34,6 +34,7 @@ import MyProfile from './pages/MyProfile'
 import MemberInfo from './pages/MemberInfo'
 import ProfileEdit from './pages/ProfileEdit'
 import CoinHistory from './pages/CoinHistory'
+import LottoDraw from './pages/LottoDraw'
 import Notifications from './pages/Notifications'
 import NotificationSettings from './pages/NotificationSettings'
 import Store from './pages/Store'
@@ -124,6 +125,7 @@ export default function App() {
         <Route path="/me/info" element={<MemberInfo />} />
         <Route path="/me/edit" element={<ProfileEdit />} />
         <Route path="/me/coins" element={<CoinHistory />} />
+        <Route path="/lotto/:roundId" element={<LottoDraw />} />
         {/* 상점·쪽지: 모든 로그인 사용자 접근 가능 */}
         <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
