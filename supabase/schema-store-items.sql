@@ -138,6 +138,11 @@ update public.lotto_rounds set
   prize_tiers = coalesce(prize_tiers, (select prize_tiers from public.lotto_config where id = 1))
 where number_min is null or number_max is null or pick_count is null or prize_tiers is null;
 
+-- 관리자가 "미리" 지정해 둔 당첨 번호(스테이징) — 실제 공개/정산은 draw_lotto_round() 가
+-- 정기 추첨 시각에 이 값을 그대로 사용한다. preset_bonus 는 선택 사항(없으면 랜덤 보충).
+alter table public.lotto_rounds add column if not exists preset_numbers int[];
+alter table public.lotto_rounds add column if not exists preset_bonus int;
+
 
 -- =====================================================================
 -- 2. RLS 정책
@@ -912,36 +917,48 @@ begin
 end $$;
 
 -- 로또 자동 추첨(pg_cron 용, 매주 토요일 18시 KST). 아직 당첨 번호가 없는 가장 빠른(=유일한)
--- 회차를 찾아 그 회차 자신의 스냅샷(number_min~number_max, pick_count) 기준으로 서로 다른
--- (pick_count+1)개를 뽑아 앞쪽은 winning_numbers(오름차순), 마지막 1개는 bonus_number 로
--- 채운 뒤 정산한다. 응모가 하나도 없어 열린 회차가 없으면 아무 것도 하지 않는다.
+-- 회차를 찾는다. 관리자가 preset_numbers/preset_bonus 를 미리 지정해 뒀으면 그 값을 그대로
+-- 쓰고(보너스만 없으면 그 자리만 랜덤 보충), 아무것도 지정 안 했으면 전부 랜덤으로 뽑는다.
+-- 응모가 하나도 없어 열린 회차가 없으면 아무 것도 하지 않는다.
 create or replace function public.draw_lotto_round()
 returns void language plpgsql security definer set search_path = public as $$
 declare
   v_round public.lotto_rounds;
   v_nums int[];
+  v_bonus int;
 begin
   select * into v_round from public.lotto_rounds
     where winning_numbers is null order by round_no asc limit 1
     for update skip locked;
   if v_round.id is null then return; end if;
 
-  select array_agg(x) into v_nums
-    from (select x from generate_series(v_round.number_min, v_round.number_max) as x
-          order by random() limit (v_round.pick_count + 1)) s;
+  if v_round.preset_numbers is not null then
+    v_nums := v_round.preset_numbers;
+  else
+    select array_agg(x order by x) into v_nums
+      from (select x from generate_series(v_round.number_min, v_round.number_max) as x
+            order by random() limit v_round.pick_count) s;
+  end if;
+
+  if v_round.preset_bonus is not null then
+    v_bonus := v_round.preset_bonus;
+  else
+    select x into v_bonus from generate_series(v_round.number_min, v_round.number_max) as x
+      where x <> all(v_nums) order by random() limit 1;
+  end if;
 
   update public.lotto_rounds
-    set winning_numbers = (select array_agg(n order by n) from unnest(v_nums[1:v_round.pick_count]) as n),
-        bonus_number = v_nums[v_round.pick_count + 1],
-        drawn_at = now()
+    set winning_numbers = v_nums, bonus_number = v_bonus, drawn_at = now()
     where id = v_round.id;
 
   perform public._lotto_settle_round(v_round.id);
 end $$;
 -- authenticated 에게 grant 하지 않음(cron 전용 — dispatch_due_reminders() 와 동일 패턴)
 
--- 관리자: 아직 미추첨인 회차의 당첨 번호를 직접 지정(자동 추첨을 기다리지 않고 바로 확정).
-create or replace function public.admin_set_lotto_winning_numbers(p_round_id bigint, p_numbers int[], p_bonus int)
+-- 관리자: 아직 미추첨인 회차의 당첨 번호를 "미리" 지정(스테이징)만 한다. 여기서는 공개/정산을
+-- 하지 않고, 실제 공개는 draw_lotto_round() 가 정기 추첨 시각에 그대로 가져다 쓴다.
+-- p_bonus 는 null 허용(보너스는 나중에 랜덤으로 채워짐).
+create or replace function public.admin_preset_lotto_winning_numbers(p_round_id bigint, p_numbers int[], p_bonus int)
 returns void language plpgsql security definer set search_path = public as $$
 declare
   v_round public.lotto_rounds;
@@ -966,17 +983,17 @@ begin
       raise exception '번호는 %~% 사이여야 해요.', v_round.number_min, v_round.number_max;
     end if;
   end loop;
-  if p_bonus is null or p_bonus < v_round.number_min or p_bonus > v_round.number_max then
-    raise exception '보너스 번호가 올바르지 않아요.';
+  if p_bonus is not null then
+    if p_bonus < v_round.number_min or p_bonus > v_round.number_max then
+      raise exception '보너스 번호가 올바르지 않아요.';
+    end if;
+    if p_bonus = any(v_nums) then raise exception '보너스 번호는 당첨 번호와 겹칠 수 없어요.'; end if;
   end if;
-  if p_bonus = any(v_nums) then raise exception '보너스 번호는 당첨 번호와 겹칠 수 없어요.'; end if;
 
-  update public.lotto_rounds set winning_numbers = v_nums, bonus_number = p_bonus, drawn_at = now()
+  update public.lotto_rounds set preset_numbers = v_nums, preset_bonus = p_bonus
     where id = p_round_id;
-
-  perform public._lotto_settle_round(p_round_id);
 end $$;
-grant execute on function public.admin_set_lotto_winning_numbers(bigint, int[], int) to authenticated;
+grant execute on function public.admin_preset_lotto_winning_numbers(bigint, int[], int) to authenticated;
 
 -- 관리자: 룰 갱신(다음에 새로 열리는 회차부터 적용 — 이미 열려 있는 회차는 스냅샷을 그대로 씀).
 create or replace function public.admin_update_lotto_config(p_number_min int, p_number_max int, p_pick_count int, p_prize_tiers jsonb)
@@ -996,15 +1013,20 @@ begin
 end $$;
 grant execute on function public.admin_update_lotto_config(int, int, int, jsonb) to authenticated;
 
--- 관리자: 회차 목록(응모 수 포함) + 특정 회차의 응모자 목록(아이디/응모 번호).
+-- 관리자: 회차 목록(응모 수 + 미리 지정해 둔 preset_numbers/preset_bonus 포함) + 특정
+-- 회차의 응모자 목록(아이디/응모 번호). returns table 컬럼이 늘어날 때마다(preset 추가 시
+-- 등) create or replace 가 아니라 drop 후 재생성해야 한다.
+drop function if exists public.admin_list_lotto_rounds();
 create or replace function public.admin_list_lotto_rounds()
 returns table(id bigint, round_no integer, entry_count bigint, winning_numbers int[], bonus_number int,
               number_min int, number_max int, pick_count int, prize_tiers jsonb,
+              preset_numbers int[], preset_bonus int,
               drawn_at timestamptz, created_at timestamptz)
 language sql security definer stable set search_path = public as $$
   select r.id, r.round_no,
          (select count(*) from public.lotto_entries e where e.round_id = r.id) as entry_count,
          r.winning_numbers, r.bonus_number, r.number_min, r.number_max, r.pick_count, r.prize_tiers,
+         r.preset_numbers, r.preset_bonus,
          r.drawn_at, r.created_at
   from public.lotto_rounds r
   where public.is_admin(auth.uid())

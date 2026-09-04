@@ -3352,17 +3352,31 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   font-size: 14px; font-weight: 700; font-family: inherit;
 }
+.la-draw-box {
+  position: relative; margin-top: 14px; border-radius: 16px; background: var(--surface);
+  box-shadow: var(--card-shadow); padding: 18px 16px; text-align: center;
+}
+.la-draw-box .lotto-draw { padding: 0; }
+.la-draw-pending { margin: 0; padding: 14px 0; color: var(--muted); font-size: 13.5px; text-align: center; }
+.la-draw-edit-btn {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
+  border: none; background: #f2f2f5; color: #57536a; display: flex; align-items: center;
+  justify-content: center; cursor: pointer;
+}
+.la-preset-open-btn {
+  display: block; margin: 12px auto 0; border: none; background: none; color: #7363e8;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; padding: 4px 0;
+}
 .la-round-panel { margin-top: 16px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
 .la-entries-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; color: var(--text); }
-.la-round-panel .la-entries-head:not(:first-child) { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, .06); }
 .la-entries { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 .la-entry-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .la-entry-id { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text); }
-.la-draw-readonly { margin-top: 10px; padding: 4px 0; }
-.la-picker { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.la-preset-picker { margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .la-picker-label { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-top: 8px; }
 .la-picker-grid { margin-top: 4px; }
 .la-bonus-num.on { background: #cf5e88; border-color: #cf5e88; }
+.la-bonus-switch-row { margin-top: 14px; }
 .la-confirm-btn { width: 100%; margin-top: 14px; }
 .la-rule-note { margin: 10px 0 0; }
 .la-range-row { display: flex; align-items: center; gap: 8px; }

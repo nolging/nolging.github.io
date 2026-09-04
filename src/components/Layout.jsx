@@ -250,6 +250,7 @@ export default function Layout() {
             : p.startsWith('/admin/misc/groups/') ? '그룹 사용량 제어'
               : p.startsWith('/admin/misc/groups') ? '그룹별 사용량 제어'
                 : p.startsWith('/admin/misc/notices') ? (p.endsWith('/new') ? '시스템 공지 발송' : p === '/admin/misc/notices' ? '시스템 공지' : '시스템 공지 수정')
+                  : p.startsWith('/admin/misc/lotto') ? '로또 당첨 관리'
                   : p.startsWith('/admin/reports') ? '오류 리포트 관리'
                   : '관리자'
   // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
