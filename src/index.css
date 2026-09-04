@@ -3384,13 +3384,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .la-sort-select:focus, .la-sort-select:focus-visible { outline: none; box-shadow: none; }
 .la-round-panel { margin-top: 10px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
 .la-entries { display: flex; flex-direction: column; }
-.la-entry-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; }
+/* 아이디+응모 번호+등수가 한 줄에 들어오도록 이 목록에서만 전체적으로 작게 */
+.la-entry-row { display: flex; align-items: center; gap: 6px; padding: 9px 0; }
 .la-entry-row + .la-entry-row { border-top: 1px solid rgba(0, 0, 0, .06); }
 .la-entry-row:first-child { padding-top: 0; }
 .la-entry-row:last-child { padding-bottom: 0; }
-.la-entry-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.la-entry-id { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text); }
-.la-entry-rank { flex-shrink: 0; font-size: 12.5px; font-weight: 800; color: var(--text); white-space: nowrap; }
+.la-entry-id {
+  flex-shrink: 0; max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11.5px; font-weight: 700; color: var(--text);
+}
+.la-entry-row .lotto-ticket-row { flex: 1 1 auto; gap: 4px; flex-wrap: nowrap; justify-content: flex-start; overflow: hidden; }
+.la-entry-row .lotto-ticket-num { width: 22px; height: 22px; font-size: 10px; flex-shrink: 0; }
+.lotto-ticket-num.hit { background: #191722; color: #fff; }
+.lotto-ticket-num.bonus-hit { background: #cf5e88; color: #fff; }
+.la-entry-rank { flex-shrink: 0; margin-left: auto; padding-left: 6px; font-size: 11.5px; font-weight: 800; color: var(--text); white-space: nowrap; }
 .la-preset-picker { margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .la-picker-label { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-top: 8px; }
 .la-picker-grid { margin-top: 4px; }
