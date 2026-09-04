@@ -3356,21 +3356,34 @@ img.store-img.store-img-lg { transform: scale(1.16); }
   box-shadow: var(--card-shadow); padding: 18px 16px; text-align: center;
 }
 .la-draw-box .lotto-draw { padding: 0; }
-.la-draw-pending { margin: 0; padding: 14px 0 6px; color: var(--muted); font-size: 13.5px; text-align: center; }
-.la-draw-edit-btn {
-  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
-  border: none; background: #f2f2f5; color: #57536a; display: flex; align-items: center;
-  justify-content: center; cursor: pointer;
+/* 관리자 지정(preset) 회차: 번호 위에 공개 예정일 + 수정/삭제 아이콘을 한 줄로 */
+.la-preset-date-row { position: relative; padding: 0 62px; margin-bottom: 2px; }
+.la-preset-icons { position: absolute; top: 50%; right: 0; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; }
+.la-icon-btn {
+  width: 26px; height: 26px; border-radius: 50%; border: none; background: #f2f2f5; color: #57536a;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
 }
+.la-icon-btn.danger { color: #d64545; }
+/* 보너스 공까지 7개가 한 줄에 들어가도록 이 영역에서만 공 크기를 줄인다 */
+.la-draw-box .lotto-draw-nums { gap: 5px; flex-wrap: nowrap; }
+.la-draw-box .lotto-draw-ball { width: 30px; height: 30px; font-size: 12px; }
+.la-draw-box .lotto-draw-plus { font-size: 13px; }
+.lotto-draw-ball.bonus.unknown { opacity: .5; }
+.la-draw-pending { margin: 0; padding: 14px 0 6px; color: var(--muted); font-size: 13.5px; text-align: center; }
 .la-preset-open-btn {
   display: block; margin: 4px auto 0; border: none; border-radius: 999px; background: #191722;
   color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; padding: 9px 22px;
 }
-.la-round-panel { margin-top: 16px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
-.la-entries-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; color: var(--text); }
-.la-entries { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
-.la-entry-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.la-entries-head { margin-top: 20px; }
+.la-round-panel { margin-top: 10px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 18px; }
+.la-entries { display: flex; flex-direction: column; }
+.la-entry-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; }
+.la-entry-row + .la-entry-row { border-top: 1px solid rgba(0, 0, 0, .06); }
+.la-entry-row:first-child { padding-top: 0; }
+.la-entry-row:last-child { padding-bottom: 0; }
+.la-entry-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .la-entry-id { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text); }
+.la-entry-rank { flex-shrink: 0; font-size: 12.5px; font-weight: 800; color: var(--text); white-space: nowrap; }
 .la-preset-picker { margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .la-picker-label { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-top: 8px; }
 .la-picker-grid { margin-top: 4px; }

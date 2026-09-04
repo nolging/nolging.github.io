@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { adminListLottoRounds, adminListLottoEntries, adminPresetLottoWinningNumbers } from '../../lib/api'
+import {
+  adminListLottoRounds, adminListLottoEntries, adminPresetLottoWinningNumbers, adminClearLottoPreset,
+} from '../../lib/api'
 import Modal from '../../components/Modal'
 import Switch from '../../components/Switch'
 
@@ -24,6 +26,31 @@ function EditIcon() {
       <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </svg>
   )
+}
+
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  )
+}
+
+// 응모자 한 명의 당첨 등수 — 관리자가 미리 지정했거나(preset) 실제 추첨이 끝난 회차에서만
+// 계산할 수 있고, 둘 다 없으면 "-". 보너스 번호가 아직 안 정해졌으면(preset만 있고 보너스는
+// 미지정) 보너스 불일치로 간주해 계산한다(나중에 실제 보너스가 정해지면 결과가 바뀔 수 있음).
+function lottoRankLabel(entry, round) {
+  const winNums = round.winning_numbers ?? round.preset_numbers
+  if (!winNums) return '-'
+  const bonusNum = round.winning_numbers ? round.bonus_number : round.preset_bonus
+  const match = entry.numbers.filter((n) => winNums.includes(n)).length
+  const bonusHit = bonusNum != null && entry.numbers.includes(bonusNum)
+  const tiers = Array.isArray(round.prize_tiers) ? round.prize_tiers : []
+  const tier = tiers.slice().sort((a, b) => a.rank - b.rank)
+    .find((t) => t.match === match && (!t.bonus || bonusHit))
+  return tier ? `${tier.rank}등` : '낙첨'
 }
 
 // 당첨 번호 지정 모달 내부 — 번호 버튼 하나로 본번호(pick_count개)를 먼저 채우고,
@@ -94,28 +121,40 @@ function LottoPresetPicker({ round, onSaved }) {
   )
 }
 
-// 회차 선택 셀렉트 하단의 당첨 번호 표시 영역 — 공개됐으면 확정 번호, 미리 지정만 해뒀으면
-// 그 번호(공개 예정일과 함께), 아무것도 없으면 "추첨 예정" 문구만 가운데 정렬로 보여준다.
-function LottoDrawBox({ round, onOpenPicker }) {
+// 회차 선택 셀렉트 하단의 당첨 번호 표시 영역 — 공개됐으면 확정 번호(날짜는 번호 아래),
+// 미리 지정만 해뒀으면 그 번호 + 공개 예정일(날짜는 번호 위, 우측 끝에 수정/삭제 아이콘),
+// 아무것도 없으면 "추첨 예정" 문구만 가운데 정렬로 보여준다. 보너스 번호를 아직 안 정했으면
+// "?"로 표시한다.
+function LottoDrawBox({ round, onOpenPicker, onDeletePreset }) {
   const drawn = !!round.winning_numbers
   const hasPreset = !drawn && round.preset_numbers?.length > 0
   const nums = drawn ? round.winning_numbers : (hasPreset ? round.preset_numbers : null)
-  const bonus = drawn ? round.bonus_number : (hasPreset ? round.preset_bonus : null)
+  const bonusKnown = drawn ? true : (hasPreset ? round.preset_bonus != null : false)
+  const bonus = drawn ? round.bonus_number : round.preset_bonus
 
   return (
     <div className="la-draw-box">
-      {hasPreset && (
-        <button type="button" className="la-draw-edit-btn" aria-label="당첨 번호 수정" title="당첨 번호 수정"
-          onClick={onOpenPicker}><EditIcon /></button>
-      )}
       {nums ? (
         <div className="lotto-draw">
+          {hasPreset && (
+            <div className="la-preset-date-row">
+              <span className="lotto-draw-date">{nextDrawLabel()} 공개 예정</span>
+              <span className="la-preset-icons">
+                <button type="button" className="la-icon-btn" aria-label="당첨 번호 수정" title="당첨 번호 수정"
+                  onClick={onOpenPicker}><EditIcon /></button>
+                <button type="button" className="la-icon-btn danger" aria-label="당첨 번호 삭제" title="당첨 번호 삭제"
+                  onClick={onDeletePreset}><TrashIcon /></button>
+              </span>
+            </div>
+          )}
           <div className="lotto-draw-nums">
             {nums.map((n) => <span key={n} className="lotto-draw-ball">{n}</span>)}
-            {bonus != null && <span className="lotto-draw-plus">+</span>}
-            {bonus != null && <span className="lotto-draw-ball bonus">{bonus}</span>}
+            {(drawn || hasPreset) && <span className="lotto-draw-plus">+</span>}
+            {(drawn || hasPreset) && (
+              <span className={`lotto-draw-ball bonus ${bonusKnown ? '' : 'unknown'}`}>{bonusKnown ? bonus : '?'}</span>
+            )}
           </div>
-          <div className="lotto-draw-date">{drawn ? `${formatDate(round.drawn_at)} 추첨` : `${nextDrawLabel()} 공개 예정`}</div>
+          {drawn && <div className="lotto-draw-date">{formatDate(round.drawn_at)} 추첨</div>}
         </div>
       ) : (
         <p className="la-draw-pending">{nextDrawLabel()} 추첨 예정</p>
@@ -127,29 +166,35 @@ function LottoDrawBox({ round, onOpenPicker }) {
   )
 }
 
-// 선택한 회차의 응모 현황(아이디/응모 번호).
-function LottoEntriesPanel({ entryCount, entries, entriesLoading }) {
+// 선택한 회차의 응모 현황(아이디/응모 번호/당첨 등수). "응모 현황" 배지(응모 건수)는
+// 흰색 카드 바깥 제목 줄에 두고, 카드 안 각 행 우측 끝에는 당첨 등수를 보여준다.
+function LottoEntriesPanel({ round, entries, entriesLoading }) {
   return (
-    <div className="la-round-panel">
-      <div className="la-entries-head">
-        <span>응모 현황</span>
-        <span className="aq-count">{entryCount}</span>
+    <>
+      <div className="aq-section-head la-entries-head">
+        <span className="aq-section-title">응모 현황</span>
+        <span className="aq-count">{round.entry_count}</span>
       </div>
-      {entriesLoading ? <div className="spinner sm" /> : entries.length === 0 ? (
-        <p className="muted sm">아직 응모가 없어요.</p>
-      ) : (
-        <div className="la-entries">
-          {entries.map((e, i) => (
-            <div key={i} className="la-entry-row">
-              <span className="la-entry-id">{e.login_id}</span>
-              <span className="lotto-ticket-row">
-                {e.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      <div className="la-round-panel">
+        {entriesLoading ? <div className="spinner sm" /> : entries.length === 0 ? (
+          <p className="muted sm">아직 응모가 없어요.</p>
+        ) : (
+          <div className="la-entries">
+            {entries.map((e, i) => (
+              <div key={i} className="la-entry-row">
+                <div className="la-entry-top">
+                  <span className="la-entry-id">{e.login_id}</span>
+                  <span className="la-entry-rank">{lottoRankLabel(e, round)}</span>
+                </div>
+                <span className="lotto-ticket-row">
+                  {e.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
@@ -186,6 +231,11 @@ export default function AdminLotto() {
     return () => { on = false }
   }, [selectedId])
 
+  async function handleDeletePreset() {
+    if (!selectedRound || !window.confirm('지정한 당첨 번호를 삭제할까요?')) return
+    try { await adminClearLottoPreset(selectedRound.id); await load() } catch (e) { setError(e.message) }
+  }
+
   return (
     <div className="page admin-page aq-page la-page">
       {error && <div className="alert alert-error">{error}</div>}
@@ -204,8 +254,8 @@ export default function AdminLotto() {
             </select>
             {selectedRound && (
               <>
-                <LottoDrawBox round={selectedRound} onOpenPicker={() => setPickerOpen(true)} />
-                <LottoEntriesPanel entryCount={selectedRound.entry_count} entries={entries} entriesLoading={entriesLoading} />
+                <LottoDrawBox round={selectedRound} onOpenPicker={() => setPickerOpen(true)} onDeletePreset={handleDeletePreset} />
+                <LottoEntriesPanel round={selectedRound} entries={entries} entriesLoading={entriesLoading} />
               </>
             )}
           </>
