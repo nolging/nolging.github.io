@@ -1644,8 +1644,11 @@ export async function adminListLottoEntries(roundId) {
   if (error) throw error
   return data ?? []
 }
-export async function adminSetLottoWinningNumbers(roundId, numbers, bonus) {
-  const { error } = await supabase.rpc('admin_set_lotto_winning_numbers', { p_round_id: roundId, p_numbers: numbers, p_bonus: bonus })
+// 당첨 번호를 "미리" 지정(스테이징)만 한다 — 즉시 공개/정산되지 않고, 실제 공개는 정기
+// 추첨 시각(매주 토요일 18시)에 이 값을 그대로 사용한다. bonus 는 null 허용(추첨 시각에
+// 랜덤으로 채워짐).
+export async function adminPresetLottoWinningNumbers(roundId, numbers, bonus) {
+  const { error } = await supabase.rpc('admin_preset_lotto_winning_numbers', { p_round_id: roundId, p_numbers: numbers, p_bonus: bonus })
   if (error) throw error
 }
 export async function adminUpdateLottoConfig({ numberMin, numberMax, pickCount, prizeTiers }) {
