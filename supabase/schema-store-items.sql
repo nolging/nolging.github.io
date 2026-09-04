@@ -995,6 +995,23 @@ begin
 end $$;
 grant execute on function public.admin_preset_lotto_winning_numbers(bigint, int[], int) to authenticated;
 
+-- 관리자: 미리 지정해 둔 당첨 번호(preset) 삭제 — 다시 "미지정" 상태로 돌아가 정기 추첨
+-- 시각에 시스템이 랜덤으로 뽑는다. 이미 추첨이 끝난 회차는 삭제할 수 없다.
+create or replace function public.admin_clear_lotto_preset(p_round_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_round public.lotto_rounds;
+begin
+  if not public.is_admin(auth.uid()) then raise exception '관리자만 사용할 수 있어요.'; end if;
+
+  select * into v_round from public.lotto_rounds where id = p_round_id for update;
+  if v_round.id is null then raise exception '회차를 찾을 수 없어요.'; end if;
+  if v_round.winning_numbers is not null then raise exception '이미 추첨이 완료된 회차예요.'; end if;
+
+  update public.lotto_rounds set preset_numbers = null, preset_bonus = null where id = p_round_id;
+end $$;
+grant execute on function public.admin_clear_lotto_preset(bigint) to authenticated;
+
 -- 관리자: 룰 갱신(다음에 새로 열리는 회차부터 적용 — 이미 열려 있는 회차는 스냅샷을 그대로 씀).
 create or replace function public.admin_update_lotto_config(p_number_min int, p_number_max int, p_pick_count int, p_prize_tiers jsonb)
 returns void language plpgsql security definer set search_path = public as $$

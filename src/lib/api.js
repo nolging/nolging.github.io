@@ -1651,6 +1651,11 @@ export async function adminPresetLottoWinningNumbers(roundId, numbers, bonus) {
   const { error } = await supabase.rpc('admin_preset_lotto_winning_numbers', { p_round_id: roundId, p_numbers: numbers, p_bonus: bonus })
   if (error) throw error
 }
+// 미리 지정해 둔 당첨 번호 삭제 — 다시 "미지정" 상태로 돌아가 정기 추첨 시각에 랜덤으로 뽑힌다.
+export async function adminClearLottoPreset(roundId) {
+  const { error } = await supabase.rpc('admin_clear_lotto_preset', { p_round_id: roundId })
+  if (error) throw error
+}
 export async function adminUpdateLottoConfig({ numberMin, numberMax, pickCount, prizeTiers }) {
   const { error } = await supabase.rpc('admin_update_lotto_config', {
     p_number_min: numberMin, p_number_max: numberMax, p_pick_count: pickCount, p_prize_tiers: prizeTiers,
