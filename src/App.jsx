@@ -59,6 +59,7 @@ import AdminGroupFeatureDetail from './pages/admin/AdminGroupFeatureDetail'
 import AdminSystemNotices from './pages/admin/AdminSystemNotices'
 import AdminSystemNoticeDetail from './pages/admin/AdminSystemNoticeDetail'
 import AdminLotto from './pages/admin/AdminLotto'
+import AdminLottoRules from './pages/admin/AdminLottoRules'
 
 // 그룹이 바뀌면 리마운트되게 key 부여 → 그룹별 임베드 상세 상태(sessionStorage 복원 포함)가
 // 다른 그룹으로 새지 않도록. (같은 그룹 내에선 리마운트 없음)
@@ -154,6 +155,7 @@ export default function App() {
         <Route path="/admin/misc/notices/new" element={<ProtectedRoute adminOnly><AdminSystemNoticeDetail /></ProtectedRoute>} />
         <Route path="/admin/misc/notices/:id" element={<ProtectedRoute adminOnly><AdminSystemNoticeDetail /></ProtectedRoute>} />
         <Route path="/admin/misc/lotto" element={<ProtectedRoute adminOnly><AdminLotto /></ProtectedRoute>} />
+        <Route path="/admin/misc/lotto/rules" element={<ProtectedRoute adminOnly><AdminLottoRules /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

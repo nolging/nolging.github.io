@@ -234,6 +234,7 @@ export default function Layout() {
   const profileEditMatch = useMatch('/me/edit')
   const coinHistoryMatch = useMatch('/me/coins')
   const lottoDrawMatch = useMatch('/lotto/:roundId')
+  const adminLottoMatch = useMatch('/admin/misc/lotto')
   const groupMatch = useMatch('/groups/:groupId')
   const homeMatch = useMatch('/')
   // 관리자: 섹션(탭 메뉴) vs 드릴다운(뒤로+제목)
@@ -250,7 +251,8 @@ export default function Layout() {
             : p.startsWith('/admin/misc/groups/') ? '그룹 사용량 제어'
               : p.startsWith('/admin/misc/groups') ? '그룹별 사용량 제어'
                 : p.startsWith('/admin/misc/notices') ? (p.endsWith('/new') ? '시스템 공지 발송' : p === '/admin/misc/notices' ? '시스템 공지' : '시스템 공지 수정')
-                  : p.startsWith('/admin/misc/lotto') ? '로또 당첨 관리'
+                  : p.startsWith('/admin/misc/lotto/rules') ? '당첨 룰 설정'
+                    : p.startsWith('/admin/misc/lotto') ? '로또 당첨 관리'
                   : p.startsWith('/admin/reports') ? '오류 리포트 관리'
                   : '관리자'
   // 관리자 탭 밑줄: 현재 탭 <a> 의 위치·너비를 측정해 슬라이드 애니메이션으로 옮긴다
@@ -1100,6 +1102,15 @@ export default function Layout() {
           <span className="admin-tabs-indicator" aria-hidden="true"
             style={{ transform: `translateX(${adminIndicator.left}px)`, width: adminIndicator.width }} />
         </nav>
+      </header>
+    )
+  } else if (adminLottoMatch) {
+    // 로또 당첨 관리: 좌측 뒤로, 제목, 우측 끝 톱니바퀴(당첨 룰 설정 페이지로)
+    topbar = (
+      <header className="topbar">
+        <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <span className="topbar-heading">로또 당첨 관리</span>
+        <Link to="/admin/misc/lotto/rules" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="당첨 룰 설정" title="당첨 룰 설정"><GearIcon /></Link>
       </header>
     )
   } else if (adminSub) {
