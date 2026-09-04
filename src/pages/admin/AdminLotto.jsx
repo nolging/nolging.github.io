@@ -9,14 +9,30 @@ function formatDate(iso) {
   try { return new Date(iso).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 }
 
-// 다음 정기 추첨/공개 시각(매주 토요일 18:00) — "YYYY-MM-DD 18:00" 형식.
-function nextDrawLabel() {
+// 다음 정기 추첨/공개 시각(매주 토요일 18:00).
+function nextDrawDate() {
   const d = new Date()
   let daysUntilSat = (6 - d.getDay() + 7) % 7
   if (daysUntilSat === 0 && d.getHours() >= 18) daysUntilSat = 7
   d.setDate(d.getDate() + daysUntilSat)
+  d.setHours(18, 0, 0, 0)
+  return d
+}
+function formatYmd(d) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day} 18:00`
+  return `${y}-${m}-${day}`
+}
+// "YYYY-MM-DD 18:00" 형식.
+function nextDrawLabel() {
+  return `${formatYmd(nextDrawDate())} 18:00`
+}
+// 셀렉트박스에 쓰는 회차 표기 — 회차 번호 대신 응모 기간(직전 추첨~이번 추첨, 매주
+// 토요일 간격이라 항상 7일)과 응모 건수. "2026-08-29~2026-09-05 (5 건)" 형식.
+function roundPeriodLabel(round) {
+  const end = round.drawn_at ? new Date(round.drawn_at) : nextDrawDate()
+  const start = new Date(end)
+  start.setDate(start.getDate() - 7)
+  return `${formatYmd(start)}~${formatYmd(end)} (${round.entry_count} 건)`
 }
 
 function EditIcon() {
@@ -38,16 +54,23 @@ function TrashIcon() {
   )
 }
 
-// 응모자 한 명의 당첨 등수(숫자) — 관리자가 미리 지정했거나(preset) 실제 추첨이 끝난
-// 회차에서만 계산할 수 있고, 둘 다 없으면 null. 당첨 등수를 못 찾으면(낙첨) Infinity —
-// 당첨순 정렬 시 맨 뒤로 가도록. 보너스 번호가 아직 안 정해졌으면(preset만 있고 보너스는
-// 미지정) 보너스 불일치로 간주해 계산한다(나중에 실제 보너스가 정해지면 결과가 바뀔 수 있음).
-function lottoRankValue(entry, round) {
+// 회차의 당첨 번호(확정 또는 관리자 preset) — 둘 다 없으면 null. 보너스 번호가 아직
+// 안 정해졌으면(preset만 있고 보너스는 미지정) bonusNum 이 null.
+function lottoWinInfo(round) {
   const winNums = round.winning_numbers ?? round.preset_numbers
   if (!winNums) return null
   const bonusNum = round.winning_numbers ? round.bonus_number : round.preset_bonus
-  const match = entry.numbers.filter((n) => winNums.includes(n)).length
-  const bonusHit = bonusNum != null && entry.numbers.includes(bonusNum)
+  return { winNums, bonusNum }
+}
+
+// 응모자 한 명의 당첨 등수(숫자) — 당첨 번호가 정해지지 않았으면 null. 당첨 등수를 못
+// 찾으면(낙첨) Infinity — 당첨순 정렬 시 맨 뒤로 가도록. 보너스 번호가 아직 안 정해졌으면
+// 보너스 불일치로 간주해 계산한다(나중에 실제 보너스가 정해지면 결과가 바뀔 수 있음).
+function lottoRankValue(entry, round) {
+  const info = lottoWinInfo(round)
+  if (!info) return null
+  const match = entry.numbers.filter((n) => info.winNums.includes(n)).length
+  const bonusHit = info.bonusNum != null && entry.numbers.includes(info.bonusNum)
   const tiers = Array.isArray(round.prize_tiers) ? round.prize_tiers : []
   const tier = tiers.slice().sort((a, b) => a.rank - b.rank)
     .find((t) => t.match === match && (!t.bonus || bonusHit))
@@ -178,7 +201,8 @@ function LottoDrawBox({ round, onOpenPicker, onDeletePreset }) {
 // 각 행 우측 끝에는 당첨 등수를 보여준다. 당첨 번호가 정해지기 전엔 응모순, 정해진
 // 후엔 당첨순이 기본값 — 회차를 바꾸면(또는 그 회차의 결정 여부가 바뀌면) 다시 맞춘다.
 function LottoEntriesPanel({ round, entries, entriesLoading }) {
-  const determined = !!(round.winning_numbers || round.preset_numbers)
+  const winInfo = lottoWinInfo(round)
+  const determined = !!winInfo
   const [sortMode, setSortMode] = useState(determined ? 'rank' : 'recent')
   useEffect(() => { setSortMode(determined ? 'rank' : 'recent') }, [round.id, determined])
 
@@ -209,13 +233,17 @@ function LottoEntriesPanel({ round, entries, entriesLoading }) {
           <div className="la-entries">
             {sorted.map((e, i) => (
               <div key={i} className="la-entry-row">
-                <div className="la-entry-top">
-                  <span className="la-entry-id">{e.login_id}</span>
-                  <span className="la-entry-rank">{lottoRankLabel(e, round)}</span>
-                </div>
+                <span className="la-entry-id">{e.login_id}</span>
                 <span className="lotto-ticket-row">
-                  {e.numbers.map((n) => <span key={n} className="lotto-ticket-num">{n}</span>)}
+                  {e.numbers.map((n) => {
+                    const isBonusHit = winInfo && winInfo.bonusNum === n
+                    const isHit = !isBonusHit && winInfo && winInfo.winNums.includes(n)
+                    return (
+                      <span key={n} className={`lotto-ticket-num ${isBonusHit ? 'bonus-hit' : isHit ? 'hit' : ''}`}>{n}</span>
+                    )
+                  })}
                 </span>
+                <span className="la-entry-rank">{lottoRankLabel(e, round)}</span>
               </div>
             ))}
           </div>
@@ -274,9 +302,7 @@ export default function AdminLotto() {
           <>
             <select className="la-round-select" value={selectedId ?? ''} onChange={(e) => setSelectedId(Number(e.target.value))}>
               {rounds.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.round_no}회 · 응모 {r.entry_count}건 · {r.winning_numbers ? '추첨 완료' : '미추첨'}
-                </option>
+                <option key={r.id} value={r.id}>{roundPeriodLabel(r)}</option>
               ))}
             </select>
             {selectedRound && (
