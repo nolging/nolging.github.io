@@ -121,7 +121,7 @@ function LottoDrawBox({ round, onOpenPicker }) {
         <p className="la-draw-pending">{nextDrawLabel()} 추첨 예정</p>
       )}
       {!drawn && !hasPreset && (
-        <button type="button" className="la-preset-open-btn" onClick={onOpenPicker}>당첨 번호 지정 &gt;</button>
+        <button type="button" className="la-preset-open-btn" onClick={onOpenPicker}>당첨 번호 지정</button>
       )}
     </div>
   )
