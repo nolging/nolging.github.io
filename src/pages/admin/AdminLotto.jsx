@@ -38,19 +38,26 @@ function TrashIcon() {
   )
 }
 
-// 응모자 한 명의 당첨 등수 — 관리자가 미리 지정했거나(preset) 실제 추첨이 끝난 회차에서만
-// 계산할 수 있고, 둘 다 없으면 "-". 보너스 번호가 아직 안 정해졌으면(preset만 있고 보너스는
+// 응모자 한 명의 당첨 등수(숫자) — 관리자가 미리 지정했거나(preset) 실제 추첨이 끝난
+// 회차에서만 계산할 수 있고, 둘 다 없으면 null. 당첨 등수를 못 찾으면(낙첨) Infinity —
+// 당첨순 정렬 시 맨 뒤로 가도록. 보너스 번호가 아직 안 정해졌으면(preset만 있고 보너스는
 // 미지정) 보너스 불일치로 간주해 계산한다(나중에 실제 보너스가 정해지면 결과가 바뀔 수 있음).
-function lottoRankLabel(entry, round) {
+function lottoRankValue(entry, round) {
   const winNums = round.winning_numbers ?? round.preset_numbers
-  if (!winNums) return '-'
+  if (!winNums) return null
   const bonusNum = round.winning_numbers ? round.bonus_number : round.preset_bonus
   const match = entry.numbers.filter((n) => winNums.includes(n)).length
   const bonusHit = bonusNum != null && entry.numbers.includes(bonusNum)
   const tiers = Array.isArray(round.prize_tiers) ? round.prize_tiers : []
   const tier = tiers.slice().sort((a, b) => a.rank - b.rank)
     .find((t) => t.match === match && (!t.bonus || bonusHit))
-  return tier ? `${tier.rank}등` : '낙첨'
+  return tier ? tier.rank : Infinity
+}
+
+function lottoRankLabel(entry, round) {
+  const v = lottoRankValue(entry, round)
+  if (v == null) return '-'
+  return v === Infinity ? '낙첨' : `${v}등`
 }
 
 // 당첨 번호 지정 모달 내부 — 번호 버튼 하나로 본번호(pick_count개)를 먼저 채우고,
@@ -167,20 +174,40 @@ function LottoDrawBox({ round, onOpenPicker, onDeletePreset }) {
 }
 
 // 선택한 회차의 응모 현황(아이디/응모 번호/당첨 등수). "응모 현황" 배지(응모 건수)는
-// 흰색 카드 바깥 제목 줄에 두고, 카드 안 각 행 우측 끝에는 당첨 등수를 보여준다.
+// 흰색 카드 바깥 제목 줄에 두고, 같은 줄 우측 끝엔 정렬 셀렉트(응모순/당첨순), 카드 안
+// 각 행 우측 끝에는 당첨 등수를 보여준다. 당첨 번호가 정해지기 전엔 응모순, 정해진
+// 후엔 당첨순이 기본값 — 회차를 바꾸면(또는 그 회차의 결정 여부가 바뀌면) 다시 맞춘다.
 function LottoEntriesPanel({ round, entries, entriesLoading }) {
+  const determined = !!(round.winning_numbers || round.preset_numbers)
+  const [sortMode, setSortMode] = useState(determined ? 'rank' : 'recent')
+  useEffect(() => { setSortMode(determined ? 'rank' : 'recent') }, [round.id, determined])
+
+  const sorted = useMemo(() => {
+    const withRank = entries.map((e) => ({ ...e, _rank: lottoRankValue(e, round) ?? Infinity }))
+    if (sortMode === 'rank') {
+      withRank.sort((a, b) => a._rank - b._rank || new Date(b.created_at) - new Date(a.created_at))
+    } else {
+      withRank.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    }
+    return withRank
+  }, [entries, sortMode, round])
+
   return (
     <>
       <div className="aq-section-head la-entries-head">
         <span className="aq-section-title">응모 현황</span>
         <span className="aq-count">{round.entry_count}</span>
+        <select className="la-sort-select" value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
+          <option value="recent">응모순</option>
+          <option value="rank">당첨순</option>
+        </select>
       </div>
       <div className="la-round-panel">
         {entriesLoading ? <div className="spinner sm" /> : entries.length === 0 ? (
           <p className="muted sm">아직 응모가 없어요.</p>
         ) : (
           <div className="la-entries">
-            {entries.map((e, i) => (
+            {sorted.map((e, i) => (
               <div key={i} className="la-entry-row">
                 <div className="la-entry-top">
                   <span className="la-entry-id">{e.login_id}</span>
