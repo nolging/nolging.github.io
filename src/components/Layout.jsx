@@ -988,10 +988,14 @@ export default function Layout() {
       </header>
     )
   } else if (lottoDrawMatch) {
-    // 로또 당첨 번호 추첨 결과: 좌측 뒤로(알림 센터로), 제목 "로또 당첨 번호"
+    // 로또 당첨 번호 추첨 결과: 알림 센터에서 왔으면 히스토리 뒤로(pop)로 되돌아가야
+    // "뒤로 → 알림센터 → 뒤로 → 다시 이 페이지" 무한 루프가 안 생긴다(TaskDetail 과 동일
+    // 패턴). 직접 접근 등 알림에서 온 게 아니면 알림 센터로 이동(replace).
     topbar = (
       <header className="topbar">
-        <Link to="/notifications" className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></Link>
+        {location.state?.from === 'notifications'
+          ? <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+          : <button type="button" onClick={() => backOr('/notifications')} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>}
         <span className="topbar-heading">로또 당첨 번호</span>
       </header>
     )
