@@ -1558,15 +1558,23 @@ export async function submitLottoEntry(numbers) {
   return { roundNo: data?.roundNo, remaining: data?.remaining ?? 0 }
 }
 
-// 이번 회차(round_no)에 내가 제출한 번호 목록(제출 시각 오름차순)
+// 이번 회차(round_no)에 내가 제출한 번호 목록(제출 시각 오름차순). rank/reward/claimed_at 은
+// 추첨 전엔 전부 null — 추첨 후(정산 완료) 당첨 여부/등수/수령 상태 판단에 쓴다.
 export async function listMyLottoEntries(roundNo) {
   const { data, error } = await supabase
     .from('lotto_entries')
-    .select('numbers, created_at')
+    .select('id, numbers, rank, reward, claimed_at, created_at')
     .eq('round_no', roundNo)
     .order('created_at', { ascending: true })
   if (error) { if (error.code === '42P01') return []; throw error }
   return data ?? []
+}
+
+// 당첨금 수령 — 성공 시 지급된 츄르 금액을 반환.
+export async function claimLottoPrize(entryId) {
+  const { data, error } = await supabase.rpc('claim_lotto_prize', { p_entry_id: entryId })
+  if (error) throw error
+  return Number(data) || 0
 }
 
 // 내가 마지막으로 응모한 회차 번호(응모 이력이 없으면 null). round_no 를 미리 알지

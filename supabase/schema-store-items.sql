@@ -100,6 +100,12 @@ create table if not exists public.lotto_entries (
 );
 create index if not exists idx_lotto_entries_user_round on public.lotto_entries(user_id, round_no, created_at);
 
+-- 당첨 수령제 — 정산 시점엔 등수/당첨금만 기록하고, 실제 코인 원장 지급은 응모자가 당첨
+-- 번호 공개 페이지에서 "N등" 버튼을 눌러야(claim_lotto_prize) 이뤄진다.
+alter table public.lotto_entries add column if not exists rank int;
+alter table public.lotto_entries add column if not exists reward int;
+alter table public.lotto_entries add column if not exists claimed_at timestamptz;
+
 -- 알림(추첨 완료)이 당첨 번호 페이지로 바로 이동할 수 있게 컬럼 추가.
 alter table public.notifications add column if not exists lotto_round_id bigint
   references public.lotto_rounds(id) on delete cascade;
@@ -871,8 +877,8 @@ $$;
 grant execute on function public.submit_lotto_entry(int[]) to authenticated;
 
 -- 당첨 정산(자동 추첨/관리자 수동 지정 공용) — 회차의 각 응모마다 당첨 번호와 겹치는 개수·
--- 보너스 일치 여부를 계산해 회차에 스냅샷된 prize_tiers 에서 등수를 찾고, 있으면 코인 원장에
--- 지급을 남긴다. prize_tiers 는 rank 오름차순(좋은 등수 먼저)으로 저장돼 있다고 가정한다.
+-- 보너스 일치 여부를 계산해 회차에 스냅샷된 prize_tiers 에서 등수를 찾아 응모 행에 등수/
+-- 당첨금만 기록한다(코인 원장 지급은 claim_lotto_prize 에서 응모자가 직접 수령할 때).
 create or replace function public._lotto_settle_round(p_round_id bigint)
 returns void language plpgsql security definer set search_path = public as $$
 declare
@@ -881,7 +887,6 @@ declare
   v_match int;
   v_bonus_hit boolean;
   v_tier jsonb;
-  v_reward int;
 begin
   select * into v_round from public.lotto_rounds where id = p_round_id;
   if v_round.id is null or v_round.winning_numbers is null then return; end if;
@@ -896,14 +901,9 @@ begin
       order by (t->>'rank')::int asc
       limit 1;
 
-    if v_tier is not null then
-      v_reward := coalesce((v_tier->>'reward')::int, 0);
-      if v_reward > 0 then
-        insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
-          values (v_entry.user_id, v_reward,
-            '로또 ' || (v_tier->>'rank') || '등 당첨 - ' || v_round.round_no || '회', 'lotto', v_entry.id);
-      end if;
-    end if;
+    update public.lotto_entries
+      set rank = (v_tier->>'rank')::int, reward = coalesce((v_tier->>'reward')::int, 0)
+      where id = v_entry.id;
   end loop;
 
   -- 이번 회차에 응모한(당첨 여부 무관) 모든 회원에게 추첨 완료 알림. notif_render 를 거치지
@@ -915,6 +915,32 @@ begin
   from public.lotto_entries le
   where le.round_id = p_round_id;
 end $$;
+
+-- 당첨금 수령 — 본인 응모 건에 한해, 아직 안 받았고 지급액이 0보다 클 때만 코인 원장에
+-- 지급을 남기고 claimed_at 을 찍는다.
+create or replace function public.claim_lotto_prize(p_entry_id uuid)
+returns integer language plpgsql security definer set search_path = public as $$
+declare
+  v_entry public.lotto_entries;
+  v_round public.lotto_rounds;
+begin
+  select * into v_entry from public.lotto_entries where id = p_entry_id and user_id = auth.uid() for update;
+  if v_entry.id is null then raise exception '응모 내역을 찾을 수 없어요.'; end if;
+  if v_entry.claimed_at is not null then raise exception '이미 수령한 당첨금이에요.'; end if;
+  if v_entry.reward is null or v_entry.reward <= 0 then raise exception '수령할 당첨금이 없어요.'; end if;
+
+  select * into v_round from public.lotto_rounds where id = v_entry.round_id;
+  if v_round.id is null or v_round.winning_numbers is null then raise exception '아직 추첨 전이에요.'; end if;
+
+  update public.lotto_entries set claimed_at = now() where id = p_entry_id;
+
+  insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
+    values (auth.uid(), v_entry.reward,
+      '로또 ' || v_entry.rank || '등 당첨 수령 - ' || v_round.round_no || '회', 'lotto', p_entry_id);
+
+  return v_entry.reward;
+end $$;
+grant execute on function public.claim_lotto_prize(uuid) to authenticated;
 
 -- 로또 자동 추첨(pg_cron 용, 매주 토요일 18시 KST). 아직 당첨 번호가 없는 가장 빠른(=유일한)
 -- 회차를 찾는다. 관리자가 preset_numbers/preset_bonus 를 미리 지정해 뒀으면 그 값을 그대로
