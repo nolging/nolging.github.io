@@ -3345,6 +3345,26 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .lotto-draw-date { font-size: 12.5px; color: var(--muted); }
 .lotto-draw-empty { text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.6; padding: 24px 0; }
 
+/* 로또 당첨 번호 페이지: 내 응모 번호 + 등수/수령 */
+.lotto-my-entries { margin-top: 24px; }
+.lotto-my-entries-head { font-size: 13.5px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.lotto-my-entries-list {
+  display: flex; flex-direction: column; border-radius: 16px; background: var(--surface);
+  box-shadow: var(--card-shadow); padding: 4px 16px;
+}
+.lotto-my-entry-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; }
+.lotto-my-entry-row + .lotto-my-entry-row { border-top: 1px solid rgba(0, 0, 0, .06); }
+.lotto-my-entry-row .lotto-ticket-row { flex: 1 1 auto; gap: 5px; flex-wrap: nowrap; justify-content: flex-start; overflow: hidden; }
+.lotto-my-entry-row .lotto-ticket-num { flex-shrink: 0; }
+.lotto-rank-pill {
+  flex-shrink: 0; border: none; border-radius: 999px; padding: 7px 14px;
+  font-size: 12.5px; font-weight: 800; font-family: inherit; white-space: nowrap;
+}
+.lotto-rank-pill.claim { background: #191722; color: #fff; cursor: pointer; }
+.lotto-rank-pill.claim:active { transform: scale(.97); }
+.lotto-rank-pill.claim:disabled { opacity: .6; cursor: default; }
+.lotto-rank-pill.muted { background: #eceef3; color: var(--muted); cursor: default; }
+
 /* 관리자: 로또 당첨 관리 */
 .la-round-select {
   width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px 14px; border-radius: 12px;
