@@ -513,7 +513,13 @@ export default function GroupDetail() {
 
   // 특정 상태(탭)의 카드 목록 렌더 (현재 pane 과 넘어오는 ghost pane 이 공용)
   function renderTaskList(status) {
-    const list = tasks.filter((t) => t.status === status && matchesCat(t))
+    let list = tasks.filter((t) => t.status === status && matchesCat(t))
+    if (status === 'done') {
+      // 추억 탭: 카드에 보여지는 마지막 일정(scheduled_at) 기준 최신순, 일정이 없으면
+      // 추억으로 완료된 시점(completed_at) 기준 최신순.
+      list = [...list].sort((a, b) =>
+        new Date(b.scheduled_at || b.completed_at || 0) - new Date(a.scheduled_at || a.completed_at || 0))
+    }
     if (list.length === 0) return <div className="empty"><p className="muted">{terms.noun}가 없습니다.</p></div>
     return (
       <ul className="task-list">
