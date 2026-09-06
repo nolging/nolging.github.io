@@ -939,8 +939,7 @@ begin
   update public.lotto_entries set claimed_at = now() where id = p_entry_id;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
-    values (auth.uid(), v_entry.reward,
-      '로또 ' || v_entry.rank || ' 등 당첨 수령 - ' || v_round.round_no || '회', 'lotto', p_entry_id);
+    values (auth.uid(), v_entry.reward, '로또 ' || v_entry.rank || ' 등 당첨', 'lotto', p_entry_id);
 
   return v_entry.reward;
 end $$;
