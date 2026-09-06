@@ -1603,16 +1603,16 @@ export async function getLatestLottoDraw() {
   return data?.[0] ?? null
 }
 
-// 특정 회차의 당첨 번호(로또 추첨 완료 알림 클릭 시 이동하는 당첨 번호 페이지용).
-// 아직 추첨 전이면 winning_numbers 가 null 인 채로 반환.
-export async function getLottoDrawByRound(roundId) {
+// 전체 회차 목록(당첨 번호 페이지의 회차 선택 셀렉트용) — 로그인한 사용자 누구나 조회
+// 가능(내가 응모하지 않은 회차 포함). 관리자가 미리 지정만 해 둔 preset_numbers/
+// preset_bonus 는 아직 공개 전 정보라 여기서 절대 select 하지 않는다.
+export async function listAllLottoRounds() {
   const { data, error } = await supabase
     .from('lotto_rounds')
-    .select('round_no, winning_numbers, bonus_number, drawn_at')
-    .eq('id', roundId)
-    .maybeSingle()
-  if (error) { if (error.code === '42P01') return null; throw error }
-  return data
+    .select('id, round_no, winning_numbers, bonus_number, drawn_at')
+    .order('round_no', { ascending: false })
+  if (error) { if (error.code === '42P01') return []; throw error }
+  return data ?? []
 }
 
 // 지금 응모하면 적용될 룰(번호 범위·선택 개수) — 이미 열려 있는(미추첨) 회차가 있으면 그
