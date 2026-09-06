@@ -10,7 +10,8 @@ import redHoodPng from '../assets/deco/red-hood.png'
 //  - head: deco-sprout(새싹·앞) | deco-jaguar(까만 고양이 귀·뒤) | deco-wolf(강아지 귀·뒤)
 //    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·뒤) | deco-bear(곰 귀·뒤)
 //    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) | deco-devil-horn(악마 뿔·앞)
-//    | deco-kitty-ribbon(고양이 리본·앞) | deco-party-hat(고깔모자·앞) | deco-cherry-cream(체리 콕·앞) → 하나만
+//    | deco-kitty-ribbon(고양이 리본·앞) | deco-party-hat(고깔모자·앞) | deco-cherry-cream(체리 콕·앞)
+//    | deco-pinwheel(바람개비·앞, 날개만 계속 회전) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고)
 //    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) | deco-chupa-chups(막대사탕·앞) | deco-korea(태극 배지·앞) → 하나만
 //  - 안경(글라스류와 별도 슬롯. DB store_items.deco_slot='안경'): deco-circle-glasses(동그리 안경·앞)
@@ -19,7 +20,7 @@ import redHoodPng from '../assets/deco/red-hood.png'
 // 프로필 사진에 가려진 채 옆으로 삐져나와 딱 맞게 보인다. 새싹·홍조·뿔·리본·고깔모자·체리 콕·
 // 나비넥타이·막대사탕·동그리 안경은 "앞" 레이어(front).
 
-export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream', 'deco-red-hood']
+export const DECO_HEAD = ['deco-sprout', 'deco-jaguar', 'deco-wolf', 'deco-angel-ring', 'deco-tomato', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-devil-horn', 'deco-kitty-ribbon', 'deco-party-hat', 'deco-cherry-cream', 'deco-red-hood', 'deco-pinwheel']
 export const DECO_FACE = ['deco-blush', 'deco-anger', 'deco-pixel-shades', 'deco-alien-shades', 'deco-bandage', 'deco-gum', 'deco-heart-shades', 'deco-bow-tie', 'deco-chupa-chups', 'deco-korea']
 export const DECO_IDS = [...DECO_HEAD, ...DECO_FACE]
 export const decoSlot = (id) => (DECO_FACE.includes(id) ? 'face' : DECO_HEAD.includes(id) ? 'head' : null)
@@ -498,6 +499,27 @@ function AngelRing() {
   )
 }
 
+// 바람개비(머리 유형): 앞(front) 레이어, 머리 위로 뻗은 막대 끝에 색종이 4장짜리 바람개비가
+// 꽂혀 있다. 막대·중심 핀은 고정, 날개(색종이 4장)만 핀을 축으로 계속 빙글빙글 돈다
+// (avd-pinwheel-spin). 날개 4장은 전부 같은 도안(blade)을 90도씩 돌려 붙인 것 — 한 장이
+// 중심에서 한쪽으로 치우쳐 넓어지는 모양이라 4장을 겹치면 바람개비 특유의 살짝 휘어 도는
+// 느낌이 난다.
+function Pinwheel() {
+  const blade = 'M0,0 L8,-2 L12,-13 L2,-8 Z'
+  return (
+    <g>
+      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="#d9a066" strokeWidth="2.3" strokeLinecap="round" fill="none" />
+      <g className="avd-pinwheel-spin">
+        <path transform="translate(50 -19)" d={blade} fill="#ff6b6b" />
+        <path transform="translate(50 -19) rotate(90)" d={blade} fill="#ffd23f" />
+        <path transform="translate(50 -19) rotate(180)" d={blade} fill="#4fc3f7" />
+        <path transform="translate(50 -19) rotate(270)" d={blade} fill="#7ec994" />
+        <circle cx="50" cy="-19" r="2.4" fill="#ffd23f" stroke="#e8ab1f" strokeWidth="0.6" />
+      </g>
+    </g>
+  )
+}
+
 // 비눗방울(테두리 유형): 아바타 전체를 무지갯빛 막으로 감싼다. 바깥 경계(원 자체)는
 // 또렷하고, 색은 mask 로 테두리→중심 방향으로만 옅어져 가운데는 거의 투명해 프로필
 // 사진이 그대로 비친다. 왼쪽 위엔 흰 그라데이션 하이라이트 반점, 반짝임도 있다.
@@ -720,6 +742,7 @@ const PREVIEW_VB = {
   'deco-korea': '61 46 20 20',
   'deco-red-hood': '-10 -11 120 131',
   'deco-heart-beam': '-40 -36 180 180',
+  'deco-pinwheel': '32 -37 36 46',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
@@ -820,6 +843,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-bubble' && <Bubble />}
       {id === 'deco-red-hood' && <RedHood />}
       {id === 'deco-heart-beam' && <HeartBeam />}
+      {id === 'deco-pinwheel' && <Pinwheel />}
     </svg>
   )
 }
@@ -834,7 +858,7 @@ const ART = {
   'deco-angel-wing': AngelWing, 'deco-devil-wing': DevilWing,
   'deco-devil-horn': DevilHorn, 'deco-kitty-ribbon': KittyRibbon, 'deco-bow-tie': BowTie,
   'deco-party-hat': PartyHat, 'deco-chupa-chups': ChupaChups, 'deco-cherry-cream': CherryCream,
-  'deco-red-hood': RedHood, 'deco-heart-beam': HeartBeam,
+  'deco-red-hood': RedHood, 'deco-heart-beam': HeartBeam, 'deco-pinwheel': Pinwheel,
 }
 // 테두리(원형 테두리) 유형: 아바타의 흰 테두리를 대체. 기본은 다른 꾸미기보다 뒤에 그려지되
 // (후광), FRONTMOST_IDS 에 있으면(비눗방울) 예외적으로 항상 맨 앞에 그려진다.
