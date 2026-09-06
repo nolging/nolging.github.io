@@ -83,7 +83,7 @@ export default function AdminLottoRules() {
           <div className="la-tiers">
             {tiers.map((t, i) => (
               <div key={i} className="la-tier-row">
-                <span className="la-tier-rank">{i + 1}등</span>
+                <span className="la-tier-rank">{i + 1} 등</span>
                 <span className="la-suffix-wrap">
                   <input type="number" inputMode="numeric" min="0"
                     value={t.match} onChange={(e) => { updateTier(i, { match: e.target.value }); setSaved(false) }} />

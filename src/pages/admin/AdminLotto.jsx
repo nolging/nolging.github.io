@@ -80,7 +80,7 @@ function lottoRankValue(entry, round) {
 function lottoRankLabel(entry, round) {
   const v = lottoRankValue(entry, round)
   if (v == null) return '-'
-  return v === Infinity ? '낙첨' : `${v}등`
+  return v === Infinity ? '낙첨' : `${v} 등`
 }
 
 // 당첨 번호 지정 모달 내부 — 번호 버튼 하나로 본번호(pick_count개)를 먼저 채우고,
