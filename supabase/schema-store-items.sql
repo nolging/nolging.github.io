@@ -101,7 +101,8 @@ create table if not exists public.lotto_entries (
 create index if not exists idx_lotto_entries_user_round on public.lotto_entries(user_id, round_no, created_at);
 
 -- 당첨 수령제 — 정산 시점엔 등수/당첨금만 기록하고, 실제 코인 원장 지급은 응모자가 당첨
--- 번호 공개 페이지에서 "N등" 버튼을 눌러야(claim_lotto_prize) 이뤄진다.
+-- 번호 공개 페이지에서 "N 등" 버튼을 눌러야(claim_lotto_prize) 이뤄진다. 추첨 시각으로부터
+-- 7일 이내에만 수령 가능(claim_lotto_prize 에서 강제).
 alter table public.lotto_entries add column if not exists rank int;
 alter table public.lotto_entries add column if not exists reward int;
 alter table public.lotto_entries add column if not exists claimed_at timestamptz;
@@ -916,8 +917,8 @@ begin
   where le.round_id = p_round_id;
 end $$;
 
--- 당첨금 수령 — 본인 응모 건에 한해, 아직 안 받았고 지급액이 0보다 클 때만 코인 원장에
--- 지급을 남기고 claimed_at 을 찍는다.
+-- 당첨금 수령 — 본인 응모 건에 한해, 아직 안 받았고 지급액이 0보다 클 때만, 그리고 추첨
+-- 시각으로부터 7일 이내일 때만 코인 원장에 지급을 남기고 claimed_at 을 찍는다.
 create or replace function public.claim_lotto_prize(p_entry_id uuid)
 returns integer language plpgsql security definer set search_path = public as $$
 declare
@@ -931,12 +932,15 @@ begin
 
   select * into v_round from public.lotto_rounds where id = v_entry.round_id;
   if v_round.id is null or v_round.winning_numbers is null then raise exception '아직 추첨 전이에요.'; end if;
+  if now() >= v_round.drawn_at + interval '7 days' then
+    raise exception '수령 기간이 만료됐어요.';
+  end if;
 
   update public.lotto_entries set claimed_at = now() where id = p_entry_id;
 
   insert into public.coin_ledger(user_id, delta, reason, ref_type, ref_id)
     values (auth.uid(), v_entry.reward,
-      '로또 ' || v_entry.rank || '등 당첨 수령 - ' || v_round.round_no || '회', 'lotto', p_entry_id);
+      '로또 ' || v_entry.rank || ' 등 당첨 수령 - ' || v_round.round_no || '회', 'lotto', p_entry_id);
 
   return v_entry.reward;
 end $$;

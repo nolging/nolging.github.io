@@ -4,21 +4,30 @@ import { getLottoDrawByRound, listMyLottoEntries, claimLottoPrize } from '../lib
 import Modal from '../components/Modal'
 
 const num = (n) => (n ?? 0).toLocaleString('ko-KR')
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 function formatDrawDate(iso) {
   try { return new Date(iso).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 }
 
-// 응모 한 장의 우측 알약 — 당첨(수령 전)이면 클릭 가능한 진한 알약("N등"), 이미
-// 수령했으면 회색 "수령완료", 등수는 있는데 지급액이 0이면 회색 "N등", 낙첨이면
-// 회색 "낙첨"(클릭 불가).
-function LottoRankPill({ entry, busy, onClaim }) {
+// 당첨금 수령 기한 — 추첨(공개) 시각으로부터 정확히 7일. "1일 18:00 공개"면
+// "8일 17:59:59"까지만 수령 가능(8일 18:00 부터 만료).
+function isClaimExpired(drawnAt) {
+  if (!drawnAt) return false
+  return Date.now() >= new Date(drawnAt).getTime() + WEEK_MS
+}
+
+// 응모 한 장의 우측 알약 — 당첨(수령 전, 기한 내)이면 클릭 가능한 진한 알약("N 등"), 이미
+// 수령했으면 회색 "수령완료", 기한이 지났으면 회색 "기간 만료", 등수는 있는데 지급액이
+// 0이면 회색 "N 등", 낙첨이면 회색 "낙첨"(클릭 불가).
+function LottoRankPill({ entry, expired, busy, onClaim }) {
   if (entry.rank == null) return <span className="lotto-rank-pill muted">낙첨</span>
-  if (!entry.reward) return <span className="lotto-rank-pill muted">{entry.rank}등</span>
+  if (!entry.reward) return <span className="lotto-rank-pill muted">{entry.rank} 등</span>
   if (entry.claimed_at) return <span className="lotto-rank-pill muted">수령완료</span>
+  if (expired) return <span className="lotto-rank-pill muted">기간 만료</span>
   return (
     <button type="button" className="lotto-rank-pill claim" disabled={busy} onClick={onClaim}>
-      {busy ? '수령 중…' : `${entry.rank}등`}
+      {busy ? '수령 중…' : `${entry.rank} 등`}
     </button>
   )
 }
@@ -88,7 +97,7 @@ export default function LottoDraw() {
                         )
                       })}
                     </span>
-                    <LottoRankPill entry={e} busy={claimingId === e.id} onClaim={() => handleClaim(e)} />
+                    <LottoRankPill entry={e} expired={isClaimExpired(draw.drawn_at)} busy={claimingId === e.id} onClaim={() => handleClaim(e)} />
                   </div>
                 ))}
               </div>
