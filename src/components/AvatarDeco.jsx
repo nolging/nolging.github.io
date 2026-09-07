@@ -500,11 +500,22 @@ function AngelRing() {
 }
 
 // 바람개비(머리 유형): 앞(front) 레이어, 머리 위로 뻗은 막대 끝에 헝겊 바람개비 완구가
-// 꽂혀 있다(참고 사진 재현 — 베이지·세이지그린 번갈아, 끝이 둥글게 오므라든 꽃잎형 날개
-// 4장 + 짙은 로즈색 중심 단추). 막대는 두 톤이 튀지 않도록 가까운 로즈브라운 계열
-// 그라데이션 하나로. 막대·중심 단추는 고정, 날개 4장만 계속 빙글빙글 돈다(avd-pinwheel-spin).
+// 꽂혀 있다(참고 사진 재현). 날개 하나 = 타원(장축 17·단축 11)의 1/4 조각 — 중심(허브)에서
+// 곧게 뻗은 두 변과, 바깥은 그 타원의 호로 이어진 부채꼴 모양. 이 부채꼴을 다시 허브에서
+// 호(직선이 아니라 곡선) 하나로 갈라 베이지/세이지그린 두 색으로 나누되, 둘을 합치면
+// 원래의 1/4 타원과 정확히 같은 윤곽이 되어 "두 색이 합쳐져 날개 하나"가 된다. 막대·중심
+// 단추는 고정, 날개 4장(과 그 안의 베이지/그린)만 통째로 빙글빙글 돈다(avd-pinwheel-spin).
 function Pinwheel() {
-  const blade = 'M0,0 C-3,-2 -9,-6 -8,-11 C-7,-16 -2,-18 0,-18 C2,-18 7,-16 8,-11 C9,-6 3,-2 0,0 Z'
+  // 1/4 타원 호 위의 중간점(45˚): x=11·sin45°≈7.78, y=-17·cos45°≈-12.02.
+  // 허브(0,0)→그 중간점을 곧은 반지름이 아니라 완만한 곡선(Q)으로 이어 두 조각으로 가른다.
+  const beige = 'M0,0 L0,-17 A11,17 0 0,1 7.78,-12.02 Q3,-8.6 0,0 Z'
+  const green = 'M0,0 Q3,-8.6 7.78,-12.02 A11,17 0 0,1 11,0 Z'
+  const Blade = ({ angle }) => (
+    <g transform={`translate(50 -20) rotate(${angle})`}>
+      <path d={beige} fill="#f2e6d3" />
+      <path d={green} fill="#7f9e82" />
+    </g>
+  )
   return (
     <g>
       <defs>
@@ -515,10 +526,10 @@ function Pinwheel() {
       </defs>
       <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="url(#pinwheelStick)" strokeWidth="2.6" strokeLinecap="round" fill="none" />
       <g className="avd-pinwheel-spin">
-        <path transform="translate(50 -20)" d={blade} fill="#f2e6d3" />
-        <path transform="translate(50 -20) rotate(90)" d={blade} fill="#7f9e82" />
-        <path transform="translate(50 -20) rotate(180)" d={blade} fill="#f2e6d3" />
-        <path transform="translate(50 -20) rotate(270)" d={blade} fill="#7f9e82" />
+        <Blade angle={0} />
+        <Blade angle={90} />
+        <Blade angle={180} />
+        <Blade angle={270} />
         <circle cx="50" cy="-20" r="2.6" fill="#a8655a" stroke="#8a4f45" strokeWidth="0.4" />
       </g>
     </g>
