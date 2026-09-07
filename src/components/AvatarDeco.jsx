@@ -500,22 +500,27 @@ function AngelRing() {
 }
 
 // 바람개비(머리 유형): 앞(front) 레이어, 머리 위로 뻗은 막대 끝에 헝겊 바람개비 완구가
-// 꽂혀 있다(참고 사진 재현). 날개 하나 = 타원(장축 17·단축 8, 단축을 짧게 잡아 더 갸름한
-// 부채꼴)의 1/4 조각 — 중심(허브)에서 곧게 뻗은 두 변과, 바깥은 그 타원의 호로 이어진
-// 부채꼴 모양. 이 부채꼴을 다시 허브에서 호(직선이 아니라 곡선) 하나로 갈라 세이지그린/
-// 베이지 두 색으로 나누되, 둘을 합치면 원래의 1/4 타원과 정확히 같은 윤곽이 되어 "두 색이
-// 합쳐져 날개 하나"가 된다. 막대·중심 단추는 고정, 날개 4장(과 그 안의 그린/베이지)만
-// 통째로 빙글빙글 돈다(avd-pinwheel-spin).
+// 꽂혀 있다(참고 사진 재현, 이전 버전의 70% 크기로 축소 + 막대 길이 2/3로 단축). 날개
+// 하나 = 타원(장축 11.9·단축 5.6)의 1/4 조각 — 중심(허브)에서 곧게 뻗은 두 변과, 바깥은
+// 그 타원의 호로 이어진 부채꼴 모양. 이 부채꼴을 다시 허브에서 호(직선이 아니라 곡선)
+// 하나로 갈라 두 톤으로 나누되, 둘을 합치면 원래의 1/4 타원과 정확히 같은 윤곽이 되어
+// "두 색이 합쳐져 날개 하나"가 된다. 색종이처럼 날개 4장을 빨강·초록·노랑·파랑으로 다르게
+// 칠하고(짙은 톤 = mainC), 나머지 절반은 같은 색의 더 밝은 톤(lightC)으로. 막대·중심 단추는
+// 고정, 날개 4장만 통째로 빙글빙글 돈다(avd-pinwheel-spin).
 function Pinwheel() {
-  // 1/4 타원 호 위의 중간점(45˚): x=8·sin45°≈5.66, y=-17·cos45°≈-12.02.
-  // 허브(0,0)→그 중간점을 곧은 반지름이 아니라 완만한 곡선(Q)으로 이어 두 조각으로 가른다
-  // (긴 변 쪽이 그린, 짧은 변 쪽이 베이지 — 이전 버전과 색 위치·곡선이 휘는 방향을 반대로).
-  const green = 'M0,0 L0,-17 A8,17 0 0,1 5.66,-12.02 Q5.3,-4.9 0,0 Z'
-  const beige = 'M0,0 Q5.3,-4.9 5.66,-12.02 A8,17 0 0,1 8,0 Z'
-  const Blade = ({ angle }) => (
-    <g transform={`translate(50 -20) rotate(${angle})`}>
-      <path d={green} fill="#7f9e82" />
-      <path d={beige} fill="#f2e6d3" />
+  // 1/4 타원 호 위의 중간점(45˚): x=5.6·sin45°≈3.96, y=-11.9·cos45°≈-8.42.
+  const partA = 'M0,0 L0,-11.9 A5.6,11.9 0 0,1 3.96,-8.42 Q3.71,-3.43 0,0 Z'
+  const partB = 'M0,0 Q3.71,-3.43 3.96,-8.42 A5.6,11.9 0 0,1 5.6,0 Z'
+  const WING_COLORS = [
+    { main: '#e2635f', light: '#f6c7c5' }, // 빨강
+    { main: '#55ab68', light: '#bfe3c6' }, // 초록
+    { main: '#e8c23f', light: '#f6e6ab' }, // 노랑
+    { main: '#4f90d6', light: '#bcd8f2' }, // 파랑
+  ]
+  const Blade = ({ angle, color }) => (
+    <g transform={`translate(50 -10.4) rotate(${angle})`}>
+      <path d={partA} fill={color.main} />
+      <path d={partB} fill={color.light} />
     </g>
   )
   return (
@@ -527,13 +532,13 @@ function Pinwheel() {
           <stop offset="100%" stopColor="#c99b8c" />
         </linearGradient>
       </defs>
-      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="url(#pinwheelStick)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M50 9 C49.53 3.67 50.4 -2.33 50 -9" stroke="url(#pinwheelStick)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
       <g className="avd-pinwheel-spin">
-        <Blade angle={0} />
-        <Blade angle={90} />
-        <Blade angle={180} />
-        <Blade angle={270} />
-        <circle cx="50" cy="-20" r="1.6" fill="#a8655a" />
+        <Blade angle={0} color={WING_COLORS[0]} />
+        <Blade angle={90} color={WING_COLORS[1]} />
+        <Blade angle={180} color={WING_COLORS[2]} />
+        <Blade angle={270} color={WING_COLORS[3]} />
+        <circle cx="50" cy="-10.4" r="1.1" fill="#a8655a" />
       </g>
     </g>
   )
@@ -761,7 +766,7 @@ const PREVIEW_VB = {
   'deco-korea': '61 46 20 20',
   'deco-red-hood': '-10 -11 120 131',
   'deco-heart-beam': '-40 -36 180 180',
-  'deco-pinwheel': '32 -37 36 46',
+  'deco-pinwheel': '36 -24 28 34',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
