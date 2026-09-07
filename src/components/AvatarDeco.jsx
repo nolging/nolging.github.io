@@ -512,13 +512,13 @@ function Pinwheel() {
   const partA = 'M0,0 L0,-11.9 A5.6,11.9 0 0,1 3.96,-8.42 Q3.71,-3.43 0,0 Z'
   const partB = 'M0,0 Q3.71,-3.43 3.96,-8.42 A5.6,11.9 0 0,1 5.6,0 Z'
   const WING_COLORS = [
-    { main: '#e2635f', light: '#f6c7c5' }, // 빨강
-    { main: '#55ab68', light: '#bfe3c6' }, // 초록
-    { main: '#e8c23f', light: '#f6e6ab' }, // 노랑
-    { main: '#4f90d6', light: '#bcd8f2' }, // 파랑
+    { main: '#e2635f', light: '#e98682' }, // 빨강
+    { main: '#55ab68', light: '#77bf87' }, // 초록
+    { main: '#e8c23f', light: '#ebce63' }, // 노랑
+    { main: '#4f90d6', light: '#76ace1' }, // 파랑
   ]
   const Blade = ({ angle, color }) => (
-    <g transform={`translate(50 -10.4) rotate(${angle})`}>
+    <g transform={`translate(50 -4) rotate(${angle})`}>
       <path d={partA} fill={color.main} />
       <path d={partB} fill={color.light} />
     </g>
@@ -532,13 +532,13 @@ function Pinwheel() {
           <stop offset="100%" stopColor="#c99b8c" />
         </linearGradient>
       </defs>
-      <path d="M50 9 C49.53 3.67 50.4 -2.33 50 -9" stroke="url(#pinwheelStick)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M50 9 C49.69 5.44 50.27 1.44 50 -3" stroke="url(#pinwheelStick)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
       <g className="avd-pinwheel-spin">
         <Blade angle={0} color={WING_COLORS[0]} />
         <Blade angle={90} color={WING_COLORS[1]} />
         <Blade angle={180} color={WING_COLORS[2]} />
         <Blade angle={270} color={WING_COLORS[3]} />
-        <circle cx="50" cy="-10.4" r="1.1" fill="#a8655a" />
+        <circle cx="50" cy="-4" r="1.1" fill="#a8655a" />
       </g>
     </g>
   )
@@ -766,7 +766,7 @@ const PREVIEW_VB = {
   'deco-korea': '61 46 20 20',
   'deco-red-hood': '-10 -11 120 131',
   'deco-heart-beam': '-40 -36 180 180',
-  'deco-pinwheel': '36 -24 28 34',
+  'deco-pinwheel': '36 -17 28 27',
 }
 // 미리보기 전용 뷰박스 오버라이드. PREVIEW_VB 를 직접 바꾸면 decoAnchor(실제 아바타
 // 조정 기준점)까지 같이 틀어지므로, 천사/악마 날개처럼 "미리보기에서만" 좁혀 보이게 할
