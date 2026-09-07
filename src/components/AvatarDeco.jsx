@@ -521,18 +521,19 @@ function Pinwheel() {
   return (
     <g>
       <defs>
+        {/* 위(바람개비 쪽, y1)는 어둡게 → 아래(머리 쪽, y2)는 밝게 */}
         <linearGradient id="pinwheelStick" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c99b8c" />
-          <stop offset="100%" stopColor="#9c6d5f" />
+          <stop offset="0%" stopColor="#8a5c4d" />
+          <stop offset="100%" stopColor="#c99b8c" />
         </linearGradient>
       </defs>
-      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="url(#pinwheelStick)" strokeWidth="2.6" strokeLinecap="round" fill="none" />
+      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="url(#pinwheelStick)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
       <g className="avd-pinwheel-spin">
         <Blade angle={0} />
         <Blade angle={90} />
         <Blade angle={180} />
         <Blade angle={270} />
-        <circle cx="50" cy="-20" r="2.6" fill="#a8655a" stroke="#8a4f45" strokeWidth="0.4" />
+        <circle cx="50" cy="-20" r="1.6" fill="#a8655a" />
       </g>
     </g>
   )
