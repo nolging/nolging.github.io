@@ -11,7 +11,7 @@ import redHoodPng from '../assets/deco/red-hood.png'
 //    | deco-angel-ring(천사 링·앞) | deco-tomato(토마토 꼭지·앞) | deco-bunny(토끼 귀·뒤) | deco-bear(곰 귀·뒤)
 //    | deco-angel-wing(천사 날개·뒤) | deco-devil-wing(악마 날개·뒤) | deco-devil-horn(악마 뿔·앞)
 //    | deco-kitty-ribbon(고양이 리본·앞) | deco-party-hat(고깔모자·앞) | deco-cherry-cream(체리 콕·앞)
-//    | deco-pinwheel(바람개비·앞, 날개만 계속 회전) → 하나만
+//    | deco-pinwheel(헝겊 바람개비·앞, 날개만 계속 회전) → 하나만
 //  - face: deco-blush(양 볼 홍조) | deco-anger | deco-pixel-shades | deco-alien-shades | deco-bandage(오른 볼 반창고)
 //    | deco-gum(풍선껌) | deco-bow-tie(나비넥타이·앞) | deco-chupa-chups(막대사탕·앞) | deco-korea(태극 배지·앞) → 하나만
 //  - 안경(글라스류와 별도 슬롯. DB store_items.deco_slot='안경'): deco-circle-glasses(동그리 안경·앞)
@@ -499,22 +499,27 @@ function AngelRing() {
   )
 }
 
-// 바람개비(머리 유형): 앞(front) 레이어, 머리 위로 뻗은 막대 끝에 색종이 4장짜리 바람개비가
-// 꽂혀 있다. 막대·중심 핀은 고정, 날개(색종이 4장)만 핀을 축으로 계속 빙글빙글 돈다
-// (avd-pinwheel-spin). 날개 4장은 전부 같은 도안(blade)을 90도씩 돌려 붙인 것 — 한 장이
-// 중심에서 한쪽으로 치우쳐 넓어지는 모양이라 4장을 겹치면 바람개비 특유의 살짝 휘어 도는
-// 느낌이 난다.
+// 바람개비(머리 유형): 앞(front) 레이어, 머리 위로 뻗은 막대 끝에 헝겊 바람개비 완구가
+// 꽂혀 있다(참고 사진 재현 — 베이지·세이지그린 번갈아, 끝이 둥글게 오므라든 꽃잎형 날개
+// 4장 + 짙은 로즈색 중심 단추). 막대는 두 톤이 튀지 않도록 가까운 로즈브라운 계열
+// 그라데이션 하나로. 막대·중심 단추는 고정, 날개 4장만 계속 빙글빙글 돈다(avd-pinwheel-spin).
 function Pinwheel() {
-  const blade = 'M0,0 L8,-2 L12,-13 L2,-8 Z'
+  const blade = 'M0,0 C-3,-2 -9,-6 -8,-11 C-7,-16 -2,-18 0,-18 C2,-18 7,-16 8,-11 C9,-6 3,-2 0,0 Z'
   return (
     <g>
-      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="#d9a066" strokeWidth="2.3" strokeLinecap="round" fill="none" />
+      <defs>
+        <linearGradient id="pinwheelStick" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c99b8c" />
+          <stop offset="100%" stopColor="#9c6d5f" />
+        </linearGradient>
+      </defs>
+      <path d="M50 9 C49.3 1 50.6 -8 50 -18" stroke="url(#pinwheelStick)" strokeWidth="2.6" strokeLinecap="round" fill="none" />
       <g className="avd-pinwheel-spin">
-        <path transform="translate(50 -19)" d={blade} fill="#ff6b6b" />
-        <path transform="translate(50 -19) rotate(90)" d={blade} fill="#ffd23f" />
-        <path transform="translate(50 -19) rotate(180)" d={blade} fill="#4fc3f7" />
-        <path transform="translate(50 -19) rotate(270)" d={blade} fill="#7ec994" />
-        <circle cx="50" cy="-19" r="2.4" fill="#ffd23f" stroke="#e8ab1f" strokeWidth="0.6" />
+        <path transform="translate(50 -20)" d={blade} fill="#f2e6d3" />
+        <path transform="translate(50 -20) rotate(90)" d={blade} fill="#7f9e82" />
+        <path transform="translate(50 -20) rotate(180)" d={blade} fill="#f2e6d3" />
+        <path transform="translate(50 -20) rotate(270)" d={blade} fill="#7f9e82" />
+        <circle cx="50" cy="-20" r="2.6" fill="#a8655a" stroke="#8a4f45" strokeWidth="0.4" />
       </g>
     </g>
   )
