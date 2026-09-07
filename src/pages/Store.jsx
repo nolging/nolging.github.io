@@ -3,7 +3,6 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import GiftItemModal from '../components/GiftItemModal'
-import LottoDrawModal from '../components/LottoDrawModal'
 import RecipientPicker from '../components/RecipientPicker'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
@@ -41,7 +40,6 @@ export default function Store() {
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)
   const [giftOpen, setGiftOpen] = useState(false)
-  const [lottoDrawOpen, setLottoDrawOpen] = useState(false)
   const [ownsCouple, setOwnsCouple] = useState(false)
   const [hasCouple, setHasCouple] = useState(false)
   const [hasFriend, setHasFriend] = useState(false)
@@ -344,7 +342,8 @@ export default function Store() {
           return (
             <div className="st-detail">
               {selected.id === 'lotto' && (
-                <button type="button" className="btn btn-ghost btn-sm st-lotto-check-btn" onClick={() => setLottoDrawOpen(true)}>당첨 확인</button>
+                <button type="button" className="btn btn-ghost btn-sm st-lotto-check-btn"
+                  onClick={() => navigate('/lotto/latest', { state: { from: 'store' } })}>당첨 확인</button>
               )}
               <button type="button" className="st-x" onClick={close} aria-label="닫기" title="닫기">
                 <svg width="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -425,8 +424,6 @@ export default function Store() {
 
       <RecipientPicker open={donatePickOpen} onClose={() => setDonatePickOpen(false)} title="후원할 길냥이"
         onPick={(r) => { setDonateRecipient(r); setDonatePickOpen(false) }} />
-
-      <LottoDrawModal open={lottoDrawOpen} onClose={() => setLottoDrawOpen(false)} />
     </div>
   )
 }
