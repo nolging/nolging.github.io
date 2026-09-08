@@ -41,6 +41,7 @@ const USE_SECTIONS = [
   { label: '기능 강화', ids: [...MEDIA, 'eraser', 'waterbomb', 'polaroid-film'] },
 ]
 const TIMER_MIN = 10, TIMER_MAX = 120
+const NC_DRAFT_KEY = 'nc-draft'
 
 const StarIcon = () => (
   <svg width="16" viewBox="0 0 24 24" fill="none" stroke="#7363e8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.7 5.8 21 7 14.1 2 9.3 9 8.5z" /></svg>
@@ -66,13 +67,31 @@ export default function NoteCompose() {
   })
   const reply = prefill?.reply
 
-  const [recipient, setRecipient] = useState(reply?.recipient || null)
-  const [me, setMe] = useState(reply?.me || { name: '', avatar: null })
-  const [body, setBody] = useState('')
-  const [anonymous, setAnonymous] = useState(false)
-  const [useItem, setUseItem] = useState(null)   // { id, url? }
-  const [gifts, setGifts] = useState([])          // [{ id, qty }]
-  const [photos, setPhotos] = useState([])        // [{ url }] — 폴라로이드 필름으로 첨부한 사진(최대 5장)
+  // 작성 중 시트의 "상점으로 가기"로 상점에 다녀오면 이 페이지가 통째로 언마운트됐다
+  // 되돌아올 때 다시 마운트된다 — 그 사이 입력 내용이 날아가지 않도록 sessionStorage 에
+  // 임시 저장해 뒀다가 복원한다. 팝업은 제외. 답장 모드는 같은 상대에게 쓰던 초안일
+  // 때만 이어서 복원하고(다른 답장을 새로 열면 무시), 그 외엔 프리필을 그대로 쓴다.
+  const [draft] = useState(() => {
+    if (isPopup) return null
+    try {
+      const raw = sessionStorage.getItem(NC_DRAFT_KEY)
+      if (!raw) return null
+      const d = JSON.parse(raw)
+      if (reply) {
+        const same = d?.recipient?.userId === reply.recipient?.userId && d?.recipient?.groupId === reply.recipient?.groupId
+        return same ? d : null
+      }
+      return d
+    } catch { return null }
+  })
+
+  const [recipient, setRecipient] = useState(reply?.recipient || draft?.recipient || null)
+  const [me, setMe] = useState(reply?.me || draft?.me || { name: '', avatar: null })
+  const [body, setBody] = useState(draft?.body || '')
+  const [anonymous, setAnonymous] = useState(draft?.anonymous || false)
+  const [useItem, setUseItem] = useState(draft?.useItem || null)   // { id, url? }
+  const [gifts, setGifts] = useState(draft?.gifts || [])          // [{ id, qty }]
+  const [photos, setPhotos] = useState(draft?.photos || [])        // [{ url }] — 폴라로이드 필름으로 첨부한 사진(최대 5장)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [polaroidModalOpen, setPolaroidModalOpen] = useState(false) // 전용 사용 모달(선물상자/비디오처럼)
   const polaroidInputRef = useRef(null)
@@ -116,6 +135,17 @@ export default function NoteCompose() {
       .then(([c, f]) => { if (on) { setCoupleGroups(c || []); setFriendGroups(f || []) } })
     return () => { on = false }
   }, [user?.id])
+
+  // 작성 내용을 sessionStorage 에 계속 동기화(언마운트 시 지우지 않음) — 아이템 사용/선물
+  // 시트의 "상점으로 가기"로 이 페이지를 벗어났다 돌아와도 복원되게. 팝업만 제외.
+  useEffect(() => {
+    if (isPopup) return
+    try {
+      const hasContent = !!recipient || !!me?.name || !!body.trim() || !!useItem || gifts.length > 0 || photos.length > 0
+      if (hasContent) sessionStorage.setItem(NC_DRAFT_KEY, JSON.stringify({ recipient, me, body, anonymous, useItem, gifts, photos }))
+      else sessionStorage.removeItem(NC_DRAFT_KEY)
+    } catch { /* noop */ }
+  }, [isPopup, reply, recipient, me, body, anonymous, useItem, gifts, photos])
 
   const pickerMode = useItem?.id === 'friend-ring' ? 'friend' : null
   // 우정 링을 사용/선물할 때는 이미 커플·우정 링이 적용된 그룹을 후보에서 제외
@@ -290,6 +320,7 @@ export default function NoteCompose() {
         groupId: recipient.groupId, recipientId: recipient.userId,
         body: body.trim(), anonymous, useItem, gifts, photos,
       })
+      try { sessionStorage.removeItem(NC_DRAFT_KEY) } catch { /* noop */ }
       if (anonymous) touchQuest('r_eraser')          // 랜덤 퀘스트 '익명 쪽지 보내기'(지우개 사용)
       if (gifts.some((g) => g.id === 'wish')) touchQuest('r_wish_ticket_present')   // 랜덤 퀘스트 '소원권 선물하기'
       if (isPopup) {
@@ -309,15 +340,19 @@ export default function NoteCompose() {
 
   const isActive = (id) => (id === 'eraser' ? anonymous : useItem?.id === id)
 
-  // 닫기: 팝업이면 창을 닫고, 인앱이면 뒤로가기
+  // 닫기: 팝업이면 창을 닫고, 인앱이면 뒤로가기. 명시적으로 닫는 거라 임시저장 초안도 정리.
   function closeCompose() {
+    try { sessionStorage.removeItem(NC_DRAFT_KEY) } catch { /* noop */ }
     if (isPopup) { try { window.close() } catch { /* noop */ } return }
     navigate(-1)
   }
   // 인앱 모달: 배경(백드롭) 클릭 시 닫기 (모바일 일반 페이지/팝업 창에서는 무시)
   function onBackdrop(e) {
     if (isPopup || e.target !== e.currentTarget) return
-    if (window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches) navigate(-1)
+    if (window.matchMedia?.('(min-width: 641px) and (orientation: landscape)')?.matches) {
+      try { sessionStorage.removeItem(NC_DRAFT_KEY) } catch { /* noop */ }
+      navigate(-1)
+    }
   }
 
   return (
