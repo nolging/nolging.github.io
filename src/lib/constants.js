@@ -98,7 +98,7 @@ export function gamePlatformLabels(list) {
 
 // 위시 카드에 표시할 미디어 요약. 숫자와 단위 사이는 띄어 표기 (예: 8 부작, 90 분).
 // OTT: (러닝타임 | OTT) / (N 부작 | OTT), 영화: 러닝타임 | 개봉일 개봉,
-// 독서: 페이지수 | 저자, 게임: 플랫폼 | 장르
+// 독서: 저자 | 페이지수(알라딘) 또는 출판사(카카오), 게임: 플랫폼 | 장르
 export function mediaCardLine(category, mi) {
   if (!mi) return ''
   const parts = []
@@ -113,7 +113,8 @@ export function mediaCardLine(category, mi) {
     if (mi.release_date) parts.push(`${mi.release_date} 개봉`)
   } else if (category === '독서') {
     if (mi.author) parts.push(mi.author)
-    if (mi.page_count) parts.push(`${mi.page_count} 쪽`)
+    if (mi.isbn) { if (mi.publisher) parts.push(mi.publisher) } // 카카오(신규, isbn 있음): 페이지수 대신 출판사
+    else if (mi.page_count) parts.push(`${mi.page_count} 쪽`) // 알라딘(기존, isbn 없음): 페이지수 유지
   } else if (category === '게임') {
     const plats = gamePlatformLabels(mi.platforms)
     if (plats.length) parts.push(plats.join(' '))
