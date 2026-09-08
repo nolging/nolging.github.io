@@ -103,7 +103,7 @@ export default function NoteCompose() {
   const [error, setError] = useState('')
 
   const [pickOpen, setPickOpen] = useState(false)
-  const [sheet, setSheet] = useState(null)        // 'use' | 'gift'
+  const [sheet, setSheet] = useState(draft?.sheet || null)        // 'use' | 'gift' — 상점 다녀오면 복원
   const [linkFor, setLinkFor] = useState(null)    // media itemId for URL modal
   const [linkUrl, setLinkUrl] = useState('')
   const [linkErr, setLinkErr] = useState('')      // URL 검증 오류
@@ -141,15 +141,15 @@ export default function NoteCompose() {
   }, [user?.id])
 
   // 작성 내용을 sessionStorage 에 계속 동기화(언마운트 시 지우지 않음) — 아이템 사용/선물
-  // 시트의 "상점으로 가기"로 이 페이지를 벗어났다 돌아와도 복원되게. 팝업만 제외.
+  // 시트의 "상점으로 가기"로 이 페이지를 벗어났다 돌아와도 복원되게(연 시트도 함께). 팝업만 제외.
   useEffect(() => {
     if (isPopup) return
     try {
-      const hasContent = !!recipient || !!me?.name || !!body.trim() || !!useItem || gifts.length > 0 || photos.length > 0
-      if (hasContent) sessionStorage.setItem(NC_DRAFT_KEY, JSON.stringify({ recipient, me, body, anonymous, useItem, gifts, photos }))
+      const hasContent = !!recipient || !!me?.name || !!body.trim() || !!useItem || gifts.length > 0 || photos.length > 0 || !!sheet
+      if (hasContent) sessionStorage.setItem(NC_DRAFT_KEY, JSON.stringify({ recipient, me, body, anonymous, useItem, gifts, photos, sheet }))
       else sessionStorage.removeItem(NC_DRAFT_KEY)
     } catch { /* noop */ }
-  }, [isPopup, reply, recipient, me, body, anonymous, useItem, gifts, photos])
+  }, [isPopup, reply, recipient, me, body, anonymous, useItem, gifts, photos, sheet])
 
   const pickerMode = useItem?.id === 'friend-ring' ? 'friend' : null
   // 우정 링을 사용/선물할 때는 이미 커플·우정 링이 적용된 그룹을 후보에서 제외
@@ -495,7 +495,7 @@ export default function NoteCompose() {
             <h3 className="nc-sheet-title">쪽지에 사용할 아이템</h3>
             <p className="nc-sheet-sub">내 인벤토리에 있는 쪽지 강화 아이템이에요</p>
           </div>
-          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store')}>
+          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store', { state: { from: 'notes-compose' } })}>
             상점으로 가기
             <svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
           </button>
@@ -537,7 +537,7 @@ export default function NoteCompose() {
             <h3 className="nc-sheet-title">선물할 아이템</h3>
             <p className="nc-sheet-sub">보낼 아이템과 수량을 골라 주세요</p>
           </div>
-          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store')}>
+          <button type="button" className="nc-sheet-store" onClick={() => navigate('/store', { state: { from: 'notes-compose' } })}>
             상점으로 가기
             <svg width="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
           </button>
