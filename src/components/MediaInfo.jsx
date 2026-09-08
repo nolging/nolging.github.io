@@ -132,13 +132,17 @@ export default function MediaInfo({ category, info, onClear, onSetProviders }) {
     if (info.genres?.length) rows.push(genreRow(info.genres))
     if (info.runtime) rows.push(['러닝타임', `${info.runtime} 분`])
   } else if (category === '독서') {
-    // 카카오 책 검색 API 는 장르·페이지수를 안 줘서(알라딘 종료로 전환) 그 자리에
-    // 출판사와 교보문고 검색 링크를 대신 넣는다.
     if (info.author) rows.push(['저자', info.author])
-    if (info.publisher) rows.push(['출판사', info.publisher])
     if (info.isbn) {
+      // 카카오 책 검색 API(신규, isbn 포함)는 장르·페이지수를 안 줘서 그 자리에
+      // 출판사와 교보문고 검색 링크를 대신 넣는다.
+      if (info.publisher) rows.push(['출판사', info.publisher])
       const kyoboUrl = `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(info.isbn)}`
       rows.push(['링크', <a href={kyoboUrl} target="_blank" rel="noopener noreferrer">교보문고에서 상세 보기</a>])
+    } else {
+      // 알라딘 API(구, isbn 없음)로 이미 저장된 기존 카드는 그대로 장르·페이지수 표시
+      if (info.genres?.length) rows.push(genreRow(info.genres))
+      if (info.page_count) rows.push(['페이지', `${info.page_count} 쪽`])
     }
   } else if (category === '게임') {
     const plats = gamePlatformLabels(info.platforms) // 닌텐도·맥·윈도우·플스만, 지정 순서
