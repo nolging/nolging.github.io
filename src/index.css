@@ -1644,6 +1644,7 @@ button.mention-chip:active { opacity: .6; }
   display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; flex-shrink: 0;
 }
 .notif-ic-lotto_draw { background: #fff0d6; }
+.notif-ic-dino_win { background: #e8f4ec; }
 .notif-ic-gift, .notif-ic-wish, .notif-ic-reminder { background: #eeebfe; }
 .notif-ic-new_member, .notif-ic-accept { background: #e8f4ec; }
 .notif-ic-reply, .notif-ic-task_comment { background: #fdeee6; }
@@ -7037,4 +7038,29 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
 .acct-add-row { display: flex; justify-content: flex-end; gap: 8px; }
 .acct-add-btn { margin-top: 10px; width: 100%; padding: 10px; border: 1.5px dashed var(--border); border-radius: 12px; background: none; color: var(--text); font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .acct-add-btn:active { background: rgba(0, 0, 0, .03); }
+
+/* ---- 다이노 짬푸 ---- */
+.dino-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.dino-canvas {
+  width: 100%; max-width: 640px; aspect-ratio: 4 / 1; background: #fff;
+  border: 1.5px solid var(--border); border-radius: 12px; touch-action: none; cursor: pointer;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+.dino-controls { display: flex; gap: 10px; width: 100%; max-width: 640px; }
+.dino-btn {
+  flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border); background: #fafaff;
+  color: var(--text); font-size: 14px; font-weight: 800; cursor: pointer; user-select: none; touch-action: none;
+}
+.dino-btn:active { background: #eeebfe; border-color: #b9abf3; }
+.dino-result { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.dino-board { display: flex; flex-direction: column; gap: 8px; }
+.dino-board-title { font-size: 14px; font-weight: 800; color: var(--text); }
+.dino-board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.dino-board-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #fafaff;
+}
+.dino-board-row.is-me { background: #eeebfe; border: 1.5px solid #b9abf3; }
+.dino-rank { width: 22px; text-align: center; font-weight: 800; color: var(--muted); flex-shrink: 0; }
+.dino-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dino-score { font-size: 13.5px; font-weight: 800; color: #7363e8; flex-shrink: 0; }
 .acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }

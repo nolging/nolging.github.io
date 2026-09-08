@@ -37,6 +37,7 @@ export const NOTIF_ICONS = {
   system_notice: '📢',
   donation: '🐾',
   lotto_draw: '🎱',
+  dino_win: '🦖',
 }
 
 export function timeAgo(iso) {
@@ -72,6 +73,7 @@ export function notifTarget(n) {
   if (n.type === 'megaphone' && n.group_id) return `/groups/${n.group_id}`         // 확성기 → 그룹 홈
   if (n.type === 'donation') return '/me/coins'                                    // 길냥이 후원 받음 → 츄르 내역
   if (n.type === 'lotto_draw' && n.lotto_round_id) return `/lotto/${n.lotto_round_id}`  // 로또 추첨 완료 → 당첨 번호 페이지
+  if (n.type === 'dino_win' && n.group_id) return `/groups/${n.group_id}/dino`          // 다이노 짬푸 1위 보상 → 게임 페이지
   if ((n.type === 'new_memory' || n.type === 'new_review') && n.task_id && n.group_id)
     return `/groups/${n.group_id}/tasks/${n.task_id}?tab=reviews`   // 새 추억/새 리뷰 → 추억 상세(리뷰 탭)
   if (n.task_id && n.group_id) {

@@ -323,6 +323,8 @@ export default function GroupMembers() {
             <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={isBlocked('puzzle') ? undefined : () => go('puzzle')} blocked={isBlocked('puzzle')} />
             <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={isBlocked('rps') ? undefined : () => go('rps')} blocked={isBlocked('rps')} />
             <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={isBlocked('omok') ? undefined : () => go('omok')} blocked={isBlocked('omok')} />
+            {/* 다이노 짬푸: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
+            {isAdmin && <PlayCard emoji="🦖" bg="#e8f4ec" title="다이노 짬푸" sub="장애물 피하기" onClick={() => go('dino')} />}
           </div>
         </div>
 
@@ -454,6 +456,8 @@ export default function GroupMembers() {
               <PlayCard emoji="🧩" bg="#e8f4ec" title="퍼즐" sub="한 조각 두 조각" onClick={isBlocked('puzzle') ? undefined : () => go('puzzle')} blocked={isBlocked('puzzle')} />
               <PlayCard emoji="✌️" bg="#fde8ee" title="가위바위보" sub="안 내면 진 거" onClick={isBlocked('rps') ? undefined : () => go('rps')} blocked={isBlocked('rps')} />
               <PlayCard emoji="⚫" bg="#f3f2f7" title="오목" sub="쪼로로로록" onClick={isBlocked('omok') ? undefined : () => go('omok')} blocked={isBlocked('omok')} />
+              {/* 다이노 짬푸: 우선 관리자만 (일반 사용자에게는 카드 자체를 숨긴다) */}
+              {isAdmin && <PlayCard emoji="🦖" bg="#e8f4ec" title="다이노 짬푸" sub="장애물 피하기" onClick={() => go('dino')} />}
             </div>
           </div>
         </div>
