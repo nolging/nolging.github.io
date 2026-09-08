@@ -1782,6 +1782,26 @@ export async function isFriendGroup(groupId) {
   return !!data
 }
 
+// 다이노 짬푸: 판 종료 시 점수 제출. 반환: { ok, score, best } / RPC 미배포 시 { ok:false, reason:'missing' }
+export async function submitDinoScore(groupId, score) {
+  const { data, error } = await supabase.rpc('submit_dino_score', { p_group_id: groupId, p_score: score })
+  if (error) {
+    if (error.code === 'PGRST202' || /submit_dino_score/.test(error.message || '')) return { ok: false, reason: 'missing' }
+    throw error
+  }
+  return data || { ok: false }
+}
+
+// 다이노 짬푸: 그룹 내 기록 순위(전체 기간 최고점). 반환: { rows, my_best } / RPC 미배포 시 { rows:[], my_best:0 }
+export async function getDinoLeaderboard(groupId) {
+  const { data, error } = await supabase.rpc('dino_leaderboard', { p_group_id: groupId })
+  if (error) {
+    if (error.code === 'PGRST202' || /dino_leaderboard/.test(error.message || '')) return { rows: [], my_best: 0 }
+    throw error
+  }
+  return data || { rows: [], my_best: 0 }
+}
+
 // 콕 찌르기: 프리미엄 그룹에서 대상 멤버에게 알림 전송.
 export async function pokeMember(groupId, targetUserId) {
   const { error } = await supabase.rpc('poke_member', { p_group_id: groupId, p_target: targetUserId })
