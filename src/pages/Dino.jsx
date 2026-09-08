@@ -7,9 +7,9 @@ import { useAuth } from '../context/AuthContext'
 import { isCoupleGroup, isFriendGroup, submitDinoScore, getDinoLeaderboard } from '../lib/api'
 import Avatar from '../components/Avatar'
 
-// ---- 논리 캔버스 좌표계(크롬 공룡 게임과 동일한 4:1 비율) ----
-const W = 600, H = 150
-const GROUND_Y = 130
+// ---- 논리 캔버스 좌표계(가로는 그대로, 세로를 늘려 하늘 공간을 더 확보) ----
+const W = 600, H = 220
+const GROUND_Y = 190
 
 // ---- 물리/속도 ----
 const GRAVITY = 0.0022          // px / ms^2
@@ -21,61 +21,86 @@ const NIGHT_EVERY = 700         // 점수 이 값만큼마다 낮/밤 전환
 const PTERO_FROM_SCORE = 250    // 이 점수부터 익룡 등장
 
 // ---- 다이노 본체 크기(논리 px) ----
-const DINO_W = 34, DINO_H = 42
-const DUCK_W = 46, DUCK_H = 24
+const DINO_W = 44, DINO_H = 46
+const DUCK_W = 54, DUCK_H = 24
 
 function rr(x) { return Math.round(x) }
 
-// 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림).
-// x,y = 바운딩 박스 좌상단. duck/dead/legPhase 로 자세 결정.
-function drawDino(ctx, x, y, { duck, dead, legPhase, color }) {
+// 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
+// 몸통은 위→아래로 폭이 계단식으로 변하는 "쌓기" 방식(겹치는 둥근 사각형 대신)이라 실루엣이
+// 또렷하다. pose: 'idle'(양발 모으고 정지) | 'runA'(앞다리 듦) | 'runB'(뒷다리 듦) | 'duck' | 'dead'
+// legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임(runA/runB 는 pose 자체가 프레임을 지정).
+function drawDino(ctx, x, y, { pose, legPhase, color }) {
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
-  if (duck) {
+
+  if (pose === 'duck') {
     // 웅크린 자세: 낮고 긴 몸통 + 앞으로 뻗은 머리
-    ctx.fillRect(x, y + 6, 34, 14)          // 몸통
-    ctx.fillRect(x + 30, y, 16, 12)         // 머리(앞으로 낮게)
-    ctx.fillRect(x + 42, y + 3, 6, 4)       // 주둥이
-    ctx.fillStyle = '#fff'
-    ctx.fillRect(x + 40, y + 3, 2, 2)       // 눈
+    ctx.fillRect(x + 4, y + 8, 38, 12)        // 몸통
+    ctx.fillRect(x + 36, y, 14, 10)           // 머리(앞으로 낮게)
+    ctx.fillRect(x + 48, y + 3, 6, 4)         // 주둥이
+    ctx.fillRect(x, y + 10, 6, 5)             // 꼬리
+    ctx.fillStyle = '#fff'; ctx.fillRect(x + 41, y + 2, 3, 3)
+    ctx.fillStyle = '#535353'; ctx.fillRect(x + 42, y + 3, 2, 2)
     ctx.fillStyle = color
-    ctx.fillRect(x, y + 12, 8, 6)           // 꼬리
-    // 다리(짧게, 교차 애니메이션)
-    ctx.fillRect(x + (legPhase ? 6 : 20), y + 20, 6, 4)
-    ctx.fillRect(x + (legPhase ? 20 : 6), y + 20, 6, 4)
+    ctx.fillRect(x + (legPhase ? 10 : 24), y + 20, 6, 4)
+    ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
     return
   }
-  // 서 있는/달리는 자세
-  ctx.fillRect(x + 6, y, 14, 8)            // 등 위쪽(목~등)
-  ctx.fillRect(x + 2, y + 8, 20, 14)       // 몸통
-  ctx.fillRect(x + 4, y + 22, 16, 6)       // 골반
-  ctx.fillRect(x + 20, y - 4, 13, 12)      // 머리
-  ctx.fillRect(x + 30, y, 7, 5)            // 주둥이
-  ctx.fillStyle = dead ? '#fff' : '#fff'
-  ctx.fillRect(x + 27, y - 1, 2, 2)        // 눈(흰자)
-  if (!dead) { ctx.fillStyle = '#535353'; ctx.fillRect(x + 27, y - 1, 2, 2) }
+
+  // ---- 머리~목~등~몸통을 위에서 아래로 계단식으로 쌓아 완만한 곡선 실루엣을 만든다 ----
+  ctx.fillRect(x + 24, y, 8, 4)          // 정수리
+  ctx.fillRect(x + 20, y + 4, 14, 4)     // 머리 위쪽
+  ctx.fillRect(x + 18, y + 8, 18, 5)     // 머리(눈 높이)
+  ctx.fillRect(x + 14, y + 13, 14, 4)    // 목
+  ctx.fillRect(x + 10, y + 17, 20, 4)    // 등 시작
+  ctx.fillRect(x + 6, y + 21, 28, 7)     // 몸통(가장 넓은 부분)
+  ctx.fillRect(x + 8, y + 28, 22, 5)     // 몸통 아래(다리로 이어짐)
+
+  // ---- 주둥이(머리보다 오른쪽·아래로 튀어나와 턱선을 표현) ----
+  ctx.fillRect(x + 34, y + 9, 8, 5)
+  // ---- 눈 ----
+  ctx.fillStyle = '#fff'; ctx.fillRect(x + 23, y + 9, 3, 3)
+  ctx.fillStyle = '#535353'; ctx.fillRect(x + 24, y + 10, 2, 2)
   ctx.fillStyle = color
-  ctx.fillRect(x + 22, y + 10, 5, 3)       // 앞다리(짧은 팔)
-  ctx.fillRect(x - 6, y + 8, 9, 6)         // 꼬리 뿌리
-  ctx.fillRect(x - 10, y + 10, 6, 4)       // 꼬리 끝
-  if (dead) {
-    // 게임오버: 다리는 가만히 선 자세 + 눈에 X
-    ctx.fillRect(x + 4, y + 28, 6, 10)
-    ctx.fillRect(x + 16, y + 28, 6, 10)
-    ctx.strokeStyle = color; ctx.lineWidth = 1.4
+
+  // ---- 앞다리(짧은 팔 하나) — 가슴 앞쪽으로 또렷하게 튀어나오게 ----
+  ctx.fillRect(x + 28, y + 19, 8, 5)
+
+  // ---- 꼬리(몸통 왼쪽 아래로 갈수록 좁아지는 계단식) ----
+  ctx.fillRect(x + 4, y + 21, 8, 5)
+  ctx.fillRect(x + 1, y + 26, 6, 5)
+  ctx.fillRect(x, y + 30, 4, 4)
+
+  if (pose === 'dead') {
+    // 게임오버: 다리는 가만히 선 자세 + 눈 위에 X(배경색과 무관하게 보이도록 흰/검 눈 위에 반대 톤으로)
+    ctx.fillRect(x + 12, y + 33, 8, 13)
+    ctx.fillRect(x + 22, y + 33, 8, 13)
+    ctx.fillRect(x + 10, y + 44, 4, 2)
+    ctx.fillRect(x + 28, y + 44, 4, 2)
+    ctx.strokeStyle = color === '#535353' ? '#fff' : '#535353'
+    ctx.lineWidth = 1.4
     ctx.beginPath()
-    ctx.moveTo(x + 26, y); ctx.lineTo(x + 30, y + 4)
-    ctx.moveTo(x + 30, y); ctx.lineTo(x + 26, y + 4)
+    ctx.moveTo(x + 23, y + 9); ctx.lineTo(x + 26, y + 12)
+    ctx.moveTo(x + 26, y + 9); ctx.lineTo(x + 23, y + 12)
     ctx.stroke()
     return
   }
-  // 달리는 다리(2프레임 교차)
-  if (legPhase) {
-    ctx.fillRect(x + 4, y + 28, 6, 12)
-    ctx.fillRect(x + 16, y + 28, 6, 8)
+
+  // ---- 다리: idle(양발 모음) / runA(앞다리 듦) / runB(뒷다리 듦) ----
+  if (pose === 'runA') {
+    ctx.fillRect(x + 12, y + 33, 8, 13)       // 뒷다리(땅 딛음)
+    ctx.fillRect(x + 23, y + 29, 9, 9)        // 앞다리(듦)
+    ctx.fillRect(x + 10, y + 44, 4, 2)        // 뒷발 발가락
+  } else if (pose === 'runB') {
+    ctx.fillRect(x + 22, y + 33, 8, 13)       // 앞다리(땅 딛음)
+    ctx.fillRect(x + 11, y + 29, 9, 9)        // 뒷다리(듦)
+    ctx.fillRect(x + 28, y + 44, 4, 2)        // 앞발 발가락
   } else {
-    ctx.fillRect(x + 4, y + 28, 6, 8)
-    ctx.fillRect(x + 16, y + 28, 6, 12)
+    ctx.fillRect(x + 12, y + 33, 8, 13)       // idle: 양발 모음
+    ctx.fillRect(x + 22, y + 33, 8, 13)
+    ctx.fillRect(x + 10, y + 44, 4, 2)
+    ctx.fillRect(x + 28, y + 44, 4, 2)
   }
 }
 
@@ -267,10 +292,13 @@ export default function Dino() {
         // 구름
         for (const c of s.clouds) { c.x -= s.speed * dt * 0.25; if (c.x < -50) { c.x = W + Math.random() * 60; c.y = 20 + Math.random() * 40 } }
 
-        // 충돌(약간 여유를 준 히트박스)
+        // 충돌(약간 여유를 준 히트박스). 웅크리면 키가 줄어들지만 s.y 는 "서 있을 때" 기준
+        // top 이라 그대로 쓰면 발이 땅에서 떠 보인다 — 웅크릴 때는 항상 땅에 붙어 있으므로
+        // (점프 중엔 duck 이 true 가 될 수 없음) 바닥(GROUND_Y) 기준으로 top 을 다시 잡는다.
         const dw = s.duck ? DUCK_W : DINO_W, dh = s.duck ? DUCK_H : DINO_H
+        const dTop = s.duck ? GROUND_Y - DUCK_H : s.y
         const inset = 6
-        const dx0 = 30 + inset, dx1 = 30 + dw - inset, dy0 = s.y + inset, dy1 = s.y + dh - inset
+        const dx0 = 30 + inset, dx1 = 30 + dw - inset, dy0 = dTop + inset, dy1 = dTop + dh - inset
         for (const o of s.obstacles) {
           const ox0 = o.x + 4, ox1 = o.x + o.w - 4, oy0 = o.y + 3, oy1 = o.y + o.h - 3
           if (dx0 < ox1 && dx1 > ox0 && dy0 < oy1 && dy1 > oy0) { s.over = true; finish(s.score); break }
@@ -280,11 +308,11 @@ export default function Dino() {
       // ---- 렌더 ----
       const s2 = st.current
       const night = s2 && Math.floor(s2.score / NIGHT_EVERY) % 2 === 1
-      const bg = night ? '#202124' : '#fff'
       const fg = night ? '#f7f7f7' : '#535353'
       ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, W, H)
+      // 낮에는 배경을 채우지 않아 페이지 배경 위에서 그대로 플레이되게(흰 박스 없음).
+      // 밤에는 반전 연출을 위해 어두운 배경을 채운다.
+      if (night) { ctx.fillStyle = '#202124'; ctx.fillRect(0, 0, W, H) }
 
       if (s2) {
         ctx.fillStyle = night ? '#3a3a3d' : '#e8e8e8'
@@ -300,7 +328,13 @@ export default function Dino() {
           else drawPtero(ctx, o.x, o.y, s2.wingUp, fg)
         }
 
-        drawDino(ctx, 30, s2.y, { duck: s2.duck, dead: phaseRef.current === 'over', legPhase: s2.legPhase, color: fg })
+        {
+          const dead = phaseRef.current === 'over'
+          const moving = phaseRef.current === 'running' && s2.onGround
+          const pose = dead ? 'dead' : s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
+          const drawY = s2.duck ? GROUND_Y - DUCK_H : s2.y
+          drawDino(ctx, 30, drawY, { pose, legPhase: s2.legPhase, color: fg })
+        }
 
         // 점수(우상단, 등폭 숫자)
         ctx.fillStyle = fg

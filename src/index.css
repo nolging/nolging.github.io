@@ -7042,8 +7042,7 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
 /* ---- 다이노 짬푸 ---- */
 .dino-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .dino-canvas {
-  width: 100%; max-width: 640px; aspect-ratio: 4 / 1; background: #fff;
-  border: 1.5px solid var(--border); border-radius: 12px; touch-action: none; cursor: pointer;
+  width: 100%; max-width: 640px; aspect-ratio: 600 / 220; touch-action: none; cursor: pointer;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
 .dino-controls { display: flex; gap: 10px; width: 100%; max-width: 640px; }
