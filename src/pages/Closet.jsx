@@ -35,6 +35,7 @@ export default function Closet() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rows, setRows] = useState([])   // 보유한 deco-* user_items 행(전체 그룹 포함)
+  const [meta, setMeta] = useState({})   // item_id -> { storeIndex, sortOrder, premium } — 상점과 동일한 정렬용
   const [me, setMe] = useState(null)
   const [editItem, setEditItem] = useState(null) // 편집 대상 아이템 id | null
   const [worn, setWorn] = useState(new Map())       // 로컬(미저장) 착장 상태: item_id → tf
@@ -48,6 +49,11 @@ export default function Closet() {
       const [storeItems, inv, cards] = await Promise.all([
         listStoreItems(), listInventory(user.id), listMemberCards(groupId).catch(() => []),
       ])
+      // storeIndex: listStoreItems() 가 이미 sort_order 로 정렬해 주므로, 그 배열 위치를 그대로
+      // 정렬 기준으로 쓰면 상점과 100% 같은 순서가 된다(Inventory.jsx 와 동일한 방식).
+      const m = {}
+      storeItems.forEach((s, i) => { m[s.id] = { storeIndex: i, sortOrder: s.sortOrder ?? 0, premium: !!s.premium } })
+      setMeta(m)
       setStoreCatalog(storeItems)
       setRows(inv.filter((r) => r.item_id.startsWith('deco-')))
       setMe(cards.find((c) => c.is_self) || null)
@@ -135,10 +141,14 @@ export default function Closet() {
       if (!bySlot.has(slot)) bySlot.set(slot, [])
       bySlot.get(slot).push(id)
     }
+    // 슬롯 안 아이템 순서도 상점과 동일하게(Inventory.jsx 와 같은 기준: 프리미엄은 뒤로,
+    // 그 안에서는 상점이 실제로 보여준 배열 순서로).
+    const prem = (id) => (meta[id]?.premium ? 1 : 0)
+    const ord = (id) => (meta[id]?.storeIndex ?? meta[id]?.sortOrder ?? 999)
     return [...bySlot.entries()]
       .sort((a, b) => (SLOT_RANK[a[0]] ?? 99) - (SLOT_RANK[b[0]] ?? 99))
-      .map(([slot, ids]) => ({ slot, ids }))
-  }, [owned])
+      .map(([slot, ids]) => ({ slot, ids: [...ids].sort((a, b) => prem(a) - prem(b) || ord(a) - ord(b)) }))
+  }, [owned, meta])
 
   const previewDeco = useMemo(() => [...worn.entries()].map(([id, tf]) => ({ id, tf })), [worn])
 
