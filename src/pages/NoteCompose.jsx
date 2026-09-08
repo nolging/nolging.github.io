@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import RecipientPicker from '../components/RecipientPicker'
 import BottomSheet from '../components/BottomSheet'
 import Modal from '../components/Modal'
@@ -53,6 +53,7 @@ const GiftIcon = ({ stroke }) => (
 export default function NoteCompose() {
   const navigate = useNavigate()
   const location = useLocation()
+  const navType = useNavigationType() // 'POP'(뒤로가기로 도착) | 'PUSH' | 'REPLACE'
   const { user } = useAuth()
   useStoreCatalog()
   // 팝업(브라우저 새 창) 모드 여부 — /notes/compose?popup=1 로 열림
@@ -67,12 +68,15 @@ export default function NoteCompose() {
   })
   const reply = prefill?.reply
 
-  // 작성 중 시트의 "상점으로 가기"로 상점에 다녀오면 이 페이지가 통째로 언마운트됐다
-  // 되돌아올 때 다시 마운트된다 — 그 사이 입력 내용이 날아가지 않도록 sessionStorage 에
-  // 임시 저장해 뒀다가 복원한다. 팝업은 제외. 답장 모드는 같은 상대에게 쓰던 초안일
-  // 때만 이어서 복원하고(다른 답장을 새로 열면 무시), 그 외엔 프리필을 그대로 쓴다.
+  // 작성 중 시트의 "상점으로 가기"로 상점에 다녀오다 "<"(뒤로가기)로 돌아오면 이 페이지가
+  // 통째로 언마운트됐다 재마운트되는데, 그 사이 입력 내용이 날아가지 않도록 sessionStorage 에
+  // 임시 저장해 뒀다가 복원한다. 단, "뒤로가기로 도착"(POP)한 경우에만 복원한다 — 상점에서
+  // 뒤로가기가 아닌 다른 버튼(하단 탭 등)으로 이동했다거나, 쪽지쓰기를 그냥 새로 연 경우엔
+  // 예전 초안이 되살아나면 안 되므로 그 자리에서 버린다. 팝업은 제외. 답장 모드는 같은
+  // 상대에게 쓰던 초안일 때만 이어서 복원하고(다른 답장을 새로 열면 무시), 프리필을 그대로 쓴다.
   const [draft] = useState(() => {
     if (isPopup) return null
+    if (navType !== 'POP') { try { sessionStorage.removeItem(NC_DRAFT_KEY) } catch { /* noop */ } return null }
     try {
       const raw = sessionStorage.getItem(NC_DRAFT_KEY)
       if (!raw) return null
