@@ -45,6 +45,9 @@ export default function Store() {
   const [hasFriend, setHasFriend] = useState(false)
   const [premiumGroupIds, setPremiumGroupIds] = useState([]) // 커플/우정 링 적용 그룹(우정 링 선물 시 제외)
   const [decoSlotFilter, setDecoSlotFilter] = useState('전체') // 프로필 꾸미기 섹션 유형 필터
+  // 쪽지쓰기의 아이템 사용/선물 시트 "상점으로 가기"로 들어온 경우 — 구매 완료 후
+  // "쪽지 쓰러 돌아가기"로 정확히 그 화면(history 한 칸 전)으로 돌아가게 한다.
+  const fromNotesCompose = location.state?.from === 'notes-compose'
   // 새로 진입하면 일반 상점. 단, 퀘스트 등으로 premium 지정 시 프리미엄 탭, 인벤토리에서 "<"로 돌아온 경우(restore)만 직전 탭 복원.
   const [premiumView, setPremiumView] = useState(() => {
     try {
@@ -329,8 +332,12 @@ export default function Store() {
               <button type="button" className="st-btn-buy st-btn-block" onClick={close}>확인</button>
             ) : (
               <>
-                <button type="button" className="st-btn-buy st-btn-block" onClick={() => navigate(notice.kind === 'gift' ? '/notes' : '/inventory', notice.kind === 'gift' ? { state: { tab: 'sent' } } : undefined)}>
-                  {notice.kind === 'gift' ? '보낸 쪽지함으로 가기' : '인벤토리로 이동'}
+                <button type="button" className="st-btn-buy st-btn-block"
+                  onClick={() => {
+                    if (notice.kind !== 'gift' && fromNotesCompose) { navigate(-1); return }
+                    navigate(notice.kind === 'gift' ? '/notes' : '/inventory', notice.kind === 'gift' ? { state: { tab: 'sent' } } : undefined)
+                  }}>
+                  {notice.kind === 'gift' ? '보낸 쪽지함으로 가기' : fromNotesCompose ? '쪽지 쓰러 돌아가기' : '인벤토리로 이동'}
                 </button>
                 <button type="button" className="st-btn-text" onClick={close}>{notice.kind === 'gift' ? '닫기' : '계속 둘러보기'}</button>
               </>
