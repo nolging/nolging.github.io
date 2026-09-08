@@ -207,9 +207,14 @@ export default function Dino() {
   }, [groupId, loadBoard])
 
   // ---- 게임 루프 ----
+  // gate 가 'ok' 로 바뀌기 전엔 <canvas> 가 아직 렌더되지 않아 canvasRef.current 가 null.
+  // gate 를 의존성에 넣지 않으면 그 순간 이 effect 가 조용히 아무것도 안 하고 끝나버리고,
+  // board.my_best 가 우연히 바뀌지 않는 한(처음 플레이하는 유저는 0→0 이라 안 바뀜) 다시
+  // 실행되지 않아 캔버스가 영원히 빈 채로 남는다 — gate 를 넣어 canvas 가 실제로 생긴
+  // 시점에 반드시 한 번 더 돌게 한다.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || gate !== 'ok') return
     const ctx = canvas.getContext('2d')
     ctx.imageSmoothingEnabled = false
     let last = performance.now()
@@ -323,7 +328,7 @@ export default function Dino() {
     }
     rafRef.current = requestAnimationFrame(step)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [finish, board.my_best])
+  }, [finish, board.my_best, gate])
 
   const onPointerDown = (e) => {
     e.preventDefault()
