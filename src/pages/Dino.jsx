@@ -12,22 +12,37 @@ const FONT = "'Cafe24Proup', sans-serif"
 // ---- 논리 좌표계: 가로(W)는 600 고정, 세로(H)·바닥선(groundY)은 실제 캔버스 크기에 맞춰
 // 매 프레임 동적으로 계산한다 — 상단바를 제외한 화면 전체 높이를 하늘로 쓰기 위함. ----
 const W = 600
-const GROUND_MARGIN = 34   // 바닥선이 캔버스 맨 아래에서 얼마나 떨어져 있는지(고정 여백)
+const GROUND_MARGIN = 70   // 바닥선이 캔버스 맨 아래에서 얼마나 떨어져 있는지(고정 여백) — 살짝 위로
+
+// 공룡/장애물/구름 픽셀아트를 그릴 때 원래 좌표(아래 draw* 함수들의 fillRect 오프셋) 위에
+// 곱해 그리는 배율 — 히트박스(DINO_W 등)·물리 상수는 이 배율에 맞춰 함께 2배로 스케일했다.
+const SPRITE_SCALE = 2
 
 // ---- 물리/속도 ----
-const GRAVITY = 0.0022          // px / ms^2
-const JUMP_V = -0.62            // px / ms (음수 = 위)
+// 점프 높이(JUMP_V²/2GRAVITY)가 스프라이트와 같은 배율로 커지도록 둘 다 SPRITE_SCALE 배 —
+// 이러면 점프 정점까지 걸리는 시간(JUMP_V/GRAVITY)은 그대로라 조작감은 원래와 동일하다.
+const GRAVITY = 0.0022 * SPRITE_SCALE     // px / ms^2
+const JUMP_V = -0.62 * SPRITE_SCALE       // px / ms (음수 = 위)
 const START_SPEED = 0.32        // px / ms
 const MAX_SPEED = 0.62
 const SPEED_ACCEL = 0.000006    // px/ms 당 가속
 const NIGHT_EVERY = 700         // 점수 이 값만큼마다 낮/밤 전환
 const PTERO_FROM_SCORE = 250    // 이 점수부터 익룡 등장
 
-// ---- 다이노 본체 크기(논리 px) ----
-const DINO_W = 44, DINO_H = 46
-const DUCK_W = 54, DUCK_H = 24
+// ---- 다이노 본체 크기(논리 px, SPRITE_SCALE 반영) ----
+const DINO_W = 44 * SPRITE_SCALE, DINO_H = 46 * SPRITE_SCALE
+const DUCK_W = 54 * SPRITE_SCALE, DUCK_H = 24 * SPRITE_SCALE
 
 function rr(x) { return Math.round(x) }
+// 내부 좌표가 고정 리터럴인 픽셀아트 함수(drawDino/drawPtero/drawCloud)를 SPRITE_SCALE 배로
+// 그린다 — (x,y) 는 그대로 두고 그 지점을 원점 삼아 확대하므로 좌상단 기준 크기만 커진다.
+function drawScaled(ctx, x, y, fn) {
+  ctx.save()
+  ctx.translate(rr(x), rr(y))
+  ctx.scale(SPRITE_SCALE, SPRITE_SCALE)
+  fn()
+  ctx.restore()
+}
 
 // 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
 // 몸통은 위→아래로 폭이 계단식으로 변하는 "쌓기" 방식(겹치는 둥근 사각형 대신)이라 실루엣이
@@ -139,12 +154,12 @@ function drawCloud(ctx, x, y, color) {
   ctx.fillRect(x, y + 4, 40, 6)
 }
 
-// 장애물 정의(폭/높이/그라운드 기준 y). 익룡은 3가지 높이 중 하나로 등장.
+// 장애물 정의(폭/높이/그라운드 기준 y, SPRITE_SCALE 반영). 익룡은 3가지 높이 중 하나로 등장.
 const CACTUS_DEFS = [
   { w: 17, h: 35 }, { w: 34, h: 35 }, { w: 51, h: 35 },   // 작은 선인장 1~3개
   { w: 25, h: 47 }, { w: 50, h: 47 },                      // 큰 선인장 1~2개
-]
-const PTERO_Y_OFFSETS = [0, -34, -68]   // 그라운드 기준(낮음=점프 필요) ~ 높음(그냥 지나감)
+].map((d) => ({ w: d.w * SPRITE_SCALE, h: d.h * SPRITE_SCALE }))
+const PTERO_Y_OFFSETS = [0, -34 * SPRITE_SCALE, -68 * SPRITE_SCALE]   // 그라운드 기준(낮음=점프 필요) ~ 높음(그냥 지나감)
 
 export default function Dino() {
   const { groupId } = useParams()
@@ -197,7 +212,9 @@ export default function Dino() {
     st.current = {
       y: groundY - DINO_H, vy: 0, duck: false, onGround: true,
       speed: START_SPEED, distance: 0, score: 0, legPhase: false, legTimer: 0,
-      obstacles: [], nextGapPx: 260, clouds: [{ x: 480, y: 30 }, { x: 300, y: 55 }],
+      obstacles: [], nextGapPx: 260,
+      // 구름은 하늘 위쪽이 아니라 땅에 가까운 아래쪽에(바닥선의 45~80%쯤) 뜨게.
+      clouds: [{ x: 480, y: groundY * 0.5 }, { x: 300, y: groundY * 0.68 }],
       wingUp: false, wingTimer: 0, holdDuck: false,
     }
   }, [])
@@ -282,14 +299,15 @@ export default function Dino() {
       const usePtero = s.score >= PTERO_FROM_SCORE && Math.random() < 0.28
       if (usePtero) {
         const off = PTERO_Y_OFFSETS[Math.floor(Math.random() * PTERO_Y_OFFSETS.length)]
-        s.obstacles.push({ type: 'ptero', x: W + 10, w: 46, h: 34, y: groundY - 40 + off })
+        s.obstacles.push({ type: 'ptero', x: W + 10, w: 46 * SPRITE_SCALE, h: 34 * SPRITE_SCALE, y: groundY - 40 * SPRITE_SCALE + off })
       } else {
         const n = Math.floor(Math.random() * CACTUS_DEFS.length)
         const def = CACTUS_DEFS[n]
         s.obstacles.push({ type: 'cactus', x: W + 10, w: def.w, h: def.h, y: groundY - def.h })
       }
-      const minGap = 180 + s.speed * 220
-      s.nextGapPx = minGap + Math.random() * 220
+      // 장애물이 커진 만큼 간격도 같은 배율로 넓혀야 상대적인 여유가 그대로 유지된다.
+      const minGap = (180 + s.speed * 220) * SPRITE_SCALE
+      s.nextGapPx = minGap + Math.random() * 220 * SPRITE_SCALE
     }
 
     const step = (now) => {
@@ -324,10 +342,13 @@ export default function Dino() {
         s.gapAcc = (s.gapAcc || 0) + s.speed * dt
         if (s.gapAcc >= s.nextGapPx) { s.gapAcc = 0; spawnObstacle(s) }
 
-        // 구름
+        // 구름 — 하늘 위쪽이 아니라 땅에 가까운 아래쪽(바닥선의 45~80%쯤)에 뜨게.
         for (const c of s.clouds) {
           c.x -= s.speed * dt * 0.25
-          if (c.x < -50) { c.x = W + Math.random() * 60; c.y = 20 + Math.random() * Math.max(40, H * 0.4) }
+          if (c.x < -50 * SPRITE_SCALE) {
+            c.x = W + Math.random() * 60
+            c.y = groundY * 0.45 + Math.random() * (groundY * 0.35)
+          }
         }
 
         // 충돌(약간 여유를 준 히트박스). 웅크리면 키가 줄어들지만 s.y 는 "서 있을 때" 기준
@@ -335,10 +356,10 @@ export default function Dino() {
         // (점프 중엔 duck 이 true 가 될 수 없음) 바닥(groundY) 기준으로 top 을 다시 잡는다.
         const dw = s.duck ? DUCK_W : DINO_W, dh = s.duck ? DUCK_H : DINO_H
         const dTop = s.duck ? groundY - DUCK_H : s.y
-        const inset = 6
+        const inset = 6 * SPRITE_SCALE
         const dx0 = 30 + inset, dx1 = 30 + dw - inset, dy0 = dTop + inset, dy1 = dTop + dh - inset
         for (const o of s.obstacles) {
-          const ox0 = o.x + 4, ox1 = o.x + o.w - 4, oy0 = o.y + 3, oy1 = o.y + o.h - 3
+          const ox0 = o.x + 4 * SPRITE_SCALE, ox1 = o.x + o.w - 4 * SPRITE_SCALE, oy0 = o.y + 3 * SPRITE_SCALE, oy1 = o.y + o.h - 3 * SPRITE_SCALE
           if (dx0 < ox1 && dx1 > ox0 && dy0 < oy1 && dy1 > oy0) { s.over = true; finish(s.score); break }
         }
       }
@@ -354,16 +375,20 @@ export default function Dino() {
       if (isNight) { ctx.fillStyle = '#202124'; ctx.fillRect(0, 0, W, H) }
 
       if (s2) {
-        for (const c of s2.clouds) drawCloud(ctx, c.x, c.y, isNight ? '#3a3a3d' : '#e0e0e0')
+        for (const c of s2.clouds) {
+          const cloudColor = isNight ? '#3a3a3d' : '#e0e0e0'
+          drawScaled(ctx, c.x, c.y, () => drawCloud(ctx, 0, 0, cloudColor))
+        }
         // 바닥선 + 점선 텍스처
         ctx.fillStyle = fg
-        ctx.fillRect(0, groundY, W, 2)
-        const dashOffset = Math.floor(s2.distance / 3) % 24
-        for (let x = -dashOffset; x < W; x += 24) ctx.fillRect(x, groundY, 12, 2)
+        ctx.fillRect(0, groundY, W, 2 * SPRITE_SCALE)
+        const dashW = 12 * SPRITE_SCALE, dashGap = 12 * SPRITE_SCALE
+        const dashOffset = Math.floor(s2.distance / 3) % (dashW + dashGap)
+        for (let x = -dashOffset; x < W; x += dashW + dashGap) ctx.fillRect(x, groundY, dashW, 2 * SPRITE_SCALE)
 
         for (const o of s2.obstacles) {
           if (o.type === 'cactus') drawCactus(ctx, o.x, o.y, o.w, o.h, fg)
-          else drawPtero(ctx, o.x, o.y, s2.wingUp, fg)
+          else drawScaled(ctx, o.x, o.y, () => drawPtero(ctx, 0, 0, s2.wingUp, fg))
         }
 
         {
@@ -371,7 +396,7 @@ export default function Dino() {
           const moving = phaseRef.current === 'running' && s2.onGround
           const pose = dead ? 'dead' : s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
           const drawY = s2.duck ? groundY - DUCK_H : s2.y
-          drawDino(ctx, 30, drawY, { pose, legPhase: s2.legPhase, color: fg })
+          drawScaled(ctx, 30, drawY, () => drawDino(ctx, 0, 0, { pose, legPhase: s2.legPhase, color: fg }))
         }
 
         // 점수(우상단, 등폭 숫자)
@@ -382,21 +407,19 @@ export default function Dino() {
         const hi = Math.max(myBestRef.current || 0, s2.score)
         ctx.fillText(`HI ${String(hi).padStart(5, '0')}  ${String(s2.score).padStart(5, '0')}`, W - 12, 16)
 
-        if (phaseRef.current === 'ready') {
-          ctx.textAlign = 'center'
-          ctx.font = `800 32px ${FONT}`
-          ctx.fillText('탭하거나 스페이스바로 시작', W / 2, H / 2 - 18)
-        }
-        if (phaseRef.current === 'over') {
+        // 대기 화면(ready)과 게임오버 화면(over) 모두 가운데에 "제목 + 그룹 순위 + 안내 문구"를
+        // 같은 레이아웃으로 그린다. 대기 화면은 큰 로고("DINO JUMP")를, 게임오버는 결과 문구를 쓴다.
+        if (phaseRef.current === 'ready' || phaseRef.current === 'over') {
+          const isReady = phaseRef.current === 'ready'
           const rows = boardRowsRef.current || []
-          const rowH = 36, titleH = 64, gapAfterTitle = 26, gapAfterList = 30, promptH = 32
+          const rowH = 36, titleH = isReady ? 76 : 64, gapAfterTitle = 26, gapAfterList = 30, promptH = 32
           const listH = rows.length * rowH
           const totalH = titleH + (rows.length ? gapAfterTitle + listH : 0) + gapAfterList + promptH
           let y = H / 2 - totalH / 2
 
           ctx.textAlign = 'center'
-          ctx.font = `900 52px ${FONT}`
-          ctx.fillText('GAME OVER', W / 2, y)
+          ctx.font = `900 ${isReady ? 62 : 52}px ${FONT}`
+          ctx.fillText(isReady ? 'DINO JUMP' : 'GAME OVER', W / 2, y)
           y += titleH
 
           if (rows.length) {
@@ -413,9 +436,12 @@ export default function Dino() {
           }
 
           y += gapAfterList
-          ctx.textAlign = 'center'
-          ctx.font = `800 28px ${FONT}`
-          ctx.fillText('탭해서 다시 시작', W / 2, y)
+          // 안내 문구는 0.6초 간격으로 깜빡이게.
+          if (Math.floor(now / 600) % 2 === 0) {
+            ctx.textAlign = 'center'
+            ctx.font = `800 28px ${FONT}`
+            ctx.fillText(isReady ? 'Tap to start' : 'Tap to retry', W / 2, y)
+          }
         }
       }
 

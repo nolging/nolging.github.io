@@ -619,9 +619,11 @@ export default function Layout() {
       </header>
     )
   } else if (dinoMatch) {
-    // 다이노 짬푸: 좌측 뒤로, 제목
+    // 다이노 짬푸: 좌측 뒤로, 제목. 밤 모드(setHeaderBg)에서 배경이 실제로 바뀌려면
+    // headerBg 를 style 로 반영해야 한다(다른 곳들과 동일 패턴 — 빠뜨리면 상태만 바뀌고
+    // 화면엔 안 보임).
     topbar = (
-      <header className="topbar">
+      <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">DINO JUMP</span>
       </header>
