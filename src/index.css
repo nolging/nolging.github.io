@@ -1876,6 +1876,12 @@ button.mention-chip:active { opacity: .6; }
 .tarot-view .topbar-heading { color: #f4f2fd; }
 .tarot-view .topbar .icon-btn { background: rgba(255, 255, 255, .1); color: #efecfb; }
 .tarot-view .topbar .icon-btn:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+
+/* 다이노 짬푸 밤 모드: 상단바 배경은 Dino.jsx 가 setHeaderBg 로 직접 어둡게 칠하고,
+   여기서는 그 위의 글자·아이콘 색만 밝게 뒤집는다. */
+.dino-night .topbar-heading { color: #f7f7f7; }
+.dino-night .topbar .icon-btn { background: rgba(255, 255, 255, .1); color: #f7f7f7; }
+.dino-night .topbar .icon-btn:hover { background: rgba(255, 255, 255, .18); color: #fff; }
 .tarot-view .content { background: transparent; padding: 0; }
 .tarot-page { background: transparent; min-height: 100%; padding: 8px 16px 28px; box-sizing: border-box; color: #ece8f7; }
 .tr-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: #b6afd0; }
@@ -7039,27 +7045,22 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
 .acct-add-btn { margin-top: 10px; width: 100%; padding: 10px; border: 1.5px dashed var(--border); border-radius: 12px; background: none; color: var(--text); font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .acct-add-btn:active { background: rgba(0, 0, 0, .03); }
 
-/* ---- 다이노 짬푸 ---- */
-.dino-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/* ---- 다이노 짬푸: 상단바를 제외한 화면 전체를 게임 화면으로 사용(스크롤 없음) ---- */
+.content:has(> .dino-page) { padding: 0; overflow: hidden; }
+.dino-page {
+  height: 100%; box-sizing: border-box; display: flex; flex-direction: column;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); gap: 10px; overflow: hidden;
+  transition: background .15s;
+}
 .dino-canvas {
-  width: 100%; max-width: 640px; aspect-ratio: 600 / 220; touch-action: none; cursor: pointer;
+  flex: 1; min-height: 0; width: 100%; touch-action: none; cursor: pointer;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.dino-controls { display: flex; gap: 10px; width: 100%; max-width: 640px; }
+.dino-controls { display: flex; gap: 10px; flex-shrink: 0; }
 .dino-btn {
   flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border); background: #fafaff;
   color: var(--text); font-size: 14px; font-weight: 800; cursor: pointer; user-select: none; touch-action: none;
 }
 .dino-btn:active { background: #eeebfe; border-color: #b9abf3; }
-.dino-result { font-size: 13.5px; font-weight: 700; color: var(--muted); }
-.dino-board { display: flex; flex-direction: column; gap: 8px; }
-.dino-board-title { font-size: 14px; font-weight: 800; color: var(--text); }
-.dino-board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.dino-board-row {
-  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #fafaff;
-}
-.dino-board-row.is-me { background: #eeebfe; border: 1.5px solid #b9abf3; }
-.dino-rank { width: 22px; text-align: center; font-weight: 800; color: var(--muted); flex-shrink: 0; }
-.dino-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dino-score { font-size: 13.5px; font-weight: 800; color: #7363e8; flex-shrink: 0; }
+.dino-result { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: var(--muted); text-align: center; }
 .acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
