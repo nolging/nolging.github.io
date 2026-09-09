@@ -19,10 +19,13 @@ const GROUND_MARGIN = 70   // 바닥선이 캔버스 맨 아래에서 얼마나 
 const SPRITE_SCALE = 2
 
 // ---- 물리/속도 ----
-// 점프 높이(JUMP_V²/2GRAVITY)가 스프라이트와 같은 배율로 커지도록 둘 다 SPRITE_SCALE 배 —
-// 이러면 점프 정점까지 걸리는 시간(JUMP_V/GRAVITY)은 그대로라 조작감은 원래와 동일하다.
-const GRAVITY = 0.0022 * SPRITE_SCALE     // px / ms^2
-const JUMP_V = -0.62 * SPRITE_SCALE       // px / ms (음수 = 위)
+// 점프 정점 높이(v²/2g)는 스프라이트와 같은 배율(SPRITE_SCALE=S)로 커져야 장애물 높이와
+// 맞고, 정점까지 걸리는 시간(v/g)도 S배로 늘어나야 한다 — 가로 이동 속도는 스케일하지
+// 않았으므로 점프 "거리"(시간×속도)가 S배로 커진 장애물 폭/간격을 따라가려면 시간이
+// 그만큼 늘어야 하기 때문. JUMP_V(v)는 원래 값 그대로 두고 GRAVITY(g)만 1/S 로 줄이면
+// 높이(v²/2g)·시간(v/g) 둘 다 정확히 S배가 되어 두 조건을 동시에 만족한다.
+const GRAVITY = 0.0022 / SPRITE_SCALE     // px / ms^2
+const JUMP_V = -0.62                      // px / ms (음수 = 위) — 스케일하지 않은 원래 값
 const START_SPEED = 0.32        // px / ms
 const MAX_SPEED = 0.62
 const SPEED_ACCEL = 0.000006    // px/ms 당 가속
