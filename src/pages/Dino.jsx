@@ -44,48 +44,101 @@ function drawScaled(ctx, x, y, fn) {
   ctx.restore()
 }
 
-// 정지(idle) 자세 전용 20×22 비트맵(1=칠함, 0=빈칸) — 첫 화면(대기 화면)에 보이는 공룡.
-const DINO_IDLE_BITMAP = [
-  '00000000000111111110',
-  '00000000001111111111',
-  '00000000001101111111',
-  '00000000001111111111',
-  '00000000001111111111',
-  '00000000001111111111',
-  '00000000001111100000',
-  '00000000001111111100',
-  '10000000011111000000',
-  '10000000111111000000',
-  '11000011111111110000',
-  '11100111111111010000',
-  '11111111111111000000',
-  '11111111111111000000',
-  '01111111111111000000',
-  '00111111111110000000',
-  '00011111111100000000',
-  '00001111111000000000',
-  '00000111011000000000',
-  '00000110001000000000',
-  '00000100001000000000',
-  '00000110001100000000',
-]
+// 정지/달리기 자세 전용 20×22 비트맵(1=칠함, 0=빈칸). 머리~몸통~꼬리(0~17행)는 세 자세 모두
+// 동일하고, 다리(18~21행)만 다르다 — idle: 양발 모음 / runA: 오른쪽(앞)다리 듦 / runB: 왼쪽(뒤)다리 듦.
+const DINO_POSE_BITMAPS = {
+  idle: [
+    '00000000000111111110',
+    '00000000001111111111',
+    '00000000001101111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111100000',
+    '00000000001111111100',
+    '10000000011111000000',
+    '10000000111111000000',
+    '11000011111111110000',
+    '11100111111111010000',
+    '11111111111111000000',
+    '11111111111111000000',
+    '01111111111111000000',
+    '00111111111110000000',
+    '00011111111100000000',
+    '00001111111000000000',
+    '00000111011000000000',
+    '00000110001000000000',
+    '00000100001000000000',
+    '00000110001100000000',
+  ],
+  runA: [
+    '00000000000111111110',
+    '00000000001111111111',
+    '00000000001101111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111100000',
+    '00000000001111111100',
+    '10000000011111000000',
+    '10000000111111000000',
+    '11000011111111110000',
+    '11100111111111010000',
+    '11111111111111000000',
+    '11111111111111000000',
+    '01111111111111000000',
+    '00111111111110000000',
+    '00011111111100000000',
+    '00001111111000000000',
+    '00000111001110000000',
+    '00000110000000000000',
+    '00000100000000000000',
+    '00000110000000000000',
+  ],
+  runB: [
+    '00000000000111111110',
+    '00000000001111111111',
+    '00000000001101111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111111111',
+    '00000000001111100000',
+    '00000000001111111100',
+    '10000000011111000000',
+    '10000000111111000000',
+    '11000011111111110000',
+    '11100111111111010000',
+    '11111111111111000000',
+    '11111111111111000000',
+    '01111111111111000000',
+    '00111111111110000000',
+    '00011111111100000000',
+    '00001111111000000000',
+    '00000110011000000000',
+    '00000011001000000000',
+    '00000000001000000000',
+    '00000000001100000000',
+  ],
+}
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
 // 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
 // 딱 한 번 그려두고, 화면엔 그 이미지를 통째로 drawImage 로 확대해 붙인다 — 이러면 이어진
 // 하나의 이미지로 렌더되고, image-rendering 설정(픽셀아트 크리스프 확대)도 그대로 적용된다.
-const idleBitmapCache = new Map()
-function getIdleBitmapCanvas(color) {
-  let c = idleBitmapCache.get(color)
+const dinoBitmapCache = new Map()
+function getDinoBitmapCanvas(pose, color) {
+  const key = pose + ':' + color
+  let c = dinoBitmapCache.get(key)
   if (c) return c
-  const w = DINO_IDLE_BITMAP[0].length, h = DINO_IDLE_BITMAP.length
+  const bitmap = DINO_POSE_BITMAPS[pose]
+  const w = bitmap[0].length, h = bitmap.length
   c = document.createElement('canvas')
   c.width = w; c.height = h
   const cx = c.getContext('2d')
   cx.fillStyle = color
   for (let r = 0; r < h; r++) {
-    const row = DINO_IDLE_BITMAP[r]
+    const row = bitmap[r]
     let runStart = -1
     for (let col = 0; col <= row.length; col++) {
       const on = col < row.length && row[col] === '1'
@@ -93,22 +146,24 @@ function getIdleBitmapCanvas(color) {
       else if (!on && runStart !== -1) { cx.fillRect(runStart, r, col - runStart, 1); runStart = -1 }
     }
   }
-  idleBitmapCache.set(color, c)
+  dinoBitmapCache.set(key, c)
   return c
 }
 
-function drawDinoIdle(ctx, x, y, color) {
+function drawDinoBitmapPose(ctx, x, y, pose, color) {
   x = rr(x); y = rr(y)
-  const bmp = getIdleBitmapCanvas(color)
+  const bmp = getDinoBitmapCanvas(pose, color)
   ctx.drawImage(bmp, x, y, bmp.width * DINO_BITMAP_PX, bmp.height * DINO_BITMAP_PX)
 }
 
 // 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
-// 몸통은 위→아래로 폭이 계단식으로 변하는 "쌓기" 방식(겹치는 둥근 사각형 대신)이라 실루엣이
-// 또렷하다. pose: 'idle'(양발 모으고 정지, 비트맵으로 그림) | 'runA'(앞다리 듦) | 'runB'(뒷다리 듦) | 'duck' | 'dead'
-// legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임(runA/runB 는 pose 자체가 프레임을 지정).
+// pose: 'idle'/'runA'/'runB'(비트맵으로 그림) | 'duck' | 'dead'(아래 절차적 드로잉)
+// legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임.
 function drawDino(ctx, x, y, { pose, legPhase, color }) {
-  if (pose === 'idle') { drawDinoIdle(ctx, x, y, color); return }
+  if (pose === 'idle' || pose === 'runA' || pose === 'runB') {
+    drawDinoBitmapPose(ctx, x, y, pose, color)
+    return
+  }
 
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
@@ -164,22 +219,6 @@ function drawDino(ctx, x, y, { pose, legPhase, color }) {
     ctx.moveTo(x + 26, y + 9); ctx.lineTo(x + 23, y + 12)
     ctx.stroke()
     return
-  }
-
-  // ---- 다리: idle(양발 모음) / runA(앞다리 듦) / runB(뒷다리 듦) ----
-  if (pose === 'runA') {
-    ctx.fillRect(x + 12, y + 33, 8, 13)       // 뒷다리(땅 딛음)
-    ctx.fillRect(x + 23, y + 29, 9, 9)        // 앞다리(듦)
-    ctx.fillRect(x + 10, y + 44, 4, 2)        // 뒷발 발가락
-  } else if (pose === 'runB') {
-    ctx.fillRect(x + 22, y + 33, 8, 13)       // 앞다리(땅 딛음)
-    ctx.fillRect(x + 11, y + 29, 9, 9)        // 뒷다리(듦)
-    ctx.fillRect(x + 28, y + 44, 4, 2)        // 앞발 발가락
-  } else {
-    ctx.fillRect(x + 12, y + 33, 8, 13)       // idle: 양발 모음
-    ctx.fillRect(x + 22, y + 33, 8, 13)
-    ctx.fillRect(x + 10, y + 44, 4, 2)
-    ctx.fillRect(x + 28, y + 44, 4, 2)
   }
 }
 
