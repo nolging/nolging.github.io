@@ -352,6 +352,8 @@ export default function Layout() {
   const [headerTitle, setHeaderTitle] = useState(null)
   // 상점의 프리미엄 탭이 켜지면 앱 전체(상단바·하단탭)를 다크 테마로
   const [storePremium, setStorePremium] = useState(false)
+  // 다이노 짬푸 밤 모드(700점마다 반전)일 땐 상단바 글자색도 밝게(배경은 setHeaderBg 로 이미 어둡게)
+  const [dinoNight, setDinoNight] = useState(false)
   // 전역 음악 플레이어(페이지 이동/모달 닫아도 재생 유지)
   const playerRef = useRef(null)
   const [nowPlaying, setNowPlaying] = useState({ current: null, playing: false, pos: 0, dur: 0 })
@@ -1163,7 +1165,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''} ${tarotMatch ? 'tarot-view' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''} ${tarotMatch ? 'tarot-view' : ''} ${dinoNight ? 'dino-night' : ''}`} ref={shellRef}>
       {storePremium && (
         <div className="premium-backdrop" aria-hidden="true">
           {PREM_STARS.map(([l, t, s, c, d, dl], i) => (
@@ -1226,7 +1228,7 @@ export default function Layout() {
         </div>
       )}
       <main className="content" ref={contentRef}>
-        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, qwSearch: { open: qwSearchOpen, query: qwSearchQuery, term: qwSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, refreshStoreBadge: refreshStoreNew, player, bluray }} />
+        <Outlet context={{ setTaskHeading, setTaskBackTo, setBackHandler, setRefreshHandler, setHeaderFilter, setHeaderInvite, setHeaderTitle, setHeaderSave, setHeaderGear, setHeaderSubmit, setHeaderPostMenu, setHeaderCommentCount, commentSearch: { open: commentSearchOpen, query: commentSearchQuery, term: commentSearchTerm, mineOnly: commentMineOnly }, schedSearch: { open: schedSearchOpen, query: schedSearchQuery, term: schedSearchTerm }, qwSearch: { open: qwSearchOpen, query: qwSearchQuery, term: qwSearchTerm }, setHeaderBg, setHeaderMenu, setStorePremium, setDinoNight, refreshCoin, refreshNoteUnread, refreshQuestBadge: refreshQuestClaimable, refreshStoreBadge: refreshStoreNew, player, bluray }} />
       </main>
       <MiniPlayer ref={playerRef} onState={setNowPlaying} />
       <BlurayPlayer ref={blurayRef} />
