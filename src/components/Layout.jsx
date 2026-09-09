@@ -623,7 +623,7 @@ export default function Layout() {
     topbar = (
       <header className="topbar">
         <button type="button" onClick={() => navigate(-1)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
-        <span className="topbar-heading">다이노 짬푸</span>
+        <span className="topbar-heading">DINO JUMP</span>
       </header>
     )
   } else if (qworkshopNewMatch || qworkshopEditMatch) {
@@ -1165,7 +1165,7 @@ export default function Layout() {
   const showBottomNav = !isGroupView
 
   return (
-    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''} ${tarotMatch ? 'tarot-view' : ''} ${dinoNight ? 'dino-night' : ''}`} ref={shellRef}>
+    <div className={`app-shell ${showBottomNav ? 'has-nav' : ''} ${homeMatch ? 'is-home' : ''} ${nowPlaying.current ? 'has-mini' : ''} ${storePremium ? 'premium-shop' : ''} ${storeMatch ? 'store-view' : ''} ${meMatch ? 'me-view' : ''} ${tarotMatch ? 'tarot-view' : ''} ${dinoMatch ? 'dino-view' : ''} ${dinoNight ? 'dino-night' : ''}`} ref={shellRef}>
       {storePremium && (
         <div className="premium-backdrop" aria-hidden="true">
           {PREM_STARS.map(([l, t, s, c, d, dl], i) => (

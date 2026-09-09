@@ -6,6 +6,9 @@
 @font-face { font-family: 'Paperlogy'; font-style: normal; font-display: swap; font-weight: 700; src: url('/fonts/Paperlogy-7Bold.woff2') format('woff2'); }
 @font-face { font-family: 'Paperlogy'; font-style: normal; font-display: swap; font-weight: 800; src: url('/fonts/Paperlogy-8ExtraBold.woff2') format('woff2'); }
 
+/* 카페24 프로업 (self-host, public/fonts) — 다이노 짬푸 페이지 전용 픽셀 폰트 */
+@font-face { font-family: 'Cafe24Proup'; font-style: normal; font-display: swap; font-weight: 400; src: url('/fonts/Cafe24Proup.woff2') format('woff2'); }
+
 :root {
   --bg: #fdfcfe;
   --surface: #ffffff;
@@ -1876,6 +1879,9 @@ button.mention-chip:active { opacity: .6; }
 .tarot-view .topbar-heading { color: #f4f2fd; }
 .tarot-view .topbar .icon-btn { background: rgba(255, 255, 255, .1); color: #efecfb; }
 .tarot-view .topbar .icon-btn:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+
+/* 다이노 짬푸: 상단바 제목도 게임과 같은 픽셀 폰트로. 자간을 살짝 넓혀야 이 폰트가 더 또렷하다. */
+.dino-view .topbar-heading { font-family: 'Cafe24Proup', sans-serif; letter-spacing: .5px; }
 
 /* 다이노 짬푸 밤 모드: 상단바 배경은 Dino.jsx 가 setHeaderBg 로 직접 어둡게 칠하고,
    여기서는 그 위의 글자·아이콘 색만 밝게 뒤집는다. */
@@ -7050,7 +7056,7 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
 .dino-page {
   height: 100%; box-sizing: border-box; display: flex; flex-direction: column;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); gap: 10px; overflow: hidden;
-  transition: background .15s;
+  transition: background .15s; font-family: 'Cafe24Proup', sans-serif;
 }
 .dino-canvas {
   flex: 1; min-height: 0; width: 100%; touch-action: none; cursor: pointer;
@@ -7058,9 +7064,9 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
 }
 .dino-controls { display: flex; gap: 10px; flex-shrink: 0; }
 .dino-btn {
-  flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border); background: #fafaff;
-  color: var(--text); font-size: 14px; font-weight: 800; cursor: pointer; user-select: none; touch-action: none;
+  flex: 1; padding: 14px; border-radius: 12px; border: 1.5px solid var(--border); background: #fafaff;
+  color: var(--text); font-family: inherit; font-size: 16px; letter-spacing: .5px; cursor: pointer;
+  user-select: none; touch-action: none;
 }
 .dino-btn:active { background: #eeebfe; border-color: #b9abf3; }
-.dino-result { flex-shrink: 0; font-size: 13.5px; font-weight: 700; color: var(--muted); text-align: center; }
 .acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }

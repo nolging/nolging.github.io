@@ -1,12 +1,13 @@
 // 다이노 짬푸 — 크롬 오프라인 공룡 게임 클론(프리미엄 그룹 전용, 대기실 없이 혼자 플레이).
 // 캔버스에 직접 픽셀아트(사각형 조합)로 그리고, requestAnimationFrame 루프로 물리/충돌을 계산한다.
-// 판이 끝나면 서버(submit_dino_score)에 점수를 올리고, 내 최고 기록을 갱신한다.
-// (그룹 내 기록 순위 UI는 잠시 뺀 상태 — 이후 다시 붙일 예정. getDinoLeaderboard 는
-//  my_best 값을 얻기 위해 계속 씀.)
+// 판이 끝나면 서버(submit_dino_score)에 점수를 올리고, 게임오버 화면 가운데에 그룹 내
+// 기록 순위(닉네임 + 점수)를 캔버스에 함께 그려 보여준다.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isCoupleGroup, isFriendGroup, submitDinoScore, getDinoLeaderboard } from '../lib/api'
+
+const FONT = "'Cafe24Proup', sans-serif"
 
 // ---- 논리 좌표계: 가로(W)는 600 고정, 세로(H)·바닥선(groundY)은 실제 캔버스 크기에 맞춰
 // 매 프레임 동적으로 계산한다 — 상단바를 제외한 화면 전체 높이를 하늘로 쓰기 위함. ----
@@ -156,9 +157,6 @@ export default function Dino() {
 
   const [gate, setGate] = useState('checking')  // checking | blocked | ok
   const [phase, setPhase] = useState('ready')    // ready | running | over
-  const [myBest, setMyBest] = useState(0)
-  const [lastScore, setLastScore] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
   const [night, setNight] = useState(false)      // 상단바까지 까맣게 하기 위해 리액트 상태로도 들고 있음
 
   // 게임 내부 상태는 매 프레임 바뀌므로 ref 로(리렌더 없이 캔버스에만 반영)
@@ -166,7 +164,7 @@ export default function Dino() {
   const phaseRef = useRef('ready')
   useEffect(() => { phaseRef.current = phase }, [phase])
   const myBestRef = useRef(0)
-  useEffect(() => { myBestRef.current = myBest }, [myBest])
+  const boardRowsRef = useRef([])   // 게임오버 화면 가운데에 그릴 그룹 순위(닉네임+점수)
   const nightRef = useRef(false)
 
   // 밤 모드(700점마다 반전)일 땐 캔버스뿐 아니라 상단바까지 화면 전체가 까맣게.
@@ -177,8 +175,12 @@ export default function Dino() {
     return () => { setHeaderBg(null); setDinoNight(false) }
   }, [night, setHeaderBg, setDinoNight])
 
-  const loadBest = useCallback(async () => {
-    try { const b = await getDinoLeaderboard(groupId); setMyBest(b?.my_best || 0) } catch { /* noop */ }
+  const loadBoard = useCallback(async () => {
+    try {
+      const b = await getDinoLeaderboard(groupId)
+      myBestRef.current = b?.my_best || 0
+      boardRowsRef.current = (b?.rows || []).slice(0, 8)
+    } catch { /* noop */ }
   }, [groupId])
 
   useEffect(() => {
@@ -186,9 +188,9 @@ export default function Dino() {
     Promise.all([isCoupleGroup(groupId), isFriendGroup(groupId)]).then(([c, f]) => {
       if (on) setGate((c || f || isAdmin) ? 'ok' : 'blocked')
     })
-    loadBest()
+    loadBoard()
     return () => { on = false }
-  }, [groupId, isAdmin, loadBest])
+  }, [groupId, isAdmin, loadBoard])
 
   const resetState = useCallback(() => {
     const { groundY } = dimsRef.current
@@ -202,7 +204,6 @@ export default function Dino() {
 
   const restart = useCallback(() => {
     resetState()
-    setLastScore(null)
     setPhase('running')
   }, [resetState])
 
@@ -235,18 +236,13 @@ export default function Dino() {
     return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp) }
   }, [doJump, setDuck])
 
-  // ---- 판 종료: 서버 제출 + 최고 기록 갱신 ----
+  // ---- 판 종료: 서버 제출 + 게임오버 화면에 그릴 그룹 순위 갱신 ----
   const finish = useCallback(async (score) => {
     setPhase('over')
-    setLastScore(score)
     if (score <= 0 || !groupId) return
-    setSubmitting(true)
-    try {
-      const r = await submitDinoScore(groupId, score)
-      if (r?.best != null) setMyBest((b) => Math.max(b, r.best))
-    } catch { /* noop */ }
-    finally { setSubmitting(false) }
-  }, [groupId])
+    try { await submitDinoScore(groupId, score) } catch { /* noop */ }
+    loadBoard()
+  }, [groupId, loadBoard])
 
   // ---- 게임 루프 ----
   // gate 가 'ok' 로 바뀌기 전엔 <canvas> 가 아직 렌더되지 않아 canvasRef.current 가 null.
@@ -378,9 +374,9 @@ export default function Dino() {
           drawDino(ctx, 30, drawY, { pose, legPhase: s2.legPhase, color: fg })
         }
 
-        // 점수(우상단, 등폭 숫자) — 더 크게
+        // 점수(우상단, 등폭 숫자)
         ctx.fillStyle = fg
-        ctx.font = '700 26px monospace'
+        ctx.font = `700 38px ${FONT}`
         ctx.textAlign = 'right'
         ctx.textBaseline = 'top'
         const hi = Math.max(myBestRef.current || 0, s2.score)
@@ -388,15 +384,38 @@ export default function Dino() {
 
         if (phaseRef.current === 'ready') {
           ctx.textAlign = 'center'
-          ctx.font = '800 24px sans-serif'
-          ctx.fillText('탭하거나 스페이스바로 시작', W / 2, H / 2 - 14)
+          ctx.font = `800 32px ${FONT}`
+          ctx.fillText('탭하거나 스페이스바로 시작', W / 2, H / 2 - 18)
         }
         if (phaseRef.current === 'over') {
+          const rows = boardRowsRef.current || []
+          const rowH = 36, titleH = 64, gapAfterTitle = 26, gapAfterList = 30, promptH = 32
+          const listH = rows.length * rowH
+          const totalH = titleH + (rows.length ? gapAfterTitle + listH : 0) + gapAfterList + promptH
+          let y = H / 2 - totalH / 2
+
           ctx.textAlign = 'center'
-          ctx.font = '900 34px monospace'
-          ctx.fillText('GAME OVER', W / 2, H / 2 - 44)
-          ctx.font = '800 20px sans-serif'
-          ctx.fillText('탭해서 다시 시작', W / 2, H / 2 - 6)
+          ctx.font = `900 52px ${FONT}`
+          ctx.fillText('GAME OVER', W / 2, y)
+          y += titleH
+
+          if (rows.length) {
+            y += gapAfterTitle
+            ctx.font = `700 27px ${FONT}`
+            for (let i = 0; i < rows.length; i++) {
+              const r = rows[i]
+              ctx.textAlign = 'left'
+              ctx.fillText(`${i + 1}. ${r.name}`, W / 2 - 160, y)
+              ctx.textAlign = 'right'
+              ctx.fillText(String(r.best), W / 2 + 160, y)
+              y += rowH
+            }
+          }
+
+          y += gapAfterList
+          ctx.textAlign = 'center'
+          ctx.font = `800 28px ${FONT}`
+          ctx.fillText('탭해서 다시 시작', W / 2, y)
         }
       }
 
@@ -418,17 +437,12 @@ export default function Dino() {
     <div className="dino-page" style={night ? { background: '#202124' } : undefined}>
       <canvas ref={canvasRef} className="dino-canvas" onPointerDown={onPointerDown} />
       <div className="dino-controls">
-        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}>▲ 점프</button>
+        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}>JUMP</button>
         <button type="button" className="dino-btn dino-btn-duck"
           onPointerDown={(e) => { e.preventDefault(); setDuck(true) }}
           onPointerUp={() => setDuck(false)}
-          onPointerLeave={() => setDuck(false)}>▼ 숙이기</button>
+          onPointerLeave={() => setDuck(false)}>DOWN</button>
       </div>
-      {lastScore != null && phase === 'over' && (
-        <div className="dino-result">
-          {submitting ? '기록 제출 중…' : `이번 점수 ${lastScore}점${lastScore >= myBest ? ' · 신기록!' : ''}`}
-        </div>
-      )}
     </div>
   )
 }
