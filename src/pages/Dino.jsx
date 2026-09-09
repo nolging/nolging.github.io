@@ -44,11 +44,51 @@ function drawScaled(ctx, x, y, fn) {
   ctx.restore()
 }
 
+// 정지(idle) 자세 전용 20×22 비트맵(1=칠함, 0=빈칸) — 첫 화면(대기 화면)에 보이는 공룡.
+const DINO_IDLE_BITMAP = [
+  '00000000000111111110',
+  '00000000001111111111',
+  '00000000001101111111',
+  '00000000001111111111',
+  '00000000001111111111',
+  '00000000001111111111',
+  '00000000001111100000',
+  '00000000001111111100',
+  '10000000011111000000',
+  '10000000111111000000',
+  '11000011111111110000',
+  '11100111111111010000',
+  '11111111111111000000',
+  '11111111111111000000',
+  '01111111111111000000',
+  '00111111111110000000',
+  '00011111111100000000',
+  '00001111111000000000',
+  '00000111011000000000',
+  '00000110001000000000',
+  '00000100001000000000',
+  '00000110001100000000',
+]
+const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
+
+function drawDinoIdle(ctx, x, y, color) {
+  ctx.fillStyle = color
+  x = rr(x); y = rr(y)
+  for (let r = 0; r < DINO_IDLE_BITMAP.length; r++) {
+    const row = DINO_IDLE_BITMAP[r]
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === '1') ctx.fillRect(x + c * DINO_BITMAP_PX, y + r * DINO_BITMAP_PX, DINO_BITMAP_PX, DINO_BITMAP_PX)
+    }
+  }
+}
+
 // 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
 // 몸통은 위→아래로 폭이 계단식으로 변하는 "쌓기" 방식(겹치는 둥근 사각형 대신)이라 실루엣이
-// 또렷하다. pose: 'idle'(양발 모으고 정지) | 'runA'(앞다리 듦) | 'runB'(뒷다리 듦) | 'duck' | 'dead'
+// 또렷하다. pose: 'idle'(양발 모으고 정지, 비트맵으로 그림) | 'runA'(앞다리 듦) | 'runB'(뒷다리 듦) | 'duck' | 'dead'
 // legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임(runA/runB 는 pose 자체가 프레임을 지정).
 function drawDino(ctx, x, y, { pose, legPhase, color }) {
+  if (pose === 'idle') { drawDinoIdle(ctx, x, y, color); return }
+
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
 
