@@ -14,6 +14,14 @@ const FONT = "'Cafe24Proup', sans-serif"
 const W = 600
 const GROUND_MARGIN = 70   // 바닥선이 캔버스 맨 아래에서 얼마나 떨어져 있는지(고정 여백) — 살짝 위로
 
+// 바닥선 아래 모래 질감(짧은 마크를 불규칙한 폭·간격으로 반복) — 한 주기(GROUND_SAND_CYCLE)
+// 안에서 크기가 제각각인 마크를 배치해 자연스러운 자갈/모래처럼 보이게 한다.
+const GROUND_SAND_PATTERN = [
+  { start: 3, w: 3 }, { start: 13, w: 6 }, { start: 25, w: 2 },
+  { start: 34, w: 4 }, { start: 46, w: 2 }, { start: 54, w: 3 },
+]
+const GROUND_SAND_CYCLE = 64
+
 // 공룡/장애물/구름 픽셀아트를 그릴 때 원래 좌표(아래 draw* 함수들의 fillRect 오프셋) 위에
 // 곱해 그리는 배율 — 히트박스(DINO_W 등)·물리 상수는 이 배율에 맞춰 함께 2배로 스케일했다.
 const SPRITE_SCALE = 2
@@ -26,9 +34,9 @@ const SPRITE_SCALE = 2
 // 높이(v²/2g)·시간(v/g) 둘 다 정확히 S배가 되어 두 조건을 동시에 만족한다.
 const GRAVITY = 0.0022 / SPRITE_SCALE     // px / ms^2
 const JUMP_V = -0.62                      // px / ms (음수 = 위) — 스케일하지 않은 원래 값
-const START_SPEED = 0.32        // px / ms
-const MAX_SPEED = 0.62
-const SPEED_ACCEL = 0.000006    // px/ms 당 가속
+const START_SPEED = 0.48        // px / ms — 초반이 너무 느리다는 피드백으로 상향(기존 0.32)
+const MAX_SPEED = 0.93
+const SPEED_ACCEL = 0.000009    // px/ms 당 가속
 const NIGHT_EVERY = 700         // 점수 이 값만큼마다 낮/밤 전환
 const PTERO_FROM_SCORE = 250    // 이 점수부터 익룡 등장
 
@@ -124,6 +132,11 @@ const DINO_POSE_BITMAPS = {
   ],
 }
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
+// 비트맵 실제 렌더 높이(SPRITE_SCALE 반영, world 단위) — 다리 부분이 비어 있는 칸이 많아
+// DINO_H(히트박스 높이)보다 살짝 작다. 바닥에 닿았을 때 이 차이만큼 뜨는 걸 막고, 참고 이미지처럼
+// 발이 바닥선에 살짝 겹치도록 아래로 내려서 그린다.
+const DINO_SPRITE_H = DINO_POSE_BITMAPS.idle.length * DINO_BITMAP_PX * SPRITE_SCALE
+const GROUND_OVERLAP = 6   // world 단위 — 바닥선과 겹치는 정도
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
 // 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
@@ -184,17 +197,26 @@ function drawDino(ctx, x, y, { pose, legPhase, color }) {
   ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
 }
 
+// 참고 이미지처럼 줄기 옆에서 뻗어 나와 위로 꺾이는 "갈고리" 모양 팔 두 개(왼쪽은 아래쪽에서
+// 낮게, 오른쪽은 위쪽에서 높게) — 실제 사구아로 선인장 실루엣에 가깝게.
 function drawCactus(ctx, x, y, w, h, color) {
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
-  const stemW = Math.max(6, Math.floor(w * 0.34))
-  const stemX = x + Math.floor((w - stemW) / 2)
+  const stemW = Math.max(5, Math.round(w * 0.24))
+  const stemX = x + Math.round((w - stemW) / 2)
   ctx.fillRect(stemX, y, stemW, h)
-  // 팔(가지) — 폭이 넉넉할 때만
-  if (w > stemW + 6) {
-    const armW = Math.max(4, Math.floor(stemW * 0.7))
-    ctx.fillRect(x, y + Math.floor(h * 0.28), armW, Math.floor(h * 0.4))
-    ctx.fillRect(x + w - armW, y + Math.floor(h * 0.12), armW, Math.floor(h * 0.4))
+  if (w > stemW + 8) {
+    const nub = Math.max(3, Math.round(stemW * 0.6))       // 팔 두께
+    const armLen = Math.max(4, Math.round(stemW * 0.7))    // 줄기에서 옆으로 뻗는 길이
+    const upLen = Math.round(h * 0.24)                      // 꺾여서 위로 이어지는 길이
+    // 왼쪽 팔: 줄기 아래쪽에서 왼쪽으로 뻗은 뒤 위로 꺾임
+    const lY = y + Math.round(h * 0.42)
+    ctx.fillRect(stemX - armLen, lY, armLen + 2, nub)
+    ctx.fillRect(stemX - armLen, lY - upLen, nub, upLen + nub)
+    // 오른쪽 팔: 줄기 위쪽에서 오른쪽으로 뻗은 뒤 위로 꺾임
+    const rY = y + Math.round(h * 0.18)
+    ctx.fillRect(stemX + stemW - 2, rY, armLen + 2, nub)
+    ctx.fillRect(stemX + stemW + armLen - nub - 2, rY - upLen, nub, upLen + nub)
   }
 }
 
@@ -209,11 +231,13 @@ function drawPtero(ctx, x, y, wingUp, color) {
   else { ctx.fillRect(x + 14, y + 14, 20, 8); ctx.fillRect(x + 6, y + 14, 10, 6) }
 }
 
+// 가로로 넓은 밑단 위에 높이가 다른 뭉치 두 개를 비대칭으로 얹어 뭉게구름처럼 보이게 한다.
 function drawCloud(ctx, x, y, color) {
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
-  ctx.fillRect(x + 4, y, 30, 8)
-  ctx.fillRect(x, y + 4, 40, 6)
+  ctx.fillRect(x, y + 7, 36, 5)
+  ctx.fillRect(x + 3, y + 3, 18, 5)
+  ctx.fillRect(x + 19, y, 13, 4)
 }
 
 // 장애물 정의(폭/높이/그라운드 기준 y, SPRITE_SCALE 반영). 익룡은 3가지 높이 중 하나로 등장.
@@ -441,12 +465,17 @@ export default function Dino() {
           const cloudColor = isNight ? '#3a3a3d' : '#e0e0e0'
           drawScaled(ctx, c.x, c.y, () => drawCloud(ctx, 0, 0, cloudColor))
         }
-        // 바닥선 + 점선 텍스처
+        // 바닥선 + 모래 질감(선 아래에 크기가 다른 짧은 마크를 불규칙 간격으로 반복)
         ctx.fillStyle = fg
         ctx.fillRect(0, groundY, W, 2 * SPRITE_SCALE)
-        const dashW = 12 * SPRITE_SCALE, dashGap = 12 * SPRITE_SCALE
-        const dashOffset = Math.floor(s2.distance / 3) % (dashW + dashGap)
-        for (let x = -dashOffset; x < W; x += dashW + dashGap) ctx.fillRect(x, groundY, dashW, 2 * SPRITE_SCALE)
+        const sandY = groundY + 5 * SPRITE_SCALE
+        const sandUnit = GROUND_SAND_CYCLE * SPRITE_SCALE
+        const sandOffset = Math.floor(s2.distance / 3) % sandUnit
+        for (let base = -sandOffset; base < W; base += sandUnit) {
+          for (const m of GROUND_SAND_PATTERN) {
+            ctx.fillRect(base + m.start * SPRITE_SCALE, sandY, m.w * SPRITE_SCALE, 2)
+          }
+        }
 
         for (const o of s2.obstacles) {
           if (o.type === 'cactus') drawCactus(ctx, o.x, o.y, o.w, o.h, fg)
@@ -458,7 +487,10 @@ export default function Dino() {
           // duck/onGround/legPhase 가 충돌 시점 값으로 고정돼 자연히 그 프레임이 유지된다).
           const moving = (phaseRef.current === 'running' || phaseRef.current === 'over') && s2.onGround
           const pose = s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
-          const drawY = s2.duck ? groundY - DUCK_H : s2.y
+          // 비트맵(idle/runA/runB)은 히트박스(DINO_H)보다 살짝 낮아서, 히트박스 바닥
+          // (s2.y+DINO_H, 접지 시 groundY)에 스프라이트 바닥을 맞추고 GROUND_OVERLAP 만큼 더
+          // 내려 바닥선과 살짝 겹치게 한다.
+          const drawY = s2.duck ? groundY - DUCK_H : s2.y + DINO_H - DINO_SPRITE_H + GROUND_OVERLAP
           drawScaled(ctx, 30, drawY, () => drawDino(ctx, 0, 0, { pose, legPhase: s2.legPhase, color: fg }))
         }
 
