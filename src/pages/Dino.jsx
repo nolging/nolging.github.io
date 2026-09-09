@@ -71,15 +71,36 @@ const DINO_IDLE_BITMAP = [
 ]
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
 
-function drawDinoIdle(ctx, x, y, color) {
-  ctx.fillStyle = color
-  x = rr(x); y = rr(y)
-  for (let r = 0; r < DINO_IDLE_BITMAP.length; r++) {
+// 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
+// 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
+// 딱 한 번 그려두고, 화면엔 그 이미지를 통째로 drawImage 로 확대해 붙인다 — 이러면 이어진
+// 하나의 이미지로 렌더되고, image-rendering 설정(픽셀아트 크리스프 확대)도 그대로 적용된다.
+const idleBitmapCache = new Map()
+function getIdleBitmapCanvas(color) {
+  let c = idleBitmapCache.get(color)
+  if (c) return c
+  const w = DINO_IDLE_BITMAP[0].length, h = DINO_IDLE_BITMAP.length
+  c = document.createElement('canvas')
+  c.width = w; c.height = h
+  const cx = c.getContext('2d')
+  cx.fillStyle = color
+  for (let r = 0; r < h; r++) {
     const row = DINO_IDLE_BITMAP[r]
-    for (let c = 0; c < row.length; c++) {
-      if (row[c] === '1') ctx.fillRect(x + c * DINO_BITMAP_PX, y + r * DINO_BITMAP_PX, DINO_BITMAP_PX, DINO_BITMAP_PX)
+    let runStart = -1
+    for (let col = 0; col <= row.length; col++) {
+      const on = col < row.length && row[col] === '1'
+      if (on && runStart === -1) runStart = col
+      else if (!on && runStart !== -1) { cx.fillRect(runStart, r, col - runStart, 1); runStart = -1 }
     }
   }
+  idleBitmapCache.set(color, c)
+  return c
+}
+
+function drawDinoIdle(ctx, x, y, color) {
+  x = rr(x); y = rr(y)
+  const bmp = getIdleBitmapCanvas(color)
+  ctx.drawImage(bmp, x, y, bmp.width * DINO_BITMAP_PX, bmp.height * DINO_BITMAP_PX)
 }
 
 // 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
