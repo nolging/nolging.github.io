@@ -157,7 +157,8 @@ function drawDinoBitmapPose(ctx, x, y, pose, color) {
 }
 
 // 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
-// pose: 'idle'/'runA'/'runB'(비트맵으로 그림) | 'duck' | 'dead'(아래 절차적 드로잉)
+// pose: 'idle'/'runA'/'runB'(비트맵으로 그림) | 'duck'(아래 절차적 드로잉). 게임오버는 별도
+// 자세 없이 충돌 순간의 자세(물리가 멈추므로 자연히 그 프레임 그대로 고정됨)를 그대로 보여준다.
 // legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임.
 function drawDino(ctx, x, y, { pose, legPhase, color }) {
   if (pose === 'idle' || pose === 'runA' || pose === 'runB') {
@@ -168,58 +169,16 @@ function drawDino(ctx, x, y, { pose, legPhase, color }) {
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
 
-  if (pose === 'duck') {
-    // 웅크린 자세: 낮고 긴 몸통 + 앞으로 뻗은 머리
-    ctx.fillRect(x + 4, y + 8, 38, 12)        // 몸통
-    ctx.fillRect(x + 36, y, 14, 10)           // 머리(앞으로 낮게)
-    ctx.fillRect(x + 48, y + 3, 6, 4)         // 주둥이
-    ctx.fillRect(x, y + 10, 6, 5)             // 꼬리
-    ctx.fillStyle = '#fff'; ctx.fillRect(x + 41, y + 2, 3, 3)
-    ctx.fillStyle = '#535353'; ctx.fillRect(x + 42, y + 3, 2, 2)
-    ctx.fillStyle = color
-    ctx.fillRect(x + (legPhase ? 10 : 24), y + 20, 6, 4)
-    ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
-    return
-  }
-
-  // ---- 머리~목~등~몸통을 위에서 아래로 계단식으로 쌓아 완만한 곡선 실루엣을 만든다 ----
-  ctx.fillRect(x + 24, y, 8, 4)          // 정수리
-  ctx.fillRect(x + 20, y + 4, 14, 4)     // 머리 위쪽
-  ctx.fillRect(x + 18, y + 8, 18, 5)     // 머리(눈 높이)
-  ctx.fillRect(x + 14, y + 13, 14, 4)    // 목
-  ctx.fillRect(x + 10, y + 17, 20, 4)    // 등 시작
-  ctx.fillRect(x + 6, y + 21, 28, 7)     // 몸통(가장 넓은 부분)
-  ctx.fillRect(x + 8, y + 28, 22, 5)     // 몸통 아래(다리로 이어짐)
-
-  // ---- 주둥이(머리보다 오른쪽·아래로 튀어나와 턱선을 표현) ----
-  ctx.fillRect(x + 34, y + 9, 8, 5)
-  // ---- 눈 ----
-  ctx.fillStyle = '#fff'; ctx.fillRect(x + 23, y + 9, 3, 3)
-  ctx.fillStyle = '#535353'; ctx.fillRect(x + 24, y + 10, 2, 2)
+  // 웅크린 자세: 낮고 긴 몸통 + 앞으로 뻗은 머리
+  ctx.fillRect(x + 4, y + 8, 38, 12)        // 몸통
+  ctx.fillRect(x + 36, y, 14, 10)           // 머리(앞으로 낮게)
+  ctx.fillRect(x + 48, y + 3, 6, 4)         // 주둥이
+  ctx.fillRect(x, y + 10, 6, 5)             // 꼬리
+  ctx.fillStyle = '#fff'; ctx.fillRect(x + 41, y + 2, 3, 3)
+  ctx.fillStyle = '#535353'; ctx.fillRect(x + 42, y + 3, 2, 2)
   ctx.fillStyle = color
-
-  // ---- 앞다리(짧은 팔 하나) — 가슴 앞쪽으로 또렷하게 튀어나오게 ----
-  ctx.fillRect(x + 28, y + 19, 8, 5)
-
-  // ---- 꼬리(몸통 왼쪽 아래로 갈수록 좁아지는 계단식) ----
-  ctx.fillRect(x + 4, y + 21, 8, 5)
-  ctx.fillRect(x + 1, y + 26, 6, 5)
-  ctx.fillRect(x, y + 30, 4, 4)
-
-  if (pose === 'dead') {
-    // 게임오버: 다리는 가만히 선 자세 + 눈 위에 X(배경색과 무관하게 보이도록 흰/검 눈 위에 반대 톤으로)
-    ctx.fillRect(x + 12, y + 33, 8, 13)
-    ctx.fillRect(x + 22, y + 33, 8, 13)
-    ctx.fillRect(x + 10, y + 44, 4, 2)
-    ctx.fillRect(x + 28, y + 44, 4, 2)
-    ctx.strokeStyle = color === '#535353' ? '#fff' : '#535353'
-    ctx.lineWidth = 1.4
-    ctx.beginPath()
-    ctx.moveTo(x + 23, y + 9); ctx.lineTo(x + 26, y + 12)
-    ctx.moveTo(x + 26, y + 9); ctx.lineTo(x + 23, y + 12)
-    ctx.stroke()
-    return
-  }
+  ctx.fillRect(x + (legPhase ? 10 : 24), y + 20, 6, 4)
+  ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
 }
 
 function drawCactus(ctx, x, y, w, h, color) {
@@ -492,9 +451,10 @@ export default function Dino() {
         }
 
         {
-          const dead = phaseRef.current === 'over'
-          const moving = phaseRef.current === 'running' && s2.onGround
-          const pose = dead ? 'dead' : s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
+          // 게임오버 시에는 별도 자세 없이 충돌 순간 그대로 멈춘 모습(물리 업데이트가 멈추므로
+          // duck/onGround/legPhase 가 충돌 시점 값으로 고정돼 자연히 그 프레임이 유지된다).
+          const moving = (phaseRef.current === 'running' || phaseRef.current === 'over') && s2.onGround
+          const pose = s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
           const drawY = s2.duck ? groundY - DUCK_H : s2.y
           drawScaled(ctx, 30, drawY, () => drawDino(ctx, 0, 0, { pose, legPhase: s2.legPhase, color: fg }))
         }
