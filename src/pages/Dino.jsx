@@ -30,9 +30,12 @@ const SPRITE_SCALE = 2
 // 점프 정점 높이(v²/2g)는 스프라이트와 같은 배율(SPRITE_SCALE=S)로 커져야 장애물 높이와
 // 맞고, 정점까지 걸리는 시간(v/g)도 S배로 늘어나야 한다 — 가로 이동 속도는 스케일하지
 // 않았으므로 점프 "거리"(시간×속도)가 S배로 커진 장애물 폭/간격을 따라가려면 시간이
-// 그만큼 늘어야 하기 때문. JUMP_V(v)는 원래 값 그대로 두고 GRAVITY(g)만 1/S 로 줄이면
-// 높이(v²/2g)·시간(v/g) 둘 다 정확히 S배가 되어 두 조건을 동시에 만족한다.
-const GRAVITY = 0.0022 / SPRITE_SCALE     // px / ms^2
+// 그만큼 늘어야 하기 때문. JUMP_V(v)는 원래 값 그대로 두고 올라갈 때 중력(GRAVITY_UP)만
+// 1/S 로 줄이면 높이(v²/2g)·시간(v/g) 둘 다 정확히 S배가 되어 두 조건을 동시에 만족한다.
+// 떨어질 때는 별도로 더 큰 중력(GRAVITY_DOWN)을 적용해 하강이 빠르고 경쾌하게 느껴지도록
+// 한다(올라갈 때만 느리게, 떨어질 때는 빠르게 — 흔한 플랫포머 점프 손맛 기법).
+const GRAVITY_UP = 0.0022 / SPRITE_SCALE       // px / ms^2
+const GRAVITY_DOWN = GRAVITY_UP * 3.5          // px / ms^2 — 하강은 더 빠르게
 const JUMP_V = -0.62                      // px / ms (음수 = 위) — 스케일하지 않은 원래 값
 const START_SPEED = 0.48        // px / ms — 초반이 너무 느리다는 피드백으로 상향(기존 0.32)
 const MAX_SPEED = 0.93
@@ -53,6 +56,19 @@ function drawScaled(ctx, x, y, fn) {
   ctx.scale(SPRITE_SCALE, SPRITE_SCALE)
   fn()
   ctx.restore()
+}
+
+// [0,totalW) 구간에 가로띠를 그리되 gaps([gx0,gx1] 목록)에 해당하는 부분은 비워 둔다 —
+// 바닥선/모래가 공룡 다리나 선인장 줄기 밑을 그대로 지나지 않고 양옆에 공백이 보이게 한다.
+function fillRectGapped(ctx, y, h, totalW, gaps) {
+  let x = 0
+  for (const [gx0, gx1] of gaps.slice().sort((a, b) => a[0] - b[0])) {
+    const cgx0 = Math.max(0, gx0), cgx1 = Math.min(totalW, gx1)
+    if (cgx1 <= x) continue
+    if (cgx0 > x) ctx.fillRect(x, y, cgx0 - x, h)
+    x = Math.max(x, cgx1)
+  }
+  if (x < totalW) ctx.fillRect(x, y, totalW - x, h)
 }
 
 // 정지/달리기 자세 전용 20×22 비트맵(1=칠함, 0=빈칸). 머리~몸통~꼬리(0~17행)는 세 자세 모두
@@ -132,11 +148,14 @@ const DINO_POSE_BITMAPS = {
   ],
 }
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
-// 비트맵 실제 렌더 높이(SPRITE_SCALE 반영, world 단위) — 다리 부분이 비어 있는 칸이 많아
+// 비트맵 실제 렌더 크기(SPRITE_SCALE 반영, world 단위) — 다리 부분이 비어 있는 칸이 많아
 // DINO_H(히트박스 높이)보다 살짝 작다. 바닥에 닿았을 때 이 차이만큼 뜨는 걸 막고, 참고 이미지처럼
-// 발이 바닥선에 살짝 겹치도록 아래로 내려서 그린다.
+// 발이 바닥선보다 살짝 아래로 내려서 그린다. DINO_SPRITE_W 는 바닥선에서 다리 구간을 비워
+// 그릴 때(다리 양옆에 공백이 보이도록) 폭 기준으로 쓴다.
+const DINO_SPRITE_W = DINO_POSE_BITMAPS.idle[0].length * DINO_BITMAP_PX * SPRITE_SCALE
 const DINO_SPRITE_H = DINO_POSE_BITMAPS.idle.length * DINO_BITMAP_PX * SPRITE_SCALE
-const GROUND_OVERLAP = 6   // world 단위 — 바닥선과 겹치는 정도
+const GROUND_OVERLAP = 6      // world 단위 — 공룡이 바닥선과 겹치는 정도
+const CACTUS_GROUND_OVERLAP = 6   // world 단위 — 선인장이 바닥선과 겹치는 정도
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
 // 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
@@ -197,13 +216,21 @@ function drawDino(ctx, x, y, { pose, legPhase, color }) {
   ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
 }
 
+// 선인장 줄기의 x 범위(바닥선에 닿는 부분) — 바닥 렌더링에서 이 구간만큼 선을 비워 그리는 데도
+// 같이 쓰기 때문에 drawCactus 와 별도 함수로 뺐다(둘이 어긋나지 않도록).
+function cactusStemBounds(x, w) {
+  x = rr(x)
+  const stemW = Math.max(5, Math.round(w * 0.24))
+  const stemX = x + Math.round((w - stemW) / 2)
+  return { stemX, stemW }
+}
+
 // 참고 이미지처럼 줄기 옆에서 뻗어 나와 위로 꺾이는 "갈고리" 모양 팔 두 개(왼쪽은 아래쪽에서
 // 낮게, 오른쪽은 위쪽에서 높게) — 실제 사구아로 선인장 실루엣에 가깝게.
 function drawCactus(ctx, x, y, w, h, color) {
   ctx.fillStyle = color
   x = rr(x); y = rr(y)
-  const stemW = Math.max(5, Math.round(w * 0.24))
-  const stemX = x + Math.round((w - stemW) / 2)
+  const { stemX, stemW } = cactusStemBounds(x, w)
   ctx.fillRect(stemX, y, stemW, h)
   if (w > stemW + 8) {
     const nub = Math.max(3, Math.round(stemW * 0.6))       // 팔 두께
@@ -389,7 +416,7 @@ export default function Dino() {
       } else {
         const n = Math.floor(Math.random() * CACTUS_DEFS.length)
         const def = CACTUS_DEFS[n]
-        s.obstacles.push({ type: 'cactus', x: W + 10, w: def.w, h: def.h, y: groundY - def.h })
+        s.obstacles.push({ type: 'cactus', x: W + 10, w: def.w, h: def.h, y: groundY - def.h + CACTUS_GROUND_OVERLAP })
       }
       // 장애물이 커진 만큼 간격도 같은 배율로 넓혀야 상대적인 여유가 그대로 유지된다.
       const minGap = (180 + s.speed * 220) * SPRITE_SCALE
@@ -406,9 +433,9 @@ export default function Dino() {
         s.distance += s.speed * dt
         s.score = Math.floor(s.distance / 8)
 
-        // 물리
+        // 물리 — 올라갈 땐 느린 중력, 떨어질 땐 빠른 중력(하강이 경쾌하게 느껴지도록)
         if (!s.onGround) {
-          s.vy += GRAVITY * dt
+          s.vy += (s.vy < 0 ? GRAVITY_UP : GRAVITY_DOWN) * dt
           s.y += s.vy * dt
           if (s.y >= groundY - DINO_H) { s.y = groundY - DINO_H; s.vy = 0; s.onGround = true; s.duck = s.holdDuck }
         } else {
@@ -465,15 +492,31 @@ export default function Dino() {
           const cloudColor = isNight ? '#3a3a3d' : '#e0e0e0'
           drawScaled(ctx, c.x, c.y, () => drawCloud(ctx, 0, 0, cloudColor))
         }
+        // 바닥선이 공룡 다리(접지 중일 때)·선인장 줄기 밑을 그대로 지나지 않도록 그 구간만
+        // 비워서 그린다 — 참고 이미지처럼 다리/줄기 양옆에 바닥선과 안 닿는 공백이 보이게.
+        const groundGaps = []
+        const gapPad = 3 * SPRITE_SCALE
+        if (s2.onGround) {
+          const dw = s2.duck ? DUCK_W : DINO_SPRITE_W
+          groundGaps.push([30 - gapPad, 30 + dw + gapPad])
+        }
+        for (const o of s2.obstacles) {
+          if (o.type !== 'cactus') continue
+          const { stemX, stemW } = cactusStemBounds(o.x, o.w)
+          groundGaps.push([stemX - gapPad, stemX + stemW + gapPad])
+        }
+
         // 바닥선 + 모래 질감(선 아래에 크기가 다른 짧은 마크를 불규칙 간격으로 반복)
         ctx.fillStyle = fg
-        ctx.fillRect(0, groundY, W, 2 * SPRITE_SCALE)
+        fillRectGapped(ctx, groundY, 2 * SPRITE_SCALE, W, groundGaps)
         const sandY = groundY + 5 * SPRITE_SCALE
         const sandUnit = GROUND_SAND_CYCLE * SPRITE_SCALE
         const sandOffset = Math.floor(s2.distance / 3) % sandUnit
         for (let base = -sandOffset; base < W; base += sandUnit) {
           for (const m of GROUND_SAND_PATTERN) {
-            ctx.fillRect(base + m.start * SPRITE_SCALE, sandY, m.w * SPRITE_SCALE, 2)
+            const mx0 = base + m.start * SPRITE_SCALE, mx1 = mx0 + m.w * SPRITE_SCALE
+            if (groundGaps.some(([g0, g1]) => mx1 > g0 && mx0 < g1)) continue
+            ctx.fillRect(mx0, sandY, m.w * SPRITE_SCALE, 2)
           }
         }
 
