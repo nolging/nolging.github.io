@@ -27,16 +27,16 @@ const GROUND_SAND_CYCLE = 64
 const SPRITE_SCALE = 2
 
 // ---- 물리/속도 ----
-// 점프 정점 높이(v²/2g)는 스프라이트와 같은 배율(SPRITE_SCALE=S)로 커져야 장애물 높이와
-// 맞고, 정점까지 걸리는 시간(v/g)도 S배로 늘어나야 한다 — 가로 이동 속도는 스케일하지
-// 않았으므로 점프 "거리"(시간×속도)가 S배로 커진 장애물 폭/간격을 따라가려면 시간이
-// 그만큼 늘어야 하기 때문. JUMP_V(v)는 원래 값 그대로 두고 올라갈 때 중력(GRAVITY_UP)만
-// 1/S 로 줄이면 높이(v²/2g)·시간(v/g) 둘 다 정확히 S배가 되어 두 조건을 동시에 만족한다.
-// 떨어질 때는 별도로 더 큰 중력(GRAVITY_DOWN)을 적용해 하강이 빠르고 경쾌하게 느껴지도록
-// 한다(올라갈 때만 느리게, 떨어질 때는 빠르게 — 흔한 플랫포머 점프 손맛 기법).
-const GRAVITY_UP = 0.0022 / SPRITE_SCALE       // px / ms^2
-const GRAVITY_DOWN = GRAVITY_UP * 3.5          // px / ms^2 — 하강은 더 빠르게
-const JUMP_V = -0.62                      // px / ms (음수 = 위) — 스케일하지 않은 원래 값
+// 점프 정점 높이(v²/2g)는 스프라이트와 같은 배율(SPRITE_SCALE)로 커야 장애물 높이와 맞는다.
+// v0·g0(스케일 전 원래 값)를 그대로 SPRITE_SCALE 배 하면(k=1) 정점까지 걸리는 시간이 원래와
+// 같아 상승이 가장 스냅있지만, 실측해 보니 가장 큰 장애물을 넘을 수 있는 점프 타이밍 여유가
+// 너무 좁았다(약 90ms). 반대로 시간을 2배(k=2)로 늘리면 여유는 충분해지지만 상승이 "너무
+// 느리게" 느껴졌다. 그 중간(k=1.4, 높이는 그대로 유지한 채 시간만 1.4배)이 여유(약 280ms)와
+// 속도감을 함께 만족한다 — v→v0·S/k, g→g0·S/k² 로 스케일하면 높이(v²/2g)는 그대로, 시간(v/g)만
+// k배가 된다. 떨어질 때는 더 큰 중력(GRAVITY_DOWN)을 따로 적용해 하강만 더 빠르고 경쾌하게.
+const GRAVITY_UP = (0.0022 * SPRITE_SCALE) / 1.4 ** 2   // px / ms^2
+const GRAVITY_DOWN = GRAVITY_UP * 2                      // px / ms^2 — 하강은 더 빠르게
+const JUMP_V = (-0.62 * SPRITE_SCALE) / 1.4   // px / ms (음수 = 위)
 const START_SPEED = 0.48        // px / ms — 초반이 너무 느리다는 피드백으로 상향(기존 0.32)
 const MAX_SPEED = 0.93
 const SPEED_ACCEL = 0.000009    // px/ms 당 가속
@@ -148,14 +148,36 @@ const DINO_POSE_BITMAPS = {
   ],
 }
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
-// 비트맵 실제 렌더 크기(SPRITE_SCALE 반영, world 단위) — 다리 부분이 비어 있는 칸이 많아
+const GRID_CELL = DINO_BITMAP_PX * SPRITE_SCALE   // 격자 한 칸의 world 단위 크기(바닥 공백 폭 기준)
+// 비트맵 실제 렌더 높이(SPRITE_SCALE 반영, world 단위) — 다리 부분이 비어 있는 칸이 많아
 // DINO_H(히트박스 높이)보다 살짝 작다. 바닥에 닿았을 때 이 차이만큼 뜨는 걸 막고, 참고 이미지처럼
-// 발이 바닥선보다 살짝 아래로 내려서 그린다. DINO_SPRITE_W 는 바닥선에서 다리 구간을 비워
-// 그릴 때(다리 양옆에 공백이 보이도록) 폭 기준으로 쓴다.
-const DINO_SPRITE_W = DINO_POSE_BITMAPS.idle[0].length * DINO_BITMAP_PX * SPRITE_SCALE
+// 발이 바닥선보다 살짝 아래로 내려서 그린다.
 const DINO_SPRITE_H = DINO_POSE_BITMAPS.idle.length * DINO_BITMAP_PX * SPRITE_SCALE
 const GROUND_OVERLAP = 6      // world 단위 — 공룡이 바닥선과 겹치는 정도
 const CACTUS_GROUND_OVERLAP = 6   // world 단위 — 선인장이 바닥선과 겹치는 정도
+
+// 비트맵의 다리 행(마지막 4행)에서 실제로 칠해진 칸의 최소~최대 열 index를 찾는다 — 바닥선을
+// "다리 양옆 2칸"만큼만 비워 그릴 때 그 다리가 정확히 어디 있는지 알아야 하기 때문.
+function legColRange(bitmap) {
+  let min = Infinity, max = -Infinity
+  for (let r = bitmap.length - 4; r < bitmap.length; r++) {
+    const row = bitmap[r]
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === '1') { if (c < min) min = c; if (c > max) max = c }
+    }
+  }
+  return { min, max }
+}
+const DINO_LEG_COL_RANGE = {
+  idle: legColRange(DINO_POSE_BITMAPS.idle),
+  runA: legColRange(DINO_POSE_BITMAPS.runA),
+  runB: legColRange(DINO_POSE_BITMAPS.runB),
+}
+const DINO_LEG_GAP_PAD = 2 * GRID_CELL    // 다리 양옆으로 비울 여백 — 2칸
+const CACTUS_GAP_PAD = 1 * GRID_CELL      // 선인장 줄기 양옆으로 비울 여백 — 1칸
+// 웅크리기(duck)는 비트맵이 아니라 절차적 드로잉이라 다리 좌표를 직접 알고 있다(로컬/pre-scale
+// 좌표 — drawDino 의 duck 분기에서 다리를 x+10~x+30 범위에 그림, 폭 6 포함).
+const DUCK_LEG_LOCAL_RANGE = { min: 10, max: 30 }
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
 // 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
@@ -492,18 +514,32 @@ export default function Dino() {
           const cloudColor = isNight ? '#3a3a3d' : '#e0e0e0'
           drawScaled(ctx, c.x, c.y, () => drawCloud(ctx, 0, 0, cloudColor))
         }
+
+        // 게임오버 시에는 별도 자세 없이 충돌 순간 그대로 멈춘 모습(물리 업데이트가 멈추므로
+        // duck/onGround/legPhase 가 충돌 시점 값으로 고정돼 자연히 그 프레임이 유지된다).
+        const moving = (phaseRef.current === 'running' || phaseRef.current === 'over') && s2.onGround
+        const pose = s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
+
         // 바닥선이 공룡 다리(접지 중일 때)·선인장 줄기 밑을 그대로 지나지 않도록 그 구간만
-        // 비워서 그린다 — 참고 이미지처럼 다리/줄기 양옆에 바닥선과 안 닿는 공백이 보이게.
+        // 비워서 그린다 — 다리/줄기 양옆으로 딱 필요한 만큼만(다리는 2칸, 선인장은 1칸) 비워서
+        // 참고 이미지처럼 바닥선과 살짝 떨어져 보이게 한다(비트맵 전체 폭을 비우면 너무 넓어짐).
         const groundGaps = []
-        const gapPad = 3 * SPRITE_SCALE
         if (s2.onGround) {
-          const dw = s2.duck ? DUCK_W : DINO_SPRITE_W
-          groundGaps.push([30 - gapPad, 30 + dw + gapPad])
+          if (s2.duck) {
+            const gx0 = 30 + DUCK_LEG_LOCAL_RANGE.min * SPRITE_SCALE - DINO_LEG_GAP_PAD
+            const gx1 = 30 + DUCK_LEG_LOCAL_RANGE.max * SPRITE_SCALE + DINO_LEG_GAP_PAD
+            groundGaps.push([gx0, gx1])
+          } else {
+            const range = DINO_LEG_COL_RANGE[pose]
+            const gx0 = 30 + range.min * GRID_CELL - DINO_LEG_GAP_PAD
+            const gx1 = 30 + (range.max + 1) * GRID_CELL + DINO_LEG_GAP_PAD
+            groundGaps.push([gx0, gx1])
+          }
         }
         for (const o of s2.obstacles) {
           if (o.type !== 'cactus') continue
           const { stemX, stemW } = cactusStemBounds(o.x, o.w)
-          groundGaps.push([stemX - gapPad, stemX + stemW + gapPad])
+          groundGaps.push([stemX - CACTUS_GAP_PAD, stemX + stemW + CACTUS_GAP_PAD])
         }
 
         // 바닥선 + 모래 질감(선 아래에 크기가 다른 짧은 마크를 불규칙 간격으로 반복)
@@ -526,10 +562,6 @@ export default function Dino() {
         }
 
         {
-          // 게임오버 시에는 별도 자세 없이 충돌 순간 그대로 멈춘 모습(물리 업데이트가 멈추므로
-          // duck/onGround/legPhase 가 충돌 시점 값으로 고정돼 자연히 그 프레임이 유지된다).
-          const moving = (phaseRef.current === 'running' || phaseRef.current === 'over') && s2.onGround
-          const pose = s2.duck ? 'duck' : moving ? (s2.legPhase ? 'runA' : 'runB') : 'idle'
           // 비트맵(idle/runA/runB)은 히트박스(DINO_H)보다 살짝 낮아서, 히트박스 바닥
           // (s2.y+DINO_H, 접지 시 groundY)에 스프라이트 바닥을 맞추고 GROUND_OVERLAP 만큼 더
           // 내려 바닥선과 살짝 겹치게 한다.
