@@ -30,13 +30,14 @@ const SPRITE_SCALE = 2
 // 점프 정점 높이(v²/2g)는 스프라이트와 같은 배율(SPRITE_SCALE)로 커야 장애물 높이와 맞는다.
 // v0·g0(스케일 전 원래 값)를 그대로 SPRITE_SCALE 배 하면(k=1) 정점까지 걸리는 시간이 원래와
 // 같아 상승이 가장 스냅있지만, 실측해 보니 가장 큰 장애물을 넘을 수 있는 점프 타이밍 여유가
-// 너무 좁았다(약 90ms). 반대로 시간을 2배(k=2)로 늘리면 여유는 충분해지지만 상승이 "너무
-// 느리게" 느껴졌다. 그 중간(k=1.4, 높이는 그대로 유지한 채 시간만 1.4배)이 여유(약 280ms)와
-// 속도감을 함께 만족한다 — v→v0·S/k, g→g0·S/k² 로 스케일하면 높이(v²/2g)는 그대로, 시간(v/g)만
-// k배가 된다. 떨어질 때는 더 큰 중력(GRAVITY_DOWN)을 따로 적용해 하강만 더 빠르고 경쾌하게.
-const GRAVITY_UP = (0.0022 * SPRITE_SCALE) / 1.4 ** 2   // px / ms^2
-const GRAVITY_DOWN = GRAVITY_UP * 2                      // px / ms^2 — 하강은 더 빠르게
-const JUMP_V = (-0.62 * SPRITE_SCALE) / 1.4   // px / ms (음수 = 위)
+// 너무 좁았다(약 90ms). 시간을 2배(k=2)로 늘리면 여유는 충분해지지만 상승이 "너무 느리게"
+// 느껴졌고, 1.4배(약 280ms 여유)도 여전히 좀 더 빠르게 해 달라는 피드백을 받아 1.25배로
+// 다시 낮췄다(여유 약 200ms — v→v0·S/k, g→g0·S/k² 로 스케일하면 높이(v²/2g)는 그대로,
+// 시간(v/g)만 k배가 된다). 떨어질 때는 더 큰 중력(GRAVITY_DOWN)을 따로 적용해 하강만 더
+// 빠르고 경쾌하게.
+const GRAVITY_UP = (0.0022 * SPRITE_SCALE) / 1.25 ** 2   // px / ms^2
+const GRAVITY_DOWN = GRAVITY_UP * 2                       // px / ms^2 — 하강은 더 빠르게
+const JUMP_V = (-0.62 * SPRITE_SCALE) / 1.25   // px / ms (음수 = 위)
 const START_SPEED = 0.48        // px / ms — 초반이 너무 느리다는 피드백으로 상향(기존 0.32)
 const MAX_SPEED = 0.93
 const SPEED_ACCEL = 0.000009    // px/ms 당 가속
@@ -44,8 +45,8 @@ const NIGHT_EVERY = 700         // 점수 이 값만큼마다 낮/밤 전환
 const PTERO_FROM_SCORE = 250    // 이 점수부터 익룡 등장
 
 // ---- 다이노 본체 크기(논리 px, SPRITE_SCALE 반영) ----
+// DUCK_W/DUCK_H 는 duck 비트맵이 정의된 뒤(아래)에 그 크기로부터 구한다.
 const DINO_W = 44 * SPRITE_SCALE, DINO_H = 46 * SPRITE_SCALE
-const DUCK_W = 54 * SPRITE_SCALE, DUCK_H = 24 * SPRITE_SCALE
 
 function rr(x) { return Math.round(x) }
 // 내부 좌표가 고정 리터럴인 픽셀아트 함수(drawDino/drawPtero/drawCloud)를 SPRITE_SCALE 배로
@@ -146,6 +147,21 @@ const DINO_POSE_BITMAPS = {
     '00000000001000000000',
     '00000000001100000000',
   ],
+  duck: [
+    '100000000000000000111111110',
+    '111000011111111001111111111',
+    '111111111111111111101111111',
+    '011111111111111111111111111',
+    '001111111111111111111111111',
+    '000111111111111111111111111',
+    '000011111111111111111100000',
+    '000001111111111100111111100',
+    '000000111111001000000000000',
+    '000001001110001100000000000',
+    '000001101100000000000000000',
+    '000000001000000000000000000',
+    '000000001100000000000000000',
+  ],
 }
 const DINO_BITMAP_PX = 2   // 격자 한 칸의 논리 픽셀 크기(20x22 → 40x44)
 const GRID_CELL = DINO_BITMAP_PX * SPRITE_SCALE   // 격자 한 칸의 world 단위 크기(바닥 공백 폭 기준)
@@ -155,12 +171,16 @@ const GRID_CELL = DINO_BITMAP_PX * SPRITE_SCALE   // 격자 한 칸의 world 단
 const DINO_SPRITE_H = DINO_POSE_BITMAPS.idle.length * DINO_BITMAP_PX * SPRITE_SCALE
 const GROUND_OVERLAP = 6      // world 단위 — 공룡이 바닥선과 겹치는 정도
 const CACTUS_GROUND_OVERLAP = 6   // world 단위 — 선인장이 바닥선과 겹치는 정도
+// duck 비트맵 크기(world 단위) — idle/runA/runB 와 같은 방식으로 히트박스도 비트맵 크기에서 구한다.
+const DUCK_W = DINO_POSE_BITMAPS.duck[0].length * DINO_BITMAP_PX * SPRITE_SCALE
+const DUCK_H = DINO_POSE_BITMAPS.duck.length * DINO_BITMAP_PX * SPRITE_SCALE
 
-// 비트맵의 다리 행(마지막 4행)에서 실제로 칠해진 칸의 최소~최대 열 index를 찾는다 — 바닥선을
-// "다리 양옆 2칸"만큼만 비워 그릴 때 그 다리가 정확히 어디 있는지 알아야 하기 때문.
-function legColRange(bitmap) {
+// 비트맵의 다리 행(아래에서 rowsFromBottom 번째 행부터 끝까지)에서 실제로 칠해진 칸의
+// 최소~최대 열 index를 찾는다 — 바닥선을 "다리 양옆 몇 칸"만큼만 비워 그릴 때 그 다리가
+// 정확히 어디 있는지 알아야 하기 때문.
+function legColRange(bitmap, rowsFromBottom) {
   let min = Infinity, max = -Infinity
-  for (let r = bitmap.length - 4; r < bitmap.length; r++) {
+  for (let r = bitmap.length - rowsFromBottom; r < bitmap.length; r++) {
     const row = bitmap[r]
     for (let c = 0; c < row.length; c++) {
       if (row[c] === '1') { if (c < min) min = c; if (c > max) max = c }
@@ -169,15 +189,13 @@ function legColRange(bitmap) {
   return { min, max }
 }
 const DINO_LEG_COL_RANGE = {
-  idle: legColRange(DINO_POSE_BITMAPS.idle),
-  runA: legColRange(DINO_POSE_BITMAPS.runA),
-  runB: legColRange(DINO_POSE_BITMAPS.runB),
+  idle: legColRange(DINO_POSE_BITMAPS.idle, 4),
+  runA: legColRange(DINO_POSE_BITMAPS.runA, 4),
+  runB: legColRange(DINO_POSE_BITMAPS.runB, 4),
+  duck: legColRange(DINO_POSE_BITMAPS.duck, 5),
 }
 const DINO_LEG_GAP_PAD = 2 * GRID_CELL    // 다리 양옆으로 비울 여백 — 2칸
 const CACTUS_GAP_PAD = 1 * GRID_CELL      // 선인장 줄기 양옆으로 비울 여백 — 1칸
-// 웅크리기(duck)는 비트맵이 아니라 절차적 드로잉이라 다리 좌표를 직접 알고 있다(로컬/pre-scale
-// 좌표 — drawDino 의 duck 분기에서 다리를 x+10~x+30 범위에 그림, 폭 6 포함).
-const DUCK_LEG_LOCAL_RANGE = { min: 10, max: 30 }
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
 // 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
@@ -213,29 +231,11 @@ function drawDinoBitmapPose(ctx, x, y, pose, color) {
   ctx.drawImage(bmp, x, y, bmp.width * DINO_BITMAP_PX, bmp.height * DINO_BITMAP_PX)
 }
 
-// 사각형 조합으로 그리는 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림). x,y = 바운딩 박스 좌상단.
-// pose: 'idle'/'runA'/'runB'(비트맵으로 그림) | 'duck'(아래 절차적 드로잉). 게임오버는 별도
-// 자세 없이 충돌 순간의 자세(물리가 멈추므로 자연히 그 프레임 그대로 고정됨)를 그대로 보여준다.
-// legPhase: duck 자세일 때 다리 교차 애니메이션에만 쓰임.
-function drawDino(ctx, x, y, { pose, legPhase, color }) {
-  if (pose === 'idle' || pose === 'runA' || pose === 'runB') {
-    drawDinoBitmapPose(ctx, x, y, pose, color)
-    return
-  }
-
-  ctx.fillStyle = color
-  x = rr(x); y = rr(y)
-
-  // 웅크린 자세: 낮고 긴 몸통 + 앞으로 뻗은 머리
-  ctx.fillRect(x + 4, y + 8, 38, 12)        // 몸통
-  ctx.fillRect(x + 36, y, 14, 10)           // 머리(앞으로 낮게)
-  ctx.fillRect(x + 48, y + 3, 6, 4)         // 주둥이
-  ctx.fillRect(x, y + 10, 6, 5)             // 꼬리
-  ctx.fillStyle = '#fff'; ctx.fillRect(x + 41, y + 2, 3, 3)
-  ctx.fillStyle = '#535353'; ctx.fillRect(x + 42, y + 3, 2, 2)
-  ctx.fillStyle = color
-  ctx.fillRect(x + (legPhase ? 10 : 24), y + 20, 6, 4)
-  ctx.fillRect(x + (legPhase ? 24 : 10), y + 20, 6, 4)
+// 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림) — idle/runA/runB/duck 네 자세 모두 비트맵으로
+// 그린다. 게임오버는 별도 자세 없이 충돌 순간의 자세(물리가 멈추므로 자연히 그 프레임 그대로
+// 고정됨)를 그대로 보여준다.
+function drawDino(ctx, x, y, { pose, color }) {
+  drawDinoBitmapPose(ctx, x, y, pose, color)
 }
 
 // 선인장 줄기의 x 범위(바닥선에 닿는 부분) — 바닥 렌더링에서 이 구간만큼 선을 비워 그리는 데도
@@ -525,16 +525,10 @@ export default function Dino() {
         // 참고 이미지처럼 바닥선과 살짝 떨어져 보이게 한다(비트맵 전체 폭을 비우면 너무 넓어짐).
         const groundGaps = []
         if (s2.onGround) {
-          if (s2.duck) {
-            const gx0 = 30 + DUCK_LEG_LOCAL_RANGE.min * SPRITE_SCALE - DINO_LEG_GAP_PAD
-            const gx1 = 30 + DUCK_LEG_LOCAL_RANGE.max * SPRITE_SCALE + DINO_LEG_GAP_PAD
-            groundGaps.push([gx0, gx1])
-          } else {
-            const range = DINO_LEG_COL_RANGE[pose]
-            const gx0 = 30 + range.min * GRID_CELL - DINO_LEG_GAP_PAD
-            const gx1 = 30 + (range.max + 1) * GRID_CELL + DINO_LEG_GAP_PAD
-            groundGaps.push([gx0, gx1])
-          }
+          const range = DINO_LEG_COL_RANGE[pose]
+          const gx0 = 30 + range.min * GRID_CELL - DINO_LEG_GAP_PAD
+          const gx1 = 30 + (range.max + 1) * GRID_CELL + DINO_LEG_GAP_PAD
+          groundGaps.push([gx0, gx1])
         }
         for (const o of s2.obstacles) {
           if (o.type !== 'cactus') continue
@@ -562,11 +556,11 @@ export default function Dino() {
         }
 
         {
-          // 비트맵(idle/runA/runB)은 히트박스(DINO_H)보다 살짝 낮아서, 히트박스 바닥
+          // idle/runA/runB 비트맵은 히트박스(DINO_H)보다 살짝 낮아서, 히트박스 바닥
           // (s2.y+DINO_H, 접지 시 groundY)에 스프라이트 바닥을 맞추고 GROUND_OVERLAP 만큼 더
-          // 내려 바닥선과 살짝 겹치게 한다.
-          const drawY = s2.duck ? groundY - DUCK_H : s2.y + DINO_H - DINO_SPRITE_H + GROUND_OVERLAP
-          drawScaled(ctx, 30, drawY, () => drawDino(ctx, 0, 0, { pose, legPhase: s2.legPhase, color: fg }))
+          // 내려 바닥선과 살짝 겹치게 한다. duck 은 비트맵 높이가 곧 DUCK_H 라 그대로 적용.
+          const drawY = s2.duck ? groundY - DUCK_H + GROUND_OVERLAP : s2.y + DINO_H - DINO_SPRITE_H + GROUND_OVERLAP
+          drawScaled(ctx, 30, drawY, () => drawDino(ctx, 0, 0, { pose, color: fg }))
         }
 
         // 점수(우상단, 등폭 숫자)
