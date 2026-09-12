@@ -198,18 +198,26 @@ const DINO_LEG_GAP_PAD = 2 * GRID_CELL    // 다리 양옆으로 비울 여백 �
 const CACTUS_GAP_PAD = 1 * GRID_CELL      // 선인장 줄기 양옆으로 비울 여백 — 1칸
 
 // 격자를 칸별로 fillRect 하면 메인 캔버스의 소수점 스케일(디바이스 배율×SPRITE_SCALE) 때문에
-// 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 실제 픽셀 크기(20×22)의 오프스크린 캔버스에
-// 딱 한 번 그려두고, 화면엔 그 이미지를 통째로 drawImage 로 확대해 붙인다 — 이러면 이어진
-// 하나의 이미지로 렌더되고, image-rendering 설정(픽셀아트 크리스프 확대)도 그대로 적용된다.
+// 칸 사이에 미세한 틈(격자 선)이 보인다. 그래서 오프스크린 캔버스에 딱 한 번 그려두고, 화면엔
+// 그 이미지를 통째로 drawImage 로 붙인다 — 이어진 하나의 이미지로 렌더된다.
+//
+// 이 오프스크린 캔버스를 격자 크기 그대로(가로 20~27px) 만들면, 화면에 그릴 때 그 작은 이미지를
+// 실제 기기 배율에 맞는 임의의(정수 아닌) 비율로 확대해야 해서, 칸마다 가로/세로 반올림이
+// 서로 달라져 정사각형 칸이 미세하게 직사각형으로 보이는 문제가 있었다(웅크리기 눈이 대표적).
+// 고정 배율로 "적당히 크게" 미리 그려 두는 정도로는(예: 8배) 근본적으로 해결되지 않는다 — 마지막
+// drawImage 한 번이 여전히 임의의 비정수 비율이기 때문. 완전히 없애려면 오프스크린 캔버스를
+// "현재 화면에서 실제로 몇 기기픽셀로 보일지"에 딱 맞는 정수 해상도로 만들고, drawImage 는
+// 그 크기를 그대로(1:1, 리샘플링 없이) 그리기만 하면 된다 — dw = bmp.width/scale 로 계산하면
+// bmp.width/scale*scale = bmp.width 가 대수적으로 정확히 맞아떨어져 반올림 오차가 없다.
 const dinoBitmapCache = new Map()
-function getDinoBitmapCanvas(pose, color) {
-  const key = pose + ':' + color
+function getDinoBitmapCanvas(pose, color, cellPx) {
+  const key = pose + ':' + color + ':' + cellPx
   let c = dinoBitmapCache.get(key)
   if (c) return c
   const bitmap = DINO_POSE_BITMAPS[pose]
   const w = bitmap[0].length, h = bitmap.length
   c = document.createElement('canvas')
-  c.width = w; c.height = h
+  c.width = w * cellPx; c.height = h * cellPx
   const cx = c.getContext('2d')
   cx.fillStyle = color
   for (let r = 0; r < h; r++) {
@@ -218,17 +226,23 @@ function getDinoBitmapCanvas(pose, color) {
     for (let col = 0; col <= row.length; col++) {
       const on = col < row.length && row[col] === '1'
       if (on && runStart === -1) runStart = col
-      else if (!on && runStart !== -1) { cx.fillRect(runStart, r, col - runStart, 1); runStart = -1 }
+      else if (!on && runStart !== -1) {
+        cx.fillRect(runStart * cellPx, r * cellPx, (col - runStart) * cellPx, cellPx)
+        runStart = -1
+      }
     }
   }
+  if (dinoBitmapCache.size > 40) dinoBitmapCache.clear()   // 화면 회전 등으로 cellPx 가 바뀔 때마다 쌓이지 않도록
   dinoBitmapCache.set(key, c)
   return c
 }
 
 function drawDinoBitmapPose(ctx, x, y, pose, color) {
   x = rr(x); y = rr(y)
-  const bmp = getDinoBitmapCanvas(pose, color)
-  ctx.drawImage(bmp, x, y, bmp.width * DINO_BITMAP_PX, bmp.height * DINO_BITMAP_PX)
+  const t = ctx.getTransform()   // 현재 기기 배율×SPRITE_SCALE (a === d, 정사각형 스케일)
+  const cellPx = Math.max(1, Math.round(DINO_BITMAP_PX * t.a))
+  const bmp = getDinoBitmapCanvas(pose, color, cellPx)
+  ctx.drawImage(bmp, x, y, bmp.width / t.a, bmp.height / t.a)
 }
 
 // 픽셀아트 공룡(옆모습, 오른쪽을 보고 달림) — idle/runA/runB/duck 네 자세 모두 비트맵으로
@@ -627,11 +641,11 @@ export default function Dino() {
     <div className="dino-page" style={night ? { background: '#202124' } : undefined}>
       <canvas ref={canvasRef} className="dino-canvas" onPointerDown={onPointerDown} />
       <div className="dino-controls">
-        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}>JUMP</button>
+        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}><span className="dino-btn-label">JUMP</span></button>
         <button type="button" className="dino-btn dino-btn-duck"
           onPointerDown={(e) => { e.preventDefault(); setDuck(true) }}
           onPointerUp={() => setDuck(false)}
-          onPointerLeave={() => setDuck(false)}>DOWN</button>
+          onPointerLeave={() => setDuck(false)}><span className="dino-btn-label">DOWN</span></button>
       </div>
     </div>
   )

@@ -120,6 +120,8 @@ declare
   v_score      int;
   v_n          int;
   v_coin       int;
+  v_t          text;
+  v_b          text;
 begin
   for v_group in
     select distinct group_id from public.dino_runs
@@ -150,13 +152,24 @@ begin
     insert into public.coin_ledger(user_id, delta, reason, ref_type)
       values (v_winner, v_coin, '다이노 짬푸 1위 보상', 'dino');
 
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-      values (v_winner, null, 'dino_win', '다이노 짬푸 1위 보상',
-        format('어제 다이노 짬푸 그룹 1위! %s 츄르를 받았어요.', v_coin), v_group.group_id);
+    select nr.title, nr.body into v_t, v_b
+      from public.notif_render('dino_win', jsonb_build_object('coin', v_coin::text)) nr;
+    if v_t is not null then
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
+        values (v_winner, null, 'dino_win', v_t, v_b, v_group.group_id);
+    end if;
   end loop;
 end;
 $$;
 -- authenticated 에게 grant 하지 않음(cron 전용 — draw_lotto_round() 와 동일 패턴)
+
+-- 알림 템플릿(관리자 "알림 관리"에서 문구 수정 가능) — 다른 도메인 함수들처럼 notif_render() 를
+-- 거치도록 위에서 이미 고쳤는데, notif_templates 에 시드 행이 없어 관리자 페이지 목록에도
+-- 안 보이고 있었다. 여기서 등록.
+insert into public.notif_templates (key, label, title, body, vars, emoji, sort_order) values
+  ('dino_win', '다이노 짬푸 1위 보상', '다이노 짬푸 1위 보상',
+   '어제 다이노 짬푸 그룹 1위! {coin} 츄르를 받았어요.', '{coin} = 지급된 츄르 수', '🦖', 130)
+on conflict (key) do update set label = excluded.label, vars = excluded.vars, sort_order = excluded.sort_order;
 
 
 -- =============================================================
