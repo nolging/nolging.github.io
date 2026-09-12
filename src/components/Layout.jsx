@@ -798,13 +798,14 @@ export default function Layout() {
     // 가위바위보: 페이지가 자체 헤더를 그리므로 Layout 상단바는 숨김
     topbar = null
   } else if (praiseMatch) {
-    // 칭찬 스티커: 좌측 뒤로(데이트로), 제목. 페이지 그라데이션을 상단바까지 연장(headerBg).
-    // 완성한 판이 있으면 우측 삼선 버튼 → 히스토리 드롭다운. 마이 페이지 '도전'(r_sticker)으로
-    // 왔으면 마이 페이지로.
+    // 칭찬 스티커: 좌측 뒤로(데이트로, 알림 센터에서 왔으면 그리로), 제목. 페이지 그라데이션을
+    // 상단바까지 연장(headerBg). 완성한 판이 있으면 우측 삼선 버튼 → 히스토리 드롭다운.
+    // 마이 페이지 '도전'(r_sticker)으로 왔으면 마이 페이지로.
     const hasMenu = headerMenu?.items?.length > 0
+    const fromNotif = location.state?.from === 'notifications'
     topbar = (
       <header className="topbar" style={headerBg ? { background: headerBg, borderBottom: 'none' } : undefined}>
-        <button type="button" onClick={() => (fromMe ? navigate('/me') : backOr(`/groups/${praiseMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (fromMe ? navigate('/me') : fromNotif ? navigate(-1) : backOr(`/groups/${praiseMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">칭찬 스티커</span>
         {hasMenu && (
           <div className="praise-menu-wrap">
