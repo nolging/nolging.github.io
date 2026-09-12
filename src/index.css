@@ -6826,15 +6826,23 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-modal-pill { width: 100%; height: 46px; border: none; border-radius: 999px; background: #191722; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 2px; }
 .praise-modal-btn { width: 100%; height: 46px; border: none; border-radius: 14px; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
 
-/* ===== 알림에서 들어왔을 때 해당 스티커 한 칸에 은은한 후광 ===== */
+/* ===== 알림에서 들어왔을 때 해당 스티커 한 칸에 도는 빵빠레 후광 ===== */
 .praise-slot-halo { position: relative; }
 .praise-slot-halo::before {
-  content: ''; position: absolute; inset: -30%; z-index: -1; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,225,140,.75) 0%, rgba(255,210,110,.35) 45%, rgba(255,210,110,0) 72%);
-  animation: praise-halo-pulse 2.2s ease-in-out infinite;
+  content: ''; position: absolute; inset: -95%; z-index: -1; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg,
+    rgba(255,249,220,.95) 0deg 7.5deg,
+    rgba(255,168,55,.55) 7.5deg 15deg);
+  /* 진한/옅은 선 사이 경계를 블러로 스머징 */
+  filter: blur(7px);
+  /* 중심은 또렷하게, 바깥으로 갈수록 경계 없이 사라지도록 */
+  -webkit-mask-image: radial-gradient(circle, #000 0%, #000 28%, rgba(0,0,0,.5) 52%, transparent 78%);
+          mask-image: radial-gradient(circle, #000 0%, #000 28%, rgba(0,0,0,.5) 52%, transparent 78%);
+  animation: praise-halo-spin 7s linear infinite, praise-halo-breathe 2.6s ease-in-out infinite;
   pointer-events: none;
 }
-@keyframes praise-halo-pulse { 0%, 100% { transform: scale(.88); opacity: .7; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes praise-halo-spin { to { transform: rotate(360deg); } }
+@keyframes praise-halo-breathe { 0%, 100% { opacity: .78; } 50% { opacity: 1; } }
 
 /* ===== 소원권 수령 오버레이 ===== */
 .praise-boardbox.is-blurred { filter: blur(5px); opacity: .5; pointer-events: none; transition: filter .3s ease, opacity .3s ease; }
