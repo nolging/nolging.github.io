@@ -6830,9 +6830,10 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 .praise-slot-halo { position: relative; }
 .praise-slot-halo::before {
   content: ''; position: absolute; inset: -15%; z-index: -1; border-radius: 50%;
+  /* 진한/옅은 선 모두 같은 노란빛(색상은 고정), 진하기 차이는 투명도로만 표현 */
   background: repeating-conic-gradient(from 0deg,
-    rgba(255,250,222,1) 0deg 15deg,
-    rgba(255,140,20,.85) 15deg 30deg);
+    rgba(255,210,60,.28) 0deg 15deg,
+    rgba(255,210,60,.85) 15deg 30deg);
   /* 진한/옅은 선 사이 경계를 블러로 스머징(칸이 작아도 선이 뭉개지지 않게 소폭만) */
   filter: blur(1.2px);
   /* 스티커 가장자리 언저리부터 후광 바깥 경계까지 부드럽게 사라지도록 */
