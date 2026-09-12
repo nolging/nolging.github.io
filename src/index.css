@@ -7062,12 +7062,37 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
   flex: 1; min-height: 0; width: 100%; touch-action: none; cursor: pointer;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.dino-controls { display: flex; gap: 16px; flex-shrink: 0; }
+.dino-controls { display: flex; gap: 36px; justify-content: center; align-items: center; flex-shrink: 0; padding: 4px 0 2px; }
 /* 이 페이지는 어두운 회색·검은색·흰색 세 톤만 쓴다(보라색 등 브랜드 컬러 배제). */
+/* 원형이되 매끈한 원이 아니라 픽셀 게임 느낌이 나도록 계단식으로 깎은 clip-path(작은 도트 원)를
+   쓴다. 의사 요소는 자기 호스트의 배경보다 절대 뒤에 그려질 수 없어서(z-index 와 무관하게 항상
+   호스트 배경이 맨 밑) 버튼 자체(.dino-btn)를 그림자 칸(어두운 색, 고정)으로 쓰고, ::before 를
+   그보다 위(자연스러운 페인트 순서상 항상 호스트 배경 위)에 흰 얼굴 칸으로 왼쪽 위로 어긋나게
+   올린다 — 결과적으로 그림자가 오른쪽 아래에 있는 것처럼 보인다. 눌렀을 때(:active)는 얼굴을
+   그림자 쪽으로 붙여 눌리는 느낌을 준다. */
 .dino-btn {
-  flex: 1; padding: 14px; border-radius: 12px; border: 2px solid #000; background: #fff;
-  color: #000; font-family: inherit; font-size: 16px; letter-spacing: .5px; cursor: pointer;
+  position: relative; flex: none; width: 92px; height: 92px;
+  display: flex; align-items: center; justify-content: center;
+  background: #000; border: none; padding: 0; color: #000;
+  font-family: inherit; font-size: 14px; font-weight: 800; letter-spacing: .5px; cursor: pointer;
   user-select: none; touch-action: none;
+  clip-path: polygon(
+    25% 6.25%, 25% 12.5%, 18.75% 12.5%, 18.75% 18.75%, 12.5% 18.75%, 12.5% 25%, 6.25% 25%, 6.25% 75%,
+    12.5% 75%, 12.5% 81.25%, 18.75% 81.25%, 18.75% 87.5%, 25% 87.5%, 25% 93.75%, 75% 93.75%, 75% 87.5%,
+    81.25% 87.5%, 81.25% 81.25%, 87.5% 81.25%, 87.5% 75%, 93.75% 75%, 93.75% 25%, 87.5% 25%, 87.5% 18.75%,
+    81.25% 18.75%, 81.25% 12.5%, 75% 12.5%, 75% 6.25%
+  );
 }
-.dino-btn:active { background: #000; color: #fff; }
+.dino-btn::before {
+  content: ''; position: absolute; inset: -3px;
+  background: #fff; border: 3px solid #000; box-sizing: border-box; clip-path: inherit;
+  transform: translate(-6px, -6px);
+  transition: transform .08s, background .08s;
+}
+/* 라벨은 ::before(절대 위치 → z-index:auto 지만 포지션드 레이어)보다 위에 그려지도록 자신도
+   position + z-index 를 줘야 한다(안 그러면 일반 인라인 텍스트는 절대배치 의사요소보다 페인트
+   순서상 아래에 깔려 가려진다). */
+.dino-btn-label { position: relative; z-index: 1; }
+.dino-btn:active { color: #fff; }
+.dino-btn:active::before { background: #000; transform: translate(-2px, -2px); }
 .acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
