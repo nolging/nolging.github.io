@@ -641,11 +641,15 @@ export default function Dino() {
     <div className="dino-page" style={night ? { background: '#202124' } : undefined}>
       <canvas ref={canvasRef} className="dino-canvas" onPointerDown={onPointerDown} />
       <div className="dino-controls">
-        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}><span className="dino-btn-label">JUMP</span></button>
+        <button type="button" className="dino-btn dino-btn-jump" onPointerDown={(e) => { e.preventDefault(); doJump() }}>
+          <span className="dino-btn-face"><span className="dino-btn-label">JUMP</span></span>
+        </button>
         <button type="button" className="dino-btn dino-btn-duck"
           onPointerDown={(e) => { e.preventDefault(); setDuck(true) }}
           onPointerUp={() => setDuck(false)}
-          onPointerLeave={() => setDuck(false)}><span className="dino-btn-label">DOWN</span></button>
+          onPointerLeave={() => setDuck(false)}>
+          <span className="dino-btn-face"><span className="dino-btn-label">DOWN</span></span>
+        </button>
       </div>
     </div>
   )

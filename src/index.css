@@ -7062,19 +7062,21 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
   flex: 1; min-height: 0; width: 100%; touch-action: none; cursor: pointer;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.dino-controls { display: flex; gap: 36px; justify-content: center; align-items: center; flex-shrink: 0; padding: 4px 0 2px; }
+.dino-controls { display: flex; gap: 14px; align-items: flex-start; flex-shrink: 0; padding: 4px 0 2px; }
 /* 이 페이지는 어두운 회색·검은색·흰색 세 톤만 쓴다(보라색 등 브랜드 컬러 배제). */
 /* 원형이되 매끈한 원이 아니라 픽셀 게임 느낌이 나도록 계단식으로 깎은 clip-path(작은 도트 원)를
-   쓴다. 의사 요소는 자기 호스트의 배경보다 절대 뒤에 그려질 수 없어서(z-index 와 무관하게 항상
-   호스트 배경이 맨 밑) 버튼 자체(.dino-btn)를 그림자 칸(어두운 색, 고정)으로 쓰고, ::before 를
-   그보다 위(자연스러운 페인트 순서상 항상 호스트 배경 위)에 흰 얼굴 칸으로 왼쪽 위로 어긋나게
-   올린다 — 결과적으로 그림자가 오른쪽 아래에 있는 것처럼 보인다. 눌렀을 때(:active)는 얼굴을
-   그림자 쪽으로 붙여 눌리는 느낌을 준다. */
+   쓴다. CSS border 를 이 clip-path 와 같이 쓰면 계단 모서리에서 테두리 두께가 고르지 않게
+   깎여 얇고 흐릿하게(회색처럼) 보이는 문제가 있어서, border 없이 "검정 바탕(::before) 위에
+   살짝 작은 흰 바탕(.dino-btn-face)을 얹어 테두리처럼 보이게" 하는 방식으로 바꿨다 — 두 layer
+   모두 단색 채우기라 계단 모서리에서도 두께가 고르다. 버튼 자체(.dino-btn)는 그림자 칸(어두운
+   색, 고정)으로 쓰고, ::before(검정 테두리 바탕)와 .dino-btn-face(흰 얼굴)를 같이 왼쪽 위로
+   어긋나게 올려 오른쪽 아래에 그림자가 있는 것처럼 보이게 한다. 두 버튼이 폭을 나눠 가득
+   채우도록(flex:1 + aspect-ratio) 키웠다. 눌렀을 때(:active)는 색은 그대로 두고 얼굴만 그림자
+   쪽으로 붙여(간격이 줄어) 실제로 눌리는 것처럼 보이게 한다(색이 바뀌지 않는 게 포인트). */
 .dino-btn {
-  position: relative; flex: none; width: 92px; height: 92px;
-  display: flex; align-items: center; justify-content: center;
+  position: relative; flex: 1; aspect-ratio: 1; min-width: 0;
   background: #000; border: none; padding: 0; color: #000;
-  font-family: inherit; font-size: 14px; font-weight: 800; letter-spacing: .5px; cursor: pointer;
+  font-family: inherit; font-size: 18px; font-weight: 800; letter-spacing: .5px; cursor: pointer;
   user-select: none; touch-action: none;
   clip-path: polygon(
     25% 6.25%, 25% 12.5%, 18.75% 12.5%, 18.75% 18.75%, 12.5% 18.75%, 12.5% 25%, 6.25% 25%, 6.25% 75%,
@@ -7084,15 +7086,17 @@ body.graf-drawing { user-select: none; -webkit-user-select: none; -webkit-touch-
   );
 }
 .dino-btn::before {
-  content: ''; position: absolute; inset: -3px;
-  background: #fff; border: 3px solid #000; box-sizing: border-box; clip-path: inherit;
-  transform: translate(-6px, -6px);
-  transition: transform .08s, background .08s;
+  content: ''; position: absolute; inset: -12px;
+  background: #000; clip-path: inherit;
+  transform: translate(-16px, -16px);
+  transition: transform .08s;
 }
-/* 라벨은 ::before(절대 위치 → z-index:auto 지만 포지션드 레이어)보다 위에 그려지도록 자신도
-   position + z-index 를 줘야 한다(안 그러면 일반 인라인 텍스트는 절대배치 의사요소보다 페인트
-   순서상 아래에 깔려 가려진다). */
-.dino-btn-label { position: relative; z-index: 1; }
-.dino-btn:active { color: #fff; }
-.dino-btn:active::before { background: #000; transform: translate(-2px, -2px); }
+.dino-btn-face {
+  position: absolute; inset: 25px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; clip-path: inherit;
+  transform: translate(-16px, -16px);
+  transition: transform .08s;
+}
+.dino-btn:active::before, .dino-btn:active .dino-btn-face { transform: translate(-4px, -4px); }
 .acct-note { margin: 9px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
