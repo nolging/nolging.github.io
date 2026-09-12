@@ -61,7 +61,8 @@ export function notifTarget(n) {
   if (n.type === 'error_report' && n.report_id) return `/admin/reports/${n.report_id}`   // 관리자: 오류 상세
   if (NOTE_TYPES.has(n.type)) return '/notes'
   if (n.type === 'touch_call' && n.group_id) return `/groups/${n.group_id}/touch`
-  if ((n.type === 'praise' || n.type === 'praise_new') && n.group_id) return `/groups/${n.group_id}/praise?mine=1`
+  if ((n.type === 'praise' || n.type === 'praise_new') && n.group_id)
+    return `/groups/${n.group_id}/praise?mine=1${n.praise_sticker_id ? `&sticker=${n.praise_sticker_id}` : ''}`
   if (n.type === 'board_post' && n.group_id && n.post_id) return `/groups/${n.group_id}/board/${n.post_id}`   // 새 글 → 글 상세
   if ((n.type === 'board_comment' || n.type === 'board_reply') && n.group_id && n.post_id)
     return `/groups/${n.group_id}/board/${n.post_id}/comments${n.board_comment_id ? `?c=${n.board_comment_id}` : ''}`   // 댓글/답글 → 댓글 상세 + 포커스

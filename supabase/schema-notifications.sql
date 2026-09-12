@@ -680,7 +680,7 @@ select cron.schedule('nolging-reminders', '* * * * *', $$select public.dispatch_
 -- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
 returns void language plpgsql security definer set search_path = public as $$
-declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text; v_reason text;
+declare v_uid uuid := auth.uid(); v_board public.praise_boards; v_count int; v_pactor text; v_nt_t text; v_nt_b text; v_reason text; v_sticker_id uuid;
 begin
   if not public.is_couple_group(p_group_id) then raise exception '커플 그룹이 아니에요.'; end if;
   if not public.is_group_member(p_group_id, v_uid) then raise exception '그룹 멤버가 아니에요.'; end if;
@@ -697,7 +697,8 @@ begin
 
   v_reason := left(btrim(p_reason), 100);
   insert into public.praise_stickers(board_id, group_id, owner_id, slot_index, reason, from_id)
-    values (v_board.id, p_group_id, p_owner_id, p_slot, v_reason, v_uid);
+    values (v_board.id, p_group_id, p_owner_id, p_slot, v_reason, v_uid)
+    returning id into v_sticker_id;
 
   v_pactor := coalesce(public.notif_member_name(p_group_id, v_uid), '');
   select count(*) into v_count from public.praise_stickers where board_id = v_board.id;
@@ -713,8 +714,8 @@ begin
   else
     select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('praise_new', jsonb_build_object('actor', v_pactor, 'reason', v_reason)) nr;
     if v_nt_t is not null then
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id)
-        values (p_owner_id, v_uid, 'praise_new', v_nt_t, coalesce(nullif(v_nt_b, ''), v_reason), p_group_id);
+      insert into public.notifications(user_id, actor_id, type, title, body, group_id, praise_sticker_id)
+        values (p_owner_id, v_uid, 'praise_new', v_nt_t, coalesce(nullif(v_nt_b, ''), v_reason), p_group_id, v_sticker_id);
     end if;
   end if;
 end $$;
