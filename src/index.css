@@ -6845,6 +6845,20 @@ img.store-img.store-img-lg { transform: scale(1.16); }
 @keyframes praise-halo-spin { to { transform: rotate(360deg); } }
 @keyframes praise-halo-breathe { 0%, 100% { opacity: .78; } 50% { opacity: 1; } }
 
+/* 사과판은 칸이 작아 후광을 더 크게(지름 140%) + 커졌다 작아졌다 하는 펄스 글로우 추가 */
+.praise-boardwrap.is-apple .praise-slot-halo::before {
+  inset: -20%;
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 0%, #000 55%, rgba(0,0,0,.5) 78%, transparent 100%);
+          mask-image: radial-gradient(circle closest-side, #000 0%, #000 55%, rgba(0,0,0,.5) 78%, transparent 100%);
+}
+.praise-boardwrap.is-apple .praise-slot-halo::after {
+  content: ''; position: absolute; inset: -20%; z-index: -2; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,230,130,.55) 0%, rgba(255,210,90,.28) 45%, rgba(255,210,90,0) 72%);
+  animation: praise-halo-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes praise-halo-pulse { 0%, 100% { transform: scale(.85); opacity: .65; } 50% { transform: scale(1.12); opacity: 1; } }
+
 /* ===== 소원권 수령 오버레이 ===== */
 .praise-boardbox.is-blurred { filter: blur(5px); opacity: .5; pointer-events: none; transition: filter .3s ease, opacity .3s ease; }
 .praise-claim { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: none; border: none; padding: 0; cursor: pointer; }
