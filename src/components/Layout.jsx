@@ -603,10 +603,11 @@ export default function Layout() {
     )
   } else if (touchMatch) {
     // 우심뽀까: 좌측 뒤로 — 커플 공간에서 왔으면 멤버 목록으로, 직전 히스토리 없으면(푸시 콜드스타트) 데이트 페이지로.
-    // 마이 페이지 '도전'(r_kiss)으로 왔으면 마이 페이지로.
+    // 마이 페이지 '도전'(r_kiss)으로 왔으면 마이 페이지로. 알림 센터에서 왔으면 그리로.
+    const fromNotif = location.state?.from === 'notifications'
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => (fromMe ? navigate('/me') : backOr(`/groups/${touchMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => (fromMe ? navigate('/me') : fromNotif ? navigate(-1) : backOr(`/groups/${touchMatch.params.groupId}/members`, membersReturnState))} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">우심뽀까</span>
       </header>
     )
@@ -639,11 +640,13 @@ export default function Layout() {
   } else if (qworkshopPostMatch) {
     // 질문 상세: 제목 없이 좌측 뒤로 화살표, (권한 시) 우측 ⋮ → 수정/삭제(비밀 게시판과 동일 패턴).
     // 목록에서 받은 membersBackTo 를 그대로 이어서 넘겨, 목록에서 또 뒤로 갈 때도 안 끊기게 한다.
+    // 알림 센터에서 왔으면(새 물음표/댓글/답글/멘션 알림) 알림 센터로.
     const hasQwPostMenu = headerPostMenu?.items?.length > 0
+    const fromNotif = location.state?.from === 'notifications'
     topbar = (
       <header className="topbar">
         <button type="button"
-          onClick={() => backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`, location.state?.membersBackTo ? { membersBackTo: location.state.membersBackTo } : undefined)}
+          onClick={() => fromNotif ? navigate(-1) : backOr(`/groups/${qworkshopPostMatch.params.groupId}/qworkshop`, location.state?.membersBackTo ? { membersBackTo: location.state.membersBackTo } : undefined)}
           className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         {hasQwPostMenu && (
           <div className="task-menu-wrap push-right">
@@ -707,6 +710,8 @@ export default function Layout() {
     )
   } else if (boardCommentsMatch) {
     // 비밀 게시판 댓글 상세: 상단바에 댓글 수 + 우측 돋보기. 돋보기 → 상단바 한 줄이 검색창으로.
+    // 알림 센터에서 왔으면(새 댓글/답글 알림) 알림 센터로.
+    const fromNotif = location.state?.from === 'notifications'
     topbar = commentSearchOpen ? (
       <header className="topbar sb-search-topbar">
         <button type="button" className={`sb-mine-toggle${commentMineOnly ? ' on' : ''}`}
@@ -724,7 +729,7 @@ export default function Layout() {
       </header>
     ) : (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${boardCommentsMatch.params.groupId}/board/${boardCommentsMatch.params.postId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => fromNotif ? navigate(-1) : backOr(`/groups/${boardCommentsMatch.params.groupId}/board/${boardCommentsMatch.params.postId}`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">댓글{headerCommentCount != null && (<>{' '}<span className="sb-cmt-count-num">{headerCommentCount}</span></>)}</span>
         <button type="button" className="btn btn-ghost btn-sm icon-btn push-right" aria-label="댓글 검색" title="댓글 검색"
           onClick={() => setCommentSearchOpen(true)}><SearchIcon /></button>
@@ -740,10 +745,12 @@ export default function Layout() {
     )
   } else if (boardPostMatch) {
     // 비밀 게시판 글 상세: 좌측 뒤로(목록으로), 제목, (권한 시) 우측 ⋮ → 수정/삭제
+    // 알림 센터에서 왔으면(새 글 알림) 알림 센터로.
     const hasPostMenu = headerPostMenu?.items?.length > 0
+    const fromNotif = location.state?.from === 'notifications'
     topbar = (
       <header className="topbar">
-        <button type="button" onClick={() => backOr(`/groups/${boardPostMatch.params.groupId}/board`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
+        <button type="button" onClick={() => fromNotif ? navigate(-1) : backOr(`/groups/${boardPostMatch.params.groupId}/board`)} className="btn btn-ghost btn-sm icon-btn" aria-label="뒤로" title="뒤로"><BackIcon /></button>
         <span className="topbar-heading">{boardTitle || '비밀 게시판'}</span>
         {hasPostMenu && (
           <div className="task-menu-wrap push-right">
