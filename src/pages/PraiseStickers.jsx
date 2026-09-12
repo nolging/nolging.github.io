@@ -142,6 +142,7 @@ export default function PraiseStickers() {
   const claimable = isMine && completed && !claimed && !viewingHist
   const histLoading = !!histSel && !viewingHist
 
+  const highlightStickerId = searchParams.get('sticker')
   const stickers = viewingHist ? (histData.stickers || []) : (data.stickers || []).filter((s) => s.owner_id === owner?.user_id)
   const slots = Array(20).fill(null)
   stickers.forEach((s) => { if (s.slot >= 0 && s.slot < 20) slots[s.slot] = s })
@@ -272,9 +273,11 @@ export default function PraiseStickers() {
               const s = slots[i]
               const filled = !!s
               const clickable = filled || canAdd
+              const highlighted = filled && highlightStickerId && s.id === highlightStickerId
               return (
                 <div key={i} onClick={() => slotClick(i)}
-                  style={{ position: 'absolute', left: D(cx - d / 2), top: T(cy - d / 2), width: D(d), aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: clickable ? 'pointer' : 'default', zIndex: 6 + zOf(i, filled) }}>
+                  className={highlighted ? 'praise-slot-halo' : undefined}
+                  style={{ position: 'absolute', left: D(cx - d / 2), top: T(cy - d / 2), width: D(d), aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: clickable ? 'pointer' : 'default', zIndex: highlighted ? 200 : 6 + zOf(i, filled) }}>
                   {filled ? <Sticker variant={variant} bg={fillBg} /> : (
                     variant === 'grape' ? (
                       <div style={{ width: '100%', height: '100%', borderRadius: '50%', boxSizing: 'border-box', border: `2px dashed ${canAdd ? 'rgba(115,99,232,.42)' : 'rgba(90,80,130,.2)'}`, background: canAdd ? 'rgba(115,99,232,.06)' : 'rgba(120,110,150,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
