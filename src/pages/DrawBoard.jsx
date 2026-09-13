@@ -128,6 +128,9 @@ export default function DrawBoard() {
     } else {
       ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H)
     }
+    // 배경 캐시가 아직 못 따라잡았을 수 있는(방금 막 들어온) 피어의 진행 중인 획도 안전하게
+    // 다시 얹는다 — 캐시 동기화 타이밍에 기대지 않고 항상 보이도록 한 번 더 보정.
+    for (const s of liveRef.current.values()) paintStroke(ctx, s, W, H)
     if (drawing.current) paintStroke(ctx, drawing.current, W, H)
   }, [])
 
@@ -247,7 +250,12 @@ export default function DrawBoard() {
         const from = s.p.length
         if (pl.p && pl.p.length) {
           for (const q of pl.p) s.p.push(q)
-          if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else paintStroke(ctx, s, W, H, from) }
+          // 피어의 획을 캔버스에 그린 직후 배경 캐시에도 바로 반영해 둔다 — 안 그러면 내가
+          // 이어서(거의 동시에) 내 획을 그리기 시작했을 때 onMove 의 restoreBgAndDrawCurrent()
+          // 가 이 캐시로 되돌리면서 아직 캐시에 없는 피어의 획을 화면에서 지워 버린다(데이터는
+          // 멀쩡한데 화면에서만 사라짐 — 아이패드에서 애플펜슬로 빠르게 이어 쓸 때 특히 잘
+          // 드러났다). 매 세그먼트마다 캐시를 갱신해 그 창을 없앤다.
+          if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else { paintStroke(ctx, s, W, H, from); syncBgCache() } }
         }
         if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
       })
