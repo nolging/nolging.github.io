@@ -115,8 +115,9 @@ export default function DrawBoard() {
     if (drawing.current) paintStroke(ctx, drawing.current, W, H)  // 내 진행 중 획(전체 리드로우 시)
   }, [syncBgCache])
   // 형광펜/네온처럼 한 획을 통째로 다시 그려야 하는 브러쉬용 — redrawAll 처럼 커밋된 획을
-  // 전부 replay하지 않고, 마지막으로 캐시해 둔 배경 위에 지금 획만 다시 그린다.
-  const restoreBgAndDrawCurrent = useCallback(() => {
+  // 전부 replay하지 않고, 마지막으로 캐시해 둔 배경 위에 지금 획만 다시 그린다. extra 는
+  // "배경 위에 얹을 진행 중인 내 획"(보통 drawing.current) — finishStroke 에서도 재사용한다.
+  const restoreBgAndDraw = useCallback((extra) => {
     const ctx = ctxRef.current; const bg = bgCanvasRef.current
     if (!ctx) return
     const { w: W, h: H } = sizeRef.current
@@ -131,8 +132,11 @@ export default function DrawBoard() {
     // 배경 캐시가 아직 못 따라잡았을 수 있는(방금 막 들어온) 피어의 진행 중인 획도 안전하게
     // 다시 얹는다 — 캐시 동기화 타이밍에 기대지 않고 항상 보이도록 한 번 더 보정.
     for (const s of liveRef.current.values()) paintStroke(ctx, s, W, H)
-    if (drawing.current) paintStroke(ctx, drawing.current, W, H)
+    if (extra) paintStroke(ctx, extra, W, H)
   }, [])
+  const restoreBgAndDrawCurrent = useCallback(() => {
+    restoreBgAndDraw(drawing.current)
+  }, [restoreBgAndDraw])
 
   const addCommitted = useCallback((s) => {
     if (idsRef.current.has(s.id)) return
@@ -362,9 +366,11 @@ export default function DrawBoard() {
     // 좁은 범위에 연달아 그을 때 화면엔 일부 구간이 안 그려진 채로 남는 경우가 있었다 —
     // onMove 의 증분(부분) stroke() 호출 중 일부가 어떤 이유로든(캔버스 합성 관련 기기별
     // 차이로 추정) 화면에 반영이 안 된 것으로 보인다. 데이터 자체는 온전하니, 획을 마무리할
-    // 때 fromIdx 없이 전체를 한 번 더 그려서 빠진 구간이 있어도 확실히 채워지게 한다.
-    const ctx = ctxRef.current
-    if (ctx) { const { w: W, h: H } = sizeRef.current; paintStroke(ctx, cur, W, H) }
+    // 때 fromIdx 없이 전체를 한 번 더 그린다 — 단, 이미 그려진 화면 "위에" 덧그리면 안티에일
+    // 리어싱된 가장자리가 두 번 겹쳐 칠해져 펜이 쓰는 중보다 더 굵고 진하게 보인다(갤럭시
+    // 기기에서 특히 심하게 번져 보였던 원인). 그래서 onMove 와 똑같이 배경 캐시로 먼저
+    // 되돌린 뒤 한 번만 새로 그린다.
+    restoreBgAndDraw(cur)
     addCommitted({ id: cur.id, author: uid, c: cur.c, w: cur.w, b: cur.b, p: cur.p })
     syncBgCache()
     try { await addDrawingStroke(groupId, cur.id, uid, { c: cur.c, w: cur.w, b: cur.b, p: cur.p }) }
