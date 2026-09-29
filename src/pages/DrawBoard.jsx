@@ -117,6 +117,12 @@ export default function DrawBoard() {
   // 형광펜/네온처럼 한 획을 통째로 다시 그려야 하는 브러쉬용 — redrawAll 처럼 커밋된 획을
   // 전부 replay하지 않고, 마지막으로 캐시해 둔 배경 위에 지금 획만 다시 그린다. extra 는
   // "배경 위에 얹을 진행 중인 내 획"(보통 drawing.current) — finishStroke 에서도 재사용한다.
+  // (예전엔 여기서 liveRef 의 피어 진행 중인 획도 안전장치로 매번 다시 얹었는데, JS 는
+  // 단일 스레드라 피어 세그먼트 핸들러가 이미 실행됐다면 그 안의 syncBgCache() 도 이미
+  // 끝나 있어 bg 캐시는 항상 최신이었다 — 즉 그 안전장치는 애초에 불필요했고, 오히려 내가
+  // 획을 긋는 매 rAF 틱마다 이미 캐시에 반영된 피어의 획을 그 위에 또 덧그려 안티에일리어싱
+  // 가장자리가 겹겹이 합성되는 부작용만 냈다. 피어와 동시에 그릴 때 다른 사람 낙서가 짧은
+  // 시간에 여러 번 겹쳐 칠해지며 갤럭시에서 특히 심하게 번져 보였던 원인 — 제거함.)
   const restoreBgAndDraw = useCallback((extra) => {
     const ctx = ctxRef.current; const bg = bgCanvasRef.current
     if (!ctx) return
@@ -129,9 +135,6 @@ export default function DrawBoard() {
     } else {
       ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H)
     }
-    // 배경 캐시가 아직 못 따라잡았을 수 있는(방금 막 들어온) 피어의 진행 중인 획도 안전하게
-    // 다시 얹는다 — 캐시 동기화 타이밍에 기대지 않고 항상 보이도록 한 번 더 보정.
-    for (const s of liveRef.current.values()) paintStroke(ctx, s, W, H)
     if (extra) paintStroke(ctx, extra, W, H)
   }, [])
   const restoreBgAndDrawCurrent = useCallback(() => {
