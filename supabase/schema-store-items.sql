@@ -1108,23 +1108,14 @@ create trigger trg_block_locked_nick before update on public.group_members
 
 create extension if not exists pg_cron;
 
--- 명찰 만료 자동 원복
-do $$
-begin
-  perform cron.unschedule('nolging-nametag-revert');
-exception when others then null;
-end $$;
-select cron.schedule('nolging-nametag-revert', '* * * * *', $$select public.dispatch_nametag_reverts()$$);
+-- 명찰 만료 자동 원복 / 푸린 마이크 낙서 만료 자동 정리: 예전엔 여기서 각각 매분
+-- cron.schedule 로 등록했는데, 다른 매분 작업들(알림 리마인더/예약 공지)과 합쳐서
+-- DB 연결 횟수(→ Postgres 로그량)를 줄이려고 schema-cron.sql 의 dispatch_minutely()
+-- 하나로 통합했다. 함수 정의(dispatch_nametag_reverts/dispatch_purin_mic_reverts)는
+-- 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로 옮겼다 — 그 파일을 실행해야
+-- 실제로 매분 호출된다.
 
--- 푸린 마이크 낙서 만료 자동 정리
-do $$
-begin
-  perform cron.unschedule('nolging-purin-mic-revert');
-exception when others then null;
-end $$;
-select cron.schedule('nolging-purin-mic-revert', '* * * * *', $$select public.dispatch_purin_mic_reverts()$$);
-
--- 로또 자동 추첨: 매주 토요일 18:00(KST) = 09:00(UTC) — 위 두 개와 달리 매분이 아니라 주간.
+-- 로또 자동 추첨: 매주 토요일 18:00(KST) = 09:00(UTC) — 위와 달리 매분이 아니라 주간이라 그대로 둠.
 do $$
 begin
   perform cron.unschedule('nolging-lotto-draw');

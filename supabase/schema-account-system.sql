@@ -617,13 +617,11 @@ exception when others then null;
 end $$;
 select cron.schedule('nolging-cleanup-cron-logs', '0 3 * * *', $$select public.cleanup_cron_logs()$$);
 
--- 예약 발송 대기 중인 시스템 공지를 매분 체크(이미 있으면 교체)
-do $$
-begin
-  perform cron.unschedule('nolging-system-notices');
-exception when others then null;
-end $$;
-select cron.schedule('nolging-system-notices', '* * * * *', $$select public.dispatch_due_system_notices()$$);
+-- 예약 발송 대기 중인 시스템 공지를 매분 체크: 예전엔 여기서 단독으로 cron.schedule
+-- 등록했는데, 다른 매분 작업들(명찰/푸린마이크 원복, 알림 리마인더)과 합쳐서 DB 연결
+-- 횟수(→ Postgres 로그량)를 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로
+-- 통합했다. 이 함수 정의는 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로
+-- 옮겼다 — 그 파일을 실행해야 실제로 매분 호출된다.
 
 
 -- ═══════════════════════════════════════════════════════════
