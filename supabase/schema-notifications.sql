@@ -667,15 +667,11 @@ begin
   return n;
 end; $$;
 
--- pg_cron 매분 스케줄(schema-v2.sql 에서 이관 — 원래도 dispatch_due_reminders() 와 세트였는데
--- 함수만 여기로 옮겨오면서 스케줄 등록이 누락돼 있었다. 이미 있으면 교체).
-create extension if not exists pg_cron;
-do $$
-begin
-  perform cron.unschedule('nolging-reminders');
-exception when others then null;
-end $$;
-select cron.schedule('nolging-reminders', '* * * * *', $$select public.dispatch_due_reminders()$$);
+-- pg_cron 매분 스케줄: 예전엔 여기서 단독으로 cron.schedule 등록했는데, 다른 매분
+-- 작업들(명찰/푸린마이크 원복, 예약 공지)과 합쳐서 DB 연결 횟수(→ Postgres 로그량)를
+-- 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로 통합했다. 이 함수 정의는
+-- 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로 옮겼다 — 그 파일을 실행해야
+-- 실제로 매분 호출된다.
 
 -- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
