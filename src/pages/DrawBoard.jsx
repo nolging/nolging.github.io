@@ -262,7 +262,25 @@ export default function DrawBoard() {
           // 가 이 캐시로 되돌리면서 아직 캐시에 없는 피어의 획을 화면에서 지워 버린다(데이터는
           // 멀쩡한데 화면에서만 사라짐 — 아이패드에서 애플펜슬로 빠르게 이어 쓸 때 특히 잘
           // 드러났다). 매 세그먼트마다 캐시를 갱신해 그 창을 없앤다.
-          if (ctx) { if (SMOOTH.has(s.b)) redrawAll(); else { paintStroke(ctx, s, W, H, from); syncBgCache() } }
+          //
+          // 단, 지금 "라이브" ctx 위에 바로 그리고 그대로 캐시하면 안 된다 — 내가 마침 획을
+          // 긋고 있는 중(drawing.current)이면 화면엔 내 진행 중 획도 같이 떠 있는 상태라,
+          // 그걸 그대로 캐시해 버리면 내 미완성 획이 배경 캐시에 섞여 들어간다. 그러면 다음
+          // onMove 틱에서 내 획을 (SMOOTH 브러쉬라 항상 처음부터) 다시 통째로 덧그릴 때
+          // 이미 캐시에 박제된 부분 위에 또 겹쳐 칠해져 그 구간만 더 진하게/번지게 보인다 —
+          // 형광펜처럼 반투명한 브러쉬에서만 티가 나는 이유(불투명 펜은 겹쳐 칠해도 똑같아
+          // 안 보임). 그래서 캐시용으로는 먼저 배경 캐시로 되돌려(내 진행 중 획 제외) 그 위에
+          // 피어의 새 구간만 그리고 캐시한 뒤, 화면 표시용으로만 내 진행 중 획을 다시 얹는다.
+          if (ctx) {
+            if (SMOOTH.has(s.b)) {
+              redrawAll()
+            } else {
+              restoreBgAndDraw()
+              paintStroke(ctx, s, W, H, from)
+              syncBgCache()
+              if (drawing.current) paintStroke(ctx, drawing.current, W, H)
+            }
+          }
         }
         if (pl.end) { liveRef.current.delete(pl.id); addCommitted({ id: s.id, author: pl.uid, c: s.c, w: s.w, b: s.b, p: s.p }) }
       })
