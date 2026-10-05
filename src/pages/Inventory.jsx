@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Avatar from '../components/Avatar'
 import StoreItemImage from '../components/StoreItemImage'
-import { decoSlot, DECO_TF0 } from '../components/AvatarDeco'
+import { decoSlot, DECO_TF0, isEffectItem } from '../components/AvatarDeco'
 import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import RecipientPicker from '../components/RecipientPicker'
 import GiftItemModal from '../components/GiftItemModal'
@@ -35,7 +35,7 @@ const slotCapacity = (slot) => (['face', '얼굴', 'head', '머리'].includes(sl
 // 땐 항상 이 정규화를 거쳐야 한다 — 안 그러면 표기가 다른 아이템끼리 "다른 슬롯"으로 오인된다.
 const normSlot = (slot) => (['head', '머리'].includes(slot) ? 'head' : ['face', '얼굴'].includes(slot) ? 'face' : slot)
 // 프로필 꾸미기 섹션 유형 필터 알약 순서(상점과 동일). 실제로 보유한 유형만 노출한다.
-const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리']
+const DECO_SLOT_ORDER = ['머리', '얼굴', '안경', '테두리', '효과']
 // 명찰 used 행이 아직 유효(24h 내)한지
 const nameTagLive = (r) => r.item_id === 'name-tag' && r.status === 'used' && r.used_at && new Date(r.used_at).getTime() + NAME_TAG_MS > Date.now()
 // 푸린 마이크 used 행이 아직 유효(24h 내)한지 — 명찰과 동일 패턴
@@ -503,10 +503,16 @@ function DecoModal({ open, onClose, myId, item, onDone }) {
         </div>
 
         {/* item 은 모달이 닫히는 순간 null 이 되므로 반드시 함께 확인한다 */}
-        {item && target && (
+        {item && target && (isEffectItem(item.id) ? (
+          // "효과" 유형은 사진 전체에 적용되는 고정 효과라 위치·크기 조정이 의미 없다 —
+          // DecoAdjuster(드래그/핀치 조정 UI) 대신 실제로 어떻게 보일지 미리보기만 보여준다.
+          <div className="deco-adj-fx-preview">
+            <Avatar src={me?.avatar_url || null} name={me?.display_nickname || '나'} size={232} deco={[{ id: item.id }]} />
+          </div>
+        ) : (
           <DecoAdjuster itemId={item.id} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
             seed={myId} tf={tf} onChange={setTf} />
-        )}
+        ))}
 
         <button type="button" className="btn btn-primary btn-block" onClick={apply}
           disabled={busy || !target || (applied && !changed && !tfChanged)}>

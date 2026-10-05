@@ -3,7 +3,7 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { listInventory, listStoreItems, listMemberCards, applyAvatarDeco, unapplyAvatarDeco, setAvatarDecoTf } from '../lib/api'
 import { setStoreCatalog, catalogDecoSlot, catalogName, bgOf } from '../lib/storeCatalog'
-import { decoSlot, BORDER_IDS, DECO_TF0 } from '../components/AvatarDeco'
+import { decoSlot, BORDER_IDS, DECO_TF0, isEffectItem } from '../components/AvatarDeco'
 import DecoAdjuster, { clampTf, isTf0 } from '../components/DecoAdjuster'
 import StoreItemImage from '../components/StoreItemImage'
 import Avatar from '../components/Avatar'
@@ -280,10 +280,16 @@ function ClosetItemModal({ open, onClose, itemId, worn, me, myId, onStage, onUns
             </div>
           </div>
         )}
-        {itemId && (
+        {itemId && (isEffectItem(itemId) ? (
+          // "효과" 유형은 사진 전체에 적용되는 고정 효과라 위치·크기 조정이 의미 없다 —
+          // DecoAdjuster(드래그/핀치 조정 UI) 대신 실제로 어떻게 보일지 미리보기만 보여준다.
+          <div className="deco-adj-fx-preview">
+            <Avatar src={me?.avatar_url || null} name={me?.display_nickname || '나'} size={232} deco={[{ id: itemId }]} />
+          </div>
+        ) : (
           <DecoAdjuster itemId={itemId} src={me?.avatar_url || null} name={me?.display_nickname || '나'}
             seed={myId} tf={tf} onChange={setTf} />
-        )}
+        ))}
         <button type="button" className="btn btn-primary btn-block" onClick={apply}>적용하기</button>
         {alreadyHere && (
           <div className="cg-footer-center">

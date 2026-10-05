@@ -426,6 +426,26 @@ function CircleGlasses() {
   )
 }
 
+// "효과" 유형(볼록렌즈) 전용 상점/인벤토리 미리보기 아이콘 — 실제 효과는 사진 자체를
+// 확대 왜곡하는 CSS 효과라(Avatar.jsx 의 EFFECT_CLASS 참고) 다른 아이템처럼 아바타 위에
+// 그대로 겹쳐 그릴 아트가 없다. 여기서는 그 대신 "돋보기 렌즈" 느낌만 나는 아이콘을 그린다.
+function ConvexLensPreview() {
+  return (
+    <g>
+      <defs>
+        <radialGradient id="avdLensGlass" cx="38%" cy="32%" r="75%">
+          <stop offset="0%" stopColor="#fff" stopOpacity=".9" />
+          <stop offset="45%" stopColor="#cfe8ff" stopOpacity=".32" />
+          <stop offset="100%" stopColor="#8fb8e6" stopOpacity=".1" />
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="29" fill="url(#avdLensGlass)" stroke="#191722" strokeWidth="2.4" />
+      <circle cx="50" cy="50" r="18" fill="none" stroke="#191722" strokeOpacity=".22" strokeWidth="1.2" />
+      <path d="M35 33 Q42 24 56 27" fill="none" stroke="#fff" strokeOpacity=".85" strokeWidth="2.6" strokeLinecap="round" />
+    </g>
+  )
+}
+
 // 후광(테두리 유형): 솔리드 링 없이 금빛 그라데이션만 — 안쪽이 진하고 바깥으로 옅어지며 번짐.
 // 아바타 뒤(back)에 그려 다른 꾸미기보다 항상 뒤에 보인다. 펄스로 은은하게 퍼짐.
 // 그 위에 작은 반짝이 입자들이 각각 다른 타이밍으로 깜빡인다.
@@ -868,6 +888,7 @@ export function DecoPreview({ id }) {
       {id === 'deco-red-hood' && <RedHood />}
       {id === 'deco-heart-beam' && <HeartBeam />}
       {id === 'deco-pinwheel' && <Pinwheel />}
+      {id === 'deco-convex-lens' && <ConvexLensPreview />}
     </svg>
   )
 }
@@ -891,6 +912,16 @@ export const hasBorderDeco = (deco) => decoItems(deco).some((d) => BORDER_IDS.ha
 const FRONTMOST_IDS = new Set(['deco-bubble'])
 // 뒤(back) 레이어로 그릴 아이템(귀 + 날개 + 후광 + 빨간 모자 + 하트 빔) — 나머지는 앞(front). 아트 종류로 결정.
 const BACK_IDS = new Set(['deco-jaguar', 'deco-wolf', 'deco-halo', 'deco-bunny', 'deco-bear', 'deco-angel-wing', 'deco-devil-wing', 'deco-red-hood', 'deco-heart-beam'])
+
+// "효과" 유형: 다른 꾸미기처럼 아바타 위에 아트를 겹쳐 그리는 게 아니라, 사진 자체에 CSS
+// 효과(filter/transform/mask)를 입힌다 — 그래서 ART 맵에는 없고(AvatarDeco 는 자동으로
+// 건너뜀) Avatar.jsx 가 이 맵을 보고 사진 <img> 를 하나 더 겹쳐 그 class 를 입힌다.
+const EFFECT_CLASS = { 'deco-convex-lens': 'avatar-fx-convex-lens' }
+export const isEffectItem = (id) => !!EFFECT_CLASS[id]
+export const effectClassOf = (deco) => {
+  const d = decoItems(deco).find((x) => EFFECT_CLASS[x.id])
+  return d ? EFFECT_CLASS[d.id] : null
+}
 
 // deco prop 정규화 → [{ id, tf }]. 배열(신규) 또는 레거시 { head, face, headTf, faceTf } 모두 허용.
 export function decoItems(deco) {
