@@ -1694,6 +1694,16 @@ button.mention-chip:active { opacity: .6; }
   display: inline-flex; align-items: center; justify-content: center; background: inherit; }
 /* 푸린 마이크 낙서: 사진 위에 얹는 투명 PNG(짝꿍이 그림) */
 .avatar-graffiti, .mem-av-graffiti { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* "효과" 유형 꾸미기: 같은 사진을 한 장 더 겹쳐 그 사본만 변형 — 원본은 그대로 밑에 깔려
+   있어서 바깥쪽은 안 변한 원본이 비치고, 가운데(변형된 사본)만 효과가 적용된 것처럼 보인다. */
+.avatar-fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* 볼록렌즈: 사진 사본을 확대해 중앙만 보이게 마스킹 → 렌즈로 들여다보듯 가운데만 볼록하게
+   확대돼 보이고, 바깥으로 갈수록 경계 없이 원본(확대 전) 사진으로 자연스럽게 섞여 사라진다. */
+.avatar-fx-convex-lens {
+  transform: scale(1.38);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, #000 26%, transparent 62%);
+          mask-image: radial-gradient(circle, #000 0%, #000 26%, transparent 62%);
+}
 /* ---- 아바타 꾸미기 데코 오버레이 ---- */
 .avatar-deco { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 /* 테두리 유형(후광·빨간 모자 등) 장착 시 원래 아바타의 흰 테두리(box-shadow 또는
@@ -1830,6 +1840,10 @@ button.mention-chip:active { opacity: .6; }
    보조 안전장치). 드래그 제스처는 이미 .deco-adj-surf 의 pointer 핸들러가 처리하므로 영향 없음. */
 .deco-adj-face img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
   -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; }
+/* "효과" 유형(볼록렌즈 등) 장착 모달: 위치 조정 UI(DecoAdjuster) 대신 보여주는 고정 미리보기 —
+   둥근 사진틀 하나만 .deco-adj-surf 와 같은 느낌으로 중앙에 둔다(조작 불가라 커서/그림자만 간소화). */
+.deco-adj-fx-preview { display: flex; justify-content: center; margin-top: 4px; }
+.deco-adj-fx-preview .avatar { box-shadow: 0 8px 22px rgba(25, 23, 34, .1), 0 0 0 1.5px #ece9f4; }
 /* 좌우 분리 토글 + 왼쪽/오른쪽 배지(라디오 개념, 알약 모양) — 같은 줄, 모달 폭 기준 좌측 정렬 */
 .deco-adj-split-row { display: flex; align-items: center; gap: 8px; width: 100%; align-self: flex-start; flex-wrap: wrap; }
 .deco-adj-split-label { font-size: 13px; font-weight: 700; color: var(--text); flex-shrink: 0; }

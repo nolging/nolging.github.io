@@ -16,7 +16,7 @@ const num = (n) => (n ?? 0).toLocaleString('ko-KR')
 const NEW_BADGE_MS = 5 * 24 * 60 * 60 * 1000
 const isNewItem = (item) => !!item.publicSince && Date.now() - new Date(item.publicSince).getTime() < NEW_BADGE_MS
 // 프로필 꾸미기 섹션 필터 알약(전체 + 유형별). 유형명은 deco_slot 에 저장된 값 그대로 사용.
-const DECO_SLOT_FILTERS = ['전체', '머리', '얼굴', '안경', '테두리']
+const DECO_SLOT_FILTERS = ['전체', '머리', '얼굴', '안경', '테두리', '효과']
 // 꾸미기 유형: deco_slot 값이 곧 표시명. 레거시 영문 코드(head/face/glasses)만 한글로 매핑.
 const SLOT_LABEL = { head: '머리', face: '얼굴', glasses: '안경' }
 const slotLabel = (slot) => SLOT_LABEL[slot] || slot
