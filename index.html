@@ -44,13 +44,19 @@
     <!-- 프로필 꾸미기 "효과" 유형(볼록렌즈)용 전역 SVG 필터. 페이지 어디서든
          `filter: url(#avatarLensWarp)` 로 참조한다 — 아바타 컴포넌트는 매우 여러 곳에서
          반복 렌더되므로, 필터 정의 자체는 React 트리 밖(정적 HTML)에 딱 한 번만 둔다.
-         lens-displacement.png 는 중심→가장자리로 갈수록 0에 수렴하는 방향+세기 변위
-         벡터장(R=dx, G=dy)을 구워 둔 정적 이미지라 사진 내용과 무관하게 항상 재사용된다. -->
+         lens-displacement.png 는 변위 벡터장(R=dx, G=dy)을 구워 둔 정적 이미지라 사진
+         내용과 무관하게 항상 재사용된다. 반경 방향 변위 크기 Dr(r) = -r^2·(1-r)^4 형태로,
+         중심(r=0)과 가장자리(r=1) 양쪽에서 변위와 그 변화율이 모두 0으로 수렴하도록
+         설계했다 — 중심에서 변화율이 0이 아니면(예: 단순 r^p 거듭제곱 프로파일) scale을
+         조금만 올려도 중심 부근 국소 배율이 반전돼 사진이 중심을 기준으로 뒤집혀
+         샘플링되면서 십자/별 모양 접힘 아티팩트가 생긴다(실측 확인됨). 이 프로파일은
+         구조적으로 그 반전이 불가능해 scale 값과 무관하게 중심이 항상 매끈하고 사방으로
+         고르게 둥글게 부푼다. -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <defs>
         <filter id="avatarLensWarp" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB">
           <feImage href="/deco/lens-displacement.png" x="0" y="0" width="1" height="1" result="lensDispMap" preserveAspectRatio="none" />
-          <feDisplacementMap in="SourceGraphic" in2="lensDispMap" scale="0.16" xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap in="SourceGraphic" in2="lensDispMap" scale="0.10" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
     </svg>
