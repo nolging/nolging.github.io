@@ -41,6 +41,19 @@
     <meta name="twitter:description" content="심심하면 놀기 신청" />
   </head>
   <body>
+    <!-- 프로필 꾸미기 "효과" 유형(볼록렌즈)용 전역 SVG 필터. 페이지 어디서든
+         `filter: url(#avatarLensWarp)` 로 참조한다 — 아바타 컴포넌트는 매우 여러 곳에서
+         반복 렌더되므로, 필터 정의 자체는 React 트리 밖(정적 HTML)에 딱 한 번만 둔다.
+         lens-displacement.png 는 중심→가장자리로 갈수록 0에 수렴하는 방향+세기 변위
+         벡터장(R=dx, G=dy)을 구워 둔 정적 이미지라 사진 내용과 무관하게 항상 재사용된다. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <filter id="avatarLensWarp" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+          <feImage href="/deco/lens-displacement.png" x="0" y="0" width="1" height="1" result="lensDispMap" preserveAspectRatio="none" />
+          <feDisplacementMap in="SourceGraphic" in2="lensDispMap" scale="0.3" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
