@@ -18,6 +18,7 @@ npm run build    # 프로덕션 빌드
 - 사용자 생성/상태변경은 프론트에서 직접 하지 말고 **Edge Function `admin-create-user`**(action: request|create|set-status|delete) 경유. RLS 상 profiles 쓰기는 service_role(함수)만.
 - 연락처/생일 노출은 **그룹설정 공개 AND 개인설정 공개 둘 다 Y** 일 때만 (`group_member_cards` RPC).
 - 스키마(DDL) 변경은 Supabase SQL Editor 또는 Management API 로 적용하고, 해당 도메인의 `supabase/schema-*.sql` 통합본에도 반영(구조는 아래 docs/HANDOFF.md 참고).
+- **같은 함수를 두 통합본에 중복 정의하지 말 것.** 나중에 적용한 파일이 조용히 덮어써서 회귀가 난다. 실제로 `schedule_task`/`create_task_scheduled`/`dispatch_due_reminders` 가 notifications·appointments 양쪽에 있어서 "약속을 잡아도 `appointments` 행이 안 생기는" 회귀가 두 번 발생했다(상세 화면은 `tasks` 캐시를 읽어 날짜가 보이지만, 수정 화면·날짜 드롭다운은 `appointments` 를 읽어 날짜가 사라짐). 이 세 함수는 **`schema-appointments.sql` 전용**.
 - 배포: `main` 에 push 하면 자동 배포. GitHub Pages 는 **같은 커밋 SHA 재배포 시 활성화 안 됨** → 새 커밋 필요.
 
 ## 구조
