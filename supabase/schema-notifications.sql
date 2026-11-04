@@ -42,6 +42,15 @@
 --  ⚠️ use_ledboard() 는 이 파일에 있지만 led_banners 테이블은 schema-store-items.sql
 --  로 이관됐다 — 새 환경에는 그 파일을 이 파일보다 먼저(또는 최소 같이) 적용해야 한다.
 --
+--  ⚠️⚠️ schedule_task / create_task_scheduled / dispatch_due_reminders 는 이 파일에
+--  정의하지 않는다(schema-appointments.sql 전용). notif-strict-templates-2.sql 이
+--  알림 문구를 고치려고 이 세 함수를 appointments 를 모르는 옛 버전으로 통째로
+--  재정의한 적이 있고, 그래서 "약속을 잡아도 appointments 행이 안 생기는" 회귀가
+--  두 번 발생했다(tasks 캐시엔 날짜가 들어가 상세 화면엔 보이지만, appointments 를
+--  읽는 수정 화면·날짜 드롭다운에선 날짜가 통째로 사라진다).
+--  → 이 파일에 이 세 함수를 다시 추가하지 말 것. 알림 문구를 고쳐야 하면
+--    schema-appointments.sql 쪽 정의를 고친다.
+--
 --  notif_render() 의 최신 버전(아래)은 `notif_templates.active` 컬럼을 참조합니다.
 --  이 컬럼은 admin-notif-active.sql(이 번들에 포함되지 않음)에서 추가되며,
 --  admin_set_notif() 도 그 파일에서 6번째 인자(p_active)를 받는 버전으로 다시
@@ -359,43 +368,15 @@ create trigger trg_notify_task_done after update on public.tasks
 --     (notif-strict-templates-2.sql 최종본)
 -- =============================================================
 
-create or replace function public.schedule_task(
-  p_task_id uuid, p_scheduled_at timestamptz, p_time_set boolean,
-  p_repeat text, p_repeat_until date, p_remind int, p_participants uuid[]
-) returns public.tasks language plpgsql security definer set search_path = public as $$
-declare r public.tasks; v_gid uuid; v_remind_at timestamptz; v_actor text; v_nt_t text; v_nt_b text;
-begin
-  select group_id into v_gid from public.tasks where id = p_task_id;
-  if v_gid is null then raise exception '존재하지 않는 항목입니다.'; end if;
-  if not public.is_group_member(v_gid, auth.uid()) then
-    raise exception '그룹 멤버만 신청할 수 있습니다.'; end if;
-  if p_remind is not null and p_scheduled_at is not null then
-    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
-  end if;
-  update public.tasks
-     set status='accepted', assignee_id=auth.uid(), accepted_at=now(),
-         scheduled_at=p_scheduled_at, scheduled_time_set=coalesce(p_time_set, true),
-         repeat_rule=p_repeat, repeat_until=p_repeat_until,
-         remind_min=p_remind, remind_at=v_remind_at, reminded=false
-   where id=p_task_id and status='open' returning * into r;
-  if r.id is null then raise exception '이미 신청되었거나 열려 있지 않은 항목입니다.'; end if;
-  delete from public.task_participants where task_id=p_task_id;
-  insert into public.task_participants(task_id, user_id)
-    select p_task_id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
-    where public.is_group_member(v_gid, x) on conflict do nothing;
-
-  v_actor := public.notif_member_name(v_gid, auth.uid());
-  select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('accept', jsonb_build_object('actor', v_actor, 'title', r.title)) nr;
-  if v_nt_t is not null then
-    insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-    select tp.user_id, auth.uid(), 'accept', v_nt_t, v_nt_b, v_gid, p_task_id
-    from public.task_participants tp
-    where tp.task_id = p_task_id and tp.user_id <> auth.uid();
-  end if;
-
-  return r;
-end; $$;
-grant execute on function public.schedule_task(uuid, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
+-- ⚠️ schedule_task 는 여기에 정의하지 않는다 — schema-appointments.sql 에만 있다.
+--    이유: 이 함수는 알림(notif_render 'accept')뿐 아니라 appointments 행 생성까지
+--    함께 해야 한다. 예전에 이 파일(notif-strict-templates 계열)이 알림 문구를 고치려고
+--    appointments 를 모르는 옛 버전으로 이 함수를 통째로 재정의해 버렸고, 그 결과
+--    "놀기 신청으로 잡은 약속에 appointments 행이 안 생기는" 회귀가 발생했다
+--    (tasks 캐시 컬럼에는 날짜가 들어가서 상세 화면엔 날짜가 보이지만, 수정 화면·날짜
+--    드롭다운은 appointments 를 읽으므로 날짜가 통째로 비어 보인다).
+--    schema-appointments.sql 의 최종본이 알림 로직까지 모두 포함하고 있으므로,
+--    여기서 다시 정의하면 적용 순서에 따라 그 최종본을 덮어써 회귀가 재발한다.
 
 create or replace function public.poke_member(p_group_id uuid, p_target uuid)
 returns void language plpgsql security definer set search_path = public as $$
@@ -637,41 +618,15 @@ end;
 $$;
 grant execute on function public.claim_friend_ring(uuid) to authenticated;
 
--- 약속 리마인더(cron 등에서 호출 — authenticated 에게 grant 하지 않음)
-create or replace function public.dispatch_due_reminders()
-returns integer language plpgsql security definer set search_path = public as $$
-declare t record; v_when text; v_nt_t text; v_nt_b text; n int := 0;
-begin
-  for t in
-    select * from public.tasks
-    where remind_at is not null and reminded = false
-      and remind_at <= now() and status = 'accepted'
-  loop
-    v_when := to_char(t.scheduled_at at time zone 'Asia/Seoul', 'MM월 DD일 HH24:MI');
-    select nr.title, nr.body into v_nt_t, v_nt_b from public.notif_render('reminder', jsonb_build_object('title', t.title, 'when', v_when)) nr;
-
-    if v_nt_t is not null then
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-      select p.user_id, null::uuid, 'reminder', v_nt_t, v_nt_b, t.group_id, t.id
-      from public.task_participants p where p.task_id = t.id;
-
-      if not found and t.assignee_id is not null then
-        insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-        values (t.assignee_id, null::uuid, 'reminder', v_nt_t, v_nt_b, t.group_id, t.id);
-      end if;
-    end if;
-
-    update public.tasks set reminded = true where id = t.id;
-    n := n + 1;
-  end loop;
-  return n;
-end; $$;
+-- ⚠️ dispatch_due_reminders 도 여기에 정의하지 않는다 — schema-appointments.sql 에만 있다.
+--    위 schedule_task 와 같은 이유: 리마인더는 tasks 캐시가 아니라 appointments 를
+--    순회해야 한다(약속이 여러 개인 위시는 캐시에 비치는 1건 말고 나머지 약속의
+--    알림이 영영 안 나간다). 옛 버전(tasks 순회)을 여기서 재정의하면 회귀가 재발한다.
 
 -- pg_cron 매분 스케줄: 예전엔 여기서 단독으로 cron.schedule 등록했는데, 다른 매분
 -- 작업들(명찰/푸린마이크 원복, 예약 공지)과 합쳐서 DB 연결 횟수(→ Postgres 로그량)를
--- 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로 통합했다. 이 함수 정의는
--- 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로 옮겼다 — 그 파일을 실행해야
--- 실제로 매분 호출된다.
+-- 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로 통합했다. 스케줄 등록은
+-- schema-cron.sql 에 있으므로 그 파일을 실행해야 실제로 매분 호출된다.
 
 -- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)
@@ -1172,57 +1127,9 @@ grant execute on function public.use_name_tag(uuid, text) to authenticated;
 --     notif-strict-templates.sql 이 "템플릿 없으면 발송 생략"으로 최종 정리(이 버전이 최신).
 -- =============================================================
 
-create or replace function public.create_task_scheduled(
-  p_group_id uuid, p_title text, p_description text, p_category text, p_media_info jsonb,
-  p_done boolean,
-  p_scheduled_at timestamptz, p_time_set boolean, p_repeat text, p_repeat_until date,
-  p_remind int, p_participants uuid[]
-) returns public.tasks
-language plpgsql security definer set search_path = public as $$
-declare v_task public.tasks; v_remind_at timestamptz; v_t text; v_b text;
-begin
-  if not public.is_group_member(p_group_id, auth.uid()) then
-    raise exception '그룹 멤버만 등록할 수 있어요.';
-  end if;
-
-  -- 이 트랜잭션의 tasks INSERT 트리거가 새 항목 알림을 건너뛰게 함
-  perform set_config('nolging.silent_task', 'on', true);
-
-  if p_remind is not null and p_scheduled_at is not null then
-    v_remind_at := p_scheduled_at - make_interval(mins => p_remind);
-  end if;
-
-  insert into public.tasks(
-    group_id, title, description, category, media_info, created_by,
-    status, assignee_id, accepted_at, completed_at,
-    scheduled_at, scheduled_time_set, repeat_rule, repeat_until,
-    remind_min, remind_at, reminded)
-  values (
-    p_group_id, p_title, coalesce(p_description, ''), p_category, p_media_info, auth.uid(),
-    case when p_done then 'done' else 'accepted' end, auth.uid(), now(),
-    case when p_done then now() else null end,
-    p_scheduled_at, coalesce(p_time_set, true), p_repeat, p_repeat_until,
-    p_remind, v_remind_at, false)
-  returning * into v_task;
-
-  insert into public.task_participants(task_id, user_id)
-    select v_task.id, x from unnest(coalesce(p_participants, array[]::uuid[])) as x
-    where public.is_group_member(p_group_id, x) on conflict do nothing;
-
-  -- 처음부터 추억(done) 상태로 등록한 경우 → 참여자(작성자 제외)에게 '새 추억' 알림
-  if p_done then
-    select r.title, r.body into v_t, v_b from public.notif_render('new_memory', jsonb_build_object('title', v_task.title)) r;
-    if v_t is not null then
-      insert into public.notifications(user_id, actor_id, type, title, body, group_id, task_id)
-      select tp.user_id, auth.uid(), 'new_memory', v_t, v_b, p_group_id, v_task.id
-      from public.task_participants tp
-      where tp.task_id = v_task.id and tp.user_id <> auth.uid();
-    end if;
-  end if;
-
-  return v_task;
-end; $$;
-grant execute on function public.create_task_scheduled(uuid, text, text, text, jsonb, boolean, timestamptz, boolean, text, date, int, uuid[]) to authenticated;
+-- ⚠️ create_task_scheduled 도 여기에 정의하지 않는다 — schema-appointments.sql 에만 있다.
+--    위 schedule_task 와 같은 이유(알림 + appointments 행 생성을 함께 해야 함).
+--    schema-appointments.sql 의 최종본이 '새 추억' 알림 로직까지 모두 포함한다.
 
 create or replace function public.submit_review(p_task_id uuid, p_rating numeric, p_comment text)
 returns jsonb language plpgsql security definer set search_path = public as $$
