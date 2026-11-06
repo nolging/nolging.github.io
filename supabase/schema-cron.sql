@@ -11,7 +11,16 @@
 --  하루 4 × 1440 = 5,760번의 개별 DB 연결/쿼리가 발생해 Supabase
 --  대시보드의 Postgres 로그(Log Ingestion 과금 항목) 비중이 유독 크게
 --  나왔다 — 이 파일은 그 4개를 "하나의 pg_cron 작업"으로 합쳐서 DB
---  연결 횟수를 4분의 1로 줄인다(체크 주기·즉시성은 그대로 매분 유지).
+--  연결 횟수를 4분의 1로 줄인다.
+--
+--  2026-11: 무료 인스턴스가 메모리 한도(Memory commitment)에 상시 붙어 있다가
+--  넘치는 순간 DB 가 멈추는 장애가 나서, 매번 새 백엔드를 띄우는 이 작업을
+--  매분 → 5분 주기로 줄였다(함수 이름 dispatch_minutely 는 호환상 유지).
+--  네 함수 모두 "시각이 지났고 아직 처리 안 된 것"(<= now() + 처리 플래그)을
+--  찾는 방식이라 누락은 없고, 최대 5분 늦어질 뿐이다:
+--    리마인더·예약 공지 발송, 명찰 만료 후 닉네임 원복(본인 화면 잠금 해제는
+--    클라이언트가 시각으로 판단해 제때 풀림). 푸린 마이크 낙서는 조회 시
+--    expires_at 으로 거르므로 화면상 영향 없음.
 --
 --  그 대신 위 4개 파일에 있던 개별 cron.schedule 등록은 제거했다
 --  (함수 정의 자체는 각 도메인 파일에 그대로 남아있고, 스케줄 등록만
@@ -78,13 +87,13 @@ do $$ begin perform cron.unschedule('nolging-purin-mic-revert'); exception when 
 do $$ begin perform cron.unschedule('nolging-reminders');        exception when others then null; end $$;
 do $$ begin perform cron.unschedule('nolging-system-notices');   exception when others then null; end $$;
 
--- 하나로 합친 매분 작업 등록(이미 있으면 교체)
+-- 하나로 합친 작업 등록(이미 있으면 교체). 잡 이름은 호환상 유지, 주기는 5분.
 do $$
 begin
   perform cron.unschedule('nolging-minutely-dispatch');
 exception when others then null;
 end $$;
-select cron.schedule('nolging-minutely-dispatch', '* * * * *', $$select public.dispatch_minutely()$$);
+select cron.schedule('nolging-minutely-dispatch', '*/5 * * * *', $$select public.dispatch_minutely()$$);
 
 -- 원래 4개 함수도 그랬듯 클라이언트에 노출할 필요 없는 내부 전용(cron 전용) 함수라
 -- authenticated 에 execute grant 하지 않는다(cron 은 스케줄한 role 권한으로 실행됨).

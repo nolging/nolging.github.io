@@ -626,7 +626,7 @@ grant execute on function public.claim_friend_ring(uuid) to authenticated;
 -- pg_cron 매분 스케줄: 예전엔 여기서 단독으로 cron.schedule 등록했는데, 다른 매분
 -- 작업들(명찰/푸린마이크 원복, 예약 공지)과 합쳐서 DB 연결 횟수(→ Postgres 로그량)를
 -- 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로 통합했다. 스케줄 등록은
--- schema-cron.sql 에 있으므로 그 파일을 실행해야 실제로 매분 호출된다.
+-- schema-cron.sql 에 있으므로 그 파일을 실행해야 실제로 5분마다 호출된다.
 
 -- 칭찬 스티커(도착/완성, type: 완성 시 'praise', 도착 시 'praise_new')
 create or replace function public.praise_place(p_group_id uuid, p_owner_id uuid, p_slot int, p_reason text)

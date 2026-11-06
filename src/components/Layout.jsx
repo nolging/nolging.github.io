@@ -18,6 +18,18 @@ import AccountSwitcher from './AccountSwitcher'
 import ErrorReportModal from './ErrorReportModal'
 import { hasAdminSaved } from '../lib/accountSwitch'
 
+// 화면이 보일 때만 ms 주기로 fn 을 호출하고, 다시 보이게 되면 즉시 한 번 호출한다.
+// 백그라운드 탭·PWA 가 하루 종일 DB 를 두드리지 않게 하려는 것(무료 인스턴스 메모리 여유 확보).
+function useVisiblePoll(fn, ms, deps) {
+  useEffect(() => {
+    fn()
+    const tick = () => { if (document.visibilityState === 'visible') fn() }
+    const iv = setInterval(tick, ms)
+    document.addEventListener('visibilitychange', tick)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', tick) }
+  }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 function SwapIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -472,14 +484,10 @@ export default function Layout() {
     return () => { el.removeEventListener('scroll', onScroll); clearTimeout(hideT) }
   }, [])
 
-  // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + 60초 주기로 갱신
+  // 안읽은 알림 개수: 마운트 시 + 라우트 이동 시 + (화면이 보일 때만) 60초 주기로 갱신
   const [unread, setUnread] = useState(0)
   const refreshUnread = () => unreadNotificationCount().then(setUnread).catch(() => {})
-  useEffect(() => {
-    refreshUnread()
-    const iv = setInterval(refreshUnread, 60000)
-    return () => clearInterval(iv)
-  }, [])
+  useVisiblePoll(refreshUnread, 60000, [])
   useEffect(() => { refreshUnread() }, [location.pathname])
 
   // PC 전용 알림 드롭다운: 종 아이콘 클릭 시 열림 (모바일은 알림 페이지로 이동)
@@ -507,31 +515,19 @@ export default function Layout() {
   // 하단 탭 '쪽지' 점: 안 읽은 받은 쪽지가 있으면 표시
   const [noteUnread, setNoteUnread] = useState(0)
   const refreshNoteUnread = () => unreadNoteCount(profile?.id).then(setNoteUnread).catch(() => {})
-  useEffect(() => {
-    refreshNoteUnread()
-    const iv = setInterval(refreshNoteUnread, 60000)
-    return () => clearInterval(iv)
-  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useVisiblePoll(refreshNoteUnread, 60000, [profile?.id])
   useEffect(() => { refreshNoteUnread() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 하단 탭 '마이' 점: 완료돼서 "받기" 가능한 퀘스트가 있으면 표시
   const [questClaimable, setQuestClaimable] = useState(false)
   const refreshQuestClaimable = () => hasClaimableQuest().then(setQuestClaimable).catch(() => {})
-  useEffect(() => {
-    refreshQuestClaimable()
-    const iv = setInterval(refreshQuestClaimable, 60000)
-    return () => clearInterval(iv)
-  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useVisiblePoll(refreshQuestClaimable, 60000, [profile?.id])
   useEffect(() => { refreshQuestClaimable() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 하단 탭 '상점' 점: 일반/프리미엄 중 아직 안 본 신상이 있으면 표시(둘 다 봐야 없어짐)
   const [storeNew, setStoreNew] = useState(false)
   const refreshStoreNew = () => hasNewStoreItems().then(setStoreNew).catch(() => {})
-  useEffect(() => {
-    refreshStoreNew()
-    const iv = setInterval(refreshStoreNew, 60000)
-    return () => clearInterval(iv)
-  }, [profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useVisiblePoll(refreshStoreNew, 60000, [profile?.id])
   useEffect(() => { refreshStoreNew() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 상단바 츄르 알약: 마이 페이지 / 상점 진입 시 잔액 조회
