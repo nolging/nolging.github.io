@@ -478,7 +478,7 @@ begin
 end;
 $$;
 
--- ---- 마감 예정 미리 알림 발송(pg_cron 매분 호출) -------------------
+-- ---- 마감 예정 미리 알림 발송(pg_cron 5분 주기 호출, schema-cron.sql) -------------------
 -- appointments 단위로 순회하고, 알림 문구는 notif_render 로 템플릿이
 -- 없거나 비활성이면 보내지 않는다(fix-appointments-regression.sql 최종본).
 create or replace function public.dispatch_due_reminders()

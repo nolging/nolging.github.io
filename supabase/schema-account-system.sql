@@ -587,7 +587,7 @@ begin
   return v_row;
 end $$;
 
--- 예약 발송분 매분 체크
+-- 예약 발송분 주기 체크(schema-cron.sql, 5분 간격)
 create or replace function public.dispatch_due_system_notices()
 returns integer language plpgsql security definer set search_path = public as $$
 declare r record; n int := 0;
@@ -621,7 +621,7 @@ select cron.schedule('nolging-cleanup-cron-logs', '0 3 * * *', $$select public.c
 -- 등록했는데, 다른 매분 작업들(명찰/푸린마이크 원복, 알림 리마인더)과 합쳐서 DB 연결
 -- 횟수(→ Postgres 로그량)를 줄이려고 schema-cron.sql 의 dispatch_minutely() 하나로
 -- 통합했다. 이 함수 정의는 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로
--- 옮겼다 — 그 파일을 실행해야 실제로 매분 호출된다.
+-- 옮겼다 — 그 파일을 실행해야 실제로 5분마다 호출된다.
 
 
 -- ═══════════════════════════════════════════════════════════

@@ -287,7 +287,7 @@ end $$;
 grant execute on function public.use_time_machine(uuid) to authenticated;
 
 -- 3-5) 명찰 24시간 만료 자동 원복(pg_cron 용). nametag_state() 는 그 페이지를 방문할 때만
---      호출되므로, 아무도 안 들어가면 만료돼도 안 풀리는 문제를 막기 위해 매분 전체 스캔.
+--      호출되므로, 아무도 안 들어가면 만료돼도 안 풀리는 문제를 막기 위해 주기적(5분) 전체 스캔.
 create or replace function public.dispatch_nametag_reverts()
 returns integer language plpgsql security definer set search_path = public as $$
 declare n int;
@@ -561,7 +561,7 @@ $$;
 grant execute on function public.list_group_graffiti(uuid) to authenticated;
 
 -- 3-12) 푸린 마이크 만료 자동 정리(pg_cron 용, 페이지 방문 없이도 낙서가 사라지게).
---       매분 도는 크론도 미러 컬럼을 동일하게 자가 치유(어떤 그룹이든 방문 없이도 맞춰짐).
+--       5분마다 도는 크론도 미러 컬럼을 동일하게 자가 치유(어떤 그룹이든 방문 없이도 맞춰짐).
 create or replace function public.dispatch_purin_mic_reverts()
 returns integer language plpgsql security definer set search_path = public as $$
 declare n int;
@@ -1103,7 +1103,7 @@ create trigger trg_block_locked_nick before update on public.group_members
 
 
 -- =====================================================================
--- 5. pg_cron 스케줄 (매분, unschedule → schedule 가드 패턴)
+-- 5. pg_cron 스케줄 (unschedule → schedule 가드 패턴)
 -- =====================================================================
 
 create extension if not exists pg_cron;
@@ -1113,7 +1113,7 @@ create extension if not exists pg_cron;
 -- DB 연결 횟수(→ Postgres 로그량)를 줄이려고 schema-cron.sql 의 dispatch_minutely()
 -- 하나로 통합했다. 함수 정의(dispatch_nametag_reverts/dispatch_purin_mic_reverts)는
 -- 그대로 이 파일에 있고, 스케줄 등록만 schema-cron.sql 로 옮겼다 — 그 파일을 실행해야
--- 실제로 매분 호출된다.
+-- 실제로 5분마다 호출된다.
 
 -- 로또 자동 추첨: 매주 토요일 18:00(KST) = 09:00(UTC) — 위와 달리 매분이 아니라 주간이라 그대로 둠.
 do $$
