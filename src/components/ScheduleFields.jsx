@@ -87,7 +87,10 @@ function PickField({ type, value, onChange, format }) {
   return (
     <label className="sc-pick">
       <span className="sc-pick-text">{format(value)}<Chevron /></span>
-      <input type={type} className="sc-pick-input" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} />
+      {/* 투명 오버레이라 PC 크롬·엣지에선 (보이지 않는) 달력 아이콘을 눌러야만 열린다 → 클릭 시 직접 연다 */}
+      <input type={type} className="sc-pick-input" value={value}
+        onClick={(e) => { try { e.currentTarget.showPicker?.() } catch { /* 미지원·제스처 아님: 기본 동작 */ } }}
+        onChange={(e) => e.target.value && onChange(e.target.value)} />
     </label>
   )
 }
